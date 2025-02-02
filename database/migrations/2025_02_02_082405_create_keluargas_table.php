@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('keluarga', function (Blueprint $table) {
             $table->id();
             $table->char('no_kk', 16)->nullable(false);
-            $table->boolean('status_wali')->nullable();
+            $table->boolean('status_wali')->nullable()->default(false);
             $table->unsignedBigInteger('id_status_keluarga');
             $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('update_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->softDeletes();
-            $table->boolean('status');
+            $table->boolean('status')->default(true);
             $table->timestamps(); 
         });
     }
@@ -29,10 +29,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('keluarga');
-
         Schema::table('keluarga', function (Blueprint $table) {
             $table->dropSoftDeletes();
         });
+
+        Schema::dropIfExists('keluarga');
     }
 };
