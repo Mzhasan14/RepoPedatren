@@ -20,10 +20,6 @@ class BiodataController extends Controller
     {
         $validator = $request->validated();
 
-        // if ($validator->fails()) {
-        //     return response()->json($validator->errors(), 422);
-        // }
-
         $biodata = Biodata::create($validator);
         return new PdResource(true, 'Data berhasil ditambah', $biodata);
     }
