@@ -26,9 +26,14 @@ class Biodata extends Model
         'created_by',
         'updated_by',
     ];
-    
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
+    }
+
+    public function peserta_didik()
+    {
+        return $this->hasOne(Peserta_didik::class);
     }
 }

@@ -34,4 +34,9 @@ class Peserta_didik extends Model
     {
         return $query->where('status', true);
     }
+
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class);
+    }
 }
