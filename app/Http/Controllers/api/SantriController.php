@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\SantriResource;
+use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\SantriRequest;
 
@@ -16,7 +16,7 @@ class SantriController extends Controller
     {
         $santri = Peserta_didik::Santri()->Active()->latest()->paginate(5);
 
-        return new SantriResource(true, 'List data santri', $santri);
+        return new PdResource(true, 'List data santri', $santri);
     }
 
     public function store(Request $request)
@@ -41,13 +41,13 @@ class SantriController extends Controller
         }
         $santri = Peserta_didik::create($validator->validated());
 
-        return new SantriResource(true, 'Data berhasil ditambah', $santri);
+        return new PdResource(true, 'Data berhasil ditambah', $santri);
     }
 
     public function show($id)
     {
         $santri = Peserta_didik::findOrFail($id);
-        return new SantriResource(true, 'Detail data', $santri);
+        return new PdResource(true, 'Detail data', $santri);
     }
 
     public function update(Request $request, $id)
@@ -81,7 +81,7 @@ class SantriController extends Controller
 
         $santri->update($validator->validated());
 
-        return new SantriResource(true, 'Data berhasil diubah', $santri);
+        return new PdResource(true, 'Data berhasil diubah', $santri);
     }
 
     public function destroy($id)
@@ -89,6 +89,6 @@ class SantriController extends Controller
         $santri = Peserta_didik::findOrFail($id);
 
         $santri->delete();
-        return new SantriResource(true, 'Data berhasil dihapus', null);
+        return new PdResource(true, 'Data berhasil dihapus', null);
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\KeluargaResource;
+use App\Http\Resources\PdResource;
 use App\Models\Keluarga;
 use Illuminate\Support\Facades\Validator;
 
@@ -37,7 +37,7 @@ class KeluargaController extends Controller
         }
 
         $keluarga = Keluarga::create($validator->validate());
-        return new KeluargaResource(true,'Data berhasil Ditambah', $keluarga);
+        return new PdResource(true,'Data berhasil Ditambah', $keluarga);
     }
 
     /**
@@ -46,7 +46,7 @@ class KeluargaController extends Controller
     public function show(string $id)
     {
         $keluarga = Keluarga::findOrFail($id);
-        return new KeluargaResource(true,'detail data',$keluarga);
+        return new PdResource(true,'detail data',$keluarga);
     }
 
     /**
