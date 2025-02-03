@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\KeluargaRequest;
 use App\Http\Resources\PdResource;
 use App\Models\Keluarga;
 use Illuminate\Support\Facades\Validator;
@@ -21,16 +22,9 @@ class KeluargaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(KeluargaRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'no_kk' => 'required|max:16',
-            'status_wali' => 'nullable',
-            'id_status_keluarga' => 'required',
-            'created_by' => 'required',
-            'updated_by' => 'nullable',
-            'status' => 'nullable'
-            ]);
+        $validator = $request->validated();
 
         if($validator->fails()) {
             return response()->json($validator->errors(),422);
