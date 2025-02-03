@@ -23,10 +23,7 @@ class SantriController extends Controller
     {
         $validator = $request->validated();
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-        $santri = Peserta_didik::create($validator->validated());
+        $santri = Peserta_didik::create($validator);
 
         return new PdResource(true, 'Data berhasil ditambah', $santri);
     }

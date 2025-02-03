@@ -27,11 +27,7 @@ class KeluargaController extends Controller
     {
         $validator = $request->validated();
 
-        if($validator->fails()) {
-            return response()->json($validator->errors(),422);
-        }
-
-        $keluarga = Keluarga::create($validator->validate());
+        $keluarga = Keluarga::create($validator);
         return new PdResource(true,'Data berhasil Ditambah', $keluarga);
     }
 
