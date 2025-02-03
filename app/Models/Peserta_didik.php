@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class Peserta_didik extends Model
 {
+    use SoftDeletes;
     protected $table = 'peserta_didik';
 
     protected $fillable = [
