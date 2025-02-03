@@ -32,8 +32,6 @@ class SantriRequest extends FormRequest
             'anak_keberapa' => 'required|numeric|min:1',
             'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
             'tinggal_bersama' => 'required|string|max:50',
-            'jenjang_pendidikan_terakhir' => 'required',
-            'nama_pendidikan_terakhir' => 'required|string|max:100',
             'smartcard' => 'required|string|max:255',
             'tahun_masuk' => 'required|date|before_or_equal:tahun_keluar',
             'tahun_keluar' => 'required|date|after_or_equal:tahun_masuk',

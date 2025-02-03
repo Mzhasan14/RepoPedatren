@@ -14,8 +14,6 @@ class Peserta_didik extends Model
         'anak_keberapa',
         'dari_saudara',
         'tinggal_bersama',
-        'jenjang_pendidikan_terakhir',
-        'nama_pendidikan_terakhir',
         'smartcard',
         'tahun_masuk',
         'tahun_keluar',
