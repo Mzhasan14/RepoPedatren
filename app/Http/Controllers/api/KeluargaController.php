@@ -16,7 +16,8 @@ class KeluargaController extends Controller
      */
     public function index()
     {
-        //
+        $keluarga = Keluarga::Active()->latest()->paginate(5);
+        return new PdResource(true, 'List Keluarga', $keluarga);
     }
 
     /**
