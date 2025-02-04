@@ -8,7 +8,6 @@ use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Requests\SantriRequest;
 
 class SantriController extends Controller
 {
@@ -19,11 +18,26 @@ class SantriController extends Controller
         return new PdResource(true, 'List data santri', $santri);
     }
 
-    public function store(SantriRequest $request)
+    public function store(Request $request)
     {
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'id_biodata' => 'required',
+            'nis' => 'required|numeric',
+            'anak_keberapa' => 'required|numeric|min:1',
+            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
+            'tinggal_bersama' => 'required|string|max:50',
+            'smartcard' => 'required|string|max:255',
+            'tahun_masuk' => 'required|date',
+            'tahun_keluar' => 'date',
+            'created_by' => 'required',
+            'status' => 'required'
+        ]);
 
-        $santri = Peserta_didik::create($validator);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $santri = Peserta_didik::create($validator->validated());
 
         return new PdResource(true, 'Data berhasil ditambah', $santri);
     }
@@ -39,7 +53,22 @@ class SantriController extends Controller
 
         $santri = Peserta_didik::findOrFail($id);
 
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'id_biodata' => 'required',
+            'nis' => [
+                'required',
+                'numeric',
+                Rule::unique('peserta_didik', 'nis')->ignore($id),
+            ],
+            'anak_keberapa' => 'required|numeric|min:1',
+            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
+            'tinggal_bersama' => 'required|string|max:50',
+            'smartcard' => 'required|string|max:255',
+            'tahun_masuk' => 'required|date',
+            'tahun_keluar' => 'date',
+            'created_by' => 'required',
+            'status' => 'required'
+        ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);

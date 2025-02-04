@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\api;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Http\Resources\PdResource;
 use App\Models\Biodata;
-use App\Http\Requests\BiodataRequest;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Http\Resources\PdResource;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class BiodataController extends Controller
 {
@@ -16,11 +17,31 @@ class BiodataController extends Controller
         return new PdResource(true, 'list biodata', $biodata);
     }
 
-    public function store(BiodataRequest $request)
+    public function store(Request $request)
     {
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'id_desa' => 'required|integer',
+            'nama' => 'required|string|max:100',
+            'niup' => 'required|unique',
+            'jenis_kelamin' => 'required',
+            'tanggal_lahir' => 'required|date|before:today',
+            'tempat_lahir' => 'required|string|max:50',
+            'nik' => 'required|unique',
+            'no_kk' => 'required',
+            'no_telepon' => 'required',
+            'email' => 'required|unique',
+            'jenjang_pendidikan_terakhir' => 'required',
+            'nama_pendidikan_terakhir' => 'required',
+            'status' => 'required',
+            'created_by' => 'required',
+        ]);
 
-        $biodata = Biodata::create($validator);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $biodata = Biodata::create($validator->validated());
+
         return new PdResource(true, 'Data berhasil ditambah', $biodata);
     }
 
@@ -30,17 +51,41 @@ class BiodataController extends Controller
         return new PdResource(true, 'Detail data', $biodata);
     }
 
-    public function update(BiodataRequest $request, $id)
+    public function update(Request $request, $id)
     {
         $biodata = Biodata::findOrFail($id);
 
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'id_desa' => 'required|integer',
+            'nama' => 'required|string|max:100',
+            'niup' => [
+                'required',
+                Rule::unique('biodata', 'niup')->ignore($id),
+            ],
+            'jenis_kelamin' => 'required',
+            'tanggal_lahir' => 'required|date|before:today',
+            'tempat_lahir' => 'required|string|max:50',
+            'nik' => [
+                'required',
+                Rule::unique('biodata', 'nik')->ignore($id),
+            ],
+            'no_kk' => 'required',
+            'no_telepon' => 'required',
+            'email' => [
+                'required',
+                Rule::unique('biodata', 'email')->ignore($id),
+            ],
+            'jenjang_pendidikan_terakhir' => 'required',
+            'nama_pendidikan_terakhir' => 'required',
+            'status' => 'required',
+            'created_by' => 'required',
+        ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $biodata->update($validator->validated());
+        $biodata->update($request->validated());
 
         return new PdResource(true, 'Data berhasil diubah', $biodata);
     }

@@ -35,7 +35,7 @@ class StatusKeluargaController extends Controller
     public function show(string $id)
     {
         $statusKeluarga = Status_keluarga::findOrFail($id);
-        return new PdResource(true, 'detail data',$statusKeluarga);
+        return new PdResource(true, 'detail data', $statusKeluarga);
     }
 
     /**

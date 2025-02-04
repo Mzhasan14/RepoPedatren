@@ -23,12 +23,23 @@ class KeluargaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(KeluargaRequest $request)
+    public function store(Request $request)
     {
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'no_kk' => 'required|max:16',
+            'status_wali' => 'nullable',
+            'id_status_keluarga' => 'required',
+            'created_by' => 'required',
+            'updated_by' => 'nullable',
+            'status' => 'nullable'
+        ]);
 
-        $keluarga = Keluarga::create($validator);
-        return new PdResource(true,'Data berhasil Ditambah', $keluarga);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $keluarga = Keluarga::create($validator->validated());
+        return new PdResource(true, 'Data berhasil Ditambah', $keluarga);
     }
 
     /**
@@ -37,7 +48,7 @@ class KeluargaController extends Controller
     public function show(string $id)
     {
         $keluarga = Keluarga::findOrFail($id);
-        return new PdResource(true,'detail data',$keluarga);
+        return new PdResource(true, 'detail data', $keluarga);
     }
 
     /**
@@ -47,7 +58,14 @@ class KeluargaController extends Controller
     {
         $keluarga = Keluarga::findOrFail($id);
 
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'no_kk' => 'required|max:16',
+            'status_wali' => 'nullable',
+            'id_status_keluarga' => 'required',
+            'created_by' => 'required',
+            'updated_by' => 'nullable',
+            'status' => 'nullable'
+        ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
