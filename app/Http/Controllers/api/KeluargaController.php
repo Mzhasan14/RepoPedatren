@@ -45,7 +45,16 @@ class KeluargaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $keluarga = Keluarga::findOrFail($id);
+
+        $validator = $request->validated();
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $keluarga->update($validator->validated());
+        return new PdResource(true, 'data berhasil diubah', $keluarga);
     }
 
     /**
@@ -53,6 +62,9 @@ class KeluargaController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $keluarga = Keluarga::findOrFail($id);
+
+        $keluarga->delete();
+        return new PdResource(true, 'Data berhasil dihapus', null);
     }
 }
