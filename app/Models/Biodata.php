@@ -36,4 +36,8 @@ class Biodata extends Model
     {
         return $this->hasOne(Peserta_didik::class);
     }
+
+    // public function keluarga() {
+    //     return $this->hasMany(Keluarga::class, 'no_kk', 'no_kk');
+    // }
 }

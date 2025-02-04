@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('keluarga', function (Blueprint $table) {
             $table->id();
-            $table->char('no_kk', 16)->nullable(false);
+            $table->char('no_kk', 16);
             $table->boolean('status_wali')->nullable()->default(false);
             $table->unsignedBigInteger('id_status_keluarga');
             $table->unsignedBigInteger('created_by');
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps(); 
 
 
-            $table->foreign('no_kk')->references('no_kk')->on('biodata')->onDelete('cascade');
+            // $table->foreign('no_kk')->references('no_kk')->on('biodata')->onDelete('cascade');
             $table->foreign('id_status_keluarga')->references('id')->on('status_keluarga')->onDelete('cascade');
 
             // $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
@@ -37,10 +37,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('keluarga', function (Blueprint $table) {
-            $table->dropForeign(['no_kk']);
+            // $table->dropForeign(['no_kk']);
             $table->dropForeign(['id_status_keluarga']);
-            $table->dropForeign(['created_by']);
-            $table->dropForeign(['updated_by']);
+            // $table->dropForeign(['created_by']);
+            // $table->dropForeign(['updated_by']);
             $table->dropSoftDeletes();
         });
 
