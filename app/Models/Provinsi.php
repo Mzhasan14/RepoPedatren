@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Provinsi;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,5 +18,9 @@ class Provinsi extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    public function kabupaten() {
+        return $this->hasMany(Kabupaten::class,'id_provinsi', 'id');
     }
 }

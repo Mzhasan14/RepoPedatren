@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
-use App\Models\Provinsi\Provinsi;
+use App\Models\Provinsi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,7 +13,7 @@ class ProvinsiController extends Controller
     public function index() 
     {
         $provinsi = Provinsi::Active()->get();
-        return new PdResource(true,'Data Berhasil Ditampilkan', $provinsi,200);
+        return new PdResource(true,'Data Berhasil Ditampilkan', $provinsi);
     }
 
     public function store(Request $request)
@@ -35,12 +35,12 @@ class ProvinsiController extends Controller
             ],402);
         }
         $provinsi = Provinsi::create($validator->validated());
-        return new PdResource(true,'Data berhasil ditambahkan',$provinsi,200);
+        return new PdResource(true,'Data berhasil ditambahkan',$provinsi);
     }
     public function show(string $id)
     {
         $provinsi = Provinsi::findOrFail($id);
-        return new PdResource(true,'Data berhasil ditampilkan',$provinsi, 200);
+        return new PdResource(true,'Data berhasil ditampilkan',$provinsi);
     }
     public function update(Request $request, string $id)
     {
@@ -62,13 +62,13 @@ class ProvinsiController extends Controller
             ],402);
         }
         $provinsi->update($validator->validated());
-        return new PdResource(true,'Data berhasil di update',$provinsi,200);
+        return new PdResource(true,'Data berhasil di update',$provinsi);
     }
 
     public function destroy(string $id)
     {
         $provinsi = Provinsi::findOrFail($id);
         $provinsi->delete();
-        return new PdResource(true,'Data berhasil dihapus',$provinsi,200);
+        return new PdResource(true,'Data berhasil dihapus',$provinsi);
     }
 }
