@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Status_keluarga;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class StatusKeluargaController extends Controller
 {
@@ -23,9 +24,18 @@ class StatusKeluargaController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'nama_status' => 'required',
+            'created_by' => 'required',
+            'updated_by' => 'nullable',
+            'status' => 'nullable'
+        ]);
 
-        $statusKeluarga = Status_keluarga::create($validator);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $statusKeluarga = Status_keluarga::create($validator->validated());
         return new PdResource(true, 'Data berhasil Ditambah', $statusKeluarga);
     }
 
@@ -45,7 +55,12 @@ class StatusKeluargaController extends Controller
     {
         $statusKeluarga = Status_keluarga::findOrFail($id);
 
-        $validator = $request->validated();
+        $validator = Validator::make($request->all(), [
+            'nama_status' => 'required',
+            'created_by' => 'required',
+            'updated_by' => 'nullable',
+            'status' => 'nullable'
+        ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
