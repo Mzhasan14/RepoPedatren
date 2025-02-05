@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\wilayah\domisili;
 
 class Peserta_didik extends Model
 {
@@ -39,4 +40,10 @@ class Peserta_didik extends Model
     {
         return $this->belongsTo(Biodata::class);
     }
+
+    public function domisili()
+    {
+        return $this->hasOne(Domisili::class, 'nis', 'nis');
+    }
+    
 }
