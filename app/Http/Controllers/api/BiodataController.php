@@ -78,7 +78,7 @@ class BiodataController extends Controller
             'jenjang_pendidikan_terakhir' => 'required',
             'nama_pendidikan_terakhir' => 'required',
             'status' => 'required',
-            'created_by' => 'required',
+            'created_by' => 'nullable',
         ]);
 
         if ($validator->fails()) {

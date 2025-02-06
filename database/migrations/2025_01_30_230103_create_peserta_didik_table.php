@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('peserta_didik', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('id_biodata');
-            $table->char('nis', 11)->nullable();
+            $table->char('nis', 11)->nullable()->unique();
             $table->tinyInteger('anak_keberapa');
             $table->tinyInteger('dari_saudara');
             $table->string('tinggal_bersama', 40);

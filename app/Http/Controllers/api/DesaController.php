@@ -52,7 +52,7 @@ class DesaController extends Controller
             'nama_desa' => 'required|string|max:100',
             'id_kecamatan' => 'required|integer',
             'status' => 'required|boolean',
-            'created_by' => 'required|integer',
+            'created_by' => 'nullable|integer',
             'updated_by' => 'required|integer',
         ]);
 

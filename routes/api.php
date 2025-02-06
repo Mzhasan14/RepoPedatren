@@ -8,6 +8,7 @@ use App\Http\Controllers\api\BiodataController;
 use App\Http\Controllers\Api\DesaController;
 use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KecamatanController;
+use App\Http\Controllers\api\OrangTuaController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
 
@@ -30,3 +31,5 @@ Route::apiResource('/kabupaten',KabupatenController::class);
 Route::apiResource('/kecamatan',KecamatanController::class);
 
 Route::apiResource('/desa',DesaController::class);
+
+Route::apiResource('/orangtua',OrangTuaController::class);

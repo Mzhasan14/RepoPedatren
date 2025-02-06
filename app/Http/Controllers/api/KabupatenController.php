@@ -60,7 +60,7 @@ class KabupatenController extends Controller
         $validator = Validator::make($request->all(), [
             'id_provinsi' => 'required|integer|exists:provinsi,id',
             'nama_kabupaten' => 'required|string|max:255',
-            'created_by' => 'required|integer',
+            'created_by' => 'nullable|integer',
             'updated_by' => 'nullable|integer',
             'status' => 'required|boolean'
         ]);
