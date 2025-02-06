@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
-use App\Models\Desa;
+use App\Models\Alamat\Desa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 

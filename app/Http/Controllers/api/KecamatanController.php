@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
-use App\Models\Kecamatan;
+use App\Models\Alamat\Kecamatan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,8 +23,8 @@ class KecamatanController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'nama_kecamatan' => 'required|string|max:255', 
-            'id_kabupaten' => 'required|integer|exists:kabupaten,id', 
-            'updated_by' => 'required|integer', 
+            'id_kabupaten' => 'required|integer|exists:kabupaten,id',
+            'updated_by' => 'nullable|integer', 
             'created_by' => 'required|integer', 
             'status' => 'required|boolean'
         ]);
@@ -50,8 +50,8 @@ class KecamatanController extends Controller
         $kecamatan = Kecamatan::findOrFail($id);
         $validator = Validator::make($request->all(),[
             'nama_kecamatan' => 'required|string|max:255', 
-            'id_kabupaten' => 'required|integer|exists:kabupaten,id', 
-            'updated_by' => 'required|integer', 
+            'id_kabupaten' => 'required|integer|exists:kabupaten,id',
+            'updated_by' => 'nullable|integer',
             'created_by' => 'required|integer', 
             'status' => 'required|boolean'
         ]);

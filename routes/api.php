@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\SantriController;
 use App\Http\Controllers\api\BiodataController;
 use App\Http\Controllers\Api\DesaController;
+use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KecamatanController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
@@ -23,6 +24,8 @@ Route::apiResource('/biodata',BiodataController::class);
 Route::apiResource('/status_keluarga',StatusKeluargaController::class);
 
 Route::apiResource('/provinsi',ProvinsiController::class);
+
+Route::apiResource('/kabupaten',KabupatenController::class);
 
 Route::apiResource('/kecamatan',KecamatanController::class);
 

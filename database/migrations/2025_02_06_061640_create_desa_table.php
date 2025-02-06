@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_desa');
             $table->unsignedBigInteger('id_kecamatan');
-            $table->unsignedBigInteger('updated_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->softDeletes();
             $table->boolean('status');

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Alamat;
 
+use App\Models\Biodata;
 use Illuminate\Database\Eloquent\Model;
 
 class Desa extends Model
