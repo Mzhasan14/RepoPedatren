@@ -37,6 +37,11 @@ class Biodata extends Model
         return $this->hasOne(Peserta_didik::class);
     }
 
+    public function id_desa()
+    {
+        return $this->belongsTo(Desa::class,'id_desa', 'id');
+    }
+
     // public function keluarga() {
     //     return $this->hasMany(Keluarga::class, 'no_kk', 'no_kk');
     // }

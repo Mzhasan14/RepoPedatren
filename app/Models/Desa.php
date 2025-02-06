@@ -23,4 +23,8 @@ class Desa extends Model
     {
         return $this->belongsTo(Kecamatan::class, 'id_kecamatan', 'id');
     }
+    public function biodata()
+    {
+        return $this->hasMany(Biodata::class,'id_desa', 'id');
+    }
 }
