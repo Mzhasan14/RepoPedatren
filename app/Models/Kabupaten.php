@@ -28,6 +28,11 @@ class Kabupaten extends Model
         return $this->belongsTo(Provinsi::class,'id_provinsi','id');
     }
 
+    public function kecamatan()
+    {
+        return $this->hasMany(Kecamatan::class,'id_kabupaten','id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
