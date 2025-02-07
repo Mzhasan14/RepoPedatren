@@ -4,6 +4,7 @@ namespace App\Models\Kewaliasuhan;
 
 use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Wali_asuh extends Model
 {

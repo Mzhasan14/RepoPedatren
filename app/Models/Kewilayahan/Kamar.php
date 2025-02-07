@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\wilayah;
+namespace App\Models\Kewilayahan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +11,10 @@ class Kamar extends Model
     protected $table = 'kamar';
     protected $fillable = [
         'nama_kamar',
+        'id_blok',
         'created_by',
+        'updated_by',
+        'deleted_by',
         'status',
     ];
     public function scopeActive($query)
@@ -28,5 +31,4 @@ class Kamar extends Model
     {
         return $this->hasMany(Domisili::class, 'id_kamar', 'id');
     }
-   
 }

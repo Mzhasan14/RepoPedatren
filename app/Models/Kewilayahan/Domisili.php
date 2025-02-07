@@ -1,19 +1,21 @@
 <?php
 
-namespace App\Models\wilayah;
+namespace App\Models\Kewilayahan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Peserta_didik;
-
 class Domisili extends Model
 {
     use SoftDeletes;
     protected $table = 'domisili';
     protected $fillable = [
         'nama_domisili',
+        'id_kamar',
         'nis',
         'created_by',
+        'updated_by',
+        'deleted_by',
         'status',
     ];
     public function scopeActive($query)
@@ -30,5 +32,4 @@ class Domisili extends Model
     {
         return $this->belongsTo(Peserta_didik::class, 'nis', 'nis');
     }
-    
 }

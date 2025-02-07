@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Models\wilayah;
+namespace App\Models\Kewilayahan;
 
-use App\Models\Wilayah;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,6 +13,8 @@ class Blok extends Model
         'nama_blok',
         'id_wilayah',
         'created_by',
+        'updated_by',
+        'deleted_by',
         'status',
     ];
     public function scopeActive($query)
@@ -30,5 +31,4 @@ class Blok extends Model
     {
         return $this->hasMany(Kamar::class, 'id_blok', 'id');
     }
-    
 }

@@ -14,6 +14,10 @@ use App\Http\Controllers\Api\KecamatanController;
 use App\Http\Controllers\api\OrangTuaController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
+use App\Http\Controllers\api\wilayah\BlokController;
+use App\Http\Controllers\api\wilayah\DomisiliController;
+use App\Http\Controllers\api\wilayah\KamarController;
+use App\Http\Controllers\api\wilayah\WilayahController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,3 +46,11 @@ Route::apiResource('/grupwaliasuh',GrupWaliAsuhController::class);
 Route::apiResource('/waliasuh',WaliasuhController::class);
 
 Route::apiResource('/anakasuh',AnakasuhController::class);
+
+Route::apiResource('/wilayah',WilayahController::class);
+
+Route::apiResource('/blok',BlokController::class);
+
+Route::apiResource('/kamar',KamarController::class);
+
+Route::apiResource('/domisili',DomisiliController::class);
