@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models\Kewaliasuhan;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Grup_WaliAsuh extends Model
+{
+    use SoftDeletes;
+    //
+    protected $table = 'grup_wali_asuh';
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $timestamps = true;
+    public $incrementing = true;
+    
+    protected $fillable = [
+        'nama_grup',
+        'created_by',
+        'updated_by',
+        'status'
+    ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', true);
+    }
+
+            // public function createdBy()
+    // {
+    //     return $this->belongsTo(user::class, 'created_by');
+    // }
+    // public function updatedBy()
+    // {
+    //     return $this->belongsTo(user::class, 'updated_by');
+    // }
+}

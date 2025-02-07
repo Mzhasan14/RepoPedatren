@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\api\AnakasuhController;
+use App\Http\Controllers\api\GrupWaliAsuhController;
 use App\Http\Controllers\api\KeluargaController;
+use App\Http\Controllers\api\WaliasuhController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\SantriController;
@@ -33,3 +36,9 @@ Route::apiResource('/kecamatan',KecamatanController::class);
 Route::apiResource('/desa',DesaController::class);
 
 Route::apiResource('/orangtua',OrangTuaController::class);
+
+Route::apiResource('/grupwaliasuh',GrupWaliAsuhController::class);
+
+Route::apiResource('/waliasuh',WaliasuhController::class);
+
+Route::apiResource('/anakasuh',AnakasuhController::class);
