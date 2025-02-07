@@ -45,5 +45,13 @@ class Peserta_didik extends Model
     {
         return $this->hasOne(Domisili::class, 'nis', 'nis');
     }
+
+    public function waliAsuh() {
+        return $this->hasOne(Wali_asuh::class,'nis','nis');
+    }
+
+    public function anakAsuh() {
+        return $this->hasOne(Anak_asuh::class,'nis','nis');
+    }
     
 }

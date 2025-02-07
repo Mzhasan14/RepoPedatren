@@ -34,4 +34,12 @@ class Grup_WaliAsuh extends Model
     // {
     //     return $this->belongsTo(user::class, 'updated_by');
     // }
+
+    public function waliAsuh() {
+        return $this->hasMany(Wali_asuh::class,'id_grup_wali_asuh','id');
+    }
+
+    public function anakAsuh() {
+        return $this->hasMany(Anak_asuh::class,'id_grup_wali_asuh','id');
+    }
 }
