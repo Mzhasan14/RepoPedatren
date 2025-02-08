@@ -9,6 +9,9 @@ class Domisili extends Model
 {
     use SoftDeletes;
     protected $table = 'domisili';
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $incrementing = true;
     protected $fillable = [
         'nama_domisili',
         'id_kamar',

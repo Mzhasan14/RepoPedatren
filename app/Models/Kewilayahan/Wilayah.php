@@ -9,6 +9,10 @@ class Wilayah extends Model
 {
     use SoftDeletes;
     protected $table = 'wilayah';
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $incrementing = true;
+
     protected $fillable = [
         'nama_wilayah',
         'created_by',

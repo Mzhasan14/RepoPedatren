@@ -4,7 +4,7 @@ namespace App\Models\Kewaliasuhan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use App\Models\Peserta_didik;
 class Anak_asuh extends Model
 {
    use SoftDeletes;

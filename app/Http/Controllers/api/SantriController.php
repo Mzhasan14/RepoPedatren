@@ -21,16 +21,16 @@ class SantriController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_biodata' => 'required',
-            'nis' => 'required|numeric',
+            'id_biodata' => 'required|integer',
+            'nis' => 'nullable|unique:peserta_didik,nis|string|size:11',
             'anak_keberapa' => 'required|numeric|min:1',
             'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
             'tinggal_bersama' => 'required|string|max:50',
-            'smartcard' => 'required|string|max:255',
+            'smartcard' => 'required|unique:peserta_didik,smartcard|string|max:255',
             'tahun_masuk' => 'required|date',
-            'tahun_keluar' => 'date',
-            'created_by' => 'required',
-            'status' => 'required'
+            'tahun_keluar' => 'nullable|date',
+            'created_by' => 'required|integer',
+            'status' => 'required|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -56,18 +56,25 @@ class SantriController extends Controller
         $validator = Validator::make($request->all(), [
             'id_biodata' => 'required',
             'nis' => [
-                'required',
-                'numeric',
+                'nullable',
+                'unique:peserta_didik,nis',
+                'string',
+                'size:11',
                 Rule::unique('peserta_didik', 'nis')->ignore($id),
             ],
             'anak_keberapa' => 'required|numeric|min:1',
             'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
             'tinggal_bersama' => 'required|string|max:50',
-            'smartcard' => 'required|string|max:255',
+            'smartcard' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('peserta_didik', 'smartcard')->ignore($id)
+            ],
             'tahun_masuk' => 'required|date',
-            'tahun_keluar' => 'date',
-            'created_by' => 'required',
-            'status' => 'required'
+            'tahun_keluar' => 'nullable|date',
+            'created_by' => 'required|integer',
+            'status' => 'required|boolean'
         ]);
 
         if ($validator->fails()) {

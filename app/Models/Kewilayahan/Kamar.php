@@ -9,6 +9,9 @@ class Kamar extends Model
 {
     use SoftDeletes;
     protected $table = 'kamar';
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $incrementing = true;
     protected $fillable = [
         'nama_kamar',
         'id_blok',

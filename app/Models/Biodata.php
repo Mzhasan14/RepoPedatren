@@ -10,6 +10,9 @@ class Biodata extends Model
 {
     use SoftDeletes;
     protected $table = 'biodata';
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $incrementing = true;
     protected $fillable = [
         'id_desa',
         'nama',

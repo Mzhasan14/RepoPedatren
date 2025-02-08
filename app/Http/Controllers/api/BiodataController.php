@@ -22,18 +22,21 @@ class BiodataController extends Controller
         $validator = Validator::make($request->all(), [
             'id_desa' => 'required|integer',
             'nama' => 'required|string|max:100',
-            'niup' => 'required|unique',
-            'jenis_kelamin' => 'required',
+            'niup' => 'required|unique:biodata,niup',
+            'jenis_kelamin' => 'required|string',
             'tanggal_lahir' => 'required|date|before:today',
             'tempat_lahir' => 'required|string|max:50',
-            'nik' => 'required|unique',
-            'no_kk' => 'required',
-            'no_telepon' => 'required',
-            'email' => 'required|unique',
-            'jenjang_pendidikan_terakhir' => 'required',
-            'nama_pendidikan_terakhir' => 'required',
-            'status' => 'required',
-            'created_by' => 'required',
+            'nik' => 'required|unique:biodata:nik|string',
+            'no_kk' => 'required|string',
+            'no_telepon' => [
+                'required',
+                'regex:/^(?:\+62|0)[0-9]{9,13}$/',
+            ],
+            'email' => 'required|email|unique:biodata,email',
+            'jenjang_pendidikan_terakhir' => 'required|string|max:50',
+            'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'status' => 'required|boolean',
+            'created_by' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -62,23 +65,28 @@ class BiodataController extends Controller
                 'required',
                 Rule::unique('biodata', 'niup')->ignore($id),
             ],
-            'jenis_kelamin' => 'required',
+            'jenis_kelamin' => 'required|string',
             'tanggal_lahir' => 'required|date|before:today',
             'tempat_lahir' => 'required|string|max:50',
             'nik' => [
                 'required',
                 Rule::unique('biodata', 'nik')->ignore($id),
             ],
-            'no_kk' => 'required',
-            'no_telepon' => 'required',
+            'no_kk' => 'required|string',
+            'no_telepon' => [
+                'required',
+                'regex:/^(?:\+62|0)[0-9]{9,13}$/',
+                Rule::unique('biodata', 'no_telepon')->ignore($id),
+            ],
             'email' => [
                 'required',
+                'email',
                 Rule::unique('biodata', 'email')->ignore($id),
             ],
-            'jenjang_pendidikan_terakhir' => 'required',
-            'nama_pendidikan_terakhir' => 'required',
-            'status' => 'required',
-            'created_by' => 'nullable',
+            'jenjang_pendidikan_terakhir' => 'required|string|max:50',
+            'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'status' => 'required|boolean',
+            'created_by' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -89,4 +97,13 @@ class BiodataController extends Controller
 
         return new PdResource(true, 'Data berhasil diubah', $biodata);
     }
+
+    public function destroy($id)
+    {
+        $biodata = Biodata::findOrFail($id);
+        $biodata->delete();
+
+        return new PdResource(true, 'Data Berhasil Dihapus', null);
+    }
+    
 }
