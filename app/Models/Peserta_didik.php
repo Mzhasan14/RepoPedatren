@@ -60,5 +60,9 @@ class Peserta_didik extends Model
     {
         return $this->hasOne(Khadam::class,'id_peserta_didik', 'id');
     }
+    public function SantriPelanggaran()
+    {
+        return $this->hasMany(Pelanggaran::class,'id_peserta_didik', 'id');
+    }
     
 }
