@@ -54,5 +54,10 @@ class Peserta_didik extends Model
     public function anakAsuh() {
         return $this->hasOne(Anak_asuh::class,'nis','nis');
     }
+
+    public function KhadamSantri()
+    {
+        return $this->hasOne(Khadam::class,'id_peserta_didik', 'id');
+    }
     
 }

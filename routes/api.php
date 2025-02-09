@@ -11,6 +11,7 @@ use App\Http\Controllers\api\BiodataController;
 use App\Http\Controllers\Api\DesaController;
 use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KecamatanController;
+use App\Http\Controllers\Api\KhadamController;
 use App\Http\Controllers\api\OrangTuaController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
@@ -54,3 +55,5 @@ Route::apiResource('/blok',BlokController::class);
 Route::apiResource('/kamar',KamarController::class);
 
 Route::apiResource('/domisili',DomisiliController::class);
+
+Route::apiResource('/khadam', KhadamController::class);
