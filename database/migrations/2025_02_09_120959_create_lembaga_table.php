@@ -11,28 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('domisili', function (Blueprint $table) {
+        Schema::create('lembaga', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_peserta_didik');
-            $table->unsignedBigInteger('id_kamar');
-            $table->string('nama_domisili');
-            $table->integer('created_by');
+            $table->string('nama_lembaga')->nullable(false);
+            $table->integer('created_by')->nullable(false);
             $table->integer('updated_by')->nullable();
             $table->integer('deleted_by')->nullable();
-            $table->boolean('status');
             $table->softDeletes();
+            $table->boolean('status')->nullable(false);
             $table->timestamps();
-
-            $table->foreign('id_kamar')->references('id')->on('kamar')->onDelete('cascade');
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
         });
-    } 
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('domisili');
+        Schema::dropIfExists('lembaga');
     }
 };

@@ -21,7 +21,7 @@ class DomisiliController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_domisili' => 'required|string|max:100',
             'id_kamar' => 'required|integer',
-            'nis' => 'required|string',
+            'id_peserta_didik' => 'required|integer',
             'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
             'deleted_by' => 'required|integer',
@@ -52,7 +52,7 @@ class DomisiliController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_domisili' => 'required|string|max:100',
             'id_kamar' => 'required|integer',
-            'nis' => 'required|string',
+            'id_peserta_didik' => 'required|integer',
             'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
             'deleted_by' => 'required|integer',

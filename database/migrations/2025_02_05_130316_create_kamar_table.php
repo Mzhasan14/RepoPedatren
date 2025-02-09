@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_blok');
             $table->string('nama_kamar');
             $table->integer('created_by');
-            $table->integer('updated_by');
+            $table->integer('updated_by')->nullable();
+            $table->integer('deleted_by')->nullable();
             $table->boolean('status');
             $table->softDeletes();
             $table->timestamps();

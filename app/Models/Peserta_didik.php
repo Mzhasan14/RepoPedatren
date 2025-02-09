@@ -11,7 +11,9 @@ class Peserta_didik extends Model
 {
     use SoftDeletes;
     protected $table = 'peserta_didik';
-
+    protected $primaryKey = 'id';
+    protected $keyType = 'int';
+    public $incrementing = true;
     protected $fillable = [
         'id_biodata',
         'nis',
@@ -25,7 +27,6 @@ class Peserta_didik extends Model
         'created_by'
     ];
 
-    // protected $primaryKey = 'id_peserta_didik';
 
     public function scopeSantri($query)
     {
@@ -39,7 +40,7 @@ class Peserta_didik extends Model
 
     public function biodata()
     {
-        return $this->belongsTo(Biodata::class);
+        return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
     public function domisili()

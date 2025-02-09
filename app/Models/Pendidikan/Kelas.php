@@ -1,38 +1,39 @@
 <?php
 
-namespace App\Models\Kewilayahan;
+namespace App\Models\Pendidikan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Peserta_didik;
-class Domisili extends Model
+
+class Kelas extends Model
 {
     use SoftDeletes;
-    protected $table = 'domisili';
+    protected $table = 'kelas';
     protected $primaryKey = 'id';
     protected $keyType = 'int';
     public $incrementing = true;
+
     protected $fillable = [
-        'nama_domisili',
-        'id_kamar',
-        'id_peserta_didik',
+        'nama_kelas',
+        'id_jurusan',
+        'id_lembaga',
         'created_by',
         'updated_by',
-        'deleted_by',
         'status',
     ];
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
     }
 
-    public function kamar()
+    public function jurusan()
     {
-        return $this->belongsTo(Kamar::class, 'id_kamar', 'id');
+        return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
     }
 
-    public function Peserta_didik()
+    public function rombel()
     {
-        return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
+        return $this->hasMany(Rombel::class, 'id_kelas', 'id');
     }
 }

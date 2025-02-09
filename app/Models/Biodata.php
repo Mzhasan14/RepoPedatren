@@ -38,12 +38,12 @@ class Biodata extends Model
 
     public function peserta_didik()
     {
-        return $this->hasOne(Peserta_didik::class);
+        return $this->hasOne(Peserta_didik::class, 'id_biodata', 'id');
     }
 
-    public function id_desa()
+    public function desa()
     {
-        return $this->belongsTo(Desa::class,'id_desa', 'id');
+        return $this->belongsTo(Desa::class, 'id_desa', 'id');
     }
 
     // public function keluarga() {
