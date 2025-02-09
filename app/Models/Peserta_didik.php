@@ -64,5 +64,9 @@ class Peserta_didik extends Model
     {
         return $this->hasMany(Pelanggaran::class,'id_peserta_didik', 'id');
     }
+    public function SantriPerizinan()
+    {
+        return $this->hasMany(Perizinan::class, 'id_peserta_didik', 'id');
+    }
     
 }
