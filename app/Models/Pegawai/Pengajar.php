@@ -2,6 +2,7 @@
 
 namespace App\Models\Pegawai;
 
+use App\Models\Pendidikan\Lembaga;
 use Illuminate\Database\Eloquent\Model;
 
 class Pengajar extends Model
@@ -19,5 +20,15 @@ class Pengajar extends Model
     public function PengajarPegawai()
     {
         return $this->belongsTo(Pegawai::class, 'id_pegawai', 'id');
+    }
+
+    public function PengajarLembaga()
+    {
+        return $this->belongsTo(Lembaga::class, 'id_lembaga','id');
+    }
+
+    public function PengajarWaliKelas()
+    {
+        return $this->hasOne(WaliKelas::class,'id_pengajar','id');
     }
 }

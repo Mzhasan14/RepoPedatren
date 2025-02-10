@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengajar', function (Blueprint $table) {
+        Schema::create('wali_kelas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_pegawai');
-            $table->unsignedBigInteger('id_golongan');
-            $table->unsignedBigInteger('id_lembaga');
-            $table->string('mapel');
+            $table->unsignedBigInteger('id_pengajar');
+            $table->unsignedBigInteger('id_rombel');
+            $table->string('jumlah_murid');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
-            $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
+            $table->foreign('id_pengajar')->references('id')->on('pengajar')->onDelete('cascade');
+            $table->foreign('id_rombel')->references('id')->on('rombel')->onDelete('cascade');
         });
     }
 
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengajar');
+        Schema::dropIfExists('wali_kelas');
     }
 };

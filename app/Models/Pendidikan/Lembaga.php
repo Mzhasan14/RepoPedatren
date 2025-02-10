@@ -2,6 +2,7 @@
 
 namespace App\Models\Pendidikan;
 
+use App\Models\Pegawai\Pengajar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -28,6 +29,11 @@ class Lembaga extends Model
     public function jurusan()
     {
         return $this->hasMany(Jurusan::class, 'id_lembaga', 'id');
+    }
+
+    public function LembagaPengajar()
+    {
+        return $this->hasMany(Pengajar::class, 'id_lembaga','id');
     }
     
 }

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
         });
     }
 

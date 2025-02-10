@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Database\Eloquent\Model;
 
 class Perizinan extends Model
@@ -19,5 +20,10 @@ class Perizinan extends Model
     public function PeserizinanSantri()
     {
         return $this->belongsTo(Peserta_didik::class,'id_peserta_didik', 'id');
+    }
+
+    public function PerizinanWaliAsuh()
+    {
+        return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models\Kewaliasuhan;
 
+use App\Models\Perizinan;
 use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -35,6 +36,11 @@ class Wali_asuh extends Model
 
     public function grupWaliAsuh() {
         return $this->belongsTo(Grup_WaliAsuh::class,'id_grup_wali_asuh','id');
+    }
+
+    public function WaliAsuhPesrizinan()
+    {
+        return $this->hasOne(Perizinan::class,'id_wali_asuh', 'id');
     }
 
         // public function createdBy()

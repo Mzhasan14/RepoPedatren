@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\PengajarController;
 use App\Http\Controllers\Api\PerizinanController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
+use App\Http\Controllers\Api\WaliKelasController;
 use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\wilayah\DomisiliController;
 use App\Http\Controllers\api\wilayah\KamarController;
@@ -69,3 +70,5 @@ Route::apiResource('/perizinan', PerizinanController::class);
 Route::apiResource('/pegawai',PegawaiController::class);
 
 Route::apiResource('/pengajar', PengajarController::class);
+
+Route::apiResource('/walikelas',WaliKelasController::class);
