@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Alamat\Desa;
+use App\Models\Pegawai\Pegawai;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -44,6 +45,11 @@ class Biodata extends Model
     public function desa()
     {
         return $this->belongsTo(Desa::class, 'id_desa', 'id');
+    }
+
+    public function BiodataPegawai()
+    {
+        return $this->hasMany(Pegawai::class,'id_biodata', 'id');
     }
 
     // public function keluarga() {

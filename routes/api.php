@@ -13,6 +13,7 @@ use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KecamatanController;
 use App\Http\Controllers\Api\KhadamController;
 use App\Http\Controllers\api\OrangTuaController;
+use App\Http\Controllers\Api\PegawaiController;
 use App\Http\Controllers\Api\PelanggaranController;
 use App\Http\Controllers\Api\PerizinanController;
 use App\Http\Controllers\Api\ProvinsiController;
@@ -63,3 +64,5 @@ Route::apiResource('/khadam', KhadamController::class);
 Route::apiResource('/pelanggaran',PelanggaranController::class);
 
 Route::apiResource('/perizinan', PerizinanController::class);
+
+Route::apiResource('/pegawai',PegawaiController::class);
