@@ -21,4 +21,9 @@ class Pegawai extends Model
     {
         return $this->belongsTo(Biodata::class,'id_biodata', 'id');
     }
+
+    public function PegawaiPengajar()
+    {
+        return $this->hasMany(Pengajar::class,'id_pegawai', 'id');
+    }
 }

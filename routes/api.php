@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\KhadamController;
 use App\Http\Controllers\api\OrangTuaController;
 use App\Http\Controllers\Api\PegawaiController;
 use App\Http\Controllers\Api\PelanggaranController;
+use App\Http\Controllers\Api\PengajarController;
 use App\Http\Controllers\Api\PerizinanController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
@@ -66,3 +67,5 @@ Route::apiResource('/pelanggaran',PelanggaranController::class);
 Route::apiResource('/perizinan', PerizinanController::class);
 
 Route::apiResource('/pegawai',PegawaiController::class);
+
+Route::apiResource('/pengajar', PengajarController::class);
