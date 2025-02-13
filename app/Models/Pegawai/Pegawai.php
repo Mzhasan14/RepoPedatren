@@ -26,4 +26,9 @@ class Pegawai extends Model
     {
         return $this->hasMany(Pengajar::class,'id_pegawai', 'id');
     }
+
+    public function PegawaiEntitas()
+    {
+        return $this->hasMany(EntitasPegawai::class,'id_pegawai','id');
+    }
 }

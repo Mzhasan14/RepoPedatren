@@ -24,6 +24,7 @@ return new class extends Migration
 
             $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
+            $table->foreign('id_golongan')->references('id')->on('golongan')->onDelete('cascade');
         });
     }
 

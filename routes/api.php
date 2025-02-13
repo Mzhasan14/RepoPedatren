@@ -9,13 +9,18 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\SantriController;
 use App\Http\Controllers\api\BiodataController;
 use App\Http\Controllers\Api\DesaController;
+use App\Http\Controllers\Api\EntitasController;
+use App\Http\Controllers\Api\GolonganController;
 use App\Http\Controllers\api\KabupatenController;
+use App\Http\Controllers\Api\KaryawanController;
+use App\Http\Controllers\Api\KategoriGolonganController;
 use App\Http\Controllers\Api\KecamatanController;
 use App\Http\Controllers\Api\KhadamController;
 use App\Http\Controllers\api\OrangTuaController;
 use App\Http\Controllers\Api\PegawaiController;
 use App\Http\Controllers\Api\PelanggaranController;
 use App\Http\Controllers\Api\PengajarController;
+use App\Http\Controllers\Api\PengurusController;
 use App\Http\Controllers\Api\PerizinanController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
@@ -72,3 +77,13 @@ Route::apiResource('/pegawai',PegawaiController::class);
 Route::apiResource('/pengajar', PengajarController::class);
 
 Route::apiResource('/walikelas',WaliKelasController::class);
+
+Route::apiResource('/kategorigolongan',KategoriGolonganController::class);
+
+Route::apiResource('/golongan',GolonganController::class);
+
+Route::apiResource('/entitas',EntitasController::class);
+
+Route::apiResource('/pengurus', PengurusController::class);
+
+Route::apiResource('/karyawan',KaryawanController::class);

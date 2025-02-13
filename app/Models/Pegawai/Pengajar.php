@@ -31,4 +31,9 @@ class Pengajar extends Model
     {
         return $this->hasOne(WaliKelas::class,'id_pengajar','id');
     }
+
+    public function PengajarGolongan()
+    {
+        return $this->belongsTo(Golongan::class,'id_golongan','id');
+    }
 }
