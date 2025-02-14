@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\api\AnakasuhController;
+use App\Http\Controllers\Api\BerkasController;
 use App\Http\Controllers\api\GrupWaliAsuhController;
 use App\Http\Controllers\api\KeluargaController;
 use App\Http\Controllers\api\WaliasuhController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\api\BiodataController;
 use App\Http\Controllers\Api\DesaController;
 use App\Http\Controllers\Api\EntitasController;
 use App\Http\Controllers\Api\GolonganController;
+use App\Http\Controllers\Api\JenisBerkasController;
 use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KaryawanController;
 use App\Http\Controllers\Api\KategoriGolonganController;
@@ -87,3 +89,7 @@ Route::apiResource('/entitas',EntitasController::class);
 Route::apiResource('/pengurus', PengurusController::class);
 
 Route::apiResource('/karyawan',KaryawanController::class);
+
+Route::apiResource('/jenisberkas',JenisBerkasController::class);
+
+Route::apiResource('/berkas',BerkasController::class);
