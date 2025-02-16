@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
@@ -8,9 +8,11 @@ use App\Models\Pegawai\WaliKelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class WaliKelasController extends Controller
+class WalikelasController extends Controller
 {
-
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
         $walikelas = WaliKelas::all();

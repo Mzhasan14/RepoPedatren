@@ -1,29 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
-use App\Models\Pegawai\Berkas;
+use App\Models\Pegawai\JenisBerkas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class BerkasController extends Controller
+class JenisBerkasController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $berkas = Berkas::all();
-        return new PdResource(true,'Data berhasil ditampilkan',$berkas);
+        $jenisberkas = JenisBerkas::all();
+        return new PdResource(true,'Data berhasil ditampilkan',$jenisberkas);
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(),[
-            'id_jenis_berkas' => 'required|exists:jenis_berkas,id',
-            'file_path' => 'required|string',
+            'nama_jenis_berkas' => 'required|string|max:255',
             'created_by' => 'required|integer',
             'status' => 'required|boolean',
         ]);
@@ -36,22 +35,21 @@ class BerkasController extends Controller
             ]);
         }
 
-        $berkas = Berkas::create($validator->validated());
-        return new PdResource(true,'Data berhasil ditambahkan',$berkas);
+        $jenisberkas = JenisBerkas::create($validator->validated());
+        return new PdResource(true,'Data berhasil ditambahkan',$jenisberkas);
     }
 
     public function show(string $id)
     {
-        $berkas = Berkas::findOrFail($id);
-        return new PdResource(true,'Data berhasil ditampilkan',$berkas);
+        $jenisberkas = JenisBerkas::findOrFail($id);
+        return new PdResource(true,'Data berhasil ditampilkan',$jenisberkas);
     }
 
     public function update(Request $request, string $id)
     {
-        $berkas = Berkas::findOrFail($id);
+        $jenisberkas = JenisBerkas::findOrFail($id);
         $validator = Validator::make($request->all(),[
-            'id_jenis_berkas' => 'required|exists:jenis_berkas,id',
-            'file_path' => 'required|string',
+            'nama_jenis_berkas' => 'required|string|max:255',
             'created_by' => 'required|integer',
             'status' => 'required|boolean',
         ]);
@@ -64,8 +62,8 @@ class BerkasController extends Controller
             ]);
         }
 
-        $berkas->update($validator->validated());
-        return new PdResource(true,'Data berhasil diperbarui',$berkas);
+        $jenisberkas->update($validator->validated());
+        return new PdResource(true,'Data berhasil diperbarui',$jenisberkas);
     }
 
     /**
@@ -73,8 +71,8 @@ class BerkasController extends Controller
      */
     public function destroy(string $id)
     {
-        $berkas = Berkas::findOrFail($id);
-        $berkas->delete();
-        return new PdResource(true,'Data berhasil dihapus',$berkas);
+        $jenisberkas = JenisBerkas::findOrFail($id);
+        $jenisberkas->delete();
+        return new PdResource(true,'Data berhasil dihapus',$jenisberkas);
     }
 }

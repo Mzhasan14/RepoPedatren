@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\api\alamat\DesaController as AlamatDesaController;
+use App\Http\Controllers\api\alamat\KabupatenController as AlamatKabupatenController;
+use App\Http\Controllers\api\alamat\KecamatanController as AlamatKecamatanController;
+use App\Http\Controllers\api\alamat\ProvinsiController as AlamatProvinsiController;
 use App\Http\Controllers\api\AnakasuhController;
 use App\Http\Controllers\Api\BerkasController;
 use App\Http\Controllers\api\GrupWaliAsuhController;
@@ -17,8 +21,21 @@ use App\Http\Controllers\api\KabupatenController;
 use App\Http\Controllers\Api\KaryawanController;
 use App\Http\Controllers\Api\KategoriGolonganController;
 use App\Http\Controllers\Api\KecamatanController;
+use App\Http\Controllers\api\kewaliasuhan\AnakasuhController as KewaliasuhanAnakasuhController;
+use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController as KewaliasuhanGrupWaliAsuhController;
+use App\Http\Controllers\api\kewaliasuhan\WaliasuhController as KewaliasuhanWaliasuhController;
 use App\Http\Controllers\Api\KhadamController;
 use App\Http\Controllers\api\OrangTuaController;
+use App\Http\Controllers\Api\Pegawai\BerkasController as PegawaiBerkasController;
+use App\Http\Controllers\Api\Pegawai\EntitasController as PegawaiEntitasController;
+use App\Http\Controllers\Api\Pegawai\GolonganController as PegawaiGolonganController;
+use App\Http\Controllers\Api\Pegawai\JenisBerkasController as PegawaiJenisBerkasController;
+use App\Http\Controllers\Api\Pegawai\KaryawanController as PegawaiKaryawanController;
+use App\Http\Controllers\Api\Pegawai\KategoriGolonganController as PegawaiKategoriGolonganController;
+use App\Http\Controllers\Api\Pegawai\PegawaiController as PegawaiPegawaiController;
+use App\Http\Controllers\Api\Pegawai\PengajarController as PegawaiPengajarController;
+use App\Http\Controllers\Api\Pegawai\PengurusController as PegawaiPengurusController;
+use App\Http\Controllers\Api\Pegawai\WalikelasController as PegawaiWalikelasController;
 use App\Http\Controllers\Api\PegawaiController;
 use App\Http\Controllers\Api\PelanggaranController;
 use App\Http\Controllers\Api\PengajarController;
@@ -44,21 +61,21 @@ Route::apiResource('/biodata',BiodataController::class);
 
 Route::apiResource('/status_keluarga',StatusKeluargaController::class);
 
-Route::apiResource('/provinsi',ProvinsiController::class);
+Route::apiResource('/provinsi',AlamatProvinsiController::class);
 
-Route::apiResource('/kabupaten',KabupatenController::class);
+Route::apiResource('/kabupaten',AlamatKabupatenController::class);
 
-Route::apiResource('/kecamatan',KecamatanController::class);
+Route::apiResource('/kecamatan',AlamatKecamatanController::class);
 
-Route::apiResource('/desa',DesaController::class);
+Route::apiResource('/desa',AlamatDesaController::class);
 
 Route::apiResource('/orangtua',OrangTuaController::class);
 
-Route::apiResource('/grupwaliasuh',GrupWaliAsuhController::class);
+Route::apiResource('/grupwaliasuh',KewaliasuhanGrupWaliAsuhController::class);
 
-Route::apiResource('/waliasuh',WaliasuhController::class);
+Route::apiResource('/waliasuh',KewaliasuhanWaliasuhController::class);
 
-Route::apiResource('/anakasuh',AnakasuhController::class);
+Route::apiResource('/anakasuh',KewaliasuhanAnakasuhController::class);
 
 Route::apiResource('/wilayah',WilayahController::class);
 
@@ -74,22 +91,22 @@ Route::apiResource('/pelanggaran',PelanggaranController::class);
 
 Route::apiResource('/perizinan', PerizinanController::class);
 
-Route::apiResource('/pegawai',PegawaiController::class);
+Route::apiResource('/pegawai',PegawaiPegawaiController::class);
 
-Route::apiResource('/pengajar', PengajarController::class);
+Route::apiResource('/pengajar', PegawaiPengajarController::class);
 
-Route::apiResource('/walikelas',WaliKelasController::class);
+Route::apiResource('/walikelas',PegawaiWalikelasController::class);
 
-Route::apiResource('/kategorigolongan',KategoriGolonganController::class);
+Route::apiResource('/kategorigolongan',PegawaiKategoriGolonganController::class);
 
-Route::apiResource('/golongan',GolonganController::class);
+Route::apiResource('/golongan',PegawaiGolonganController::class);
 
-Route::apiResource('/entitas',EntitasController::class);
+Route::apiResource('/entitas',PegawaiEntitasController::class);
 
-Route::apiResource('/pengurus', PengurusController::class);
+Route::apiResource('/pengurus', PegawaiPengurusController::class);
 
-Route::apiResource('/karyawan',KaryawanController::class);
+Route::apiResource('/karyawan',PegawaiKaryawanController::class);
 
-Route::apiResource('/jenisberkas',JenisBerkasController::class);
+Route::apiResource('/jenisberkas',PegawaiJenisBerkasController::class);
 
-Route::apiResource('/berkas',BerkasController::class);
+Route::apiResource('/berkas',PegawaiBerkasController::class);
