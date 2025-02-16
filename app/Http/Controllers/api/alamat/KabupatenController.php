@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\api\alamat;
 
 use Illuminate\Http\Request;
 use App\Models\Alamat\Kabupaten;

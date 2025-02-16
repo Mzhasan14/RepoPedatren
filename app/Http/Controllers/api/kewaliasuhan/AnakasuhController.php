@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\api\kewaliasuhan;
 
 use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
