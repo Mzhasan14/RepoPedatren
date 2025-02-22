@@ -15,7 +15,6 @@ class Domisili extends Model
     protected $fillable = [
         'nama_domisili',
         'id_kamar',
-        'id_peserta_didik',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -33,6 +32,6 @@ class Domisili extends Model
 
     public function Peserta_didik()
     {
-        return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
+        return $this->hasMany(Peserta_didik::class, 'id_domisili', 'id');
     }
 }

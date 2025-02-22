@@ -30,6 +30,7 @@ class Biodata extends Model
         'status',
         'created_by',
         'updated_by',
+        'deleted_by',
     ];
 
     public function scopeActive($query)

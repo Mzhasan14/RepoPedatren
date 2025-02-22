@@ -21,6 +21,7 @@ class SantriController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'id_domisili' => 'required|integer',
             'id_biodata' => 'required|integer',
             'nis' => 'nullable|unique:peserta_didik,nis|string|size:11',
             'anak_keberapa' => 'required|numeric|min:1',
@@ -54,14 +55,7 @@ class SantriController extends Controller
         $santri = Peserta_didik::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'id_biodata' => 'required',
-            'nis' => [
-                'nullable',
-                'unique:peserta_didik,nis',
-                'string',
-                'size:11',
-                Rule::unique('peserta_didik', 'nis')->ignore($id),
-            ],
+            'id_domisili' => 'required|integer',
             'anak_keberapa' => 'required|numeric|min:1',
             'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
             'tinggal_bersama' => 'required|string|max:50',
@@ -73,7 +67,7 @@ class SantriController extends Controller
             ],
             'tahun_masuk' => 'required|date',
             'tahun_keluar' => 'nullable|date',
-            'created_by' => 'required|integer',
+            'updated_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 

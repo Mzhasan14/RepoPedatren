@@ -22,8 +22,6 @@ class BlokController extends Controller
             'nama_blok' => 'required|string|max:100',
             'id_wilayah' => 'required|integer',
             'created_by' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 
@@ -51,9 +49,7 @@ class BlokController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_blok' => 'required|string|max:100',
             'id_wilayah' => 'required|integer',
-            'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 

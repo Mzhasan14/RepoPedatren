@@ -18,6 +18,7 @@ class Lembaga extends Model
         'nama_lembaga',
         'created_by',
         'updated_by',
+        'deleted_by',
         'status',
     ];
 

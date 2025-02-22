@@ -16,6 +16,7 @@ class Peserta_didik extends Model
     public $incrementing = true;
     protected $fillable = [
         'id_biodata',
+        'id_domisili',
         'nis',
         'anak_keberapa',
         'dari_saudara',
@@ -24,7 +25,8 @@ class Peserta_didik extends Model
         'tahun_masuk',
         'tahun_keluar',
         'status',
-        'created_by'
+        'created_by',
+        'updated_by'
     ];
 
 
@@ -45,7 +47,7 @@ class Peserta_didik extends Model
 
     public function domisili()
     {
-        return $this->hasOne(Domisili::class, 'nis', 'nis');
+        return $this->BelongsTo(Domisili::class, 'id_domisili', 'id');
     }
 
     public function waliAsuh() {

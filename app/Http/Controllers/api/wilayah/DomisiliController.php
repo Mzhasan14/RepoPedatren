@@ -23,8 +23,6 @@ class DomisiliController extends Controller
             'id_kamar' => 'required|integer',
             'id_peserta_didik' => 'required|integer',
             'created_by' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 
@@ -53,9 +51,7 @@ class DomisiliController extends Controller
             'nama_domisili' => 'required|string|max:100',
             'id_kamar' => 'required|integer',
             'id_peserta_didik' => 'required|integer',
-            'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 

@@ -22,8 +22,6 @@ class WilayahController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_wilayah' => 'required|string|max:100',
             'created_by' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 
@@ -50,9 +48,7 @@ class WilayahController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama_wilayah' => 'required|string|max:100',
-            'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 

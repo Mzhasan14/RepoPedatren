@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('peserta_didik', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_biodata');
+            $table->unsignedBigInteger('id_domisili')->nullable();
             $table->char('nis', 11)->nullable()->unique('pd_nis_unique');
             $table->tinyInteger('anak_keberapa');
             $table->tinyInteger('dari_saudara');
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->boolean('status');
 
             $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
+            $table->foreign('id_domisili')->references('id')->on('domisili')->onDelete('cascade');
         });
     }
 

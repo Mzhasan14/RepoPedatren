@@ -22,8 +22,6 @@ class KamarController extends Controller
             'nama_kamar' => 'required|string|max:100',
             'id_blok' => 'required|integer',
             'created_by' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 
@@ -51,9 +49,7 @@ class KamarController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_kamar' => 'required|string|max:100',
             'id_blok' => 'required|integer',
-            'created_by' => 'required|integer',
             'updated_by' => 'required|integer',
-            'deleted_by' => 'required|integer',
             'status' => 'required|boolean'
         ]);
 

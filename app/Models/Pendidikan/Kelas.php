@@ -19,6 +19,7 @@ class Kelas extends Model
         'id_lembaga',
         'created_by',
         'updated_by',
+        'deleted_by',
         'status',
     ];
 

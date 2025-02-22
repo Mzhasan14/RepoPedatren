@@ -61,17 +61,6 @@ class BiodataController extends Controller
         $validator = Validator::make($request->all(), [
             'id_desa' => 'required|integer',
             'nama' => 'required|string|max:100',
-            'niup' => [
-                'required',
-                Rule::unique('biodata', 'niup')->ignore($id),
-            ],
-            'jenis_kelamin' => 'required|string',
-            'tanggal_lahir' => 'required|date|before:today',
-            'tempat_lahir' => 'required|string|max:50',
-            'nik' => [
-                'required',
-                Rule::unique('biodata', 'nik')->ignore($id),
-            ],
             'no_kk' => 'required|string',
             'no_telepon' => [
                 'required',
@@ -86,7 +75,7 @@ class BiodataController extends Controller
             'jenjang_pendidikan_terakhir' => 'required|string|max:50',
             'nama_pendidikan_terakhir' => 'required|string|max:50',
             'status' => 'required|boolean',
-            'created_by' => 'required|integer',
+            'updated_by' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
