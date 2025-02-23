@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
+use App\Models\Biodata;
 use App\Models\Pegawai\Pengajar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -77,5 +78,29 @@ class PengajarController extends Controller
         $pengajar = Pengajar::findOrFail($id);
         $pengajar->delete();
         return new PdResource(true,'Data berhasil dihapus',$pengajar);
+    }
+
+    public function Pengajar()
+    {
+        $biodata = Biodata::with(['BiodataPegawai.PegawaiPengajar' => function ($query) {
+            $query->select('id as id_pengajar', 'id_pegawai'); 
+        }])
+        ->select('id', 'nama', 'niup', 'jenjang_pendidikan_terakhir')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'id_pengajar' => optional($item->BiodataPegawai->first()->PegawaiPengajar->first())->id_pengajar ?? null, 
+                'nama' => $item->nama,
+                'niup' => $item->niup,
+                'jenjang_pendidikan_terakhir' => $item->jenjang_pendidikan_terakhir,
+            ];
+        });
+        
+        return response()->json([
+            'status' => true,
+            'message' => 'Data berhasil ditampilkan',
+            'data' => $biodata
+        ]);
+ 
     }
 }

@@ -110,3 +110,6 @@ Route::apiResource('/karyawan',PegawaiKaryawanController::class);
 Route::apiResource('/jenisberkas',PegawaiJenisBerkasController::class);
 
 Route::apiResource('/berkas',PegawaiBerkasController::class);
+
+
+Route::get('/pengajarApi',[PegawaiPengajarController::class,'Pengajar']);
