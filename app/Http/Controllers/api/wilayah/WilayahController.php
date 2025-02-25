@@ -7,6 +7,7 @@ use App\Models\Kewilayahan\Wilayah;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
+use App\Models\Peserta_didik;
 use Illuminate\Support\Facades\Validator;
 
 class WilayahController extends Controller

@@ -70,5 +70,10 @@ class Peserta_didik extends Model
     {
         return $this->hasMany(Perizinan::class, 'id_peserta_didik', 'id');
     }
+
+    public function rencana_pendidikan()
+    {
+        return $this->hasMany(Rencana_pendidikan::class, 'id_peserta_didik', 'id');
+    }
     
 }
