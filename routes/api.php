@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\PelanggaranController;
 use App\Http\Controllers\Api\PengajarController;
 use App\Http\Controllers\Api\PengurusController;
 use App\Http\Controllers\Api\PerizinanController;
+use App\Http\Controllers\api\PesertaDidikController;
 use App\Http\Controllers\Api\ProvinsiController;
 use App\Http\Controllers\api\StatusKeluargaController;
 use App\Http\Controllers\Api\WaliKelasController;
@@ -111,5 +112,6 @@ Route::apiResource('/jenisberkas',PegawaiJenisBerkasController::class);
 
 Route::apiResource('/berkas',PegawaiBerkasController::class);
 
-
 Route::get('/pengajarApi',[PegawaiPengajarController::class,'Pengajar']);
+
+Route::get('/list-peserta-didik', [PesertaDidikController::class, 'getPesertaDidik']);
