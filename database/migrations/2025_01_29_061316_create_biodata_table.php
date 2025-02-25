@@ -27,6 +27,7 @@ return new class extends Migration
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
             );
             $table->string('nama_pendidikan_terakhir');
+            $table->string('image_url');
             $table->boolean('status');
             $table->integer('created_by');
             $table->integer('updated_by')->nullable();
