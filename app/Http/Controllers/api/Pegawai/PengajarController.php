@@ -85,14 +85,15 @@ class PengajarController extends Controller
         $biodata = Biodata::with(['BiodataPegawai.PegawaiPengajar' => function ($query) {
             $query->select('id as id_pengajar', 'id_pegawai'); 
         }])
-        ->select('id', 'nama', 'niup', 'jenjang_pendidikan_terakhir')
+        ->select('id', 'nama', 'niup', 'nama_pendidikan_terakhir','image_url')
         ->get()
         ->map(function ($item) {
             return [
                 'id_pengajar' => optional($item->BiodataPegawai->first()->PegawaiPengajar->first())->id_pengajar ?? null, 
                 'nama' => $item->nama,
                 'niup' => $item->niup,
-                'jenjang_pendidikan_terakhir' => $item->jenjang_pendidikan_terakhir,
+                'nama_pendidikan_terakhir' => $item->nama_pendidikan_terakhir,
+                'image_url' => $item->image_url
             ];
         });
         

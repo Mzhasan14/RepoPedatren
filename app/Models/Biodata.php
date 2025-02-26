@@ -27,6 +27,7 @@ class Biodata extends Model
         'email',
         'jenjang_pendidikan_terakhir',
         'nama_pendidikan_terakhir',
+        'image_url',
         'status',
         'created_by',
         'updated_by',
