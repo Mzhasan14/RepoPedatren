@@ -82,26 +82,22 @@ class PengajarController extends Controller
 
     public function Pengajar()
     {
-        $biodata = Biodata::with(['BiodataPegawai.PegawaiPengajar' => function ($query) {
-            $query->select('id as id_pengajar', 'id_pegawai'); 
-        }])
-        ->select('id', 'nama', 'niup', 'nama_pendidikan_terakhir','image_url')
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id_pengajar' => optional($item->BiodataPegawai->first()->PegawaiPengajar->first())->id_pengajar ?? null, 
-                'nama' => $item->nama,
-                'niup' => $item->niup,
-                'nama_pendidikan_terakhir' => $item->nama_pendidikan_terakhir,
-                'image_url' => $item->image_url
-            ];
-        });
-        
-        return response()->json([
-            'status' => true,
-            'message' => 'Data berhasil ditampilkan',
-            'data' => $biodata
-        ]);
- 
+        $pengajar = Biodata::join('pegawai', 'biodata.id', '=', 'pegawai.id_biodata')
+        ->join('pengajar', 'pegawai.id', '=', 'pengajar.id_pegawai')
+        ->select(
+            'pengajar.id as id_pengajar', 
+            'biodata.nama', 
+            'biodata.niup', 
+            'biodata.nama_pendidikan_terakhir', 
+            'biodata.image_url'
+        )
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Data berhasil ditampilkan',
+        'data' => $pengajar
+    ]);
+
     }
 }

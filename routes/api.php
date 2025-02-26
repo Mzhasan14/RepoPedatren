@@ -112,6 +112,6 @@ Route::apiResource('/jenisberkas',PegawaiJenisBerkasController::class);
 
 Route::apiResource('/berkas',PegawaiBerkasController::class);
 
-Route::get('/pengajarApi',[PegawaiPengajarController::class,'Pengajar']);
+Route::get('/listPengajar',[PegawaiPengajarController::class,'Pengajar']);
 
 Route::get('/list-peserta-didik', [PesertaDidikController::class, 'getPesertaDidik']);
