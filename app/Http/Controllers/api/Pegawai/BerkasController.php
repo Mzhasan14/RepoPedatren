@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
+use App\Models\Biodata;
 use App\Models\Pegawai\Berkas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -76,5 +77,15 @@ class BerkasController extends Controller
         $berkas = Berkas::findOrFail($id);
         $berkas->delete();
         return new PdResource(true,'Data berhasil dihapus',$berkas);
+    }
+
+    public function Berkas()
+    {
+        $biodata = Biodata::join('berkas as b1','biodata.id', '=' , 'b1.id_biodata')
+                        ->join('jenis_berkas as jb','b1.id_jenis_berkas','=','jb.id')
+                        ->select('biodata.id', 'jb.type_jenis_berkas as type','jb.nama_jenis_berkas as nama berkas','b1.file_path as foto')
+                        ->get();
+
+        return new PdResource(true,'data berhasil ditambahkan',$biodata);
     }
 }
