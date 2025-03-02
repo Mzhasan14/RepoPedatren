@@ -9,7 +9,7 @@ use App\Models\Peserta_didik;
 
 class PesertaDidikController extends Controller
 {
-    public function getPesertaDidik()
+    public function pesertaDidik()
     {
         $data = Peserta_Didik::join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
         ->join('rencana_pendidikan', 'peserta_didik.id', '=', 'rencana_pendidikan.id_peserta_didik')
