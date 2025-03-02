@@ -15,7 +15,7 @@ class Rombel extends Model
 
     protected $fillable = [
         'nama_rombel',
-        'id_lembaga',
+        'id_kelas',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -27,13 +27,8 @@ class Rombel extends Model
         return $query->where('status', true);
     }
 
-    public function lembaga()
-    {
-        return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');
-    }
-
     public function kelas()
     {
-        return $this->hasMany(Kelas::class, 'id_jurusan', 'id');
+        return $this->belongsTo(Lembaga::class, 'id_kelas', 'id');
     }
 }

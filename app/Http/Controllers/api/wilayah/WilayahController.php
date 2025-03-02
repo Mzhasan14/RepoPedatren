@@ -14,7 +14,7 @@ class WilayahController extends Controller
 {
     public function index()
     {
-        $wilayah = Wilayah::Active();
+        $wilayah = Wilayah::Active()->get();
         return new PdResource(true, 'List data Wilayah', $wilayah);
     }
 

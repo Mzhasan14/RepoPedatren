@@ -38,6 +38,10 @@ use App\Http\Controllers\Api\Pegawai\PengurusController as PegawaiPengurusContro
 use App\Http\Controllers\Api\Pegawai\WalikelasController as PegawaiWalikelasController;
 use App\Http\Controllers\Api\PegawaiController;
 use App\Http\Controllers\Api\PelanggaranController;
+use App\Http\Controllers\api\pendidikan\JurusanController;
+use App\Http\Controllers\api\pendidikan\KelasController;
+use App\Http\Controllers\api\pendidikan\LembagaController;
+use App\Http\Controllers\api\pendidikan\RombelController;
 use App\Http\Controllers\Api\PengajarController;
 use App\Http\Controllers\Api\PengurusController;
 use App\Http\Controllers\Api\PerizinanController;
@@ -89,6 +93,14 @@ Route::apiResource('/domisili',DomisiliController::class);
 Route::apiResource('/khadam', KhadamController::class);
 
 Route::apiResource('/pelanggaran',PelanggaranController::class);
+
+Route::apiResource('/lembaga', LembagaController::class);
+
+Route::apiResource('/jurusan', JurusanController::class);
+
+Route::apiResource('/kelas', KelasController::class);
+
+Route::apiResource('/rombel', RombelController::class);
 
 Route::apiResource('/perizinan', PerizinanController::class);
 

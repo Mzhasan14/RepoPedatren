@@ -12,7 +12,7 @@ class DomisiliController extends Controller
 {
     public function index()
     {
-        $domisili = Domisili::Active();
+        $domisili = Domisili::Active()->get();
         return new PdResource(true, 'List data domisili', $domisili);
     }
 

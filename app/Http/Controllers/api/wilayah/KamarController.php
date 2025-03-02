@@ -12,7 +12,7 @@ class KamarController extends Controller
 {
     public function index()
     {
-        $kamar = Kamar::Active();
+        $kamar = Kamar::Active()->get();
         return new PdResource(true, 'List data kamar', $kamar);
     }
 
