@@ -22,6 +22,7 @@ return new class extends Migration
         });
         Schema::create('berkas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_biodata');
             $table->unsignedBigInteger('id_jenis_berkas');
             $table->string('file_path');
             $table->unsignedBigInteger('created_by');
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
+            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
             $table->foreign('id_jenis_berkas')->references('id')->on('jenis_berkas')->onDelete('cascade');
         });
     }
