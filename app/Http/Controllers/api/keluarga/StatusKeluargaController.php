@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\api\keluarga;
 
-use App\Models\OrangTua;
 use Illuminate\Http\Request;
+use App\Models\Status_keluarga;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
-class OrangTuaController extends Controller
+class StatusKeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $ortu = OrangTua::Active()->latest()->paginate(5);
-        return new PdResource(true, 'List Orang Tua', $ortu);
+        $statusKeluarga = Status_keluarga::Active()->latest()->paginate(5);
+        return new PdResource(true, 'List Status Keluarga', $statusKeluarga);
     }
 
     /**
@@ -25,9 +25,7 @@ class OrangTuaController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_biodata' => 'required|exists:biodata,id',
-            'pekerjaan' => 'required|string',
-            'penghasilan' => 'nullable|integer',
+            'nama_status' => 'required',
             'created_by' => 'required',
             'updated_by' => 'nullable',
             'status' => 'nullable'
@@ -37,9 +35,8 @@ class OrangTuaController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $ortu = OrangTua::create($validator->validated());
-        return new PdResource(true, 'Data berhasil Ditambah', $ortu);
-    
+        $statusKeluarga = Status_keluarga::create($validator->validated());
+        return new PdResource(true, 'Data berhasil Ditambah', $statusKeluarga);
     }
 
     /**
@@ -47,8 +44,8 @@ class OrangTuaController extends Controller
      */
     public function show(string $id)
     {
-        $ortu = OrangTua::findOrFail($id);
-        return new PdResource(true, 'detail data', $ortu);
+        $statusKeluarga = Status_keluarga::findOrFail($id);
+        return new PdResource(true, 'detail data', $statusKeluarga);
     }
 
     /**
@@ -56,12 +53,10 @@ class OrangTuaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $ortu = OrangTua::findOrFail($id);
+        $statusKeluarga = Status_keluarga::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'id_biodata' => 'required|exists:biodata,id',
-            'pekerjaan' => 'required|string',
-            'penghasilan' => 'nullable|integer',
+            'nama_status' => 'required',
             'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
@@ -71,18 +66,17 @@ class OrangTuaController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $ortu->update($validator->validated());
-        return new PdResource(true, 'data berhasil diubah', $ortu);
+        $statusKeluarga->update($validator->validated());
+        return new PdResource(true, 'data berhasil diubah', $statusKeluarga);
     }
-
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        $ortu = OrangTua::findOrFail($id);
+        $statusKeluarga = Status_keluarga::findOrFail($id);
 
-        $ortu->delete();
+        $statusKeluarga->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
 }

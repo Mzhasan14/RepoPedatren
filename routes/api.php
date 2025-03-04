@@ -5,12 +5,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\{
     SantriController,
     BiodataController,
-    KeluargaController,
-    StatusKeluargaController,
-    OrangTuaController,
     PerizinanController,
     PelanggaranController
 };
+
+use App\Http\Controllers\Api\keluarga\{
+    KeluargaController,
+    StatusKeluargaController,
+    OrangTuaController
+};
+
 use App\Http\Controllers\Api\Alamat\{
     ProvinsiController,
     KabupatenController,

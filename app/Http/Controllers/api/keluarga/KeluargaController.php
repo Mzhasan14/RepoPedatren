@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\api\keluarga;
 
+use App\Models\Keluarga;
 use Illuminate\Http\Request;
-use App\Models\Status_keluarga;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
-class StatusKeluargaController extends Controller
+class KeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $statusKeluarga = Status_keluarga::Active()->latest()->paginate(5);
-        return new PdResource(true, 'List Status Keluarga', $statusKeluarga);
+        $keluarga = Keluarga::Active()->latest()->paginate(5);
+        return new PdResource(true, 'List Keluarga', $keluarga);
     }
 
     /**
@@ -25,7 +25,9 @@ class StatusKeluargaController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama_status' => 'required',
+            'no_kk' => 'required|max:16',
+            'status_wali' => 'nullable',
+            'id_status_keluarga' => 'required',
             'created_by' => 'required',
             'updated_by' => 'nullable',
             'status' => 'nullable'
@@ -35,8 +37,8 @@ class StatusKeluargaController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $statusKeluarga = Status_keluarga::create($validator->validated());
-        return new PdResource(true, 'Data berhasil Ditambah', $statusKeluarga);
+        $keluarga = Keluarga::create($validator->validated());
+        return new PdResource(true, 'Data berhasil Ditambah', $keluarga);
     }
 
     /**
@@ -44,8 +46,8 @@ class StatusKeluargaController extends Controller
      */
     public function show(string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
-        return new PdResource(true, 'detail data', $statusKeluarga);
+        $keluarga = Keluarga::findOrFail($id);
+        return new PdResource(true, 'detail data', $keluarga);
     }
 
     /**
@@ -53,10 +55,12 @@ class StatusKeluargaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
+        $keluarga = Keluarga::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'nama_status' => 'required',
+            'no_kk' => 'required|max:16',
+            'status_wali' => 'nullable',
+            'id_status_keluarga' => 'required',
             'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
@@ -66,17 +70,18 @@ class StatusKeluargaController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $statusKeluarga->update($validator->validated());
-        return new PdResource(true, 'data berhasil diubah', $statusKeluarga);
+        $keluarga->update($validator->validated());
+        return new PdResource(true, 'data berhasil diubah', $keluarga);
     }
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
+        $keluarga = Keluarga::findOrFail($id);
 
-        $statusKeluarga->delete();
+        $keluarga->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
 }
