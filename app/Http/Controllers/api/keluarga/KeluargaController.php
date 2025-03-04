@@ -29,7 +29,6 @@ class KeluargaController extends Controller
             'status_wali' => 'nullable',
             'id_status_keluarga' => 'required',
             'created_by' => 'required',
-            'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);
 
@@ -61,7 +60,6 @@ class KeluargaController extends Controller
             'no_kk' => 'required|max:16',
             'status_wali' => 'nullable',
             'id_status_keluarga' => 'required',
-            'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);

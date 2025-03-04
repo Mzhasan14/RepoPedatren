@@ -20,9 +20,7 @@ class ProvinsiController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'nama_provinsi' => 'required|string|max:255',
-            'updated_by' => 'nullable|integer', 
             'created_by' => 'nullable|integer', 
-            'deleted_by' => 'nullable|integer',
             'status' => 'required|boolean',
             'created_at' => 'nullable|date_format:Y-m-d',
             'updated_at' => 'nullable|date_format:Y-m-d',
@@ -48,10 +46,7 @@ class ProvinsiController extends Controller
         $validator = Validator::make($request->all(),[
             'nama_provinsi' => 'required|string|max:255',
             'updated_by' => 'nullable|integer', 
-            'created_by' => 'nullable|integer', 
-            'deleted_by' => 'nullable|integer',
             'status' => 'required|boolean',
-            'created_at' => 'nullable|date_format:Y-m-d',
             'updated_at' => 'nullable|date_format:Y-m-d',
         ]);
         if ($validator->fails()){

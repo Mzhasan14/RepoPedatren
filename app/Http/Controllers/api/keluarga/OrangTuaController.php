@@ -29,7 +29,6 @@ class OrangTuaController extends Controller
             'pekerjaan' => 'required|string',
             'penghasilan' => 'nullable|integer',
             'created_by' => 'required',
-            'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);
 
@@ -62,7 +61,6 @@ class OrangTuaController extends Controller
             'id_biodata' => 'required|exists:biodata,id',
             'pekerjaan' => 'required|string',
             'penghasilan' => 'nullable|integer',
-            'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);

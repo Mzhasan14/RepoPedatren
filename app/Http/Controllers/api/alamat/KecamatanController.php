@@ -24,7 +24,6 @@ class KecamatanController extends Controller
         $validator = Validator::make($request->all(),[
             'nama_kecamatan' => 'required|string|max:255', 
             'id_kabupaten' => 'required|integer|exists:kabupaten,id',
-            'updated_by' => 'nullable|integer', 
             'created_by' => 'required|integer', 
             'status' => 'required|boolean'
         ]);
@@ -52,7 +51,6 @@ class KecamatanController extends Controller
             'nama_kecamatan' => 'required|string|max:255', 
             'id_kabupaten' => 'required|integer|exists:kabupaten,id',
             'updated_by' => 'nullable|integer',
-            'created_by' => 'nullable|integer', 
             'status' => 'required|boolean'
         ]);
         if ($validator->fails())

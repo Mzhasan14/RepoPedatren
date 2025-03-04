@@ -28,7 +28,6 @@ class PengajarController extends Controller
             'id_lembaga'   => 'required|integer',
             'mapel'        => 'required|string|max:255',
             'created_by'   => 'required|integer',
-            'updated_by'   => 'nullable|integer',
             'status'       => 'required|boolean',
         ]);
 
@@ -57,7 +56,6 @@ class PengajarController extends Controller
             'id_golongan'  => 'required|integer',
             'id_lembaga'   => 'required|integer',
             'mapel'        => 'required|string|max:255',
-            'created_by'   => 'required|integer',
             'updated_by'   => 'nullable|integer',
             'status'       => 'required|boolean',
         ]);

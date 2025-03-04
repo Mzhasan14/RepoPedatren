@@ -51,7 +51,7 @@ class GolonganController extends Controller
         $validator = Validator::make($request->all(),[
             'nama_golongan' => 'required|string|max:255|unique:golongan,nama_golongan',
             'id_kategori_golongan' => 'required|integer|exists:kategori_golongan,id',
-            'created_by' => 'required|integer',
+            'updated_by' => 'nullable |integer',
             'status' => 'required|boolean',
         ]);
         if ($validator->fails()){

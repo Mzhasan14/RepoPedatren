@@ -54,7 +54,7 @@ class KaryawanController extends Controller
             'id_pegawai' => 'required', 'exists:pegawai,id', 'unique:karyawan,id_pegawai',
             'id_golongan' => 'required', 'exists:golongan,id',
             'keterangan' => 'required', 'string',
-            'created_by' => 'required', 'integer',
+            'updated_by' => 'nullable ', 'integer',
             'status' => 'required', 'boolean',
         ]);
         if ($validator->fails())

@@ -27,7 +27,6 @@ class StatusKeluargaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_status' => 'required',
             'created_by' => 'required',
-            'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);
 
@@ -57,7 +56,6 @@ class StatusKeluargaController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama_status' => 'required',
-            'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);

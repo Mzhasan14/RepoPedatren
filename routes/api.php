@@ -6,7 +6,9 @@ use App\Http\Controllers\Api\{
     BiodataController,
     PerizinanController,
     PelanggaranController,
-    PesertaDidikController
+    PesertaDidikController,
+    JenisBerkasController,
+    BerkasController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -47,8 +49,6 @@ use App\Http\Controllers\Api\Pegawai\{
     EntitasController,
     PengurusController,
     KaryawanController,
-    JenisBerkasController,
-    BerkasController
 };
 
 // Route untuk autentikasi

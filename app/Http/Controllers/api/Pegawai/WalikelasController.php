@@ -27,7 +27,6 @@ class WalikelasController extends Controller
             'id_rombel'    => 'required|integer',
             'jumlah_murid' => 'required|string|min:1',
             'created_by'   => 'required|integer',
-            'updated_by'   => 'nullable|integer',
             'status'       => 'required|boolean',
         ]);
 
@@ -57,7 +56,6 @@ class WalikelasController extends Controller
             'id_pengajar'  => 'required|integer',
             'id_rombel'    => 'required|integer',
             'jumlah_murid' => 'required|string|min:1',
-            'created_by'   => 'required|integer',
             'updated_by'   => 'nullable|integer',
             'status'       => 'required|boolean',
         ]);

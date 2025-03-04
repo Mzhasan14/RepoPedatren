@@ -56,7 +56,7 @@ class PengurusController extends Controller
             'id_golongan' => 'required', 'exists:golongan,id',
             'satuan_kerja' => 'required', 'string', 'max:255',
             'jabatan' => 'required', 'string', 'max:255',
-            'created_by' => 'required', 'integer',
+            'updated_by' => 'nullable', 'integer',
             'status' => 'required', 'boolean',
         ]);
         if ($validator->fails())

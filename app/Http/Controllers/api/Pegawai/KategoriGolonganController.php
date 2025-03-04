@@ -50,7 +50,7 @@ class KategoriGolonganController extends Controller
         $kategori = KategoriGolongan::findOrFail($id);
         $validator = Validator::make($request->all(),[
             'nama_kategori_golongan' => 'required|string|max:255|unique:kategori_golongan,nama_kategori_golongan',
-            'created_by' => 'required|integer',
+            'updated_by' => 'nullable |integer',
             'status' => 'required|boolean',
         ]);
 

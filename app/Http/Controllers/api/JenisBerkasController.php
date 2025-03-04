@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Pegawai;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class JenisBerkasController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $jenisberkas = JenisBerkas::all();
@@ -22,6 +19,7 @@ class JenisBerkasController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(),[
+            'type_jenis_berkas' => 'required|string',
             'nama_jenis_berkas' => 'required|string|max:255',
             'created_by' => 'required|integer',
             'status' => 'required|boolean',
@@ -49,8 +47,9 @@ class JenisBerkasController extends Controller
     {
         $jenisberkas = JenisBerkas::findOrFail($id);
         $validator = Validator::make($request->all(),[
+            'type_jenis_berkas' => 'required|string',
             'nama_jenis_berkas' => 'required|string|max:255',
-            'created_by' => 'required|integer',
+            'updated_by' => 'nullable|integer',
             'status' => 'required|boolean',
         ]);
 

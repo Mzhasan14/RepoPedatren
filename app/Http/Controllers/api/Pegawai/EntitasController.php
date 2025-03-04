@@ -54,7 +54,7 @@ class EntitasController extends Controller
             'id_golongan' => 'required|integer|exists:golongan,id',
             'tanggal_masuk' => 'required|date|before_or_equal:today',
             'tanggal_keluar' => 'nullable|date|after:tanggal_masuk',
-            'created_by' => 'required|integer',
+            'updated_by' => 'nullable|integer',
             'status' => 'required|boolean',
         ]);
 

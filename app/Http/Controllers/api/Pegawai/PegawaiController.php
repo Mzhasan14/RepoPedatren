@@ -24,7 +24,6 @@ class PegawaiController extends Controller
         $validator = Validator::make($request->all(),[
             'id_biodata' => 'required|integer',
             'created_by' => 'required|integer',
-            'updated_by' => 'nullable|integer',
             'status'     => 'required|boolean',
         ]);
         if($validator->fails()){
@@ -51,7 +50,6 @@ class PegawaiController extends Controller
         $pegawai = Pegawai::findOrFail($id);
         $validator = Validator::make($request->all(),[
             'id_biodata' => 'required|integer',
-            'created_by' => 'required|integer',
             'updated_by' => 'nullable|integer',
             'status'     => 'required|boolean',
         ]);

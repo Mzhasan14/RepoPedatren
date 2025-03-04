@@ -28,7 +28,6 @@ class WaliasuhController extends Controller
             'nis' => 'required|exists:peserta_didik,nis',
             'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
             'created_by' => 'required',
-            'updated_by' => 'nullable',
             'status' => 'nullable',
         ]);
 
@@ -60,7 +59,6 @@ class WaliasuhController extends Controller
         $validator = Validator::make($request->all(), [
             'nis' => 'required|exists:peserta_didik,nis',
             'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
-            'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);

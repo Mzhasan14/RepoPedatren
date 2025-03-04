@@ -35,7 +35,6 @@ class PerizinanController extends Controller
             'status_kembali' => ['nullable', Rule::in(['telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu'])],
             'keterangan' => ['required', 'string', 'max:1000'],
             'created_by' => ['required', 'integer'],
-            'updated_by' => ['nullable', 'integer'],
             'status' => ['required', 'boolean'],
         ]);
         if ($validator->fails()){
@@ -79,7 +78,6 @@ class PerizinanController extends Controller
             'status_izin' => ['required', Rule::in(['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok', 'perizinan ditolak', 'dibatalkan'])],
             'status_kembali' => ['nullable', Rule::in(['telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu'])],
             'keterangan' => ['required', 'string', 'max:1000'],
-            'created_by' => ['required', 'integer'],
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
             'status' => ['required', 'boolean'],
         ]);

@@ -27,7 +27,6 @@ class PelanggaranController extends Controller
             'keterangan' => 'required|string|max:1000',
             'created_by' => 'required|integer',
             'status' => 'required|boolean',
-            'updated_by' => 'nullable|integer',
         ]);
 
         if ($validator->fails()){
@@ -60,7 +59,6 @@ class PelanggaranController extends Controller
         'jenis_putusan' => ['required', Rule::in(['Belum ada putusan', 'Disanksi', 'Dibebaskan'])],
         'jenis_pelanggaran' => ['required', Rule::in(['Ringan', 'Sedang', 'Berat'])],
         'keterangan' => 'required|string|max:1000',
-        'created_by' => 'required|integer',
         'status' => 'required|boolean',
         'updated_by' => 'nullable|integer',
         ]);

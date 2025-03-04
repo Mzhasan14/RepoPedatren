@@ -27,7 +27,6 @@ class GrupWaliAsuhController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_grup' => 'required',
             'created_by' => 'required',
-            'updated_by' => 'nullable',
             'status' => 'nullable',
         ]);
 
@@ -58,7 +57,6 @@ class GrupWaliAsuhController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nama_grup' => 'required',
-            'created_by' => 'nullable',
             'updated_by' => 'nullable',
             'status' => 'nullable'
         ]);

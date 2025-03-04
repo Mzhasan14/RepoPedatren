@@ -24,7 +24,6 @@ class KhadamController extends Controller
             'keterangan' => 'required|string|max:255',
             'status' => 'required|boolean',
             'created_by' => 'required|integer',
-            'updated_by' => 'nullable|integer',
         ]);
 
         if ($validator->fails()){
@@ -55,7 +54,6 @@ class KhadamController extends Controller
             ],
             'keterangan' => 'required|string|max:255',
             'status' => 'required|boolean',
-            'created_by' => 'required|integer',
             'updated_by' => 'nullable|integer',
         ]);
         
