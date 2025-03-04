@@ -3,10 +3,10 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\{
-    SantriController,
     BiodataController,
     PerizinanController,
-    PelanggaranController
+    PelanggaranController,
+    PesertaDidikController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -59,9 +59,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Grouping API
 Route::prefix('v1')->group(function () {
 
-    // 🏫 Santri & Keluarga
-    Route::apiResource('/santri', SantriController::class);
+    // 🏫 Santri & Peserta Didik
+    Route::apiResource('/peserta-didik', PesertaDidikController::class);
     Route::apiResource('/biodata', BiodataController::class);
+    Route::get('/santri', [PesertaDidikController::class, 'santri']);
+    Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
+
+    // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
