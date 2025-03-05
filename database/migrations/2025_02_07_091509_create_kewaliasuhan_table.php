@@ -25,7 +25,7 @@ return new class extends Migration
 
         Schema::create('wali_asuh', function (Blueprint $table) {
             $table->id();
-            $table->char('nis',11);
+            $table->char('id_peserta_didik');
             $table->unsignedBigInteger('id_grup_wali_asuh');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -33,7 +33,7 @@ return new class extends Migration
             $table->boolean('status')->nullable()->default(true);
             $table->timestamps();
 
-            $table->foreign('nis')->references('nis')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
             // $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
@@ -41,7 +41,7 @@ return new class extends Migration
 
         Schema::create('anak_asuh', function (Blueprint $table) {
             $table->id();
-            $table->char('nis',11);
+            $table->char('id_peserta_didik');
             $table->unsignedBigInteger('id_grup_wali_asuh');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->boolean('status')->nullable()->default(true);
             $table->timestamps();
 
-            $table->foreign('nis')->references('nis')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
             // $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');

@@ -64,7 +64,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/biodata', BiodataController::class);
     Route::get('/santri', [PesertaDidikController::class, 'santri']);
     Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('{id}/wargapesantren',[BiodataController::class, 'WargaPesantren']);
+    Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
 
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
