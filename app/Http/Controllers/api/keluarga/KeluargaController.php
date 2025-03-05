@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
+use App\Models\Biodata;
 use App\Models\Keluarga;
 use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
@@ -82,4 +83,14 @@ class KeluargaController extends Controller
         $keluarga->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
+
+    public function dataWali()
+    {
+        $wali = Biodata::join('keluarga', 'biodata.no_kk', '=', 'keluarga.no_kk')
+            ->select('biodata.nama', 'biodata.nik', 'biodata.no_telepon')
+            ->where('status_wali', true)->get();
+        return new PdResource(true, 'List Data Wali', $wali);
+    }
+    
+    
 }

@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/keluarga', KeluargaController::class);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
+    Route::get('/data-wali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);
