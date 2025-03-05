@@ -95,4 +95,13 @@ class BiodataController extends Controller
         return new PdResource(true, 'Data Berhasil Dihapus', null);
     }
     
+    public function WargaPesantren(string $id)
+    {
+        $biodata = Biodata::where('id', $id)
+            ->select('id', 'niup', 'status as aktif')
+            ->first();
+    
+        return new PdResource(true, 'data berhasil di tampilkan', $biodata);
+    }
+    
 }
