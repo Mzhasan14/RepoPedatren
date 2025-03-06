@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pegawai;
 
 use App\Models\Biodata;
 use App\Models\Pegawai\Pegawai;
@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PegawaiFactory extends Factory
 {
     protected $model = Pegawai::class;
+
     /**
      * Define the model's default state.
      *

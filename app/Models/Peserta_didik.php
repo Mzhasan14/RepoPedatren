@@ -7,8 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Kewilayahan\Domisili;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Anak_asuh;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Peserta_didik extends Model
 {
+    use HasFactory;
+
     use SoftDeletes;
     protected $table = 'peserta_didik';
     protected $primaryKey = 'id';

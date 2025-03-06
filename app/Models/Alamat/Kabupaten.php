@@ -3,11 +3,14 @@
 namespace App\Models\Alamat;
 
 use App\Models\Alamat\Provinsi;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kabupaten extends Model
 {
+    use HasFactory;
+
     //
     use SoftDeletes;
 

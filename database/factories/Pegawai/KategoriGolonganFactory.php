@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\KategoriGolongan;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KategoriGolonganFactory extends Factory
 {
     protected $model = KategoriGolongan::class;
+
     /**
      * Define the model's default state.
      *

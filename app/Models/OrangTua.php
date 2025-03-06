@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrangTua extends Model
 {
+    use HasFactory;
+
     use SoftDeletes;
 
     protected $table = 'orang_tua';

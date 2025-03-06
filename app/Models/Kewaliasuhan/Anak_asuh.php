@@ -5,8 +5,12 @@ namespace App\Models\Kewaliasuhan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Peserta_didik;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Anak_asuh extends Model
 {
+    use HasFactory;
+
    use SoftDeletes;
     //
     protected $table = 'anak_asuh';

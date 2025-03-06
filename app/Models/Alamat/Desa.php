@@ -3,10 +3,13 @@
 namespace App\Models\Alamat;
 
 use App\Models\Biodata;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Desa extends Model
 {
+    use HasFactory;
+
     protected $table = 'desa';
     protected $primaryKey = 'id';
     public $timestamps = true;

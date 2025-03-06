@@ -1,16 +1,16 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Alamat;
 
-use App\Models\Pendidikan\Lembaga;
+use App\Models\Alamat\Provinsi;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Pendidikan\Lembaga>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Alamat\Provinsi>
  */
-class LembagaFactory extends Factory
+class ProvinsiFactory extends Factory
 {
-    protected $model = Lembaga::class;
+    protected $model = Provinsi::class;
     /**
      * Define the model's default state.
      *
@@ -19,11 +19,11 @@ class LembagaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_lembaga' => $this->faker->company(),
+            'nama_provinsi' => $this->faker->state,
             'created_by' => 1,
             'updated_by' => null,
             'deleted_by' => null,
-            'status' => $this->faker->boolean(),
+            'status' => true,
         ];
     }
 }

@@ -1,18 +1,19 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Kewilayahan;
 
-use Database\Factories\GolonganFactory;
+use Database\Factories\Kewilayahan\KamarFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class GolonganSeeder extends Seeder
+class KamarSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new GolonganFactory())->count(5)->create();
+        (new KamarFactory())->count(5)->create();
+        
     }
 }

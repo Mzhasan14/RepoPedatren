@@ -1,18 +1,19 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Pegawai;
 
-use Database\Factories\PengajarFactory;
+use Database\Factories\Pegawai\WaliKelasFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class PengajarSeeder extends Seeder
+class WaliKelasSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new PengajarFactory())->count(10)->create();
+        (new WaliKelasFactory())->count(10)->create();
+        
     }
 }

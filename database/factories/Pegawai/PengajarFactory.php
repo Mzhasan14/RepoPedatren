@@ -1,8 +1,9 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Pengajar;
+use Database\Factories\Pendidikan\LembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PengajarFactory extends Factory
 {
     protected $model = Pengajar::class;
+
     /**
      * Define the model's default state.
      *

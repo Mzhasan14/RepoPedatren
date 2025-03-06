@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use Database\Factories\LembagaFactory;
+use Database\Factories\PerizinanFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class LembagaSeeder extends Seeder
+class PerizinanSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new LembagaFactory())->count(5)->create();
+        (new PerizinanFactory())->count(5)->create();
+        
     }
 }

@@ -1,18 +1,19 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Alamat;
 
-use Database\Factories\KategoriGolonganFactory;
+use Database\Factories\Alamat\DesaFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class KategoriGolonganSeeder extends Seeder
+class DesaSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new KategoriGolonganFactory())->count(10)->create();
+        (new DesaFactory())->count(5)->create();
+        
     }
 }

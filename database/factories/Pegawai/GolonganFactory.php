@@ -1,8 +1,10 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Golongan;
+use Database\Factories\KategoriGolonganFactory;
+use Database\Factories\Pegawai\KategoriGolonganFactory as PegawaiKategoriGolonganFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class GolonganFactory extends Factory
 {
     protected $model = Golongan::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,7 +23,7 @@ class GolonganFactory extends Factory
     {
         return [
             'nama_golongan' => $this->faker->randomElement(['Golongan I', 'Golongan II', 'Golongan III']),
-            'id_kategori_golongan' => (new KategoriGolonganFactory())->create()->id,
+            'id_kategori_golongan' => (new PegawaiKategoriGolonganFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

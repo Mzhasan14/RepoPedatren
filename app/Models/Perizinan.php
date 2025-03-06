@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Models\Kewaliasuhan\Wali_asuh;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Perizinan extends Model
 {
+    use HasFactory;
+
     protected $table = 'perizinan';
     protected $primaryKey = 'id';
     protected $keyType = 'int';

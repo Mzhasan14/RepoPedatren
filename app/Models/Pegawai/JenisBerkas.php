@@ -2,10 +2,13 @@
 
 namespace App\Models\Pegawai;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class JenisBerkas extends Model
 {
+    use HasFactory;
+
     protected $table = 'jenis_berkas';
     protected $primaryKey = 'id';
     protected $keyType = 'int';

@@ -2,11 +2,14 @@
 
 namespace App\Models\Kewaliasuhan;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Grup_WaliAsuh extends Model
 {
+    use HasFactory;
+
     use SoftDeletes;
     //
     protected $table = 'grup_wali_asuh';

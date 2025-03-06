@@ -4,11 +4,14 @@ namespace App\Models\Kewaliasuhan;
 
 use App\Models\Perizinan;
 use App\Models\Peserta_didik;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Wali_asuh extends Model
 {
+    use HasFactory;
+
     use SoftDeletes;
     //
     protected $table = 'wali_asuh';
