@@ -3,11 +3,14 @@
 namespace App\Models\Pendidikan;
 
 use App\Models\Pegawai\Pengajar;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Lembaga extends Model
 {
+    use HasFactory;
+
     use SoftDeletes;
     protected $table = 'lembaga';
     protected $primaryKey = 'id';

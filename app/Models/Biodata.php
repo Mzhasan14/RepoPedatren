@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Models\Alamat\Desa;
 use App\Models\Pegawai\Pegawai;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Biodata extends Model
 {
+    use HasFactory;
     use SoftDeletes;
     protected $table = 'biodata';
     protected $primaryKey = 'id';

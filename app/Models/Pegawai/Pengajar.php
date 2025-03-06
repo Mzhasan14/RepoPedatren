@@ -3,10 +3,13 @@
 namespace App\Models\Pegawai;
 
 use App\Models\Pendidikan\Lembaga;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pengajar extends Model
 {
+    use HasFactory;
+
     protected $table = 'pengajar';
     protected $primaryKey = 'id';
     protected $keyType = 'int';

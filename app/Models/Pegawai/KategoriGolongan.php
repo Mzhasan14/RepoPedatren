@@ -2,10 +2,13 @@
 
 namespace App\Models\Pegawai;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class KategoriGolongan extends Model
 {
+    use HasFactory;
+
     protected $table = 'kategori_golongan';
     protected $primaryKey = 'id';
     protected $keyType = 'int';

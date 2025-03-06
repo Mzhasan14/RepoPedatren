@@ -25,7 +25,7 @@ return new class extends Migration
 
         Schema::create('wali_asuh', function (Blueprint $table) {
             $table->id();
-            $table->char('id_peserta_didik');
+            $table->unsignedBigInteger('id_peserta_didik');
             $table->unsignedBigInteger('id_grup_wali_asuh');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -41,7 +41,7 @@ return new class extends Migration
 
         Schema::create('anak_asuh', function (Blueprint $table) {
             $table->id();
-            $table->char('id_peserta_didik');
+            $table->unsignedBigInteger('id_peserta_didik');
             $table->unsignedBigInteger('id_grup_wali_asuh');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

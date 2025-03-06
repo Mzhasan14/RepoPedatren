@@ -2,10 +2,12 @@
 
 namespace App\Models\Pegawai;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class EntitasPegawai extends Model
 {
+    use HasFactory;
     protected $table = 'entitas_pegawai';
     protected $primaryKey = 'id';
     protected $keyType = 'int';
