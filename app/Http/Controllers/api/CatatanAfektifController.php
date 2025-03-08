@@ -23,11 +23,13 @@ class CatatanAfektifController extends Controller
             'id_peserta_didik' => 'required|exists:peserta_didik,id',
             'id_wali_asuh' => 'required|exists:wali_asuh,id',
             'kepedulian_nilai' => 'required|in:A,B,C,D,E',
-            'kepedulian_tindak_lanjut' => 'nullable|string',
+            'kepedulian_tindak_lanjut' => 'required|string',
             'kebersihan_nilai' => 'required|in:A,B,C,D,E',
-            'kebersihan_tindak_lanjut' => 'nullable|string',
+            'kebersihan_tindak_lanjut' => 'required|string',
             'akhlak_nilai' => 'required|in:A,B,C,D,E',
-            'akhlak_tindak_lanjut' => 'nullable|string',
+            'akhlak_tindak_lanjut' => 'required|string',
+            'created_by' => 'required|integer',
+            'status' => 'required|boolean',
         ]);
         if ($validator->fails()){
             return response()->json([
@@ -57,11 +59,13 @@ class CatatanAfektifController extends Controller
             'id_peserta_didik' => 'required|exists:peserta_didik,id',
             'id_wali_asuh' => 'required|exists:wali_asuh,id',
             'kepedulian_nilai' => 'required|in:A,B,C,D,E',
-            'kepedulian_tindak_lanjut' => 'nullable|string',
+            'kepedulian_tindak_lanjut' => 'required|string',
             'kebersihan_nilai' => 'required|in:A,B,C,D,E',
-            'kebersihan_tindak_lanjut' => 'nullable|string',
+            'kebersihan_tindak_lanjut' => 'required|string',
             'akhlak_nilai' => 'required|in:A,B,C,D,E',
-            'akhlak_tindak_lanjut' => 'nullable|string',
+            'akhlak_tindak_lanjut' => 'required|string',
+            'updated_by' => 'nullable|integer',
+            'status' => 'required|boolean',
         ]);
         if ($validator->fails()){
             return response()->json([

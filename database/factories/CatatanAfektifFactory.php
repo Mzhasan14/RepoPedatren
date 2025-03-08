@@ -28,6 +28,9 @@ class CatatanAfektifFactory extends Factory
             'kebersihan_tindak_lanjut' => $this->faker->sentence(),
             'akhlak_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'akhlak_tindak_lanjut' => $this->faker->sentence(),
+            'created_by' => 1,
+            'updated_by' => 1,
+            'status' => 1,
             'created_at' => now(),
             'updated_at' => now(),
         ];

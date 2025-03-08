@@ -34,6 +34,9 @@ class CatatanKognitifFactory extends Factory
             'tulis_alquran_tindak_lanjut' => $this->faker->sentence(),
             'baca_alquran_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'baca_alquran_tindak_lanjut' => $this->faker->sentence(),
+            'created_by' => 1,
+            'updated_by' => 1,
+            'status' => 1,
             'created_at' => now(),
             'updated_at' => now(),
         ];

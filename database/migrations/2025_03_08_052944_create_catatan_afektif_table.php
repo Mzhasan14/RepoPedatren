@@ -21,6 +21,9 @@ return new class extends Migration
             $table->text('kebersihan_tindak_lanjut');
             $table->enum('akhlak_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('akhlak_tindak_lanjut');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->boolean('status');
             $table->timestamps();
 
             $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
