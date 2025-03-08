@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\Alamat\DesaSeeder;
 use Database\Seeders\Alamat\KabupatenSeeder;
 use Database\Seeders\Alamat\KecamatanSeeder;
+use Database\Seeders\Alamat\NegaraSeeder;
 use Database\Seeders\Alamat\ProvinsiSeeder;
 use Database\Seeders\Kewaliasuhan\Anak_AsuhSeeder;
 use Database\Seeders\Kewaliasuhan\Grup_WaliAsuhSeeder;
@@ -79,6 +80,7 @@ class DatabaseSeeder extends Seeder
             KabupatenSeeder::class,
             KecamatanSeeder::class,
             ProvinsiSeeder::class,
+            NegaraSeeder::class,
 
         ]);
     }

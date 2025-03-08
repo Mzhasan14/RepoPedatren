@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pegawai', function (Blueprint $table) {
+        Schema::create('negara', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_biodata');
-            $table->unsignedBigInteger('created_by');
+            $table->string('nama_negara');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('warga_pesantren');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
-
-            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 
@@ -29,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pegawai');
+        Schema::dropIfExists('negara');
     }
 };

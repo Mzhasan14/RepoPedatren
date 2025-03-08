@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('biodata', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_desa');
             $table->string('nama', 100);
             $table->char('niup', 11);
             $table->enum('jenis_kelamin', ['l', 'p']);
@@ -34,6 +35,8 @@ return new class extends Migration
             $table->integer('deleted_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
+
+            $table->foreign('id_desa')->references('id')->on('desa')->onDelete('cascade');
         });
     }
 

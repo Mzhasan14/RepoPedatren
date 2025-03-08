@@ -2,8 +2,9 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Arr;
+use Database\Factories\Alamat\DesaFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Biodata>
@@ -18,6 +19,7 @@ class BiodataFactory extends Factory
     public function definition(): array
     {
         return [
+            'id_desa' =>  (new DesaFactory())->create()->id,
             'nama' => $this->faker->name(),
             'niup' => $this->faker->unique()->numerify('###########'),
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),

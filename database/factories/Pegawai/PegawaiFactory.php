@@ -22,6 +22,7 @@ class PegawaiFactory extends Factory
     {
         return [
             'id_biodata' => Biodata::inRandomOrder()->first()?->id,
+            'warga_pesantren' => $this->faker->boolean,
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->boolean(),

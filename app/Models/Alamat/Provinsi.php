@@ -26,4 +26,9 @@ class Provinsi extends Model
     public function kabupaten() {
         return $this->hasMany(Kabupaten::class,'id_provinsi', 'id');
     }
+
+    public function negara()
+    {
+        return $this->belongsTo(Negara::class, 'id_negara', 'id');
+    }
 }

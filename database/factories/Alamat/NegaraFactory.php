@@ -2,15 +2,13 @@
 
 namespace Database\Factories\Alamat;
 
-use App\Models\Alamat\Provinsi;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Alamat\Provinsi>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Alamat\Negara>
  */
-class ProvinsiFactory extends Factory
+class NegaraFactory extends Factory
 {
-    protected $model = Provinsi::class;
     /**
      * Define the model's default state.
      *
@@ -19,8 +17,7 @@ class ProvinsiFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_negara' => (new NegaraFactory())->create()->id,
-            'nama_provinsi' => $this->faker->state,
+            'nama_negara' => $this->faker->country,
             'created_by' => 1,
             'updated_by' => null,
             'deleted_by' => null,
