@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\{
     PelanggaranController,
     PesertaDidikController,
     JenisBerkasController,
-    BerkasController
+    BerkasController,
+    CatatanAfektifController,
+    CatatanKognitifController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -62,6 +64,8 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/peserta-didik', PesertaDidikController::class);
     Route::apiResource('/biodata', BiodataController::class);
+    Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
+    Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
     Route::get('/santri', [PesertaDidikController::class, 'santri']);
     Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
     Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
