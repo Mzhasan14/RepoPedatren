@@ -79,5 +79,13 @@ class Peserta_didik extends Model
     {
         return $this->hasMany(Rencana_pendidikan::class, 'id_peserta_didik', 'id');
     }
+    public function PesertaDidikCatatanKognitif()
+    {
+        return $this->hasMany(Catatan_kognitif::class,'id_peserta_didik','id');
+    }
+    public function PesertaDidikCatatanAfektif()
+    {
+        return $this->hasMany(Catatan_afektif::class,'id_peserta_didik','id');
+    }
     
 }

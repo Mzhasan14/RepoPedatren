@@ -2,6 +2,8 @@
 
 namespace App\Models\Kewaliasuhan;
 
+use App\Models\Catatan_afektif;
+use App\Models\Catatan_kognitif;
 use App\Models\Perizinan;
 use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,6 +46,14 @@ class Wali_asuh extends Model
     public function WaliAsuhPesrizinan()
     {
         return $this->hasOne(Perizinan::class,'id_wali_asuh', 'id');
+    }
+    public function WaliAsuhCatatanKognitif()
+    {
+        return $this->belongsTo(Catatan_kognitif::class,'id_wali_asuh','id');
+    }
+    public function WaliAsuhCatatanAfektif()
+    {
+        return $this->belongsTo(Catatan_afektif::class,'id_wali_asuh','id');
     }
 
         // public function createdBy()
