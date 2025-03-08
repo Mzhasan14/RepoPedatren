@@ -2,40 +2,41 @@
 
 namespace App\Models\Pegawai;
 
+use App\Models\Biodata;
 use App\Models\Pendidikan\Lembaga;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Pengajar extends Model
 {
     use HasFactory;
 
     protected $table = 'pengajar';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
-
     protected $guarded = [
         'id'
     ];
 
-    public function PengajarPegawai()
+    public function biodata()
+    {
+        return $this->hasOneThrough(Biodata::class, Pegawai::class, 'id', 'id', 'id', 'id');
+    }
+
+    public function pegawai()
     {
         return $this->belongsTo(Pegawai::class, 'id_pegawai', 'id');
     }
 
-    public function PengajarLembaga()
+    public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'id_lembaga','id');
     }
 
-    public function PengajarWaliKelas()
+    public function waliKelas()
     {
         return $this->hasOne(WaliKelas::class,'id_pengajar','id');
     }
 
-    public function PengajarGolongan()
+    public function golongan()
     {
         return $this->belongsTo(Golongan::class,'id_golongan','id');
     }

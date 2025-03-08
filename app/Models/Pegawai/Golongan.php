@@ -18,11 +18,11 @@ class Golongan extends Model
     protected $guarded = [
         'id'
     ];
-    public function KategoriGolonganGolongan()
+    public function kategoriGolongan()
     {
         return $this->belongsTo(Golongan::class,'id_kategori_golongan','id');
     }
-    public function GolonganPengajar()
+    public function golongan()
     {
         return $this->hasMany(Golongan::class,'id_golongan','id');
     }

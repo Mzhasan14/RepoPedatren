@@ -127,4 +127,5 @@ class PesertaDidikController extends Controller
 
         return new PdResource(true, 'Data peserta didik', $pesertaDidik);
     }
+
 }

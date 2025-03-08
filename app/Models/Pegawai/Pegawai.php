@@ -20,17 +20,17 @@ class Pegawai extends Model
         'id'
     ];
 
-    public function PegawaiBiodata()
+    public function biodata()
     {
         return $this->belongsTo(Biodata::class,'id_biodata', 'id');
     }
 
-    public function PegawaiPengajar()
+    public function pengajar()
     {
         return $this->hasMany(Pengajar::class,'id_pegawai', 'id');
     }
 
-    public function PegawaiEntitas()
+    public function entitasPegawai()
     {
         return $this->hasMany(EntitasPegawai::class,'id_pegawai','id');
     }

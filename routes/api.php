@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
     Route::get('/list-pengajar', [PengajarController::class, 'Pengajar']);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
+    Route::get('/pengajar-filter', [PengajarController::class, 'filterPengajar']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
