@@ -76,13 +76,18 @@ class BerkasController extends Controller
         return new PdResource(true,'Data berhasil dihapus',$berkas);
     }
 
-    public function Berkas()
+    public function Berkas(string $id)
     {
-        $biodata = Biodata::join('berkas as b1','biodata.id', '=' , 'b1.id_biodata')
-                        ->join('jenis_berkas as jb','b1.id_jenis_berkas','=','jb.id')
-                        ->select('biodata.id', 'jb.type_jenis_berkas as type','jb.nama_jenis_berkas as nama berkas','b1.file_path as foto')
-                        ->get();
-
-        return new PdResource(true,'data berhasil ditambahkan',$biodata);
+        $biodata = Biodata::where('biodata.id', $id)
+            ->join('berkas as b1', 'biodata.id', '=', 'b1.id_biodata')
+            ->join('jenis_berkas as jb', 'b1.id_jenis_berkas', '=', 'jb.id')
+            ->select(
+                'biodata.id', 
+                'b1.file_path as fileUrl',
+                'jb.nama_jenis_berkas as nama', 
+            )
+            ->get();
+    
+        return new PdResource(true, 'Data berhasil diambil', $biodata);
     }
 }
