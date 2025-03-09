@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\api\kewaliasuhan;
 
 use Illuminate\Http\Request;
+use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use Database\Seeders\PesertaDidikSeeder;
 use Illuminate\Support\Facades\Validator;
 
 class WaliasuhController extends Controller
@@ -25,7 +27,7 @@ class WaliasuhController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nis' => 'required|exists:peserta_didik,nis',
+            'id_peserta_didik' => 'required|exists:peserta_didik,id',
             'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
             'created_by' => 'required',
             'status' => 'nullable',
@@ -57,7 +59,7 @@ class WaliasuhController extends Controller
         $waliAsuh = Wali_asuh::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'nis' => 'required|exists:peserta_didik,nis',
+            'id_peserta_didik' => 'required|exists:peserta_didik,id',
             'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
             'updated_by' => 'nullable',
             'status' => 'nullable'
@@ -79,5 +81,25 @@ class WaliasuhController extends Controller
         $waliAsuh = Wali_asuh::findOrFail($id);
         $waliAsuh->delete();
         return new PdResource(true,'Data berhasil dihapus',null);
+    }
+
+    public function waliAsuh() {
+        $waliAsuh = Peserta_didik::join('wali_asuh','peserta_didik.id','=','wali_asuh.id_peserta_didik')
+        ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
+        ->join('grup_wali_asuh','grup_wali_asuh.id','=','wali_asuh.id_grup_wali_asuh')
+        ->select(
+            'wali_asuh.id as id_wali_asuh',
+            'biodata.nama',
+            'peserta_didik.nis',
+            'grup_wali_asuh.nama_grup',
+            'wali_asuh.status'
+        )
+        ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Data berhasil ditampilkan',
+            'data' => $waliAsuh
+        ]);
     }
 }

@@ -16,17 +16,20 @@ return new class extends Migration
             $table->unsignedBigInteger('id_peserta_didik');
             $table->unsignedBigInteger('id_wali_asuh');
             $table->enum('kebahasaan_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('kebahasaan_tindak_lanjut')->nullable();
+            $table->text('kebahasaan_tindak_lanjut');
             $table->enum('baca_kitab_kuning_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('baca_kitab_kuning_tindak_lanjut')->nullable();
+            $table->text('baca_kitab_kuning_tindak_lanjut');
             $table->enum('hafalan_tahfidz_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('hafalan_tahfidz_tindak_lanjut')->nullable();
+            $table->text('hafalan_tahfidz_tindak_lanjut');
             $table->enum('furudul_ainiyah_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('furudul_ainiyah_tindak_lanjut')->nullable();
+            $table->text('furudul_ainiyah_tindak_lanjut');
             $table->enum('tulis_alquran_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('tulis_alquran_tindak_lanjut')->nullable();
+            $table->text('tulis_alquran_tindak_lanjut');
             $table->enum('baca_alquran_nilai', ['A', 'B', 'C', 'D', 'E']);
-            $table->text('baca_alquran_tindak_lanjut')->nullable();
+            $table->text('baca_alquran_tindak_lanjut');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->boolean('status');
             $table->timestamps();
 
             $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');

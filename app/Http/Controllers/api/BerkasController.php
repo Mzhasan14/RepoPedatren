@@ -29,7 +29,7 @@ class BerkasController extends Controller
         if ($validator->fails()){
             return response()->json([
                 'status' => false,
-                'message' => 'Data gagal ditammbahkan',
+                'message' => 'Data gagal ditambahkan',
                 'data' => $validator->errors()
             ]);
         }

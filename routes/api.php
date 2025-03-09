@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\{
     PelanggaranController,
     PesertaDidikController,
     JenisBerkasController,
-    BerkasController
+    BerkasController,
+    CatatanAfektifController,
+    CatatanKognitifController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -63,7 +65,13 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/peserta-didik', PesertaDidikController::class);
     Route::apiResource('/biodata', BiodataController::class);
+
     Route::get('/peserta-didik-santri', [PesertaDidikController::class, 'pesertaDidikSantri']);
+
+    Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
+    Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
+    Route::get('/santri', [PesertaDidikController::class, 'santri']);
+
     Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
     Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
     Route::get('/peserta-didik-filter', [PesertaDidikController::class, 'filterPesertaDidik']);
@@ -84,6 +92,9 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
     Route::apiResource('/waliasuh', WaliasuhController::class);
     Route::apiResource('/anakasuh', AnakasuhController::class);
+    Route::get('/list-wali-asuh',[WaliasuhController::class,'waliAsuh']);
+    Route::get('/list-anak-asuh', [AnakasuhController::class, 'anakAsuh']);
+    Route::get('/list-kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);

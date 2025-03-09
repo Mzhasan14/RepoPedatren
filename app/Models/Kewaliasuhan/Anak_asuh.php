@@ -33,7 +33,7 @@ class Anak_asuh extends Model
     }
 
     public function pesertaDidik() {
-        return $this->belongsTo(Peserta_didik::class,'nis','nis');
+        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
     }
 
     public function grupWaliAsuh() {
