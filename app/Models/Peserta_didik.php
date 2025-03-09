@@ -25,7 +25,6 @@ class Peserta_didik extends Model
         'anak_keberapa',
         'dari_saudara',
         'tinggal_bersama',
-        'smartcard',
         'tahun_masuk',
         'tahun_keluar',
         'status',
@@ -41,7 +40,7 @@ class Peserta_didik extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', true);
+        return $query->where('peserta_didik.status', true);
     }
 
     public function biodata()

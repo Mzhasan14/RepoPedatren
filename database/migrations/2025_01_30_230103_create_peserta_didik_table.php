@@ -19,7 +19,6 @@ return new class extends Migration
             $table->tinyInteger('anak_keberapa');
             $table->tinyInteger('dari_saudara');
             $table->string('tinggal_bersama', 40);
-            $table->string('smartcard');
             $table->date('tahun_masuk');
             $table->date('tahun_keluar')->nullable();
             $table->timestamps();

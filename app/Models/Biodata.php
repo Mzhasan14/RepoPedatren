@@ -30,6 +30,7 @@ class Biodata extends Model
         'jenjang_pendidikan_terakhir',
         'nama_pendidikan_terakhir',
         'image_url',
+        'smartcard',
         'status',
         'created_by',
         'updated_by',

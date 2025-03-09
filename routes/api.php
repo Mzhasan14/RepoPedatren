@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\Pegawai\{
     PengurusController,
     KaryawanController,
 };
+use App\Models\Peserta_didik;
 
 // Route untuk autentikasi
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -62,9 +63,10 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/peserta-didik', PesertaDidikController::class);
     Route::apiResource('/biodata', BiodataController::class);
-    Route::get('/santri', [PesertaDidikController::class, 'santri']);
+    Route::get('/peserta-didik-santri', [PesertaDidikController::class, 'pesertaDidikSantri']);
     Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
     Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
+    Route::get('/peserta-didik-filter', [PesertaDidikController::class, 'filterPesertaDidik']);
 
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);

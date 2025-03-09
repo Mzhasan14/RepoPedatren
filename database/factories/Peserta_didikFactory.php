@@ -25,7 +25,6 @@ class Peserta_didikFactory extends Factory
             'anak_keberapa' => rand(1, 5),
             'dari_saudara' => rand(1, 5),
             'tinggal_bersama' => $this->faker->word,
-            'smartcard' => $this->faker->uuid,
             'tahun_masuk' => $this->faker->date,
             'tahun_keluar' => null,
             'created_by' => 1,

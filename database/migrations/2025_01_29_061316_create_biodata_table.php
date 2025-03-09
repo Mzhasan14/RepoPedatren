@@ -29,6 +29,7 @@ return new class extends Migration
             );
             $table->string('nama_pendidikan_terakhir');
             $table->string('image_url');
+            $table->string('smartcard');
             $table->boolean('status');
             $table->integer('created_by');
             $table->integer('updated_by')->nullable();

@@ -35,6 +35,12 @@ class BiodataController extends Controller
             'email' => 'required|email|unique:biodata,email',
             'jenjang_pendidikan_terakhir' => 'required|string|max:50',
             'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'smartcard' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('peserta_didik', 'smartcard')
+            ],
             'status' => 'required|boolean',
             'created_by' => 'required|integer',
         ]);
@@ -74,6 +80,12 @@ class BiodataController extends Controller
             ],
             'jenjang_pendidikan_terakhir' => 'required|string|max:50',
             'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'smartcard' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('peserta_didik', 'smartcard')->ignore($id)
+            ],
             'status' => 'required|boolean',
             'updated_by' => 'required|integer',
         ]);
