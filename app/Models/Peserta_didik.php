@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Rombel;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Lembaga;
 use App\Models\Kewilayahan\Domisili;
-use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Peserta_didik extends Model
@@ -15,16 +19,15 @@ class Peserta_didik extends Model
 
     use SoftDeletes;
     protected $table = 'peserta_didik';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $incrementing = true;
     protected $fillable = [
         'id_biodata',
         'id_domisili',
+        'id_lembaga',
+        'id_jurusan',
+        'id_kelas',
+        'id_rombel',
+        'no_induk',
         'nis',
-        'anak_keberapa',
-        'dari_saudara',
-        'tinggal_bersama',
         'tahun_masuk',
         'tahun_keluar',
         'status',
@@ -41,6 +44,23 @@ class Peserta_didik extends Model
     public function scopeActive($query)
     {
         return $query->where('peserta_didik.status', true);
+    }
+
+    public function lembaga()
+    {
+        return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');
+    }
+    public function jurusan()
+    {
+        return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
+    }
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'id_kelas', 'id');
+    }
+    public function rombel()
+    {
+        return $this->belongsTo(Rombel::class, 'id_rombel', 'id');
     }
 
     public function biodata()
@@ -61,28 +81,22 @@ class Peserta_didik extends Model
         return $this->hasOne(Anak_asuh::class,'nis','nis');
     }
 
-    public function KhadamSantri()
-    {
-        return $this->hasOne(Khadam::class,'id_peserta_didik', 'id');
-    }
-    public function SantriPelanggaran()
+    public function pelanggaran()
     {
         return $this->hasMany(Pelanggaran::class,'id_peserta_didik', 'id');
     }
-    public function SantriPerizinan()
+
+    public function perizinan()
     {
         return $this->hasMany(Perizinan::class, 'id_peserta_didik', 'id');
     }
 
-    public function rencana_pendidikan()
-    {
-        return $this->hasMany(Rencana_pendidikan::class, 'id_peserta_didik', 'id');
-    }
-    public function PesertaDidikCatatanKognitif()
+    public function catatanKognitif()
     {
         return $this->hasMany(Catatan_kognitif::class,'id_peserta_didik','id');
     }
-    public function PesertaDidikCatatanAfektif()
+
+    public function catatanAfektif()
     {
         return $this->hasMany(Catatan_afektif::class,'id_peserta_didik','id');
     }

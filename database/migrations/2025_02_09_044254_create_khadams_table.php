@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('khadam', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_peserta_didik')->unique();
+            $table->unsignedBigInteger('id_biodata')->unique();
             $table->string('keterangan');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 

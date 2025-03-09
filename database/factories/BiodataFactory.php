@@ -40,6 +40,9 @@ class BiodataFactory extends Factory
                 'https://plus.unsplash.com/premium_photo-1689977968861-9c91dbb16049?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJvZmlsZSUyMHBpY3R1cmV8ZW58MHx8MHx8fDA%3D',
                 'https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ='
             ]),
+            'anak_keberapa' => rand(1, 5),
+            'dari_saudara' => rand(1, 5),
+            'tinggal_bersama' => $this->faker->word,
             'smartcard' => $this->faker->uuid,
             'status' => $this->faker->boolean(),
             'created_by' => 1,

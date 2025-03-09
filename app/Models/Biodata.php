@@ -13,9 +13,6 @@ class Biodata extends Model
     use HasFactory;
     use SoftDeletes;
     protected $table = 'biodata';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $incrementing = true;
     protected $fillable = [
         'id_desa',
         'nama',
@@ -29,6 +26,9 @@ class Biodata extends Model
         'email',
         'jenjang_pendidikan_terakhir',
         'nama_pendidikan_terakhir',
+        'anak_keberapa',
+        'dari_saudara',
+        'tinggal_bersama',
         'image_url',
         'smartcard',
         'status',
@@ -53,9 +53,14 @@ class Biodata extends Model
         return $this->belongsTo(Desa::class, 'id_desa', 'id');
     }
 
-    public function BiodataPegawai()
+    public function pegawai()
     {
         return $this->hasMany(Pegawai::class,'id_biodata', 'id');
+    }
+
+    public function khadam()
+    {
+        return $this->hasMany(Khadam::class, 'id_biodata', 'id');
     }
 
     // public function keluarga() {

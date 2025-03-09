@@ -33,15 +33,32 @@ class PesertaDidikController extends Controller
                 'integer',
                 Rule::unique('peserta_didik', 'id_biodata')
             ],
+            'id_lembaga' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_lembaga')
+            ],
+            'id_jurusan' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_jurusan')
+            ],
+            'id_kelas' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_kelas')
+            ],
+            'id_rombel' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_rombel')
+            ],
             'nis' => [
                 'nullable',
                 'string',
                 'size:11',
                 Rule::unique('peserta_didik', 'nis')
             ],
-            'anak_keberapa' => 'required|numeric|min:1',
-            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
-            'tinggal_bersama' => 'required|string|max:50',
             'tahun_masuk' => 'required|date',
             'tahun_keluar' => 'nullable|date',
             'created_by' => 'required|integer',
@@ -74,15 +91,33 @@ class PesertaDidikController extends Controller
                 'integer',
                 Rule::unique('peserta_didik', 'id_biodata')->ignore($id)
             ],
+            'id_lembaga' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_lembaga')->ignore($id)
+            ],
+            'id_jurusan' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_jurusan')->ignore($id)
+            ],
+            'id_kelas' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_kelas')->ignore($id)
+            ],
+            'id_rombel' => [
+                'required',
+                'integer',
+                Rule::unique('peserta_didik', 'id_rombel')->ignore($id)
+            ],
             'nis' => [
                 'nullable',
                 'string',
                 'size:11',
                 Rule::unique('peserta_didik', 'nis')->ignore($id)
             ],
-            'anak_keberapa' => 'required|numeric|min:1',
-            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
-            'tinggal_bersama' => 'required|string|max:50',
+            'no_induk' => 'nullable|string',
             'tahun_masuk' => 'required|date',
             'tahun_keluar' => 'nullable|date',
             'updated_by' => 'required|integer',
@@ -116,43 +151,53 @@ class PesertaDidikController extends Controller
     public function pesertaDidik(Request $request)
     {
         $query = Peserta_didik::Active()
-            ->join('rencana_pendidikan', 'peserta_didik.id', '=', 'rencana_pendidikan.id_peserta_didik')
             ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-            ->join('lembaga', 'rencana_pendidikan.id_lembaga', '=', 'lembaga.id');
+            ->join('lembaga', 'peserta_didik.id_lembaga', '=', 'lembaga.id');
 
         // 🔹 Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
 
         // 🔹 Filter Wilayah
-        if ($request->filled('id_wilayah')) {
+        if ($request->filled('wilayah')) {
             $query->join('domisili', 'peserta_didik.id_domisili', '=', 'domisili.id')
                 ->join('kamar', 'domisili.id_kamar', '=', 'kamar.id')
                 ->join('blok', 'kamar.id_blok', '=', 'blok.id')
                 ->join('wilayah', 'blok.id_wilayah', '=', 'wilayah.id')
-                ->where('wilayah.id', $request->id_wilayah);
-            if ($request->filled('id_blok')) {
-                $query->where('blok.id', $request->id_blok);
-                if ($request->filled('id_kamar')) {
-                    $query->where('kamar.id', $request->id_kamar);
+                ->where('wilayah.nama_wilayah', $request->wilayah);
+            if ($request->filled('blok')) {
+                $query->where('blok.nama_blok', $request->blok);
+                if ($request->filled('kamar')) {
+                    $query->where('kamar.nama_kamar', $request->kamar);
                 }
             }
         }
 
         // 🔹 Filter Lembaga
-        if ($request->filled('id_lembaga')) {
-            $query->join('jurusan', 'rencana_pendidikan.id_jurusan', '=', 'jurusan.id')
-                ->join('kelas', 'rencana_pendidikan.id_kelas', '=', 'kelas.id')
-                ->join('rombel', 'rencana_pendidikan.id_rombel', '=', 'rombel.id');
-            $query->where('rencana_pendidikan.id_lembaga', $request->id_lembaga);
-            if ($request->filled('id_jurusan')) {
-                $query->where('rencana_pendidikan.id_jurusan', $request->id_jurusan);
-                if ($request->filled('id_kelas')) {
-                    $query->where('rencana_pendidikan.id_kelas', $request->id_kelas);
-                    if ($request->filled('id_rombel')) {
-                        $query->where('rencana_pendidikan.id_rombel', $request->id_rombel);
+        if ($request->filled('lembaga')) {
+            $query->join('jurusan', 'peserta_didik.id_jurusan', '=', 'jurusan.id')
+                ->join('kelas', 'peserta_didik.id_kelas', '=', 'kelas.id')
+                ->join('rombel', 'peserta_didik.id_rombel', '=', 'rombel.id');
+            $query->where('lembaga.nama_lembaga', $request->lembaga);
+            if ($request->filled('jurusan')) {
+                $query->where('jurusan.nama_jurusan', $request->jurusan);
+                if ($request->filled('kelas')) {
+                    $query->where('kelas.nama_kelas', $request->kelas);
+                    if ($request->filled('rombel')) {
+                        $query->where('rombel.nama_rombel', $request->rombel);
                     }
                 }
             }
+        }
+
+        if ($request->filled('warga_pesantren')) {
+            if ($request->warga_pesantren === 'iya'){
+                $query->whereNotNull('peserta_didik.nis')
+                ->where('nis', '!=', '');
+            }else if ($request->warga_pesantren === 'tidak') {
+                $query->whereNull('peserta_didik.nis')
+                ->where('nis', '=', '');
+            }
+            
         }
 
         

@@ -35,6 +35,9 @@ class BiodataController extends Controller
             'email' => 'required|email|unique:biodata,email',
             'jenjang_pendidikan_terakhir' => 'required|string|max:50',
             'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'anak_keberapa' => 'required|numeric|min:1',
+            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
+            'tinggal_bersama' => 'required|string|max:50',
             'smartcard' => [
                 'required',
                 'string',
@@ -80,6 +83,9 @@ class BiodataController extends Controller
             ],
             'jenjang_pendidikan_terakhir' => 'required|string|max:50',
             'nama_pendidikan_terakhir' => 'required|string|max:50',
+            'anak_keberapa' => 'required|numeric|min:1',
+            'dari_saudara' => 'required|numeric|min:1|gte:anak_keberapa',
+            'tinggal_bersama' => 'required|string|max:50',
             'smartcard' => [
                 'required',
                 'string',

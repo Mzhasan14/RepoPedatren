@@ -28,6 +28,9 @@ return new class extends Migration
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
             );
             $table->string('nama_pendidikan_terakhir');
+            $table->tinyInteger('anak_keberapa');
+            $table->tinyInteger('dari_saudara');
+            $table->string('tinggal_bersama', 40);
             $table->string('image_url');
             $table->string('smartcard');
             $table->boolean('status');
@@ -38,6 +41,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('id_desa')->references('id')->on('desa')->onDelete('cascade');
+            $table->fullText('nama');
         });
     }
 

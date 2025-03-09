@@ -3,6 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Biodata;
+use Database\Factories\Pendidikan\KelasFactory;
+use Database\Factories\Pendidikan\RombelFactory;
+use Database\Factories\Pendidikan\JurusanFactory;
+use Database\Factories\Pendidikan\LembagaFactory;
 use Database\Factories\Kewilayahan\DomisiliFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -22,11 +26,14 @@ class Peserta_didikFactory extends Factory
             'id_biodata' => Biodata::inRandomOrder()->first()?->id,
             'id_domisili' => (new DomisiliFactory())->create()->id,
             'nis' => $this->faker->unique()->numerify('###########'),
-            'anak_keberapa' => rand(1, 5),
-            'dari_saudara' => rand(1, 5),
-            'tinggal_bersama' => $this->faker->word,
+            
             'tahun_masuk' => $this->faker->date,
             'tahun_keluar' => null,
+            'id_lembaga' =>  (new LembagaFactory())->create()->id,
+            'id_jurusan' =>  (new JurusanFactory())->create()->id,
+            'id_kelas' =>  (new KelasFactory())->create()->id,
+            'id_rombel' =>  (new RombelFactory())->create()->id,
+            'no_induk' => $this->faker->unique()->numerify('########'),
             'created_by' => 1,
             'updated_by' => null,
             'status' => true,

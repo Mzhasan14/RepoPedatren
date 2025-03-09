@@ -19,7 +19,7 @@ class KhadamFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'id_biodata' => (new BiodataFactory())->create()->id,
             'keterangan' => $this->faker->sentence,
             'created_by' => 1,
             'updated_by' => null,

@@ -10,17 +10,23 @@ class Khadam extends Model
     use HasFactory;
 
     protected $table = 'khadam';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
 
-    protected $guarded = [
-        'id'
+    protected $fillable = [
+        'id_biodata',
+        'keterangan',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+        'status'
     ];
 
-    public function SantriKhadam()
+    public function scopeActive($query)
     {
-        return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik' , 'id');
+        return $query->where('status', true);
+    }
+
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 }

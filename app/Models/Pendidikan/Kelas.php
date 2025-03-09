@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models\Pendidikan;
-
+use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,6 +27,11 @@ class Kelas extends Model
     public function scopeActive($query)
     {
         return $query->where('status', true);
+    }
+
+    public function peserta_didik()
+    {
+        $this->hasMany(Peserta_didik::class, 'id_kelas', 'id');
     }
 
     public function jurusan()
