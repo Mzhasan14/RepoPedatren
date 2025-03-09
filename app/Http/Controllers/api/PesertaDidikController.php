@@ -113,18 +113,7 @@ class PesertaDidikController extends Controller
         return new PdResource(true, 'List Peserta Didik Santri', $santri);
     }
 
-    public function pesertaDidik()
-    {
-        $pesertaDidik = Peserta_Didik::join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-            ->join('rencana_pendidikan', 'peserta_didik.id', '=', 'rencana_pendidikan.id_peserta_didik')
-            ->join('lembaga', 'rencana_pendidikan.id_lembaga', '=', 'lembaga.id')
-            ->select('biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga as lembaga')
-            ->get();
-
-        return new PdResource(true, 'Data peserta didik', $pesertaDidik);
-    }
-
-    public function filterPesertaDidik(Request $request)
+    public function pesertaDidik(Request $request)
     {
         $query = Peserta_didik::Active()
             ->join('rencana_pendidikan', 'peserta_didik.id', '=', 'rencana_pendidikan.id_peserta_didik')

@@ -62,20 +62,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Grouping API
 Route::prefix('v1')->group(function () {
 
-    // 🏫 Santri & Peserta Didik
-    Route::apiResource('/peserta-didik', PesertaDidikController::class);
+    //Biodata
+    Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
     Route::apiResource('/biodata', BiodataController::class);
 
-    Route::get('/peserta-didik-santri', [PesertaDidikController::class, 'pesertaDidikSantri']);
-
+    // 🏫 Santri & Peserta Didik
+    Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
+    Route::get('/santri', [PesertaDidikController::class, 'santri']);
+    Route::get('/list-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
-    Route::get('/santri', [PesertaDidikController::class, 'santri']);
-
-    Route::get('fe-peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
-    Route::get('/peserta-didik-filter', [PesertaDidikController::class, 'filterPesertaDidik']);
-
+    
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
