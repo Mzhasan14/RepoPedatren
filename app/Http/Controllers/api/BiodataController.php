@@ -115,11 +115,11 @@ class BiodataController extends Controller
     
     public function wargaPesantren(string $id)
     {
-        $biodata = Biodata::where('id', $id)
-            ->select('id', 'niup', 'status as aktif')
+        $biodata = Biodata::join('peserta_didik', 'biodata.id', '=', 'peserta_didik.id_biodata')
+            ->where('biodata.id', $id)
+            ->whereNotNull('peserta_didik.nis')
+            ->select('biodata.id', 'biodata.niup', 'peserta_didik.nis', 'biodata.status as aktif')
             ->first();
-    
-        return new PdResource(true, 'data berhasil di tampilkan', $biodata);
-    }
-    
+        return new PdResource(true, 'Data berhasil ditampilkan', $biodata);
+    }    
 }

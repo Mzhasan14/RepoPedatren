@@ -72,6 +72,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'santri']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
+    Route::get('/list-alumni',[PesertaDidikController::class,'alumni']);
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
@@ -118,6 +119,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/list-pengajar', [PengajarController::class, 'Pengajar']);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/pengajar-filter', [PengajarController::class, 'filterPengajar']);
+    Route::get('/list-pengurus',[PengurusController::class,'dataPengurus']);
+    Route::get('/list-walikelas',[WalikelasController::class,'dataWalikelas']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);

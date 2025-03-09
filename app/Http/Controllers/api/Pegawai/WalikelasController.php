@@ -78,4 +78,24 @@ class WalikelasController extends Controller
         $walikelas->delete();
         return new PdResource(true,'Data berhasil dihapus',$walikelas);
     }
+    public function dataWalikelas()
+    {
+        $walikelas = WaliKelas::join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
+                            ->join('pegawai','pegawai.id','=','pengajar.id_pegawai')
+                            ->join('biodata','biodata.id','=','pegawai.id_biodata')
+                            ->join('rombel','rombel.id','=','wali_kelas.id_rombel')
+                            ->join('kelas','kelas.id','=','rombel.id_kelas')
+                            ->join('jurusan','jurusan.id','=','kelas.id_jurusan')
+                            ->select(
+                                'biodata.id as id',
+                                'biodata.nama as Nama',
+                                'biodata.niup',
+                                'jurusan.nama_jurusan as Jurusan',
+                                'kelas.nama_kelas as Kelas',
+                                'rombel.nama_rombel as Rombel'
+                                )
+                            ->get();
+        return new PdResource('true','list data berhasil di tampilkan',$walikelas);
+
+    }
 }

@@ -82,4 +82,21 @@ class PengurusController extends Controller
         return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
 
     }
+    public function dataPengurus()
+    {
+        $pengurus = Pengurus::Active()
+                            ->join('golongan','pengurus.id_golongan','=','golongan.id')
+                            ->join('kategori_golongan','golongan.id_kategori_golongan','=','kategori_golongan.id')
+                            ->join('pegawai','pengurus.id_pegawai','pegawai.id')
+                            ->join('biodata','pegawai.id_biodata','=','biodata.id')
+                            ->select(
+                                'biodata.id as id',
+                                'biodata.nama as Nama',
+                                'biodata.nik as NIK',
+                                'golongan.nama_golongan as Jabatan',
+                                'kategori_golongan.nama_kategori_golongan as Golongan Jabatan'
+                            )->get();
+        return new PdResource(true,'list data berhasil di tampilkan',$pengurus);
+                            
+    }
 }

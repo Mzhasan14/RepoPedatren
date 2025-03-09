@@ -18,4 +18,19 @@ class Pengurus extends Model
     protected $guarded = [
         'id'
     ];
+    
+    public function scopeActive($query)
+    {
+        return $query->where('pengurus.status',true);
+    }
+    public function PengurusGolongan()
+    {
+        return $this->belongsTo(Golongan::class,'id_golongan','id');
+    }
+    public function PengurusPegawai()
+    {
+        return $this->belongsTo(Pegawai::class,'id_pegawai','id');
+    }
+
+
 }
