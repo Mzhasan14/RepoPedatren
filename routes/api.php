@@ -88,6 +88,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/anakasuh', AnakasuhController::class);
     Route::get('/list-wali-asuh',[WaliasuhController::class,'waliAsuh']);
     Route::get('/list-anak-asuh', [AnakasuhController::class, 'anakAsuh']);
+    Route::get('/list-kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
+use App\Models\Biodata;
 use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 
 class GrupWaliAsuhController extends Controller
 {
@@ -77,5 +79,27 @@ class GrupWaliAsuhController extends Controller
         $grupWaliAsuh = Grup_WaliAsuh::findOrFail($id);
         $grupWaliAsuh->delete();
         return new PdResource(true,'Data berhasil dihapus',null);
+    }
+
+
+    public function kewaliasuhan() {
+
+         $grupKewaliasuhan = DB::table('grup_wali_asuh')
+            // ->join('wali_asuh', 'grup_wali_asuh.id', '=', 'wali_asuh.id_grup_wali_asuh')
+            // ->join('anak_asuh', 'grup_wali_asuh.id', '=', 'anak_asuh.id_grup_wali_asuh')
+            ->select(
+                'grup_wali_asuh.id as id_grup_wali_asuh',
+                'grup_wali_asuh.nama_grup',
+                // 'wali_asuh.id',
+                // 'anak_asuh.id'
+            )
+            // ->groupBy('grup_wali_asuh.id', 'grup_wali_asuh.nama_grup')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Data berhasil ditampilkan',
+            'data' => $grupKewaliasuhan
+        ]);
     }
 }
