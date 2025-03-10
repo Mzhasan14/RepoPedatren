@@ -205,26 +205,5 @@ class PesertaDidikController extends Controller
 
         return new PdResource(true, 'list Peserta Didik', $hasil);
     }
-    public function alumni()
-    {
-        $pesertaDidik = Peserta_didik::join('biodata','peserta_didik.id_biodata','=','biodata.id')
-            ->join('desa','biodata.id_desa','=','desa.id')
-            ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
-            ->join('kabupaten','kecamatan.id_kabupaten','=','kabupaten.id')
-            ->join('provinsi','kabupaten.id_provinsi','=','provinsi.id')
-            ->join('negara','provinsi.id_negara','=','negara.id')
-            ->whereNotNull('peserta_didik.tahun_keluar')
-            ->select(
-                'biodata.id as id',
-                'biodata.nama as Nama',
-                'kabupaten.nama_kabupaten as Alamat',
-                'biodata.nama_pendidikan_terakhir as Pendidikan Terakhir',
-                'peserta_didik.tahun_keluar as Tahun ')
-            ->get();
-
-        return new PdResource(true, 'List data alumni', $pesertaDidik);
-        
-
-    }
 
 }
