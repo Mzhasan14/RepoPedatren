@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\Pegawai\WaliKelas;
@@ -10,6 +11,13 @@ use Illuminate\Support\Facades\Validator;
 
 class WalikelasController extends Controller
 {
+    protected $filterController;
+
+    public function __construct(FilterController $filterController)
+    {
+        $this->filterController = $filterController;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -78,24 +86,41 @@ class WalikelasController extends Controller
         $walikelas->delete();
         return new PdResource(true,'Data berhasil dihapus',$walikelas);
     }
-    public function dataWalikelas()
+    public function dataWalikelas(Request $request)
     {
-        $walikelas = WaliKelas::join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
+        $query = WaliKelas::join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
                             ->join('pegawai','pegawai.id','=','pengajar.id_pegawai')
                             ->join('biodata','biodata.id','=','pegawai.id_biodata')
                             ->join('rombel','rombel.id','=','wali_kelas.id_rombel')
                             ->join('kelas','kelas.id','=','rombel.id_kelas')
                             ->join('jurusan','jurusan.id','=','kelas.id_jurusan')
-                            ->select(
-                                'biodata.id as id',
-                                'biodata.nama as Nama',
-                                'biodata.niup',
-                                'jurusan.nama_jurusan as Jurusan',
-                                'kelas.nama_kelas as Kelas',
-                                'rombel.nama_rombel as Rombel'
-                                )
-                            ->get();
-        return new PdResource('true','list data berhasil di tampilkan',$walikelas);
+                            ->join('lembaga','lembaga.id','=','jurusan.id_lembaga');
+        $query = $this->filterController->applyCommonFilters($query, $request);
+        if ($request->filled('lembaga')) {
+            $query->where('lembaga.nama_lembaga', $request->lembaga);
+            if ($request->filled('jurusan')) {
+                $query->where('jurusan.nama_jurusan', $request->jurusan);
+                if ($request->filled('kelas')) {
+                    $query->where('kelas.nama_kelas', $request->kelas);
+                    if ($request->filled('rombel')) {
+                        $query->where('rombel.nama_rombel', $request->rombel);
+                    }
+                }
+            }
+        }
+        if ($request->filled('no_telepon')){
+            $query->where('biodata.no_telepon',$request->no_telepon);
+        }
+        $hasil = $query->select(
+            'wali_kelas.id as id',
+            'biodata.nama as Nama',
+            'biodata.niup',
+            'lembaga.nama_lembaga as Lembaga',
+            'kelas.nama_kelas as Kelas',
+            'rombel.nama_rombel as Rombel'
+            )->paginate(25);
+
+        return new PdResource(true,'list data berhasil di tampilkan',$hasil);
 
     }
 }

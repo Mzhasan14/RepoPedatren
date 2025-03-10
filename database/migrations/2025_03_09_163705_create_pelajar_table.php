@@ -27,7 +27,7 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
             $table->softDeletes();
-
+            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('id_jurusan')->references('id')->on('jurusan')->onDelete('cascade');
             $table->foreign('id_kelas')->references('id')->on('kelas')->onDelete('cascade');
