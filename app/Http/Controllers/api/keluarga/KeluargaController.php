@@ -101,7 +101,8 @@ class KeluargaController extends Controller
            'keluarga.no_kk',
            'biodata.nama',
            'keluarga.status_wali',
-           'status_keluarga.nama_status'
+           'status_keluarga.nama_status',
+            'biodata.image_url'
         )->get();
         return new PdResource(true, 'Data berhasil ditampilkan', $keluarga);
     }

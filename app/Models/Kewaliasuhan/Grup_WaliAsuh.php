@@ -2,9 +2,12 @@
 
 namespace App\Models\Kewaliasuhan;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Kewilayahan\Wilayah;
+use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Grup_WaliAsuh extends Model
 {
@@ -45,5 +48,9 @@ class Grup_WaliAsuh extends Model
 
     public function anakAsuh() {
         return $this->hasMany(Anak_asuh::class,'id_grup_wali_asuh','id');
+    }
+
+    public function wilayah() {
+        return $this->belongsTo(Wilayah::class,'id_wilayah','id');
     }
 }

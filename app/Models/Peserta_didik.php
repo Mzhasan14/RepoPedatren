@@ -74,11 +74,11 @@ class Peserta_didik extends Model
     }
 
     public function waliAsuh() {
-        return $this->hasOne(Wali_asuh::class,'nis','nis');
+        return $this->hasOne(Wali_asuh::class,'id_peserta_didik','id');
     }
 
     public function anakAsuh() {
-        return $this->hasOne(Anak_asuh::class,'nis','nis');
+        return $this->hasOne(Anak_asuh::class,'id_peserta_didik','id');
     }
 
     public function pelanggaran()

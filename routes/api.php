@@ -69,7 +69,7 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
     Route::get('/pesertaDidik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'santri']);
+    Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'pesertaDidiksantri']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
     Route::get('/list-alumni',[PesertaDidikController::class,'alumni']);
@@ -92,9 +92,9 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
     Route::apiResource('/waliasuh', WaliasuhController::class);
     Route::apiResource('/anakasuh', AnakasuhController::class);
-    Route::get('/list-wali-asuh',[WaliasuhController::class,'waliAsuh']);
-    Route::get('/list-anak-asuh', [AnakasuhController::class, 'anakAsuh']);
-    Route::get('/list-kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
+    Route::get('/list/waliasuh',[WaliasuhController::class,'waliAsuh']);
+    Route::get('/list/anakasuh', [AnakasuhController::class, 'anakAsuh']);
+    Route::get('/list/kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);

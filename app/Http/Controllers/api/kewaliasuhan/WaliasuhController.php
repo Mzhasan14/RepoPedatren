@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\kewaliasuhan;
 use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use Database\Seeders\PesertaDidikSeeder;
@@ -87,19 +88,20 @@ class WaliasuhController extends Controller
         $waliAsuh = Peserta_didik::join('wali_asuh','peserta_didik.id','=','wali_asuh.id_peserta_didik')
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('grup_wali_asuh','grup_wali_asuh.id','=','wali_asuh.id_grup_wali_asuh')
+        ->join('desa', 'biodata.id_desa', '=', 'desa.id')
+        ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
+        ->join('kabupaten', 'kecamatan.id_kabupaten', '=', 'kabupaten.id')
         ->select(
             'wali_asuh.id as id_wali_asuh',
             'biodata.nama',
             'peserta_didik.nis',
-            'grup_wali_asuh.nama_grup',
-            'wali_asuh.status'
+            DB::raw('YEAR(peserta_didik.tahun_masuk) as angkatan'),
+            'kabupaten.nama_kabupaten',
+            'wali_asuh.status',
+            'biodata.image_url'
         )
         ->get();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Data berhasil ditampilkan',
-            'data' => $waliAsuh
-        ]);
+        return new PdResource(true, 'List data wali asuh', $waliAsuh);
     }
 }

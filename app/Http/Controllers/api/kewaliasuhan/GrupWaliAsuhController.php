@@ -84,22 +84,21 @@ class GrupWaliAsuhController extends Controller
 
     public function kewaliasuhan() {
 
-         $grupKewaliasuhan = DB::table('grup_wali_asuh')
-            // ->join('wali_asuh', 'grup_wali_asuh.id', '=', 'wali_asuh.id_grup_wali_asuh')
-            // ->join('anak_asuh', 'grup_wali_asuh.id', '=', 'anak_asuh.id_grup_wali_asuh')
-            ->select(
-                'grup_wali_asuh.id as id_grup_wali_asuh',
-                'grup_wali_asuh.nama_grup',
-                // 'wali_asuh.id',
-                // 'anak_asuh.id'
-            )
-            // ->groupBy('grup_wali_asuh.id', 'grup_wali_asuh.nama_grup')
-            ->get();
+         $grupKewaliasuhan = Grup_WaliAsuh::join('wali_asuh as wa1','grup_wali_asuh.id','=','wa1.id_grup_wali_asuh')
+         ->join('wilayah','grup_wali_asuh.id_wilayah','=','wilayah.id')
+         ->join('peserta_didik as pd1','pd1.id','=','wa1.id_peserta_didik')
+         ->join('biodata','pd1.id_biodata','=','biodata.id')
+         
+         ->select(
+            'grup_wali_asuh.id',
+            'grup_wali_asuh.nama_grup',
+            'pd1.nis as Nis_WaliAsuh',
+            'biodata.nama as Nama_WaliAsuh',
+            'wilayah.nama_wilayah',
+            'grup_wali_asuh.updated_by as Tanggal Update Group'
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Data berhasil ditampilkan',
-            'data' => $grupKewaliasuhan
-        ]);
+         )->get();
+
+        return new PdResource(true, 'list grup kewaliasuhan', $grupKewaliasuhan);
     }
 }
