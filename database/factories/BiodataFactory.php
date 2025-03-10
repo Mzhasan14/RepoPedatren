@@ -4,6 +4,10 @@ namespace Database\Factories;
 
 use Illuminate\Support\Arr;
 use Database\Factories\Alamat\DesaFactory;
+use Database\Factories\Alamat\KabupatenFactory;
+use Database\Factories\Alamat\KecamatanFactory;
+use Database\Factories\Alamat\NegaraFactory;
+use Database\Factories\Alamat\ProvinsiFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,6 +23,10 @@ class BiodataFactory extends Factory
     public function definition(): array
     {
         return [
+            'id_negara' =>  (new NegaraFactory())->create()->id,
+            'id_provinsi' =>  (new ProvinsiFactory())->create()->id,
+            'id_kabupaten' =>  (new KabupatenFactory())->create()->id,
+            'id_kecamatan' =>  (new KecamatanFactory())->create()->id,
             'id_desa' =>  (new DesaFactory())->create()->id,
             'nama' => $this->faker->name(),
             'niup' => $this->faker->unique()->numerify('###########'),

@@ -13,14 +13,19 @@ return new class extends Migration
     {
         Schema::create('biodata', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_desa');
+            $table->unsignedBigInteger('id_negara');
+            $table->unsignedBigInteger('id_provinsi')->nullable();
+            $table->unsignedBigInteger('id_kabupaten')->nullable();
+            $table->unsignedBigInteger('id_kecamatan')->nullable();
+            $table->unsignedBigInteger('id_desa')->nullable();
             $table->string('nama', 100);
             $table->char('niup', 11);
+            $table->string('no_passport')->nullable();
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->date('tanggal_lahir');
             $table->string('tempat_lahir', 50);
-            $table->char('nik', 16);
-            $table->char('no_kk', 16);
+            $table->char('nik', 16)->nullable();
+            $table->char('no_kk', 16)->nullable();
             $table->string('no_telepon', 20);
             $table->string('email', 100)->unique('bd_email_unique');
             $table->enum(
@@ -40,6 +45,10 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
+            $table->foreign('id_negara')->references('id')->on('negara')->onDelete('cascade');
+            $table->foreign('id_provinsi')->references('id')->on('provinsi')->onDelete('cascade');
+            $table->foreign('id_kabupaten')->references('id')->on('kabupaten')->onDelete('cascade');
+            $table->foreign('id_kecamatan')->references('id')->on('kecamatan')->onDelete('cascade');
             $table->foreign('id_desa')->references('id')->on('desa')->onDelete('cascade');
             $table->fullText('nama');
         });

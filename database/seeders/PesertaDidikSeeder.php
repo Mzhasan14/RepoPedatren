@@ -13,7 +13,7 @@ class PesertaDidikSeeder extends Seeder
      */
     public function run(): void
     {
-        (new Peserta_didikFactory())->count(5)->create();
+        (new Peserta_didikFactory())->count(50)->create();
         
     }
 }

@@ -11,11 +11,11 @@ class FilterController extends Controller
     {
         // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
-            $query->join('desa', 'biodata.id_desa', '=', 'desa.id')
-                ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
-                ->join('kabupaten', 'kecamatan.id_kabupaten', '=', 'kabupaten.id')
-                ->join('provinsi', 'kabupaten.id_provinsi', '=', 'provinsi.id')
-                ->join('negara', 'provinsi.id_negara', '=', 'negara.id')
+            $query->join('negara', 'biodata.id_negara', '=', 'negara.id')
+                ->leftjoin('provinsi', 'biodata.id_provinsi', '=', 'provinsi.id')
+                ->leftjoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
+                ->leftjoin('kecamatan', 'biodata.id_kecamatan', '=', 'kecamatan.id')
+                ->leftjoin('desa', 'biodata.id_desa', '=', 'desa.id')
                 ->where('negara.nama_negara', $request->negara);
             if ($request->filled('provinsi')) {
                 $query->where('provinsi.nama_provinsi', $request->provinsi);
@@ -30,7 +30,12 @@ class FilterController extends Controller
 
         // 🔹 Filter jenis kelamin (dari biodata)
         if ($request->filled('jenis_kelamin')) {
-            $query->where('biodata.jenis_kelamin', $request->jenis_kelamin);
+            $jenis_kelamin = strtolower($request->jenis_kelamin);
+            if ($jenis_kelamin == 'laki-laki') {
+                $query->where('biodata.jenis_kelamin', 'l');
+            } else if ($jenis_kelamin == 'perempuan') {
+                $query->where('biodata.jenis_kelamin', 'p');
+            }
         }
 
         if ($request->filled('smartcard')) {
@@ -40,7 +45,6 @@ class FilterController extends Controller
         if ($request->filled('nama')) {
             $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$request->nama]);
         }
-
 
         return $query;
     }

@@ -67,6 +67,8 @@ class DatabaseSeeder extends Seeder
             PelanggaranSeeder::class,
             PerizinanSeeder::class,
             PesertaDidikSeeder::class,
+            PelajarSeeder::class,
+            SantriSeeder::class,
             StatusKeluargaSeeder::class,
             BlokSeeder::class,
             DomisiliSeeder::class,

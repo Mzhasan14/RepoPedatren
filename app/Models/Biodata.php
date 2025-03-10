@@ -14,6 +14,10 @@ class Biodata extends Model
     use SoftDeletes;
     protected $table = 'biodata';
     protected $fillable = [
+        'id_negara',
+        'id_provinsi',
+        'id_kabupaten',
+        'id_kecamatan',
         'id_desa',
         'nama',
         'niup',

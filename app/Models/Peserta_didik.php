@@ -15,30 +15,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Peserta_didik extends Model
 {
-    use HasFactory;
-
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
     protected $table = 'peserta_didik';
     protected $fillable = [
         'id_biodata',
-        'id_domisili',
-        'id_lembaga',
-        'id_jurusan',
-        'id_kelas',
-        'id_rombel',
-        'no_induk',
-        'nis',
-        'tahun_masuk',
-        'tahun_keluar',
         'status',
         'created_by',
         'updated_by'
     ];
 
-
     public function scopeSantri($query)
     {
-        return $query->whereNotNull('nis')->where('nis', '!=', '');
+        return $query->whereNotNull('santri.id');
     }
 
     public function scopeActive($query)
@@ -46,21 +34,9 @@ class Peserta_didik extends Model
         return $query->where('peserta_didik.status', true);
     }
 
-    public function lembaga()
+    public function scopeNonActive($query)
     {
-        return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');
-    }
-    public function jurusan()
-    {
-        return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
-    }
-    public function kelas()
-    {
-        return $this->belongsTo(Kelas::class, 'id_kelas', 'id');
-    }
-    public function rombel()
-    {
-        return $this->belongsTo(Rombel::class, 'id_rombel', 'id');
+        return $query->where('peserta_didik.status', false);
     }
 
     public function biodata()
@@ -68,9 +44,12 @@ class Peserta_didik extends Model
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
-    public function domisili()
-    {
-        return $this->BelongsTo(Domisili::class, 'id_domisili', 'id');
+    public function pelajar() {
+        return $this->hasOne(Pelajar::class,'id_peserta_didik','id');
+    }
+
+    public function santri() {
+        return $this->hasOne(Santri::class,'id_santri','id');
     }
 
     public function waliAsuh() {

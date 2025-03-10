@@ -2,17 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Biodata;
+use Database\Factories\PelajarFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class BiodataSeeder extends Seeder
+class PelajarSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        Biodata::factory()->count(50)->create();
+        (new PelajarFactory())->count(50)->create();
     }
 }
