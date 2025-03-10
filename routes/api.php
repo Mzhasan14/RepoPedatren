@@ -76,9 +76,11 @@ Route::prefix('v1')->group(function () {
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
+    Route::get('/list/keluarga',[KeluargaController::class,'keluarga']);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
-    Route::get('/data-wali', [KeluargaController::class, 'dataWali']);
+    Route::get('/list/orangtua',[OrangTuaController::class,'getOrtu']);
+    Route::get('/list/datawali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);

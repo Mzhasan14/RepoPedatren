@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
+use App\Models\Biodata;
 use App\Models\OrangTua;
 use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
@@ -82,5 +83,20 @@ class OrangTuaController extends Controller
 
         $ortu->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
+    }
+
+
+    public function getOrtu()
+    {
+        $ortu = Biodata::join('orang_tua', 'biodata.id', '=', 'orang_tua.id_biodata')
+            ->select(
+                'orang_tua.id',
+                'biodata.nama',
+                'biodata.nik',
+                'biodata.no_telepon',
+            )
+            ->get();
+
+        return new PdResource(true, 'Data berhasil ditampilkan', $ortu);
     }
 }

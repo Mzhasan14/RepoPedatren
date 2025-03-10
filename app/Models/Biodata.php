@@ -63,7 +63,7 @@ class Biodata extends Model
         return $this->hasMany(Khadam::class, 'id_biodata', 'id');
     }
 
-    // public function keluarga() {
-    //     return $this->hasMany(Keluarga::class, 'no_kk', 'no_kk');
-    // }
+    public function keluarga() {
+        return $this->hasMany(Keluarga::class, 'no_kk', 'no_kk');
+    }
 }

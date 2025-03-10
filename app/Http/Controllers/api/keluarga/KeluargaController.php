@@ -6,6 +6,7 @@ use App\Models\Biodata;
 use App\Models\Keluarga;
 use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
@@ -90,6 +91,19 @@ class KeluargaController extends Controller
             ->select('biodata.nama', 'biodata.nik', 'biodata.no_telepon')
             ->where('status_wali', true)->get();
         return new PdResource(true, 'List Data Wali', $wali);
+    }
+
+    public function keluarga() {
+        $keluarga = Keluarga::join('status_keluarga','keluarga.id_status_keluarga','=','status_keluarga.id')
+        ->join('biodata','keluarga.no_kk','=','biodata.no_kk')
+        ->select(
+           'keluarga.id',
+           'keluarga.no_kk',
+           'biodata.nama',
+           'keluarga.status_wali',
+           'status_keluarga.nama_status'
+        )->get();
+        return new PdResource(true, 'Data berhasil ditampilkan', $keluarga);
     }
     
     

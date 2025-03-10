@@ -27,12 +27,12 @@ class Keluarga extends Model
         'status'
     ];
 
-    // public function referensiNokk() {
-    //     return $this->belongsTo(Biodata::class, 'no_kk', 'no_kk');
-    // }
+    public function biodata() {
+        return $this->belongsTo(Biodata::class, 'no_kk', 'no_kk');
+    }
 
     public function statusKeluarga() {
-        return $this->belongsTo(Status_keluarga::class, 'id_status_keluarga');
+        return $this->belongsTo(Status_keluarga::class, 'id_status_keluarga','id');
     }
 
     // public function createdBy()
