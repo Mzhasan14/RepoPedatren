@@ -15,13 +15,16 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
             $table->string('nama_blok');
-            $table->integer('created_by');
-            $table->integer('updated_by')->nullable();
-            $table->integer('deleted_by')->nullable();
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->softDeletes();
             $table->timestamps();
 
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
         });
     }

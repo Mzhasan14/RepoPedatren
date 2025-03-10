@@ -15,13 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('nama_jurusan')->nullable(false);
             $table->unsignedBigInteger('id_lembaga');
-            $table->integer('created_by')->nullable(false);
-            $table->integer('updated_by')->nullable();
-            $table->integer('deleted_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable(false);
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
             $table->boolean('status')->nullable(false);
             $table->timestamps();
 
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
         });
     }

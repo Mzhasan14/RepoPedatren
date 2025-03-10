@@ -21,13 +21,16 @@ return new class extends Migration
             $table->string('nis', 11)->unique();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
-            $table->integer('created_by');
-            $table->integer('updated_by')->nullable();
-            $table->integer('deleted_by')->nullable();
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
             $table->foreign('id_blok')->references('id')->on('blok')->onDelete('cascade');

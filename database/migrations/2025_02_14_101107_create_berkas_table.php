@@ -18,8 +18,13 @@ return new class extends Migration
             $table->string('nama_jenis_berkas');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
+
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
         });
         Schema::create('berkas', function (Blueprint $table) {
             $table->id();
@@ -28,9 +33,13 @@ return new class extends Migration
             $table->string('file_path');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
             $table->foreign('id_jenis_berkas')->references('id')->on('jenis_berkas')->onDelete('cascade');
         });

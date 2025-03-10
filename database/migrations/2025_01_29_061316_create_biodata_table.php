@@ -37,14 +37,18 @@ return new class extends Migration
             $table->tinyInteger('dari_saudara');
             $table->string('tinggal_bersama', 40);
             $table->string('image_url');
-            $table->string('smartcard');
+            $table->string('smartcard')->nullable();
             $table->boolean('status');
-            $table->integer('created_by');
-            $table->integer('updated_by')->nullable();
-            $table->integer('deleted_by')->nullable();
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
+
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_negara')->references('id')->on('negara')->onDelete('cascade');
             $table->foreign('id_provinsi')->references('id')->on('provinsi')->onDelete('cascade');
             $table->foreign('id_kabupaten')->references('id')->on('kabupaten')->onDelete('cascade');
