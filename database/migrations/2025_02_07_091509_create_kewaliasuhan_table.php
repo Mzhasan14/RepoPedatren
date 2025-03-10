@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('grup_wali_asuh', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_wilayah');
             $table->string('nama_grup');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->softDeletes();
             $table->boolean('status')->nullable()->default(true);
             $table->timestamps();
+
+            $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
             // $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });

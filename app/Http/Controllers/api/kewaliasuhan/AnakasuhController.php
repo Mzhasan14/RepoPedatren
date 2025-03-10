@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\api\kewaliasuhan;
 
 use Illuminate\Http\Request;
+use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Anak_asuh;
-use App\Models\Peserta_didik;
 use Illuminate\Support\Facades\Validator;
 
 class AnakasuhController extends Controller
@@ -86,12 +87,17 @@ class AnakasuhController extends Controller
         $anakAsuh = Peserta_didik::join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('anak_asuh','peserta_didik.id','=','anak_asuh.id_peserta_didik')
         ->join('grup_wali_asuh','anak_asuh.id_grup_wali_asuh','=','grup_wali_asuh.id')
+        ->join('desa','biodata.id_desa','=','desa.id')
+        ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
+        ->join('kabupaten','kecamatan.id_kabupaten','=','kabupaten.id')
         ->select(
             'anak_asuh.id as id_anak_asuh',
             'biodata.nama',
             'peserta_didik.nis',
-            'grup_wali_asuh.nama_grup',
-            'anak_asuh.status'
+            DB::raw('YEAR(peserta_didik.tahun_masuk) as angkatan'),
+            'kabupaten.nama_kabupaten',
+            'anak_asuh.status',
+            'biodata.image_url'
         )
         ->get();
 

@@ -3,6 +3,7 @@
 namespace Database\Factories\Kewaliasuhan;
 
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use Database\Factories\Kewilayahan\WilayahFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,6 +20,7 @@ class Grup_WaliAsuhhFactory extends Factory
     public function definition(): array
     {
         return [
+            'id_wilayah'=> (new WilayahFactory())->create()->id,
             'nama_grup' => $this->faker->word,
             'created_by' => 1,
             'updated_by' => null,

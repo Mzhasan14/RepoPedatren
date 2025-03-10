@@ -69,15 +69,18 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
     Route::get('/pesertaDidik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'santri']);
+    Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'pesertaDidiksantri']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
+    Route::get('/list-alumni',[PesertaDidikController::class,'alumni']);
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
+    Route::get('/list/keluarga',[KeluargaController::class,'keluarga']);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
-    Route::get('/data-wali', [KeluargaController::class, 'dataWali']);
+    Route::get('/list/orangtua',[OrangTuaController::class,'getOrtu']);
+    Route::get('/list/datawali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);
@@ -89,9 +92,9 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
     Route::apiResource('/waliasuh', WaliasuhController::class);
     Route::apiResource('/anakasuh', AnakasuhController::class);
-    Route::get('/list-wali-asuh',[WaliasuhController::class,'waliAsuh']);
-    Route::get('/list-anak-asuh', [AnakasuhController::class, 'anakAsuh']);
-    Route::get('/list-kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
+    Route::get('/list/waliasuh',[WaliasuhController::class,'waliAsuh']);
+    Route::get('/list/anakasuh', [AnakasuhController::class, 'anakAsuh']);
+    Route::get('/list/kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);
@@ -118,6 +121,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/list-pengajar', [PengajarController::class, 'Pengajar']);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/pengajar-filter', [PengajarController::class, 'filterPengajar']);
+    Route::get('/list-pengurus',[PengurusController::class,'dataPengurus']);
+    Route::get('/list-walikelas',[WalikelasController::class,'dataWalikelas']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
