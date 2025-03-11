@@ -96,35 +96,48 @@ class PengurusController extends Controller
                             ->join('golongan','pengurus.id_golongan','=','golongan.id')
                             ->join('kategori_golongan','golongan.id_kategori_golongan','=','kategori_golongan.id')
                             ->join('pegawai','pengurus.id_pegawai','pegawai.id')
-                            ->join('biodata','pegawai.id_biodata','=','biodata.id');
+                            ->join('biodata','pegawai.id_biodata','=','biodata.id')
+                            ->leftJoin('berkas','biodata.id','=','berkas.id_biodata')
+                            ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas');
        $query = $this->filterController->applyCommonFilters($query, $request);
-    //    satuan kerja soon
+       if ($request->filled('satuan_kerja')) {
+        $query->where('pengurus.satuan_kerja', $request->satuan_kerja);
+    }    
+        if ($request->filled('jabatan')) {
+            $query->where('pengurus.jabatan', $request->jabatan);
+        }
         if ($request->filled('golongan')) {
             $query->where('golongan.nama_golongan', $request->golongan);
         }
-        if ($request->filled('kategori_golongan')) {
-            $query->where('kategori_golongan.nama_kategori_golongan', $request->kategori_golongan);
+        // untuk ini saya sendiri masih bimbang karena colom tampilannya di front ent kurang jelas
+        if ($request->filled('pemberkasan')) {
+            if ($request->pemberkasan == 'lengkap') {
+                $query->whereNotNull('berkas.id'); // Jika ada berkas
+            } elseif ($request->pemberkasan == 'tidak lengkap') {
+                $query->whereNull('berkas.id'); // Jika tidak ada berkas
+            }
         }
-    //     pemberkasan soon
-    //      warga pesantren soon
-    if ($request->filled('umur')) {
-        $umurInput = $request->umur;
-    
-        // Cek apakah input umur dalam format rentang (misalnya "20-25")
-        if (strpos($umurInput, '-') !== false) {
-            [$umurMin, $umurMax] = explode('-', $umurInput);
-        } else {
-            // Jika input angka tunggal, jadikan batas atas dan bawah sama
-            $umurMin = $umurInput;
-            $umurMax = $umurInput;
+        if ($request->filled('warga_pesantren')) {
+            $query->where('pegawai.warga_pesantren', $request->warga_pesantren == 'iyaa' ? 1 : 0);
         }
-    
-        // Filter berdasarkan umur yang dihitung dari tanggal_lahir
-        $query->whereBetween(
-            DB::raw('TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE())'),
-            [(int)$umurMin, (int)$umurMax]
-        );
-    }
+        if ($request->filled('umur')) {
+            $umurInput = $request->umur;
+        
+            // Cek apakah input umur dalam format rentang (misalnya "20-25")
+            if (strpos($umurInput, '-') !== false) {
+                [$umurMin, $umurMax] = explode('-', $umurInput);
+            } else {
+                // Jika input angka tunggal, jadikan batas atas dan bawah sama
+                $umurMin = $umurInput;
+                $umurMax = $umurInput;
+            }
+        
+            // Filter berdasarkan umur yang dihitung dari tanggal_lahir
+            $query->whereBetween(
+                DB::raw('TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE())'),
+                [(int)$umurMin, (int)$umurMax]
+            );
+        }
         if ($request->filled('no_telepon')){
             $query->where('biodata.no_telepon',$request->no_telepon);
         }

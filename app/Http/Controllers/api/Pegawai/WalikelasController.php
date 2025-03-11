@@ -108,8 +108,11 @@ class WalikelasController extends Controller
                 }
             }
         }
-        if ($request->filled('no_telepon')){
-            $query->where('biodata.no_telepon',$request->no_telepon);
+        if ($request->filled('gender_rombel')){
+            $query->where('biodata.jenis_kelamin',$request->gender_rombel);
+        }
+        if ($request->filled('no_telepon')) {
+            $query->where('biodata.no_telepon', 'LIKE', "%{$request->no_telepon}%");
         }
         $hasil = $query->select(
             'wali_kelas.id as id',
