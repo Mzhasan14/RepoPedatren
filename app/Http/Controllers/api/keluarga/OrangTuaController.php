@@ -96,8 +96,8 @@ class OrangTuaController extends Controller
                 'biodata.nik',
                 'biodata.no_telepon',
                 'kabupaten.nama_kabupaten',
-                'orang_tua.updated_at as Tanggal Update',
-                'orang_tua.created_at as Tanggal Input'
+                'orang_tua.updated_at as Tanggal_Update',
+                'orang_tua.created_at as Tanggal_Input'
 
             )
             ->get();

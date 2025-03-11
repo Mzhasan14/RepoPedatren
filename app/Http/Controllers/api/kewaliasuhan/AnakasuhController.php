@@ -88,6 +88,7 @@ class AnakasuhController extends Controller
         $anakAsuh = Santri::join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('anak_asuh','santri.nis','=','anak_asuh.nis')
+        ->join('kamar','santri.id_kamar','=','kamar.id')
         ->join('grup_wali_asuh','anak_asuh.id_grup_wali_asuh','=','grup_wali_asuh.id')
         // ->join('desa','biodata.id_desa','=','desa.id')
         // ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
@@ -96,15 +97,18 @@ class AnakasuhController extends Controller
             'anak_asuh.id as id_anak_asuh',
             'biodata.nama',
             'santri.nis',
-            DB::raw('YEAR(santri.tanggal_masuk) as angkatan'),
+            'kamar.nama_kamar',
+            'grup_wali_asuh.nama_grup',
             'kabupaten.nama_kabupaten',
-            'anak_asuh.status',
+            DB::raw('YEAR(santri.tanggal_masuk) as angkatan'),
+            'anak_asuh.updated_at as Tanggal_Update',
+            'anak_asuh.created_at as Tanggal_Input',
         )
         ->get();
 
         return response()->json([
             'status' => true,
-            'message' => 'Data berhasil ditampilkan',
+            'message' => 'list data anak asuh',
             'data' => $anakAsuh
         ]);
     }
