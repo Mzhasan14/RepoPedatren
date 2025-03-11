@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
+use Database\Seeders\SantriSeeder;
 use Illuminate\Support\Facades\Hash;
 use Database\Seeders\Alamat\DesaSeeder;
 use Database\Seeders\Alamat\NegaraSeeder;
@@ -28,8 +29,8 @@ use Database\Seeders\Pendidikan\LembagaSeeder;
 use Database\Seeders\Kewilayahan\WilayahSeeder;
 use Database\Seeders\Pegawai\JenisBerkasSeeder;
 use Database\Seeders\Kewilayahan\DomisiliSeeder;
-use Database\Seeders\Kewaliasuhan\Anak_AsuhSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\Kewaliasuhan\Anak_AsuhSeeder;
 use Database\Seeders\Kewaliasuhan\Wali_AsuhSeeder;
 use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Kewaliasuhan\Grup_WaliAsuhSeeder;
@@ -95,15 +96,15 @@ class DatabaseSeeder extends Seeder
             BerkasSeeder::class,
             PengurusSeeder::class,
             JenisBerkasSeeder::class,
+            StatusKeluargaSeeder::class,
             KeluargaSeeder::class,
-            KhadamSeeder::class,
             OrangTuaSeeder::class,
             PelanggaranSeeder::class,
             PerizinanSeeder::class,
             PesertaDidikSeeder::class,
             PelajarSeeder::class,
             SantriSeeder::class,
-            StatusKeluargaSeeder::class,
+            KhadamSeeder::class,
             BlokSeeder::class,
             DomisiliSeeder::class,
             KamarSeeder::class,

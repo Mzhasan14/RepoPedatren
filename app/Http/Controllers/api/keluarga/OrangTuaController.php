@@ -94,7 +94,6 @@ class OrangTuaController extends Controller
                 'biodata.nama',
                 'biodata.nik',
                 'biodata.no_telepon',
-                'biodata.image_url',
             )
             ->get();
 

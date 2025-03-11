@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Kewaliasuhan;
 
+use App\Models\Santri;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use Database\Factories\Peserta_didikFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,7 +21,7 @@ class Wali_asuhFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'nis' => Santri::factory()->create()->nis,
             'id_grup_wali_asuh' => (new Grup_WaliAsuhhFactory())->create()->id,
             'created_by' => 1,
             'updated_by' => null,

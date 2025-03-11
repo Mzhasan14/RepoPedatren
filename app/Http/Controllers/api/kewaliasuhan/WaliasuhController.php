@@ -8,6 +8,7 @@ use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Santri;
 use Database\Seeders\PesertaDidikSeeder;
 use Illuminate\Support\Facades\Validator;
 
@@ -85,7 +86,8 @@ class WaliasuhController extends Controller
     }
 
     public function waliAsuh() {
-        $waliAsuh = Peserta_didik::join('wali_asuh','peserta_didik.id','=','wali_asuh.id_peserta_didik')
+        $waliAsuh = Santri::join('wali_asuh','santri.nis','=','wali_asuh.nis')
+        ->join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('grup_wali_asuh','grup_wali_asuh.id','=','wali_asuh.id_grup_wali_asuh')
         ->join('desa', 'biodata.id_desa', '=', 'desa.id')
@@ -94,11 +96,10 @@ class WaliasuhController extends Controller
         ->select(
             'wali_asuh.id as id_wali_asuh',
             'biodata.nama',
-            'peserta_didik.nis',
-            DB::raw('YEAR(peserta_didik.tahun_masuk) as angkatan'),
+            'santri.nis',
+            DB::raw('YEAR(santri.tanggal_masuk) as angkatan'),
             'kabupaten.nama_kabupaten',
             'wali_asuh.status',
-            'biodata.image_url'
         )
         ->get();
 
