@@ -89,9 +89,9 @@ class AnakasuhController extends Controller
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('anak_asuh','santri.nis','=','anak_asuh.nis')
         ->join('grup_wali_asuh','anak_asuh.id_grup_wali_asuh','=','grup_wali_asuh.id')
-        ->join('desa','biodata.id_desa','=','desa.id')
-        ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
-        ->join('kabupaten','kecamatan.id_kabupaten','=','kabupaten.id')
+        // ->join('desa','biodata.id_desa','=','desa.id')
+        // ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
+        ->join('kabupaten','biodata.id_kabupaten','=','kabupaten.id')
         ->select(
             'anak_asuh.id as id_anak_asuh',
             'biodata.nama',

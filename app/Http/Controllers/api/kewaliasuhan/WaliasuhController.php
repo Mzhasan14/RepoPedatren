@@ -90,9 +90,9 @@ class WaliasuhController extends Controller
         ->join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('grup_wali_asuh','grup_wali_asuh.id','=','wali_asuh.id_grup_wali_asuh')
-        ->join('desa', 'biodata.id_desa', '=', 'desa.id')
-        ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
-        ->join('kabupaten', 'kecamatan.id_kabupaten', '=', 'kabupaten.id')
+        // ->join('desa', 'biodata.id_desa', '=', 'desa.id')
+        // ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
+        ->join('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
         ->select(
             'wali_asuh.id as id_wali_asuh',
             'biodata.nama',
