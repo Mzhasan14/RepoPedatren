@@ -33,7 +33,6 @@ class Biodata extends Model
         'anak_keberapa',
         'dari_saudara',
         'tinggal_bersama',
-        'image_url',
         'smartcard',
         'status',
         'created_by',
