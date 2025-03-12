@@ -123,6 +123,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/pengajar-filter', [PengajarController::class, 'filterPengajar']);
     Route::get('/list/pengurus',[PengurusController::class,'dataPengurus']);
     Route::get('/list/walikelas',[WalikelasController::class,'dataWalikelas']);
+    Route::get('list/karyawans',[KaryawanController::class,'dataKaryawan']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
