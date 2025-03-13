@@ -109,55 +109,50 @@ class PengajarController extends Controller
     {
         $query = Pengajar::join('pegawai', 'pengajar.id_pegawai', '=', 'pegawai.id')
             ->join('biodata', 'pegawai.id_biodata', '=', 'biodata.id')
-            ->join('lembaga', 'pengajar.id_lembaga', '=', 'lembaga.id')
-            ->join('golongan', 'pengajar.id_golongan', '=', 'golongan.id')
-            ->join('kategori_golongan', 'golongan.id_kategori_golongan', '=', 'kategori_golongan.id')
+            ->leftJoin('lembaga', 'pengajar.id_lembaga', '=', 'lembaga.id')
+            ->leftJoin('golongan', 'pengajar.id_golongan', '=', 'golongan.id')
+            ->leftJoin('kategori_golongan', 'golongan.id_kategori_golongan', '=', 'kategori_golongan.id')
             ->leftJoin('entitas_pegawai','entitas_pegawai.id_pegawai','=','pegawai.id')
             ->leftJoin('berkas','biodata.id','=','berkas.id_biodata')
             ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas');
 
         // 🔹 Terapkan filter umum (lokasi & jenis kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
-
-        // 🔹 Filter Lembaga
-        if ($request->has('lembaga')) {
-            $query->where('lembaga.nama_lembaga', $request->id_lembaga);
-        }
-
+    
         // 🔹 Filter Kategori Golongan
         if ($request->has('kategori_golongan')) {
-            $query->where('kategori_golongan.nama_kategori_golongan', $request->id_kategori_golongan);
+            $query->where('kategori_golongan.nama_kategori_golongan', $request->kategori_golongan);
         }
-
         // 🔹 Filter Golongan
         if ($request->has('golongan')) {
-            $query->where('golongan.nama_golongan', $request->id_golongan);
+            $query->where('golongan.nama_golongan', $request->jabatan);
         }
 
+
         if ($request->has('materi_ajar')) {
-            $query->where('pengajar.mapel', $request->id_kategori_golongan);
+            $query->where('pengajar.mapel', $request->materi_ajar);
         }
 
         if ($request->filled('masa_kerja')) {
             $masaKerja = (int) $request->masa_kerja;
             $today = Carbon::now()->format('Y-m-d');
-    
-            $query->where(function ($q) use ($masaKerja, $today) {
-                // Hitung lama bekerja berdasarkan tanggal masuk dan tanggal keluar
-                $q->whereRaw("
-                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) >= ?
-                ", [$today, $masaKerja]);
-            });
-    
+        
+            $query->whereRaw("
+                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) >= ?
+            ", [$today, $masaKerja]);
+        
             if ($masaKerja == 1) {
-                // Kurang dari 1 tahun
-                $query->havingRaw("TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) < ?", [$today, 1]);
+                $query->whereRaw("
+                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) < ?
+                ", [$today, 1]);
             } elseif ($masaKerja == 5) {
-                // 1 - 5 tahun
-                $query->havingRaw("TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?", [$today, 1, 5]);
+                $query->whereRaw("
+                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
+                ", [$today, 1, 5]);
             } elseif ($masaKerja == 10) {
-                // 6 - 10 tahun
-                $query->havingRaw("TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?", [$today, 6, 10]);
+                $query->whereRaw("
+                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
+                ", [$today, 6, 10]);
             }
         }
         // untuk ini saya sendiri masih bimbang karena colom tampilannya di front ent kurang jelas

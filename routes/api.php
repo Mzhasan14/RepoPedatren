@@ -124,6 +124,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/list/pengurus',[PengurusController::class,'dataPengurus']);
     Route::get('/list/walikelas',[WalikelasController::class,'dataWalikelas']);
     Route::get('list/karyawans',[KaryawanController::class,'dataKaryawan']);
+    Route::get('/list/pegawais',[PegawaiController::class,'dataPegawai']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);

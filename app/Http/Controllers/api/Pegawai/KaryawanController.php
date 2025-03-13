@@ -90,7 +90,9 @@ class KaryawanController extends Controller
                         ->join('golongan','golongan.id','=','karyawan.id_golongan')
                         ->join('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')
                         ->leftJoin('berkas','biodata.id','=','berkas.id_biodata')
-                        ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas');
+                        ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas')
+                        ->leftJoin('pengajar','pengajar.id_pegawai','=','pegawai.id')
+                        ->leftJoin('lembaga','lembaga.id','=','pengajar.id_lembaga');
         $query = $this->filterController->applyCommonFilters($query, $request);
         if ($request->filled('Jenis_Jabatan')){
             $query->where('golongan.nama_golongan',$request->Jenis_Jabatan);
@@ -131,8 +133,8 @@ class KaryawanController extends Controller
             'karyawan.id as id',
             'biodata.nama',
             'biodata.niup',
-            'kategori_golongan.nama_kategori_golongan as KategoriJabatan',
-            'karyawan.keterangan as Keterangan'
+            'karyawan.keterangan as Keterangan',
+            'lembaga.nama_lembaga',
         )->paginate(25);
 
         return new PdResource(true,'list data berhasil di tampilkan',$hasil);
