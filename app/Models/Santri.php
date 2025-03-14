@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Kewilayahan\Blok;
+use App\Models\Kewilayahan\Kamar;
+use App\Models\Kewilayahan\Wilayah;
 use App\Models\Kewilayahan\Domisili;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,11 +21,12 @@ class Santri extends Model
         'id_kamar',
         'id_domisili',
         'nis',
-        'tahun_masuk',
-        'tahun_keluar',
+        'tanggal_masuk',
+        'tanggal_keluar',
         'status',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'deleted_by'
     ];
 
     public function scopeActive($query)
@@ -33,6 +37,18 @@ class Santri extends Model
     public function pesertaDidik()
     {
         return $this->BelongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
+    }
+    public function wilayah()
+    {
+        return $this->BelongsTo(Wilayah::class, 'id_wilayah', 'id');
+    }
+    public function blok()
+    {
+        return $this->BelongsTo(Blok::class, 'id_blok', 'id');
+    }
+    public function kamar()
+    {
+        return $this->BelongsTo(Kamar::class, 'id_kamar', 'id');
     }
     public function domisili()
     {

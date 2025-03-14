@@ -14,8 +14,8 @@ return new class extends Migration
   
         Schema::create('jenis_berkas', function (Blueprint $table) {
             $table->id();
-            $table->string('type_jenis_berkas');
             $table->string('nama_jenis_berkas');
+            $table->boolean('wajib')->default(false);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -26,6 +26,7 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
         });
+
         Schema::create('berkas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_biodata');

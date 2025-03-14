@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\Resources\PdResource;
+use App\Models\Berkas;
 use App\Models\Biodata;
-use App\Models\Pegawai\Berkas;
 use Illuminate\Http\Request;
+use App\Http\Resources\PdResource;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class BerkasController extends Controller

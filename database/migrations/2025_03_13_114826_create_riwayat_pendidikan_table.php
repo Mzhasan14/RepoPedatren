@@ -11,28 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pelajar', function (Blueprint $table) {
+        Schema::create('riwayat_pendidikan', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_peserta_didik');
             $table->unsignedBigInteger('id_lembaga');
             $table->unsignedBigInteger('id_jurusan')->nullable();
             $table->unsignedBigInteger('id_kelas')->nullable();
             $table->unsignedBigInteger('id_rombel')->nullable();
-            $table->string('no_induk')->nullable();
-            $table->year('angkatan');
             $table->date('tanggal_masuk');
-            $table->date('tanggal_keluar')->nullable();
+            $table->date('tanggal_keluar');
+            $table->enum('keterangan', ['lulus', 'pindah lembaga', 'berhenti', 'do', 'wafat'])->default('lulus');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->enum('status', ['aktif', 'tidak aktif', 'alumni']);
-            $table->timestamps();
             $table->softDeletes();
+            $table->timestamps();
 
+            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
             $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('id_jurusan')->references('id')->on('jurusan')->onDelete('cascade');
             $table->foreign('id_kelas')->references('id')->on('kelas')->onDelete('cascade');
@@ -45,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pelajar');
+        Schema::dropIfExists('riwayat_pendidikan');
     }
 };

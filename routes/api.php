@@ -10,7 +10,11 @@ use App\Http\Controllers\Api\{
     JenisBerkasController,
     BerkasController,
     CatatanAfektifController,
-    CatatanKognitifController
+    CatatanKognitifController,
+    PelajarController,
+    SantriController,
+    AlumniController,
+    KhadamController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -69,10 +73,12 @@ Route::prefix('v1')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
     Route::get('/pesertaDidik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('/pesertaDidik/santri', [PesertaDidikController::class, 'pesertaDidiksantri']);
+    Route::get('/pesertaDidik/santri', [SantriController::class, 'pesertaDidikSantri']);
+    Route::get('/pesertaDidik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
-    Route::get('/list-alumni',[PesertaDidikController::class,'alumni']);
+    Route::get('/alumni', [AlumniController::class, 'alumni']);
+    Route::post('/pindah-alumni-angkatan', [AlumniController::class, 'pindahAlumni']);
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);
@@ -127,4 +133,7 @@ Route::prefix('v1')->group(function () {
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
     Route::apiResource('/pelanggaran', PelanggaranController::class);
+
+    // Khadam
+    Route::get('/khadam', [KhadamController::class, 'khadam']);
 });

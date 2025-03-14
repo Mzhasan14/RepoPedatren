@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Database\Seeders\Alamat\DesaSeeder;
 use Database\Seeders\Alamat\NegaraSeeder;
-use Database\Seeders\Pegawai\BerkasSeeder;
+use Database\Seeders\BerkasSeeder;
 use Database\Seeders\Alamat\ProvinsiSeeder;
 use Database\Seeders\Pegawai\PegawaiSeeder;
 use Database\Seeders\Alamat\KabupatenSeeder;
@@ -26,7 +26,7 @@ use Database\Seeders\Pendidikan\RombelSeeder;
 use Database\Seeders\Pendidikan\JurusanSeeder;
 use Database\Seeders\Pendidikan\LembagaSeeder;
 use Database\Seeders\Kewilayahan\WilayahSeeder;
-use Database\Seeders\Pegawai\JenisBerkasSeeder;
+use Database\Seeders\JenisBerkasSeeder;
 use Database\Seeders\Kewilayahan\DomisiliSeeder;
 use Database\Seeders\Kewaliasuhan\Anak_AsuhSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -92,9 +92,9 @@ class DatabaseSeeder extends Seeder
             RombelSeeder::class,
             KaryawanSeeder::class,
             WaliKelasSeeder::class,
-            BerkasSeeder::class,
             PengurusSeeder::class,
             JenisBerkasSeeder::class,
+            BerkasSeeder::class,
             KeluargaSeeder::class,
             KhadamSeeder::class,
             OrangTuaSeeder::class,

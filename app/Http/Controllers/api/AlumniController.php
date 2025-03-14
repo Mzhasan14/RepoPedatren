@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Models\Alumni;
+use App\Models\Pelajar;
+use App\Models\JenisBerkas;
 use Illuminate\Http\Request;
-use App\Models\Peserta_didik;
-use Illuminate\Validation\Rule;
-use App\Http\Resources\PdResource;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Models\JenisBerkas;
-use Illuminate\Support\Facades\Validator;
 
-class PesertaDidikController extends Controller
+class AlumniController extends Controller
 {
     protected $filterController;
 
@@ -19,85 +18,83 @@ class PesertaDidikController extends Controller
     {
         $this->filterController = $filterController;
     }
-
-    public function index()
+    
+    public function pindahAlumni(Request $request)
     {
-        $pesertaDidik = Peserta_didik::Active()->latest()->paginate(10);
-        return new PdResource(true, 'List Peserta Didik', $pesertaDidik);
-    }
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_biodata' => [
-                'required',
-                'integer',
-                Rule::unique('peserta_didik', 'id_biodata')
-            ],
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $pesertaDidik = Peserta_didik::create($validator->validated());
-
-        return new PdResource(true, 'Data berhasil ditambah', $pesertaDidik);
-    }
-
-    public function show($id)
-    {
-        $pesertaDidik = Peserta_didik::findOrFail($id);
-        return new PdResource(true, 'Detail Peserta Didik', $pesertaDidik);
-    }
-
-    public function update(Request $request, $id)
-    {
-
-        $pesertaDidik = Peserta_didik::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        // Validasi input
+        $request->validate([
+            'angkatan' => 'required|integer',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        $tahunSekarang = Carbon::now()->year;
+
+        // Ambil semua ID siswa berdasarkan angkatan (bukan berdasarkan tanggal_masuk lagi!)
+        $pelajarlulus = Pelajar::where('status', 'aktif')
+            ->where('angkatan', $request->angkatan)
+            ->pluck('id');
+
+        if ($pelajarlulus->isEmpty()) {
+            return response()->json([
+                'message' => 'Tidak ada pelajar yang dipindahkan.',
+                'angkatan' => $request->angkatan
+            ], 200);
         }
 
-        $pesertaDidik->update($validator->validated());
+        // Siapkan data untuk insert ke alumni
+        $dataAlumni = $pelajarlulus->map(fn($id) => [
+            'id_pelajar' => $id,
+            'tahun_keluar' => $tahunSekarang,
+            'status_alumni' => 'lulus',
+            'created_by' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->toArray();
 
-        return new PdResource(true, 'Data berhasil diubah', $pesertaDidik);
+        // Eksekusi dalam satu transaksi
+        DB::transaction(function () use ($dataAlumni, $pelajarlulus) {
+            DB::table('alumni')->insert($dataAlumni);
+            Pelajar::whereIn('id', $pelajarlulus)->update([
+                'status' => 'alumni',
+                'tanggal_keluar' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'message' => count($dataAlumni) . " siswa berhasil dipindahkan menjadi alumni.",
+            'angkatan' => $request->angkatan,
+            'tahun_keluar' => $tahunSekarang
+        ], 200);
     }
 
-    public function destroy($id)
+    public function alumni(Request $request)
     {
-        $pesertaDidik = Peserta_didik::findOrFail($id);
-
-        $pesertaDidik->delete();
-        return new PdResource(true, 'Data berhasil dihapus', null);
-    }
-
-    public function pesertaDidik(Request $request)
-    {
-        $query = Peserta_didik::Active()
-            ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-            ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
-            ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-            ->leftJoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
-            ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id')
-            ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-            ->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-            ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
-            ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
-            ->select(
-                'peserta_didik.id',
-                'biodata.nama',
-                'biodata.niup',
-                'lembaga.nama_lembaga',
-                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-            )
-            ->groupBy('peserta_didik.id','biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga');
+        $query = Alumni::Active()
+        ->join('pelajar', 'alumni.id_pelajar', '=', 'pelajar.id')
+        ->leftJoin('peserta_didik', 'pelajar.id_peserta_didik', '=', 'peserta_didik.id')
+        ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
+        ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
+        ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+        ->leftJoin('negara', 'biodata.id_negara', '=', 'negara.id')
+        ->leftJoin('provinsi', 'biodata.id_provinsi', '=', 'provinsi.id')
+        ->leftJoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
+        ->leftJoin('kecamatan', 'biodata.id_kecamatan', '=', 'kecamatan.id')
+        ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
+        ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
+        ->select(
+            'alumni.id',
+            'biodata.nama',
+            DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as alamat"),
+            DB::raw("CONCAT('pendidikan terakhir: ', lembaga.nama_lembaga, ' (', IFNULL(alumni.tahun_keluar, 'Belum Lulus'), ')') as nama_lembaga"),
+            DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+        )
+        ->groupBy(
+            'alumni.id',
+            'biodata.nama',
+            'kabupaten.nama_kabupaten',
+            'lembaga.nama_lembaga',
+            'alumni.tahun_keluar'
+        );
+    
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -229,33 +226,11 @@ class PesertaDidikController extends Controller
                 return [
                     "id" => $item->id,
                     "nama" => $item->nama,
-                    "niup" => $item->niup,
+                    "alamat" => $item->alamat,
                     "lembaga" => $item->nama_lembaga,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })
         ]);
-    }
-
-    public function bersaudaraKandung(Request $request)
-    {
-        $query = Peserta_didik::Active()
-        ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-        ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
-        ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-        ->leftJoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
-        ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id')
-        ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-        ->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-        ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
-        ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
-        ->select(
-            'biodata.nama',
-            'biodata.niup',
-            'lembaga.nama_lembaga',
-            DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-        )
-        ->groupBy('biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga')
-        ->where('bi');
     }
 }

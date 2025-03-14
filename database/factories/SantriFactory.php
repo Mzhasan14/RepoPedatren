@@ -28,11 +28,14 @@ class SantriFactory extends Factory
             'id_kamar' => (new KamarFactory())->create()->id,
             'id_domisili' => (new DomisiliFactory())->create()->id,
             'nis' => $this->faker->unique()->numerify('###########'),
+            'angkatan' => $this->faker->year,
             'tanggal_masuk' => $this->faker->date,
             'tanggal_keluar' => null,
             'created_by' => 1,
             'updated_by' => null,
-            'status' => true,
+            'status' => $this->faker->randomElement([
+                'aktif', 'tidak aktif', 'alumni'
+            ]),
         ];
     }
 }

@@ -41,13 +41,6 @@ class BiodataFactory extends Factory
             'nama_pendidikan_terakhir' => $this->faker->randomElement([
                 'SD', 'SMP', 'SMA', 'D3', 'S1', 'S2', 'S3'
             ]),
-            // 'image_url' => $this->faker->imageUrl(200, 200, 'people'),
-            'image_url' => Arr::random([
-                'https://t4.ftcdn.net/jpg/03/64/21/11/360_F_364211147_1qgLVxv1Tcq0Ohz3FawUfrtONzz8nq3e.jpg',
-                'https://shotkit.com/wp-content/uploads/2021/06/Cool-profile-picture-Zoom.jpg',
-                'https://plus.unsplash.com/premium_photo-1689977968861-9c91dbb16049?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJvZmlsZSUyMHBpY3R1cmV8ZW58MHx8MHx8fDA%3D',
-                'https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ='
-            ]),
             'anak_keberapa' => rand(1, 5),
             'dari_saudara' => rand(1, 5),
             'tinggal_bersama' => $this->faker->word,

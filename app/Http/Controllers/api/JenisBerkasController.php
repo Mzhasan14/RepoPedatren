@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\Resources\PdResource;
-use App\Models\Pegawai\JenisBerkas;
+use App\Models\JenisBerkas;
 use Illuminate\Http\Request;
+use App\Http\Resources\PdResource;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class JenisBerkasController extends Controller
@@ -19,7 +19,6 @@ class JenisBerkasController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(),[
-            'type_jenis_berkas' => 'required|string',
             'nama_jenis_berkas' => 'required|string|max:255',
             'created_by' => 'required|integer',
             'status' => 'required|boolean',
@@ -47,7 +46,6 @@ class JenisBerkasController extends Controller
     {
         $jenisberkas = JenisBerkas::findOrFail($id);
         $validator = Validator::make($request->all(),[
-            'type_jenis_berkas' => 'required|string',
             'nama_jenis_berkas' => 'required|string|max:255',
             'updated_by' => 'nullable|integer',
             'status' => 'required|boolean',
@@ -69,7 +67,7 @@ class JenisBerkasController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
+    {   
         $jenisberkas = JenisBerkas::findOrFail($id);
         $jenisberkas->delete();
         return new PdResource(true,'Data berhasil dihapus',$jenisberkas);

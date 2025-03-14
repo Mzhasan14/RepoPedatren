@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Models\Alamat\Desa;
 use App\Models\Pegawai\Pegawai;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Biodata extends Model
 {
@@ -33,7 +33,6 @@ class Biodata extends Model
         'anak_keberapa',
         'dari_saudara',
         'tinggal_bersama',
-        'image_url',
         'smartcard',
         'status',
         'created_by',
@@ -41,6 +40,11 @@ class Biodata extends Model
         'deleted_by',
         
     ];
+
+    public function berkas()
+    {
+        return $this->hasMany(Berkas::class, 'id_biodata', 'id');
+    }
 
     public function scopeActive($query)
     {

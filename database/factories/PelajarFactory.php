@@ -24,6 +24,7 @@ class PelajarFactory extends Factory
         return [
             'id_peserta_didik' => Peserta_didik::inRandomOrder()->first()?->id,
             'tanggal_masuk' => $this->faker->date,
+            'angkatan' => $this->faker->year,
             'tanggal_keluar' => null,
             'id_lembaga' =>  (new LembagaFactory())->create()->id,
             'id_jurusan' =>  (new JurusanFactory())->create()->id,
@@ -32,7 +33,9 @@ class PelajarFactory extends Factory
             'no_induk' => $this->faker->unique()->numerify('########'),
             'created_by' => 1,
             'updated_by' => null,
-            'status' => true,
+            'status' => $this->faker->randomElement([
+                'aktif', 'tidak aktif', 'alumni'
+            ]),
         ];
     }
 }
