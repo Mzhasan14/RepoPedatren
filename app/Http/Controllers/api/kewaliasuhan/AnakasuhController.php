@@ -8,6 +8,7 @@ use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Santri;
 use Illuminate\Support\Facades\Validator;
 
 class AnakasuhController extends Controller
@@ -84,26 +85,30 @@ class AnakasuhController extends Controller
     }
 
     public function anakAsuh() {
-        $anakAsuh = Peserta_didik::join('biodata','peserta_didik.id_biodata','=','biodata.id')
-        ->join('anak_asuh','peserta_didik.id','=','anak_asuh.id_peserta_didik')
+        $anakAsuh = Santri::join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
+        ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
+        ->join('anak_asuh','santri.nis','=','anak_asuh.nis')
+        ->join('kamar','santri.id_kamar','=','kamar.id')
         ->join('grup_wali_asuh','anak_asuh.id_grup_wali_asuh','=','grup_wali_asuh.id')
-        ->join('desa','biodata.id_desa','=','desa.id')
-        ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
-        ->join('kabupaten','kecamatan.id_kabupaten','=','kabupaten.id')
+        // ->join('desa','biodata.id_desa','=','desa.id')
+        // ->join('kecamatan','desa.id_kecamatan','=','kecamatan.id')
+        ->join('kabupaten','biodata.id_kabupaten','=','kabupaten.id')
         ->select(
             'anak_asuh.id as id_anak_asuh',
             'biodata.nama',
-            'peserta_didik.nis',
-            DB::raw('YEAR(peserta_didik.tahun_masuk) as angkatan'),
+            'santri.nis',
+            'kamar.nama_kamar',
+            'grup_wali_asuh.nama_grup',
             'kabupaten.nama_kabupaten',
-            'anak_asuh.status',
-            'biodata.image_url'
+            DB::raw('YEAR(santri.tanggal_masuk) as angkatan'),
+            'anak_asuh.updated_at as Tanggal_Update',
+            'anak_asuh.created_at as Tanggal_Input',
         )
         ->get();
 
         return response()->json([
             'status' => true,
-            'message' => 'Data berhasil ditampilkan',
+            'message' => 'list data anak asuh',
             'data' => $anakAsuh
         ]);
     }

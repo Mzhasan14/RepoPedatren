@@ -124,11 +124,13 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/pengurus', PengurusController::class);
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
-    Route::get('/list-pengajar', [PengajarController::class, 'Pengajar']);
+    Route::get('/list/pengajar', [PengajarController::class, 'Pengajar']);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
-    Route::get('/pengajar-filter', [PengajarController::class, 'filterPengajar']);
-    Route::get('/list-pengurus',[PengurusController::class,'dataPengurus']);
-    Route::get('/list-walikelass',[WalikelasController::class,'dataWalikelas']);
+    Route::get('/list/pengajars', [PengajarController::class, 'filterPengajar']);
+    Route::get('/list/pengurus',[PengurusController::class,'dataPengurus']);
+    Route::get('/list/walikelas',[WalikelasController::class,'dataWalikelas']);
+    Route::get('list/karyawans',[KaryawanController::class,'dataKaryawan']);
+    Route::get('/list/pegawais',[PegawaiController::class,'dataPegawai']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);

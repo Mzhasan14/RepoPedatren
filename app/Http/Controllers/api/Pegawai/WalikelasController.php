@@ -96,20 +96,12 @@ class WalikelasController extends Controller
                             ->join('jurusan','jurusan.id','=','kelas.id_jurusan')
                             ->join('lembaga','lembaga.id','=','jurusan.id_lembaga');
         $query = $this->filterController->applyCommonFilters($query, $request);
-        if ($request->filled('lembaga')) {
-            $query->where('lembaga.nama_lembaga', $request->lembaga);
-            if ($request->filled('jurusan')) {
-                $query->where('jurusan.nama_jurusan', $request->jurusan);
-                if ($request->filled('kelas')) {
-                    $query->where('kelas.nama_kelas', $request->kelas);
-                    if ($request->filled('rombel')) {
-                        $query->where('rombel.nama_rombel', $request->rombel);
-                    }
-                }
-            }
+
+        if ($request->filled('gender_rombel')){
+            $query->where('biodata.jenis_kelamin',$request->gender_rombel);
         }
-        if ($request->filled('no_telepon')){
-            $query->where('biodata.no_telepon',$request->no_telepon);
+        if ($request->filled('no_telepon')) {
+            $query->where('biodata.no_telepon', 'LIKE', "%{$request->no_telepon}%");
         }
         $hasil = $query->select(
             'wali_kelas.id as id',

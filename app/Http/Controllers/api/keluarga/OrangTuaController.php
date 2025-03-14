@@ -89,12 +89,16 @@ class OrangTuaController extends Controller
     public function getOrtu()
     {
         $ortu = Biodata::join('orang_tua', 'biodata.id', '=', 'orang_tua.id_biodata')
+            ->join('kabupaten','biodata.id_kabupaten','=','kabupaten.id')
             ->select(
                 'orang_tua.id',
                 'biodata.nama',
                 'biodata.nik',
                 'biodata.no_telepon',
-                'biodata.image_url',
+                'kabupaten.nama_kabupaten',
+                'orang_tua.updated_at as Tanggal_Update',
+                'orang_tua.created_at as Tanggal_Input'
+
             )
             ->get();
 

@@ -8,6 +8,7 @@ use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Santri;
 use Database\Seeders\PesertaDidikSeeder;
 use Illuminate\Support\Facades\Validator;
 
@@ -85,20 +86,27 @@ class WaliasuhController extends Controller
     }
 
     public function waliAsuh() {
-        $waliAsuh = Peserta_didik::join('wali_asuh','peserta_didik.id','=','wali_asuh.id_peserta_didik')
+        $waliAsuh = Santri::join('wali_asuh','santri.nis','=','wali_asuh.nis')
+        ->join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
         ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
         ->join('grup_wali_asuh','grup_wali_asuh.id','=','wali_asuh.id_grup_wali_asuh')
-        ->join('desa', 'biodata.id_desa', '=', 'desa.id')
-        ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
-        ->join('kabupaten', 'kecamatan.id_kabupaten', '=', 'kabupaten.id')
+        ->join('kamar','santri.id_kamar','=','kamar.id')
+        ->join('blok','santri.id_blok','=','blok.id')
+        ->join('wilayah','santri.id_wilayah','=','wilayah.id')
+        // ->join('desa', 'biodata.id_desa', '=', 'desa.id')
+        // ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
+        ->join('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
         ->select(
             'wali_asuh.id as id_wali_asuh',
             'biodata.nama',
-            'peserta_didik.nis',
-            DB::raw('YEAR(peserta_didik.tahun_masuk) as angkatan'),
+            'santri.nis',
+            'kamar.nama_kamar',
+            'blok.nama_blok',
+            'wilayah.nama_wilayah',
             'kabupaten.nama_kabupaten',
-            'wali_asuh.status',
-            'biodata.image_url'
+            DB::raw('YEAR(santri.tanggal_masuk) as angkatan'),
+            'wali_asuh.updated_at as Tanggal_update',
+            'wali_asuh.created_at as Tanggal_input'
         )
         ->get();
 
