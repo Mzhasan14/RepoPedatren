@@ -11,6 +11,7 @@ use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\FilterController;
+use App\Models\JenisBerkas;
 
 class PengajarController extends Controller
 {
@@ -109,62 +110,70 @@ class PengajarController extends Controller
     {
         $query = Pengajar::join('pegawai', 'pengajar.id_pegawai', '=', 'pegawai.id')
             ->join('biodata', 'pegawai.id_biodata', '=', 'biodata.id')
-            ->leftJoin('lembaga', 'pengajar.id_lembaga', '=', 'lembaga.id')
+            ->leftJoin('lembaga', 'pegawai.id_lembaga', '=', 'lembaga.id')
             ->leftJoin('golongan', 'pengajar.id_golongan', '=', 'golongan.id')
             ->leftJoin('kategori_golongan', 'golongan.id_kategori_golongan', '=', 'kategori_golongan.id')
             ->leftJoin('entitas_pegawai','entitas_pegawai.id_pegawai','=','pegawai.id')
-            ->leftJoin('berkas','biodata.id','=','berkas.id_biodata')
-            ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas');
+            ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
+            ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+            ->select(
+                'pengajar.id',
+                'biodata.nama',
+                'biodata.niup',
+                'lembaga.nama_lembaga',    
+                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+                )->groupBy('pengajar.id', 'biodata.nama', 'biodata.niup','lembaga.nama_lembaga');
+                
 
         // 🔹 Terapkan filter umum (lokasi & jenis kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
-    
+
+        if ($request->has('lembaga')) {
+            $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
+        }
+
         // 🔹 Filter Kategori Golongan
         if ($request->has('kategori_golongan')) {
-            $query->where('kategori_golongan.nama_kategori_golongan', $request->kategori_golongan);
+            $query->where('kategori_golongan.nama_kategori_golongan', strtolower($request->kategori_golongan));
         }
         // 🔹 Filter Golongan
         if ($request->has('golongan')) {
-            $query->where('golongan.nama_golongan', $request->jabatan);
+            $query->where('golongan.nama_golongan', strtolower($request->golongan));
         }
 
 
         if ($request->has('materi_ajar')) {
-            $query->where('pengajar.mapel', $request->materi_ajar);
+            $query->where('pengajar.mapel', strtolower($request->materi_ajar));
         }
 
-        if ($request->filled('masa_kerja')) {
-            $masaKerja = (int) $request->masa_kerja;
-            $today = Carbon::now()->format('Y-m-d');
+        $masaKerja = $request->input('masa_kerja'); // Mengambil input dari request
+        $today = now(); // Menggunakan tanggal saat ini
         
+        if ($masaKerja == 1) {
             $query->whereRaw("
-                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) >= ?
-            ", [$today, $masaKerja]);
-        
-            if ($masaKerja == 1) {
-                $query->whereRaw("
-                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) < ?
-                ", [$today, 1]);
-            } elseif ($masaKerja == 5) {
-                $query->whereRaw("
-                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
-                ", [$today, 1, 5]);
-            } elseif ($masaKerja == 10) {
-                $query->whereRaw("
-                    TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
-                ", [$today, 6, 10]);
-            }
+                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) < ?
+            ", [$today, 1]);
+        } elseif ($masaKerja == 5) {
+            $query->whereRaw("
+                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
+            ", [$today, 1, 5]);
+        } elseif ($masaKerja == 10) {
+            $query->whereRaw("
+                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
+            ", [$today, 6, 10]);
         }
-        // untuk ini saya sendiri masih bimbang karena colom tampilannya di front ent kurang jelas
+        // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
-            if ($request->pemberkasan == 'lengkap') {
-                $query->whereNotNull('berkas.id'); // Jika ada berkas
-            } elseif ($request->pemberkasan == 'tidak lengkap') {
-                $query->whereNull('berkas.id'); // Jika tidak ada berkas
+            $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
+            $pemberkasan = strtolower($request->pemberkasan);
+            if ($pemberkasan == 'lengkap') {
+                $query->havingRaw('COUNT(DISTINCT berkas.id) >= ?', [$jumlahBerkasWajib]);
+            } elseif ($pemberkasan == 'tidak lengkap') {
+                $query->havingRaw('COUNT(DISTINCT berkas.id) < ?', [$jumlahBerkasWajib]);
             }
         }
         if ($request->filled('warga_pesantren')) {
-            $query->where('pegawai.warga_pesantren', $request->warga_pesantren == 'iyaa' ? 1 : 0);
+            $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren == 'iya' ? 1 : 0));
         }
         if ($request->filled('umur')) {
             $umurInput = $request->umur;
@@ -184,17 +193,35 @@ class PengajarController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
-        $hasil = $query->select([
-            'pengajar.id as id',
-            'biodata.nama',
-            'biodata.niup',
-            DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga ORDER BY lembaga.nama_lembaga ASC SEPARATOR ', ') as lembaga")
-        ])->groupBy('pengajar.id', 'biodata.nama', 'biodata.niup')->distinct()->paginate(25);
-        
+        $onePage = $request->input('limit', 25);
+
+        $currentPage =  $request->input('page', 1);
+
+        $hasil = $query->paginate($onePage, ['*'], 'page', $currentPage);
+
+
+        // Jika Data Kosong
+        if ($hasil->isEmpty()) {
+            return response()->json([
+                "status" => "error",
+                "message" => "Data tidak ditemukan",
+                "code" => 404
+            ], 404);
+        }
         return response()->json([
-            'status' => true,
-            'message' => 'Data berhasil difilter',
-            'data' => $hasil
+            "total_data" => $hasil->total(),
+            "current_page" => $hasil->currentPage(),
+            "per_page" => $hasil->perPage(),
+            "total_pages" => $hasil->lastPage(),
+            "data" => $hasil->map(function ($item) {
+                return [
+                    "id" => $item->id,
+                    "nama" => $item->nama,
+                    "niup" => $item->niup,
+                    "lembaga" => $item->nama_lembaga,
+                    "foto_profil" => url($item->foto_profil)
+                ];
+            })
         ]);
     }
 }
