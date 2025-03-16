@@ -21,10 +21,6 @@ class WaliKelasFactory extends Factory
     {
         return [
             'id_pengajar' => (new PengajarFactory())->create()->id,
-<<<<<<< HEAD
-=======
-            // 'id_rombel' => (new RombelFactory())->create()->id,
->>>>>>> a4c57d2c63bca651ab21fa414a3af6adefa21ac5
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
             'created_by' => 1,
             'updated_by' => null,
