@@ -23,6 +23,10 @@ class PengajarFactory extends Factory
         return [
             'id_pegawai' => (new PegawaiFactory())->create()->id,
             'id_golongan' => (new GolonganFactory())->create()->id,
+<<<<<<< HEAD
+=======
+            // 'id_lembaga' => (new LembagaFactory())->create()->id,
+>>>>>>> a4c57d2c63bca651ab21fa414a3af6adefa21ac5
             'mapel' => $this->faker->randomElement([
                 'Matematika', 'Fisika', 'Kimia', 'Biologi', 
                 'Bahasa Indonesia', 'Bahasa Inggris', 

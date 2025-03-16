@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\Pegawai\WaliKelas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class WalikelasController extends Controller
@@ -91,28 +92,71 @@ class WalikelasController extends Controller
         $query = WaliKelas::join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
                             ->join('pegawai','pegawai.id','=','pengajar.id_pegawai')
                             ->join('biodata','biodata.id','=','pegawai.id_biodata')
-                            ->join('rombel','rombel.id','=','wali_kelas.id_rombel')
-                            ->join('kelas','kelas.id','=','rombel.id_kelas')
-                            ->join('jurusan','jurusan.id','=','kelas.id_jurusan')
-                            ->join('lembaga','lembaga.id','=','jurusan.id_lembaga');
+                            ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
+                            ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+                            ->leftJoin('rombel','rombel.id','=','pegawai.id_rombel')
+                            ->leftJoin('kelas','kelas.id','=','pegawai.id_kelas')
+                            ->leftJoin('jurusan','jurusan.id','=','pegawai.id_jurusan')
+                            ->leftJoin('lembaga','lembaga.id','=','pegawai.id_lembaga')
+                            ->select(
+                                'wali_kelas.id as id',
+                                'biodata.nama',
+                                'biodata.niup',
+                                'lembaga.nama_lembaga',
+                                'kelas.nama_kelas',
+                                'rombel.nama_rombel',
+                                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+                            )->groupBy('wali_kelas.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga', 'kelas.nama_kelas', 'rombel.nama_rombel');
+                                
         $query = $this->filterController->applyCommonFilters($query, $request);
 
         if ($request->filled('gender_rombel')){
             $query->where('biodata.jenis_kelamin',$request->gender_rombel);
         }
-        if ($request->filled('no_telepon')) {
-            $query->where('biodata.no_telepon', 'LIKE', "%{$request->no_telepon}%");
+        if ($request->filled('phone_number')) {
+            if ($request->phone_number == true) {
+                $query->whereNotNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '!=', '');
+            } else if ($request->phone_number == false) {
+                $query->whereNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '=', '');
+            }
         }
-        $hasil = $query->select(
-            'wali_kelas.id as id',
-            'biodata.nama as Nama',
-            'biodata.niup',
-            'lembaga.nama_lembaga as Lembaga',
-            'kelas.nama_kelas as Kelas',
-            'rombel.nama_rombel as Rombel'
-            )->paginate(25);
 
-        return new PdResource(true,'list data berhasil di tampilkan',$hasil);
+        // Ambil jumlah data per halaman (default 10 jika tidak diisi)
+        $perPage = $request->input('limit', 25);
 
+        // Ambil halaman saat ini (jika ada)
+        $currentPage = $request->input('page', 1);
+
+        // Menerapkan pagination ke hasil
+        $hasil = $query->paginate($perPage, ['*'], 'page', $currentPage);
+
+
+        // Jika Data Kosong
+        if ($hasil->isEmpty()) {
+            return response()->json([
+                "status" => "error",
+                "message" => "Data tidak ditemukan",
+                "code" => 404
+            ], 404);
+        }
+        return response()->json([
+            "total_data" => $hasil->total(),
+            "current_page" => $hasil->currentPage(),
+            "per_page" => $hasil->perPage(),
+            "total_pages" => $hasil->lastPage(),
+            "data" => $hasil->map(function ($item) {
+                return [
+                    "id" => $item->id,
+                    "nama" => $item->nama,
+                    "niup" => $item->niup,
+                    "lembaga" => $item->nama_lembaga,
+                    "kelas" => $item->nama_kelas,
+                    "rombel" => $item->nama_rombel,
+                    "foto_profil" => url($item->foto_profil)
+                ];
+            })
+        ]);
     }
 }
