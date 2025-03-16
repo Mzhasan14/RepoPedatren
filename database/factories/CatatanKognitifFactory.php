@@ -20,7 +20,7 @@ class CatatanKognitifFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'id_santri' => (new SantriFactory())->create()->id,
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
             'kebahasaan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'kebahasaan_tindak_lanjut' => $this->faker->sentence(),

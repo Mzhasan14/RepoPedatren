@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('catatan_kognitif', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_peserta_didik');
+            $table->unsignedBigInteger('id_santri');
             $table->unsignedBigInteger('id_wali_asuh');
             $table->enum('kebahasaan_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('kebahasaan_tindak_lanjut');
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
             $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
         });
     }

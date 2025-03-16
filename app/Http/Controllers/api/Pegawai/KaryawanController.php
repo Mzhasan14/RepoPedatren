@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
+use App\Models\JenisBerkas;
 use App\Models\Pegawai\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -87,28 +88,41 @@ class KaryawanController extends Controller
     {
         $query = Karyawan::join('pegawai','pegawai.id','=','karyawan.id_pegawai')
                         ->join('biodata','biodata.id','=','pegawai.id_biodata')
-                        ->join('golongan','golongan.id','=','karyawan.id_golongan')
-                        ->join('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')
-                        ->leftJoin('berkas','biodata.id','=','berkas.id_biodata')
-                        ->leftJoin('jenis_berkas','jenis_berkas.id','=','berkas.id_jenis_berkas')
+                        ->leftJoin('golongan','golongan.id','=','karyawan.id_golongan')
+                        ->leftJoin('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')
+                        ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
+                        ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
                         ->leftJoin('pengajar','pengajar.id_pegawai','=','pegawai.id')
-                        ->leftJoin('lembaga','lembaga.id','=','pengajar.id_lembaga');
+                        ->leftJoin('lembaga','lembaga.id','=','pegawai.id_lembaga')
+                        ->select(
+                            'karyawan.id',
+                            'biodata.nama',
+                            'biodata.nik',
+                            'karyawan.keterangan as Keterangan',
+                            'lembaga.nama_lembaga',
+                            DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+                            )->groupBy('karyawan.id', 'biodata.nama','biodata.nik','karyawan.keterangan','lembaga.nama_lembaga');
         $query = $this->filterController->applyCommonFilters($query, $request);
+        if ($request->filled('lembaga')) {
+            $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
+        }
         if ($request->filled('Jenis_Jabatan')){
-            $query->where('golongan.nama_golongan',$request->Jenis_Jabatan);
+            $query->where('golongan.nama_golongan',strtolower($request->Jenis_Jabatan));
         }
         if ($request->filled('golongan_jabatan')){
-            $query->where('kategori_golongan.nama_kategori_golongan',$request->golongan_jabatan);
+            $query->where('kategori_golongan.nama_kategori_golongan',strtolower($request->golongan_jabatan));
         }
         if ($request->filled('warga_pesantren')) {
             $query->where('pegawai.warga_pesantren', $request->warga_pesantren == 'iyaa' ? 1 : 0);
         }
-                // untuk ini saya sendiri masih bimbang karena colom tampilannya di front ent kurang jelas
+        // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
-            if ($request->pemberkasan == 'lengkap') {
-                $query->whereNotNull('berkas.id'); // Jika ada berkas
-            } elseif ($request->pemberkasan == 'tidak lengkap') {
-                $query->whereNull('berkas.id'); // Jika tidak ada berkas
+            $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
+            $pemberkasan = strtolower($request->pemberkasan);
+            if ($pemberkasan == 'lengkap') {
+                $query->havingRaw('COUNT(DISTINCT berkas.id) >= ?', [$jumlahBerkasWajib]);
+            } elseif ($pemberkasan == 'tidak lengkap') {
+                $query->havingRaw('COUNT(DISTINCT berkas.id) < ?', [$jumlahBerkasWajib]);
             }
         }
         if ($request->filled('umur')) {
@@ -129,14 +143,46 @@ class KaryawanController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
-        $hasil = $query->select(
-            'karyawan.id as id',
-            'biodata.nama',
-            'biodata.niup',
-            'karyawan.keterangan as Keterangan',
-            'lembaga.nama_lembaga',
-        )->paginate(25);
+        if ($request->filled('phone_number')) {
+            if ($request->phone_number == true) {
+                $query->whereNotNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '!=', '');
+            } else if ($request->phone_number == false) {
+                $query->whereNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '=', '');
+            }
+        } 
+        $onePage = $request->input('limit', 25);
 
-        return new PdResource(true,'list data berhasil di tampilkan',$hasil);
+        $currentPage =  $request->input('page', 1);
+
+        $hasil = $query->paginate($onePage, ['*'], 'page', $currentPage);
+
+
+        // Jika Data Kosong
+        if ($hasil->isEmpty()) {
+            return response()->json([
+                "status" => "error",
+                "message" => "Data tidak ditemukan",
+                "code" => 404
+            ], 404);
+        }
+        return response()->json([
+            "total_data" => $hasil->total(),
+            "current_page" => $hasil->currentPage(),
+            "per_page" => $hasil->perPage(),
+            "total_pages" => $hasil->lastPage(),
+            "data" => $hasil->map(function ($item) {
+                return [
+                    "id" => $item->id,
+                    "nama" => $item->nama,
+                    "nik" => $item->nik,
+                    "Keterangan" => $item->Keterangan,
+                    "lembaga" => $item->nama_lembaga,
+                    "foto_profil" => url($item->foto_profil)
+                ];
+            })
+        ]);
+
     }
 }

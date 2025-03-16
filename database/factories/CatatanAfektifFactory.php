@@ -20,7 +20,7 @@ class CatatanAfektifFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'id_santri' => (new SantriFactory())->create()->id,
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
             'kepedulian_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'kepedulian_tindak_lanjut' => $this->faker->sentence(),

@@ -109,13 +109,13 @@ class PegawaiController extends Controller
 
         $query = $this->filterController->applyCommonFilters($query, $request);
         if ($request->filled('lembaga')) {
-             $query->where('lembaga.nama_lembaga', $request->lembaga);
+             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
              if ($request->filled('jurusan')) {
-                 $query->where('jurusan.nama_jurusan', $request->jurusan);
+                 $query->where('jurusan.nama_jurusan', strtolower($request->jurusan));
                  if ($request->filled('kelas')) {
-                     $query->where('kelas.nama_kelas', $request->kelas);
+                     $query->where('kelas.nama_kelas', strtolower($request->kelas));
                      if ($request->filled('rombel')) {
-                         $query->where('rombel.nama_rombel', $request->rombel);
+                         $query->where('rombel.nama_rombel', strtolower($request->rombel));
                     }
                 }
             }
@@ -124,14 +124,11 @@ class PegawaiController extends Controller
             $entitas = strtolower($request->entitas); // Ubah ke huruf kecil untuk konsistensi
         
             if ($entitas == 'pengajar') {
-                $query->leftJoin('pengajar', 'pengajar.id_pegawai', '=', 'pegawai.id')
-                      ->whereNotNull('pengajar.id'); // Hanya data yang memiliki pengajar.id
+                $query->whereNotNull('pengajar.id'); 
             } elseif ($entitas == 'pengurus') {
-                $query->leftJoin('pengurus', 'pengurus.id_pegawai', '=', 'pegawai.id')
-                      ->whereNotNull('pengurus.id');
+                $query->whereNotNull('pengurus.id');
             } elseif ($entitas == 'karyawan') {
-                $query->leftJoin('karyawan', 'karyawan.id_pegawai', '=', 'pegawai.id')
-                      ->whereNotNull('karyawan.id');
+                $query->whereNotNull('karyawan.id');
             }
         }
         if ($request->filled('warga_pesantren')) {
@@ -165,6 +162,15 @@ class PegawaiController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
+        if ($request->filled('phone_number')) {
+            if ($request->phone_number == true) {
+                $query->whereNotNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '!=', '');
+            } else if ($request->phone_number == false) {
+                $query->whereNull('biodata.no_telepon')
+                    ->where('biodata.no_telepon', '=', '');
+            }
+        } 
 
         $onePage = $request->input('limit', 25);
 
