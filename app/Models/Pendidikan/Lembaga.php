@@ -3,6 +3,7 @@
 namespace App\Models\Pendidikan;
 
 use App\Models\Pegawai\Pengajar;
+use App\Models\Pelajar;
 use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,9 +32,9 @@ class Lembaga extends Model
         return $query->where('status', true);
     }
 
-    public function peserta_didik()
+    public function pelajar()
     {
-        $this->hasMany(Peserta_didik::class, 'id_lembaga', 'id');
+        $this->hasMany(Pelajar::class, 'id_lembaga', 'id');
     }
 
     public function jurusan()

@@ -8,6 +8,7 @@ use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Lembaga;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Pelajar extends Model
@@ -38,6 +39,12 @@ class Pelajar extends Model
     {
         return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
     }
+
+    public function alumniPelajar()
+    {
+        return $this->hasMany(AlumniPelajar::class, 'id_pelajar', 'id');
+    }
+
     public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');
@@ -53,10 +60,5 @@ class Pelajar extends Model
     public function rombel()
     {
         return $this->belongsTo(Rombel::class, 'id_rombel', 'id');
-    }
-
-    public function alumni()
-    {
-        return $this->hasMany(Alumni::class, 'id_pelajar', 'id');
     }
 }

@@ -161,7 +161,7 @@ class SantriController extends Controller
                 'wilayah.nama_wilayah',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
-            ->groupBy('santri.id','biodata.nama', 'santri.nis', 'wilayah.nama_wilayah');
+            ->groupBy('santri.id', 'biodata.nama', 'santri.nis', 'wilayah.nama_wilayah');
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -293,8 +293,8 @@ class SantriController extends Controller
                 return [
                     "id" => $item->id,
                     "nama" => $item->nama,
-                    "niup" => $item->niup,
-                    "lembaga" => $item->nama_wilayah,
+                    "nis" => $item->nis,
+                    "wilayah" => $item->nama_wilayah,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })

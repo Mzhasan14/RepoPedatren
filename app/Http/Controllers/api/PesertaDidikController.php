@@ -97,7 +97,7 @@ class PesertaDidikController extends Controller
                 'lembaga.nama_lembaga',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
-            ->groupBy('peserta_didik.id','biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga');
+            ->groupBy('peserta_didik.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga');
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -240,22 +240,22 @@ class PesertaDidikController extends Controller
     public function bersaudaraKandung(Request $request)
     {
         $query = Peserta_didik::Active()
-        ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-        ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
-        ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-        ->leftJoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
-        ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id')
-        ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-        ->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-        ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
-        ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
-        ->select(
-            'biodata.nama',
-            'biodata.niup',
-            'lembaga.nama_lembaga',
-            DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-        )
-        ->groupBy('biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga')
-        ->where('bi');
+            ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
+            ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
+            ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+            ->leftJoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
+            ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id')
+            ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
+            ->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
+            ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
+            ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
+            ->select(
+                'biodata.nama',
+                'biodata.niup',
+                'lembaga.nama_lembaga',
+                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+            )
+            ->groupBy('biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga')
+            ->where('bi');
     }
 }

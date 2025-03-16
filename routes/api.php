@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\{
     PelajarController,
     SantriController,
     AlumniController,
+    AlumniSantriController,
     KhadamController
 };
 
@@ -72,13 +73,16 @@ Route::prefix('v1')->group(function () {
 
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
-    Route::get('/pesertaDidik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('/pesertaDidik/santri', [SantriController::class, 'pesertaDidikSantri']);
-    Route::get('/pesertaDidik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
+    Route::get('/peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
+    Route::get('/peserta-didik/santri', [SantriController::class, 'pesertaDidikSantri']);
+    Route::get('/peserta-didik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
     Route::get('/alumni', [AlumniController::class, 'alumni']);
-    Route::post('/pindah-alumni-angkatan', [AlumniController::class, 'pindahAlumni']);
+    Route::post('/alumni-angkatan/pelajar', [AlumniController::class, 'AlumniPelajarByAngkatan']);
+    Route::post('/alumni-angkatan/santri', [AlumniController::class, 'AlumniSantriByAngkatan']);
+    Route::post('/alumni-id/pelajar', [AlumniController::class, 'AlumniPelajarByID']);
+    Route::post('/alumni-id/santri', [AlumniController::class, 'AlumniSantriByID']);
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);

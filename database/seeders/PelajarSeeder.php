@@ -13,6 +13,6 @@ class PelajarSeeder extends Seeder
      */
     public function run(): void
     {
-        (new PelajarFactory())->count(50)->create();
+        (new PelajarFactory())->count(100)->create();
     }
 }

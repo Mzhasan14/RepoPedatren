@@ -13,6 +13,6 @@ class SantriSeeder extends Seeder
      */
     public function run(): void
     {
-        (new SantriFactory())->count(50)->create();
+        (new SantriFactory())->count(100)->create();
     }
 }

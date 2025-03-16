@@ -157,7 +157,7 @@ class PelajarController extends Controller
                 'lembaga.nama_lembaga',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
-            ->groupBy('pelajar.id','biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga');
+            ->groupBy('pelajar.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga');
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);

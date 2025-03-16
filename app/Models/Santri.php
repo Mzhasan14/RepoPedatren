@@ -8,6 +8,7 @@ use App\Models\Kewilayahan\Wilayah;
 use App\Models\Kewilayahan\Domisili;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Santri extends Model
@@ -38,6 +39,7 @@ class Santri extends Model
     {
         return $this->BelongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
     }
+
     public function wilayah()
     {
         return $this->BelongsTo(Wilayah::class, 'id_wilayah', 'id');
@@ -53,5 +55,10 @@ class Santri extends Model
     public function domisili()
     {
         return $this->BelongsTo(Domisili::class, 'id_domisili', 'id');
+    }
+
+    public function alumniSantri()
+    {
+        return $this->hasMany(AlumniSantri::class, 'id_pelajar', 'id');
     }
 }

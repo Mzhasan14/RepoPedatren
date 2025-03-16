@@ -44,25 +44,29 @@ class Peserta_didik extends Model
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
-    public function pelajar() {
-        return $this->hasOne(Pelajar::class,'id_peserta_didik','id');
+    // public function pelajar()
+    // {
+    //     return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id');
+    // }
+
+    // public function santri()
+    // {
+    //     return $this->hasOne(Santri::class, 'id_santri', 'id');
+    // }
+
+    public function waliAsuh()
+    {
+        return $this->hasOne(Wali_asuh::class, 'id_peserta_didik', 'id');
     }
 
-    public function santri() {
-        return $this->hasOne(Santri::class,'id_santri','id');
-    }
-
-    public function waliAsuh() {
-        return $this->hasOne(Wali_asuh::class,'id_peserta_didik','id');
-    }
-
-    public function anakAsuh() {
-        return $this->hasOne(Anak_asuh::class,'id_peserta_didik','id');
+    public function anakAsuh()
+    {
+        return $this->hasOne(Anak_asuh::class, 'id_peserta_didik', 'id');
     }
 
     public function pelanggaran()
     {
-        return $this->hasMany(Pelanggaran::class,'id_peserta_didik', 'id');
+        return $this->hasMany(Pelanggaran::class, 'id_peserta_didik', 'id');
     }
 
     public function perizinan()
@@ -72,12 +76,21 @@ class Peserta_didik extends Model
 
     public function catatanKognitif()
     {
-        return $this->hasMany(Catatan_kognitif::class,'id_peserta_didik','id');
+        return $this->hasMany(Catatan_kognitif::class, 'id_peserta_didik', 'id');
     }
 
     public function catatanAfektif()
     {
-        return $this->hasMany(Catatan_afektif::class,'id_peserta_didik','id');
+        return $this->hasMany(Catatan_afektif::class, 'id_peserta_didik', 'id');
     }
-    
+
+    public function pelajarAktif()
+    {
+        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
+    }
+
+    public function santriAktif()
+    {
+        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
+    }
 }

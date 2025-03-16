@@ -11,21 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('santri', function (Blueprint $table) {
+        Schema::create('riwayat_pesantren', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_peserta_didik');
             $table->unsignedBigInteger('id_wilayah');
             $table->unsignedBigInteger('id_blok');
             $table->unsignedBigInteger('id_kamar');
             $table->unsignedBigInteger('id_domisili');
-            $table->string('nis', 11)->unique();
-            $table->year('angkatan');
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
+            $table->enum('status', ['alumni', 'pindah', 'keluar']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->enum('status', ['aktif', 'tidak aktif', 'alumni']);
             $table->timestamps();
             $table->softDeletes();
 
@@ -45,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('santri');
+        Schema::dropIfExists('riwayat_pesantren');
     }
 };

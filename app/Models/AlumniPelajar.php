@@ -4,11 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Alumni extends Model
+class AlumniPelajar extends Model
 {
-    protected $table = 'alumni';
+    protected $table = 'alumni_pelajar';
     protected $fillable = [
         'id_pelajar',
+        'id_lembaga',
+        'id_jurusan',
+        'id_kelas',
+        'id_rombel',
         'status_alumni',
         'tahun_keluar',
         'created_by',
@@ -21,8 +25,4 @@ class Alumni extends Model
         return $this->belongsTo(Pelajar::class, 'id_pelajar', 'id');
     }
 
-    public function scopeActive($query)
-    {
-        return $query->where('peserta_didik.status', true);
-    }
 }

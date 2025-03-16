@@ -22,7 +22,7 @@ class SantriFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => Peserta_didik::inRandomOrder()->first()?->id,
+            'id_peserta_didik' => Peserta_Didik::whereDoesntHave('santriAktif')->inRandomOrder()->first()?->id ?? Peserta_Didik::factory(),
             'id_wilayah' => (new WilayahFactory())->create()->id,
             'id_blok' => (new BlokFactory())->create()->id,
             'id_kamar' => (new KamarFactory())->create()->id,
@@ -34,7 +34,7 @@ class SantriFactory extends Factory
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->randomElement([
-                'aktif', 'tidak aktif', 'alumni'
+                'aktif', 'tidak aktif'
             ]),
         ];
     }
