@@ -95,9 +95,12 @@ class WaliasuhController extends Controller
         ->join('wilayah','santri.id_wilayah','=','wilayah.id')
         // ->join('desa', 'biodata.id_desa', '=', 'desa.id')
         // ->join('kecamatan', 'desa.id_kecamatan', '=', 'kecamatan.id')
+        ->leftjoin('berkas', 'biodata.id','=','berkas.id_biodata')
+        ->leftjoin('jenis_berkas','berkas.id_jenis_berkas','=','jenis_berkas.id')
         ->join('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
         ->select(
             'wali_asuh.id as id_wali_asuh',
+            'berkas.file_path as foto_profile',
             'biodata.nama',
             'santri.nis',
             'kamar.nama_kamar',
