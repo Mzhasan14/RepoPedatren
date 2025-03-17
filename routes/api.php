@@ -90,7 +90,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/list/keluarga',[KeluargaController::class,'keluarga']);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
-    Route::get('/list/orangtua',[OrangTuaController::class,'getOrtu']);
+    Route::get('/list/orangtua',[OrangTuaController::class,'ortu']);
     Route::get('/list/datawali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
