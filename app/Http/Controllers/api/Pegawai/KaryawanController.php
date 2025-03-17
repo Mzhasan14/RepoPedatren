@@ -86,7 +86,8 @@ class KaryawanController extends Controller
     }
     public function dataKaryawan(Request $request)
     {
-        $query = Karyawan::join('pegawai','pegawai.id','=','karyawan.id_pegawai')
+        $query = Karyawan::Active()
+                        ->join('pegawai','pegawai.id','=','karyawan.id_pegawai')
                         ->join('biodata','biodata.id','=','pegawai.id_biodata')
                         ->leftJoin('golongan','golongan.id','=','karyawan.id_golongan')
                         ->leftJoin('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')

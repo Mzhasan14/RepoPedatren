@@ -84,7 +84,8 @@ class PegawaiController extends Controller
 
     public function dataPegawai(Request $request)
     {
-        $query = Pegawai::join('biodata','biodata.id','pegawai.id_biodata')
+        $query = Pegawai::Active()
+                        ->join('biodata','biodata.id','pegawai.id_biodata')
                         ->leftJoin('pengajar','pengajar.id_pegawai','=','pegawai.id')
                         ->leftJoin('pengurus','pengurus.id_pegawai','=','pegawai.id')
                         ->leftJoin('karyawan','karyawan.id_pegawai','=','pegawai.id')

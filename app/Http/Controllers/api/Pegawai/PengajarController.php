@@ -108,7 +108,8 @@ class PengajarController extends Controller
 
     public function filterPengajar(Request $request)
     {
-        $query = Pengajar::join('pegawai', 'pengajar.id_pegawai', '=', 'pegawai.id')
+        $query = Pengajar::Active()
+            ->join('pegawai', 'pengajar.id_pegawai', '=', 'pegawai.id')
             ->join('biodata', 'pegawai.id_biodata', '=', 'biodata.id')
             ->leftJoin('lembaga', 'pegawai.id_lembaga', '=', 'lembaga.id')
             ->leftJoin('golongan', 'pengajar.id_golongan', '=', 'golongan.id')

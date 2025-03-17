@@ -89,7 +89,8 @@ class WalikelasController extends Controller
     }
     public function dataWalikelas(Request $request)
     {
-        $query = WaliKelas::join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
+        $query = WaliKelas::Active()
+                            ->join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
                             ->join('pegawai','pegawai.id','=','pengajar.id_pegawai')
                             ->join('biodata','biodata.id','=','pegawai.id_biodata')
                             ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')

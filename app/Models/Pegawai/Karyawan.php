@@ -18,4 +18,8 @@ class Karyawan extends Model
     protected $guarded = [
         'id'
     ];
+    public function ScopeActive($query)
+    {
+        return $query->where('karyawan.status',true);
+    }
 }

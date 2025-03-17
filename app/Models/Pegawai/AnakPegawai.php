@@ -2,14 +2,15 @@
 
 namespace App\Models\Pegawai;
 
+use App\Models\Peserta_didik;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WaliKelas extends Model
+class AnakPegawai extends Model
 {
     use HasFactory;
 
-    protected $table = 'wali_kelas';
+    protected $table = 'anak_pegawai';
     protected $primaryKey = 'id';
     protected $keyType = 'int';
     public $timestamps = true;
@@ -19,13 +20,16 @@ class WaliKelas extends Model
         'id'
     ];
 
-    public function WaliKelasPengajar()
+    public function AnakpegawaiPesertaDidik()
     {
-        return $this->belongsTo(Pengajar::class,'id_pengajar','id');
+        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
     }
-
+    public function anakPegawai()
+    {
+        return $this->belongsTo(Pegawai::class,'id_pegawai','id');
+    }
     public function ScopeActive($query)
     {
-        return $query->where('wali_kelas.status',true);
+        return $query->where('anak_pegawai.status',true);
     }
 }
