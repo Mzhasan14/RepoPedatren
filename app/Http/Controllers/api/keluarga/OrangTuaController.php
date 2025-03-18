@@ -96,25 +96,6 @@ class OrangTuaController extends Controller
     }
 
 
-    // public function ortu()
-    // {
-    //     $ortu = Biodata::join('orang_tua', 'biodata.id', '=', 'orang_tua.id_biodata')
-    //         ->join('kabupaten','biodata.id_kabupaten','=','kabupaten.id')
-    //         ->select(
-    //             'orang_tua.id',
-    //             'biodata.nama',
-    //             'biodata.nik',
-    //             'biodata.no_telepon',
-    //             'kabupaten.nama_kabupaten',
-    //             'orang_tua.updated_at as Tanggal_Update',
-    //             'orang_tua.created_at as Tanggal_Input'
-
-    //         )
-    //         ->get();
-
-    //     return new PdResource(true, 'Data berhasil ditampilkan', $ortu);
-    // }
-
     public function ortu(Request $request) {
 
         $query = OrangTua::active()
@@ -138,12 +119,12 @@ class OrangTuaController extends Controller
 
         // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
         }
 

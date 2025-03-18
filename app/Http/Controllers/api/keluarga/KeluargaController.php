@@ -9,12 +9,20 @@ use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\api\FilterController;
 
 class KeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+    protected $filterController;
+
+    public function __construct(FilterController $filterController)
+    {
+        $this->filterController = $filterController;
+    }
     public function index()
     {
         $keluarga = Keluarga::Active()->latest()->paginate(5);
@@ -85,12 +93,78 @@ class KeluargaController extends Controller
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
 
-    public function dataWali()
+    public function dataWali(Request $request)
     {
-        $wali = Biodata::join('keluarga', 'biodata.no_kk', '=', 'keluarga.no_kk')
-            ->select('biodata.nama', 'biodata.nik', 'biodata.no_telepon')
-            ->where('status_wali', true)->get();
-        return new PdResource(true, 'List Data Wali', $wali);
+        $query = Keluarga::active()
+                ->join('biodata','keluarga.no_kk','=','biodata.no_kk')
+                ->leftjoin('berkas','berkas.id_biodata','=','biodata.id')
+                ->leftJoin('jenis_berkas','berkas.id_jenis_berkas','=','jenis_berkas.id')
+                ->join('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
+            ->select(
+                'keluarga.id',
+                'biodata.nama',
+                'biodata.nik',
+                'biodata.no_telepon',
+                'kabupaten.nama_kabupaten',
+                'keluarga.updated_at as tanggal_update',
+                'keluarga.created_at as tanggal_input',
+                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+            )
+            ->where('status_wali','=',true)
+            ->groupBy('keluarga.id', 'biodata.nama', 'biodata.nik', 'biodata.no_telepon', 'kabupaten.nama_kabupaten', 'tanggal_update', 'tanggal_input');
+
+            // Filter Umum (Alamat dan Jenis Kelamin)
+            $query = $this->filterController->applyCommonFilters($query, $request);
+
+            // Filter No Telepon
+            if ($request->filled('phone_number')) {
+                if (strtolower($request->phone_number) === 'mempunyai') {
+                    // Hanya tampilkan data yang memiliki nomor telepon
+                    $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+                } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                    // Hanya tampilkan data yang tidak memiliki nomor telepon
+                    $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
+                }
+            }
+
+            // Ambil jumlah data per halaman (default 10 jika tidak diisi)
+            $perPage = $request->input('limit', 25);
+
+            // Ambil halaman saat ini (jika ada)
+            $currentPage = $request->input('page', 1);
+
+            // Menerapkan pagination ke hasil
+            $hasil = $query->paginate($perPage, ['*'], 'page', $currentPage);
+
+
+            // Jika Data Kosong
+            if ($hasil->isEmpty()) {
+                return response()->json([
+                    "status" => "error",
+                    "message" => "Data tidak ditemukan",
+                    "code" => 404
+                ], 404);
+            }
+
+            return response()->json([
+                "total_data" => $hasil->total(),
+                "current_page" => $hasil->currentPage(),
+                "per_page" => $hasil->perPage(),
+                "total_pages" => $hasil->lastPage(),
+                "data" => $hasil->map(function ($item) {
+                    return [
+                        "id" => $item->id,
+                        "nama" => $item->nama,
+                        "nik" => $item->nik,
+                        "no_telepon" => $item->no_telepon,
+                        "nama_kabupaten" => $item->nama_kabupaten,
+                        "tanggal_update" => $item->tanggal_update,
+                        "tanggal_input" => $item->tanggal_input,
+                        "foto_profil" => url($item->foto_profil)
+                    ];
+                })
+            ]);
+
     }
 
     public function keluarga() {
