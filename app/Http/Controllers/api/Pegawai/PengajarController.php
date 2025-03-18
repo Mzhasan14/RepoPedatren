@@ -144,25 +144,36 @@ class PengajarController extends Controller
 
 
         if ($request->has('materi_ajar')) {
-            $query->where('pengajar.mapel', strtolower($request->materi_ajar));
+            if (strtolower($request->materi_ajar) === 'materi ajar 1') {
+                // Hanya pengajar yang memiliki 1 mapel (tidak ada koma atau pemisah lain)
+                $query->whereRaw("pengajar.mapel NOT REGEXP '[,\\n]'");
+            } elseif (strtolower($request->materi_ajar) === 'materi ajar lebih dari 1') {
+                // Hanya pengajar yang memiliki lebih dari 1 mapel (terdeteksi ada koma atau enter)
+                $query->whereRaw("pengajar.mapel REGEXP '[,\\n]'");
+            }
         }
-
+             
+        
+        
+        // Filter Masa Kerja
         $masaKerja = $request->input('masa_kerja'); // Mengambil input dari request
         $today = now(); // Menggunakan tanggal saat ini
         
-        if ($masaKerja == 1) {
+        if (preg_match('/^(\d+)-(\d+)$/', $masaKerja, $matches)) {
+            // Jika input dalam format "min-max" (contoh: "1-5")
+            $min = (int) $matches[1];
+            $max = (int) $matches[2];
+        
+            $query->whereRaw("
+                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
+            ", [$today, $min, $max]);
+        } elseif (is_numeric($masaKerja)) {
+            // Jika input hanya angka (contoh: "1" untuk kurang dari 1 tahun)
             $query->whereRaw("
                 TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) < ?
-            ", [$today, 1]);
-        } elseif ($masaKerja == 5) {
-            $query->whereRaw("
-                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
-            ", [$today, 1, 5]);
-        } elseif ($masaKerja == 10) {
-            $query->whereRaw("
-                TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, ?)) BETWEEN ? AND ?
-            ", [$today, 6, 10]);
+            ", [$today, (int) $masaKerja]);
         }
+        
         // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
             $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
@@ -173,9 +184,13 @@ class PengajarController extends Controller
                 $query->havingRaw('COUNT(DISTINCT berkas.id) < ?', [$jumlahBerkasWajib]);
             }
         }
+
+                // Filter Warga Pesantren
         if ($request->filled('warga_pesantren')) {
             $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren == 'iya' ? 1 : 0));
         }
+
+                // Filter Umur
         if ($request->filled('umur')) {
             $umurInput = $request->umur;
         
@@ -194,6 +209,18 @@ class PengajarController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
+
+                // Filter No Telepon
+        if ($request->filled('phone_number')) {
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
+            }
+        }
+        
         $onePage = $request->input('limit', 25);
 
         $currentPage =  $request->input('page', 1);

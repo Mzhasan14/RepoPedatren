@@ -39,8 +39,15 @@ class FilterController extends Controller
         }
 
         if ($request->filled('smartcard')) {
-            $query->where('biodata.smartcard', $request->smartcard);
+            if (strtolower($request->smartcard) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki smartcard
+                $query->whereNotNull('biodata.smartcard')->where('biodata.smartcard', '!=', '');
+            } elseif (strtolower($request->smartcard) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki smartcard
+                $query->whereNull('biodata.smartcard')->orWhere('biodata.smartcard', '');
+            }
         }
+        
 
         if ($request->filled('nama')) {
             $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$request->nama]);

@@ -110,17 +110,35 @@ class WalikelasController extends Controller
                             )->groupBy('wali_kelas.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga', 'kelas.nama_kelas', 'rombel.nama_rombel');
                                 
         $query = $this->filterController->applyCommonFilters($query, $request);
-
-        if ($request->filled('gender_rombel')){
-            $query->where('biodata.jenis_kelamin',$request->gender_rombel);
+        // Filter Lembaga
+        if ($request->filled('lembaga')) {
+            $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
+            if ($request->filled('jurusan')) {
+                $query->where('jurusan.nama_jurusan', strtolower($request->jurusan));
+                if ($request->filled('kelas')) {
+                    $query->where('kelas.nama_kelas', strtolower($request->kelas));
+                    if ($request->filled('rombel')) {
+                        $query->where('rombel.nama_rombel', strtolower($request->rombel));
+                   }
+               }
+           }
+       }
+        // Filter Gender Rombel
+        if ($request->filled('gender_rombel')) {
+            if (strtolower($request->gender_rombel) === 'putra') {
+                $query->where('biodata.jenis_kelamin', 'L');
+            } elseif (strtolower($request->gender_rombel) === 'putri') {
+                $query->where('biodata.jenis_kelamin', 'P');
+            }
         }
+        // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
         }
 

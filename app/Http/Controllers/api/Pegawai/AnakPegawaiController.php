@@ -131,13 +131,13 @@ class AnakPegawaiController extends Controller
 
         // Filter Lembaga
         if ($request->filled('lembaga')) {
-            $query->where('lembaga.nama_lembaga', $request->lembaga);
+            $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
             if ($request->filled('jurusan')) {
-                $query->where('jurusan.nama_jurusan', $request->jurusan);
+                $query->where('jurusan.nama_jurusan', strtolower($request->jurusan));
                 if ($request->filled('kelas')) {
-                    $query->where('kelas.nama_kelas', $request->kelas);
+                    $query->where('kelas.nama_kelas', strtolower($request->kelas));
                     if ($request->filled('rombel')) {
-                        $query->where('rombel.nama_rombel', $request->rombel);
+                        $query->where('rombel.nama_rombel', strtolower($request->rombel));
                     }
                 }
             }
@@ -166,12 +166,12 @@ class AnakPegawaiController extends Controller
 
         // Filter Angkatan Pelajar
         if ($request->filled('angkatan_pelajar')) {
-            $query->where('pelajar.angkatan', $request->angkatan_pelajar);
+            $query->where('pelajar.angkatan', strtolower($request->angkatan_pelajar));
         }
 
         // Filter Angkatan Santri
         if ($request->filled('angkatan_santri')) {
-            $query->where('santri.angkatan', $request->angkatan_santri);
+            $query->where('santri.angkatan', strtolower($request->angkatan_santri));
         }
 
         // Filter No Telepon
@@ -202,7 +202,7 @@ class AnakPegawaiController extends Controller
         // Filter Sort Order
         if ($request->filled('sort_order')) {
             $sortOrder = strtolower($request->sort_order) == 'desc' ? 'desc' : 'asc';
-            $query->orderBy('peserta_didik.id', $sortOrder);
+            $query->orderBy('anak_pegawai.id', $sortOrder);
         }
 
         // Filter Status

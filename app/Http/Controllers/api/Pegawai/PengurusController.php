@@ -109,19 +109,22 @@ class PengurusController extends Controller
                                 )->groupBy('pengurus.id', 'biodata.nama', 'biodata.nik', 'pengurus.jabatan');
                                 
        $query = $this->filterController->applyCommonFilters($query, $request);
+               // Filter Satuan Kerja
         if ($request->filled('satuan_kerja')) {
             $query->where('pengurus.satuan_kerja', strtolower($request->satuan_kerja));
         }    
+                // Filter Jabatan
         if ($request->filled('jabatan')) {
             $query->where('pengurus.jabatan', strtolower($request->jabatan));
         }
+                // Filter Golongan Jabatn
         if ($request->filled('golongan')) {
             $query->where('golongan.nama_golongan', strtolower($request->golongan));
         }
         if ($request->filled('warga_pesantren')) {
             $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren) == 'iya' ? 1 : 0);
         }
-        // Filter Pemberkasan (Lengkap / Tidak Lengkap)
+                // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
             $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
             $pemberkasan = strtolower($request->pemberkasan);
@@ -149,15 +152,16 @@ class PengurusController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
+                // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
-        }  
+        } 
         
         $onePage = $request->input('limit', 25);
 
