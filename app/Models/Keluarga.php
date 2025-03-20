@@ -47,6 +47,6 @@ class Keluarga extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', true);
+        return $query->where('keluarga.status', true);
     }
 } 

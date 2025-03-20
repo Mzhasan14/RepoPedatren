@@ -34,4 +34,12 @@ class Pegawai extends Model
     {
         return $this->hasMany(EntitasPegawai::class,'id_pegawai','id');
     }
+    public function anakPegawai()
+    {
+        return $this->hasMany(AnakPegawai::class,'id_pegawai','id');
+    }
+    public function ScopeActive($query)
+    {
+        return $query->where('pegawai.status',true);
+    }
 }

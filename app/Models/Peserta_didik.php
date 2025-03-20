@@ -9,6 +9,7 @@ use App\Models\Pendidikan\Lembaga;
 use App\Models\Kewilayahan\Domisili;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Pegawai\AnakPegawai;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -82,5 +83,9 @@ class Peserta_didik extends Model
     public function santriAktif()
     {
         return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
+    }
+    public function AnakpegawaiPesertaDidik()
+    {
+        return $this->hasMany(AnakPegawai::class,'id_peserta_didik','id');
     }
 }

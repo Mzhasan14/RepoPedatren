@@ -40,4 +40,8 @@ class Pengajar extends Model
     {
         return $this->belongsTo(Golongan::class,'id_golongan','id');
     }
+    public function ScopeActive($query)
+    {
+        return $query->where('pengajar.status',true);
+    }
 }

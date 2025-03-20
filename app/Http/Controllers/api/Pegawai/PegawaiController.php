@@ -84,7 +84,8 @@ class PegawaiController extends Controller
 
     public function dataPegawai(Request $request)
     {
-        $query = Pegawai::join('biodata','biodata.id','pegawai.id_biodata')
+        $query = Pegawai::Active()
+                        ->join('biodata','biodata.id','pegawai.id_biodata')
                         ->leftJoin('pengajar','pengajar.id_pegawai','=','pegawai.id')
                         ->leftJoin('pengurus','pengurus.id_pegawai','=','pegawai.id')
                         ->leftJoin('karyawan','karyawan.id_pegawai','=','pegawai.id')
@@ -108,6 +109,7 @@ class PegawaiController extends Controller
 
 
         $query = $this->filterController->applyCommonFilters($query, $request);
+                // Filter Lembaga 
         if ($request->filled('lembaga')) {
              $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
              if ($request->filled('jurusan')) {
@@ -120,7 +122,8 @@ class PegawaiController extends Controller
                 }
             }
         }
-        if ($request->filled('entitas')) {
+                // Filter Entitas 
+            if ($request->filled('entitas')) {
             $entitas = strtolower($request->entitas); // Ubah ke huruf kecil untuk konsistensi
         
             if ($entitas == 'pengajar') {
@@ -131,10 +134,11 @@ class PegawaiController extends Controller
                 $query->whereNotNull('karyawan.id');
             }
         }
-        if ($request->filled('warga_pesantren')) {
+                // Filter Warga Pesantren 
+            if ($request->filled('warga_pesantren')) {
             $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren == 'iya' ? 1 : 0));
         }
-        // Filter Pemberkasan (Lengkap / Tidak Lengkap)
+            // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
             $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
             $pemberkasan = strtolower($request->pemberkasan);
@@ -144,7 +148,8 @@ class PegawaiController extends Controller
                 $query->havingRaw('COUNT(DISTINCT berkas.id) < ?', [$jumlahBerkasWajib]);
             }
         }
-        if ($request->filled('umur')) {
+                // Filter Umur 
+            if ($request->filled('umur')) {
             $umurInput = $request->umur;
         
             // Cek apakah input umur dalam format rentang (misalnya "20-25")
@@ -162,15 +167,16 @@ class PegawaiController extends Controller
                 [(int)$umurMin, (int)$umurMax]
             );
         }
+                // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
-        } 
+        }
 
         $onePage = $request->input('limit', 25);
 

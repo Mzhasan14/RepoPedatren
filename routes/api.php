@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\Pendidikan\{
     RombelController
 };
 use App\Http\Controllers\Api\Pegawai\{
+    AnakPegawaiController,
     PegawaiController,
     PengajarController,
     WalikelasController,
@@ -89,7 +90,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/list/keluarga',[KeluargaController::class,'keluarga']);
     Route::apiResource('/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/orangtua', OrangTuaController::class);
-    Route::get('/list/orangtua',[OrangTuaController::class,'getOrtu']);
+    Route::get('/list/orangtua',[OrangTuaController::class,'ortu']);
     Route::get('/list/datawali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
@@ -128,6 +129,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/pengurus', PengurusController::class);
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
+    Route::apiResource('/anakpegawai',AnakPegawaiController::class);
     Route::get('/list/pengajar', [PengajarController::class, 'Pengajar']);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/list/pengajars', [PengajarController::class, 'filterPengajar']);
@@ -135,6 +137,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/list/walikelas',[WalikelasController::class,'dataWalikelas']);
     Route::get('list/karyawans',[KaryawanController::class,'dataKaryawan']);
     Route::get('/list/pegawais',[PegawaiController::class,'dataPegawai']);
+    Route::get('/list/anakpegawais',[AnakPegawaiController::class,'dataAnakpegawai']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
