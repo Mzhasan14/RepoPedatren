@@ -14,20 +14,20 @@ return new class extends Migration
         Schema::create('santri', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_peserta_didik');
-            $table->unsignedBigInteger('id_wilayah');
-            $table->unsignedBigInteger('id_blok');
-            $table->unsignedBigInteger('id_kamar');
-            $table->unsignedBigInteger('id_domisili');
+            $table->unsignedBigInteger('id_wilayah')->nullable();
+            $table->unsignedBigInteger('id_blok')->nullable();
+            $table->unsignedBigInteger('id_kamar')->nullable();
+            $table->unsignedBigInteger('id_domisili')->nullable();
             $table->string('nis', 11)->unique();
             $table->year('angkatan');
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
+            $table->enum('status', ['aktif', 'cuti', 'mutasi', 'lulus', 'do', 'berhenti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->enum('status', ['aktif', 'tidak aktif', 'alumni']);
-            $table->timestamps();
             $table->softDeletes();
+            $table->timestamps();
 
             $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
             $table->foreign('id_blok')->references('id')->on('blok')->onDelete('cascade');

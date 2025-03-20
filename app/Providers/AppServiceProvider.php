@@ -2,24 +2,25 @@
 
 namespace App\Providers;
 
+use App\Models\Santri;
+use App\Models\Pelajar;
+use App\Observers\SantriObserver;
+use App\Observers\PelajarObserver;
 use Illuminate\Support\ServiceProvider;
-use App\Http\Controllers\api\FilterController;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
-        
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        //
+        Pelajar::observe(PelajarObserver::class);
+        Santri::observe(SantriObserver::class);
     }
 }

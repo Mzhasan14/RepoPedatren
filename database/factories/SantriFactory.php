@@ -34,7 +34,7 @@ class SantriFactory extends Factory
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->randomElement([
-                'aktif', 'tidak aktif'
+                'aktif'
             ]),
         ];
     }

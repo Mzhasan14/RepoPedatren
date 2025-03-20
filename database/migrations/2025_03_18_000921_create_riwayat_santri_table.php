@@ -11,21 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('alumni_santri', function (Blueprint $table) {
+        Schema::create('riwayat_santri', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_peserta_didik');
-            $table->unsignedBigInteger('id_wilayah');
-            $table->unsignedBigInteger('id_blok');
-            $table->unsignedBigInteger('id_kamar');
-            $table->unsignedBigInteger('id_domisili');
-            $table->year('tahun_keluar');
-            $table->enum('status_alumni', ['lulus', 'pindah', 'berhenti', 'do', 'wafat'])->default('Lulus');
-            $table->boolean('wafat')->default(false);
+            $table->unsignedBigInteger('id_wilayah')->nullable();
+            $table->unsignedBigInteger('id_blok')->nullable();
+            $table->unsignedBigInteger('id_kamar')->nullable();
+            $table->unsignedBigInteger('id_domisili')->nullable();
+            $table->string('nis', 11)->unique();
+            $table->year('angkatan');
+            $table->date('tanggal_masuk');
+            $table->date('tanggal_keluar')->nullable();
+            $table->enum('status', ['alumni', 'mutasi', 'do', 'berhenti']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
+           
 
             $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
             $table->foreign('id_blok')->references('id')->on('blok')->onDelete('cascade');
@@ -43,6 +46,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('alumni_santri');
+        Schema::dropIfExists('riwayat_santri');
     }
 };

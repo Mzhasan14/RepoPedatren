@@ -6,16 +6,18 @@ use App\Http\Controllers\Api\{
     BiodataController,
     PerizinanController,
     PelanggaranController,
-    PesertaDidikController,
     JenisBerkasController,
     BerkasController,
     CatatanAfektifController,
     CatatanKognitifController,
+    KhadamController,
+};
+
+use App\Http\Controllers\Api\PesertaDidik\{
+    PesertaDidikController,
     PelajarController,
     SantriController,
-    AlumniController,
-    AlumniSantriController,
-    KhadamController
+    AlumniController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -72,17 +74,15 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/biodata', BiodataController::class);
 
     // 🏫 Santri & Peserta Didik
-    Route::apiResource('/crud-peserta-didik', PesertaDidikController::class);
+    Route::apiResource('/crud/peserta_didik', PesertaDidikController::class);
+    Route::apiResource('/crud/pelajar', PelajarController::class);
+    Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
     Route::get('/peserta-didik/santri', [SantriController::class, 'pesertaDidikSantri']);
     Route::get('/peserta-didik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
     Route::get('/alumni', [AlumniController::class, 'alumni']);
-    Route::post('/alumni-angkatan/pelajar', [AlumniController::class, 'AlumniPelajarByAngkatan']);
-    Route::post('/alumni-angkatan/santri', [AlumniController::class, 'AlumniSantriByAngkatan']);
-    Route::post('/alumni-id/pelajar', [AlumniController::class, 'AlumniPelajarByID']);
-    Route::post('/alumni-id/santri', [AlumniController::class, 'AlumniSantriByID']);
     
     // 🏫 Keluarga
     Route::apiResource('/keluarga', KeluargaController::class);

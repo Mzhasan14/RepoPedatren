@@ -25,6 +25,7 @@ class Biodata extends Model
         'tanggal_lahir',
         'tempat_lahir',
         'nik',
+        'no_passport',
         'no_kk',
         'no_telepon',
         'email',

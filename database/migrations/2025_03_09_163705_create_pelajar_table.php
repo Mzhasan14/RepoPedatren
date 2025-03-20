@@ -18,16 +18,16 @@ return new class extends Migration
             $table->unsignedBigInteger('id_jurusan')->nullable();
             $table->unsignedBigInteger('id_kelas')->nullable();
             $table->unsignedBigInteger('id_rombel')->nullable();
-            $table->string('no_induk')->nullable();
+            $table->string('no_induk')->nullable()->unique();
             $table->year('angkatan');
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
-            $table->enum('status', ['aktif', 'tidak aktif', 'alumni']);
+            $table->enum('status', ['aktif', 'cuti', 'mutasi', 'lulus', 'do', 'berhenti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->timestamps();
             $table->softDeletes();
+            $table->timestamps();
 
             $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('id_jurusan')->references('id')->on('jurusan')->onDelete('cascade');

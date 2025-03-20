@@ -12,16 +12,14 @@ class FilterController extends Controller
         // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
             $query->join('negara', 'biodata.id_negara', '=', 'negara.id')
-                ->leftjoin('provinsi', 'biodata.id_provinsi', '=', 'provinsi.id')
-                ->leftjoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
-                ->leftjoin('kecamatan', 'biodata.id_kecamatan', '=', 'kecamatan.id')
-                ->leftjoin('desa', 'biodata.id_desa', '=', 'desa.id')
                 ->where('negara.nama_negara', $request->negara);
             if ($request->filled('provinsi')) {
+                $query->leftjoin('provinsi', 'biodata.id_provinsi', '=', 'provinsi.id');
                 $query->where('provinsi.nama_provinsi', $request->provinsi);
                 if ($request->filled('kabupaten')) {
                     $query->where('kabupaten.nama_kabupaten', $request->kabupaten);
                     if ($request->filled('kecamatan')) {
+                        $query->leftjoin('kecamatan', 'biodata.id_kecamatan', '=', 'kecamatan.id');
                         $query->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
                 }

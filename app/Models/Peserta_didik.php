@@ -24,19 +24,9 @@ class Peserta_didik extends Model
         'updated_by'
     ];
 
-    public function scopeSantri($query)
-    {
-        return $query->whereNotNull('santri.id');
-    }
-
     public function scopeActive($query)
     {
         return $query->where('peserta_didik.status', true);
-    }
-
-    public function scopeNonActive($query)
-    {
-        return $query->where('peserta_didik.status', false);
     }
 
     public function biodata()
@@ -44,15 +34,15 @@ class Peserta_didik extends Model
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
-    // public function pelajar()
-    // {
-    //     return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id');
-    // }
+    public function pelajar()
+    {
+        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id');
+    }
 
-    // public function santri()
-    // {
-    //     return $this->hasOne(Santri::class, 'id_santri', 'id');
-    // }
+    public function santri()
+    {
+        return $this->hasOne(Santri::class, 'id_santri', 'id');
+    }
 
     public function waliAsuh()
     {

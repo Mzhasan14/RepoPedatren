@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_kecamatan')->nullable();
             $table->unsignedBigInteger('id_desa')->nullable();
             $table->string('nama', 100);
-            $table->char('niup', 11);
+            $table->char('niup', 11)->nullable();
             $table->string('no_passport')->nullable();
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->date('tanggal_lahir');
@@ -32,7 +32,7 @@ return new class extends Migration
                 'jenjang_pendidikan_terakhir',
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
             );
-            $table->string('nama_pendidikan_terakhir');
+            $table->string('nama_pendidikan_terakhir')->nullable();
             $table->tinyInteger('anak_keberapa');
             $table->tinyInteger('dari_saudara');
             $table->string('tinggal_bersama', 40);

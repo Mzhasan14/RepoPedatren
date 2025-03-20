@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
-use App\Models\Peserta_didik;
 use App\Models\Kewilayahan\Blok;
 use App\Models\Kewilayahan\Kamar;
-use App\Observers\SantriObserver;
 use App\Models\Kewilayahan\Wilayah;
 use App\Models\Kewilayahan\Domisili;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Santri extends Model
+class RiwayatSantri extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $table = 'santri';
+    protected $table = 'riwayat_santri';
     protected $fillable = [
         'id_peserta_didik',
         'id_wilayah',
@@ -31,11 +29,6 @@ class Santri extends Model
         'updated_by',
         'deleted_by'
     ];
-
-    public function scopeActive($query)
-    {
-        return $query->where('santri.status', true);
-    }
 
     public function pesertaDidik()
     {

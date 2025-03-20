@@ -6,15 +6,14 @@ use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Rombel;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Lembaga;
-use App\Observers\PelajarObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Pelajar extends Model
+class RiwayatPelajar extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $table = 'pelajar';
+    protected $table = 'riwayat_pelajar';
     protected $fillable = [
         'id_peserta_didik',
         'id_lembaga',
@@ -30,11 +29,6 @@ class Pelajar extends Model
         'updated_by',
         'deleted_by'
     ];
-
-    public function scopeActive($query)
-    {
-        return $query->where('pelajar.status', true);
-    }
 
     public function pesertaDidik()
     {

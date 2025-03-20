@@ -62,4 +62,14 @@ class LembagaController extends Controller
         $lembaga->delete();
         return new PdResource(true, 'Lembaga Berhasil Dihapus', null);
     }
+
+    public function getLembagaList()
+    {
+        $lembagas = Lembaga::select('id', 'nama')->orderBy('nama')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $lembagas
+        ]);
+    }
 }

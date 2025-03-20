@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Khadam;
 use App\Models\JenisBerkas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
@@ -99,14 +100,20 @@ class KhadamController extends Controller
             ->leftjoin('lembaga as lg', 'pegawai.id_lembaga', '=', 'lg.id')
             ->select(
                 'khadam.id',
+                'biodata.niup',
+                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
                 'biodata.nama',
                 'khadam.keterangan',
+                'biodata.created_at',
+                'biodata.updated_at',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
                 'khadam.id',
+                'biodata.niup',
                 'biodata.nama',
-                'khadam.keterangan'
+                'biodata.created_at',
+                'biodata.updated_at',
             );
 
         // Filter Umum (Alamat dan Jenis Kelamin)
@@ -115,8 +122,7 @@ class KhadamController extends Controller
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);
-            $query->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
-                ->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
+            $query->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
                 ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
                 ->where('wilayah.nama_wilayah', $wilayah);
             if ($request->filled('blok')) {
@@ -133,6 +139,9 @@ class KhadamController extends Controller
         if ($request->filled('lembaga')) {
             $query->where('lembaga.nama_lembaga', $request->lembaga);
             if ($request->filled('jurusan')) {
+                $query->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
+                    ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
+                    ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id');
                 $query->where('jurusan.nama_jurusan', $request->jurusan);
                 if ($request->filled('kelas')) {
                     $query->where('kelas.nama_kelas', $request->kelas);
@@ -146,19 +155,30 @@ class KhadamController extends Controller
         // Filter Status Warga Pesantren
         if ($request->filled('warga_pesantren')) {
             $warga_pesantren = strtolower($request->warga_pesantren);
-            if ($warga_pesantren == 'iya') {
-                $query->whereNotNull('santri.id');
-            } else if ($warga_pesantren == 'tidak') {
-                $query->whereNull('santri.id');
+            if ($warga_pesantren == 'memiliki niup') {
+                $query->whereNotNull('biodata.niup');
+            } else if ($warga_pesantren == 'tanpa niup') {
+                $query->whereNull('biodata.niup');
+            }
+        }
+
+        // Filter Smartcard
+        if ($request->filled('smartcard')) {
+            $smartcard = strtolower($request->smartcard);
+            if ($smartcard == 'memiliki smartcard') {
+                $query->whereNotNull('biodata.smartcard');
+            } else if ($smartcard == 'tanpa smartcard') {
+                $query->whereNull('biodata.smartcard');
             }
         }
 
         // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
+            $phone_number = strtolower($request->phone_number);
+            if ($phone_number == 'memiliki phone number') {
                 $query->whereNotNull('biodata.no_telepon')
                     ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
+            } else if ($phone_number == 'tidak ada phone number') {
                 $query->whereNull('biodata.no_telepon')
                     ->where('biodata.no_telepon', '=', '');
             }
@@ -166,12 +186,24 @@ class KhadamController extends Controller
 
         // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
-            $jumlahBerkasWajib = JenisBerkas::where('wajib', 1)->count();
             $pemberkasan = strtolower($request->pemberkasan);
-            if ($pemberkasan == 'lengkap') {
-                $query->havingRaw('COUNT(DISTINCT berkas.id) >= ?', [$jumlahBerkasWajib]);
-            } elseif ($pemberkasan == 'tidak lengkap') {
-                $query->havingRaw('COUNT(DISTINCT berkas.id) < ?', [$jumlahBerkasWajib]);
+            if ($pemberkasan == 'tidak ada berkas') {
+                $query->whereNull('berkas.id_biodata');
+            } else if ($pemberkasan == 'tidak ada foto diri') {
+                $query->where('berkas.id_jenis_berkas', 4) // ID untuk Foto Diri (sesuaikan dengan yang Anda punya)
+                    ->whereNull('berkas.file_path');
+            } else if ($pemberkasan == 'memiliki foto diri') {
+                $query->where('berkas.id_jenis_berkas', 4)
+                    ->whereNotNull('berkas.file_path');
+            } else if ($pemberkasan == 'tidak ada kk') {
+                $query->where('berkas.id_jenis_berkas', 1) // ID untuk Kartu Keluarga (sesuaikan)
+                    ->whereNull('berkas.file_path');
+            } else if ($pemberkasan == 'tidak ada akta kelahiran') {
+                $query->where('berkas.id_jenis_berkas', 3) // ID untuk Akta Kelahiran (sesuaikan)
+                    ->whereNull('berkas.file_path');
+            } else if ($pemberkasan == 'tidak ada ijazah') {
+                $query->where('berkas.id_jenis_berkas', 5) // ID untuk Ijazah (sesuaikan)
+                    ->whereNull('berkas.file_path');
             }
         }
 
@@ -202,8 +234,11 @@ class KhadamController extends Controller
             "data" => $hasil->map(function ($item) {
                 return [
                     "id" => $item->id,
+                    "niup" => $item->niup,
                     "nama" => $item->nama,
                     "keterangan" => $item->keterangan,
+                    "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s'),
+                    "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
                     "foto_profil" => url($item->foto_profil)
                 ];
             })
