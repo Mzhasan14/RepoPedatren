@@ -13,7 +13,7 @@ class OrangTuaSeeder extends Seeder
      */
     public function run(): void
     {
-        (new OrangTuaFactory())->count(5)->create();
+        (new OrangTuaFactory())->count(100)->create();
         
     }
 }

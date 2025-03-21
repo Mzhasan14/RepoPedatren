@@ -13,7 +13,7 @@ class StatusKeluargaSeeder extends Seeder
      */
     public function run(): void
     {
-        (new Status_keluargaFactory())->count(5)->create();
+        (new Status_keluargaFactory())->count(4)->create();
         
     }
 }

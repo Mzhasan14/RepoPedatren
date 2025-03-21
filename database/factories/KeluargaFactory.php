@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\Biodata;
 use App\Models\Keluarga;
+use App\Models\Status_keluarga;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,11 +22,10 @@ class KeluargaFactory extends Factory
     public function definition(): array
     {
         return [
-            'no_kk' => Biodata::inRandomOrder()->value('no_kk') ?? '1234567890123456',
-            'status_wali' => $this->faker->boolean,
-            'id_status_keluarga' => (new Status_keluargaFactory())->create()->id,
-            'created_by' => 1,
-            'updated_by' => null,
+            'no_kk' => $this->faker->numerify('###############'),
+            'id_biodata' => Biodata::inRandomOrder()->first()->id ?? Biodata::factory(),
+            'id_status_keluarga' => Status_keluarga::inRandomOrder()->first()->id ?? Status_keluarga::factory(),
+            'created_by' => User::inRandomOrder()->first()->id ?? User::factory(),
             'status' => true,
         ];
     }

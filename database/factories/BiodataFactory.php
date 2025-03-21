@@ -34,8 +34,9 @@ class BiodataFactory extends Factory
             'tanggal_lahir' => $this->faker->date(),
             'tempat_lahir' => $this->faker->city(),
             'nik' => $this->faker->unique()->numerify('###############'),
-            'no_kk' => $this->faker->numerify('###############'),
+            // 'no_kk' => $this->faker->numerify('###############'),
             'no_telepon' => $this->faker->phoneNumber(),
+            'no_telepon_2' => $this->faker->phoneNumber(),
             'email' => $this->faker->unique()->safeEmail(),
             'jenjang_pendidikan_terakhir' => $this->faker->randomElement(['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
             'nama_pendidikan_terakhir' => $this->faker->randomElement([

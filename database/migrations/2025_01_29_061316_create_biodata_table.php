@@ -25,8 +25,8 @@ return new class extends Migration
             $table->date('tanggal_lahir');
             $table->string('tempat_lahir', 50);
             $table->char('nik', 16)->nullable();
-            $table->char('no_kk', 16)->nullable();
             $table->string('no_telepon', 20);
+            $table->string('no_telepon_2', 20)->nullable();
             $table->string('email', 100)->unique('bd_email_unique');
             $table->enum(
                 'jenjang_pendidikan_terakhir',

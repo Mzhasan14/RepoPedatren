@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\Status_keluarga;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,9 +20,9 @@ class Status_keluargaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_status' => $this->faker->word,
-            'created_by' => 1,
-            'updated_by' => null,
+            'nama_status' => $this->faker->randomElement(['ayah', 'ibu', 'anak', 'wali']),
+            'wali' => $this->faker->boolean(),
+            'created_by' => User::inRandomOrder()->first()->id ?? User::factory(),
             'status' => true,
         ];
     }

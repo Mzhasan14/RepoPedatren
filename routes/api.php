@@ -79,6 +79,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/crud/pelajar', PelajarController::class);
     Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
+    Route::get('/peserta-didik/bersaudara-kandung', [PesertaDidikController::class, 'bersaudaraKandung']);
     Route::get('/peserta-didik/santri', [SantriController::class, 'pesertaDidikSantri']);
     Route::get('/peserta-didik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
@@ -86,12 +87,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/alumni', [AlumniController::class, 'alumni']);
     
     // 🏫 Keluarga
-    Route::apiResource('/keluarga', KeluargaController::class);
-    Route::get('/list/keluarga',[KeluargaController::class,'keluarga']);
-    Route::apiResource('/status-keluarga', StatusKeluargaController::class);
-    Route::apiResource('/orangtua', OrangTuaController::class);
-    Route::get('/list/orangtua',[OrangTuaController::class,'ortu']);
-    Route::get('/list/datawali', [KeluargaController::class, 'dataWali']);
+    Route::apiResource('/crud/keluarga', KeluargaController::class);
+    Route::get('/keluarga',[KeluargaController::class,'keluarga']);
+    Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
+    Route::apiResource('/crud/orangtua', OrangTuaController::class);
+    Route::get('/orangtua',[OrangTuaController::class,'orang_tua']);
+    Route::get('/wali', [KeluargaController::class, 'dataWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);

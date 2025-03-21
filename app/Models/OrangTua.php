@@ -13,28 +13,30 @@ class OrangTua extends Model
     use SoftDeletes;
 
     protected $table = 'orang_tua';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'id_biodata',
+        'pekerjaan',
+        'penghasilan',
+        'wafat',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+        'status'
+    ];
 
-    public function biodata() {
-        return $this->belongsTo(Biodata::class,'id_biodata','id');
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'id_biodata');
+    }
+
+    public function keluarga()
+    {
+        return $this->hasMany(Keluarga::class, 'id_biodata', 'id_biodata');
     }
 
     public function scopeActive($query)
     {
         return $query->where('orang_tua.status', true);
     }
-
-     // public function createdBy()
-    // {
-    //     return $this->belongsTo(user::class, 'created_by');
-    // }
-    // public function updatedBy()
-    // {
-    //     return $this->belongsTo(user::class, 'updated_by');
-    // }
 }

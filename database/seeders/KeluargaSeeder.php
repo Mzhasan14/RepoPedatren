@@ -13,7 +13,7 @@ class KeluargaSeeder extends Seeder
      */
     public function run(): void
     {
-        (new KeluargaFactory())->count(5)->create();
+        (new KeluargaFactory())->count(100)->create();
         
     }
 }

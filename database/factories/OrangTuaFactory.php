@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\Biodata;
 use App\Models\OrangTua;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,11 +21,11 @@ class OrangTuaFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_biodata' => Biodata::inRandomOrder()->first()?->id,
-            'pekerjaan' => $this->faker->jobTitle,
-            'penghasialan' => rand(1000000, 10000000),
-            'wafat' => $this->faker->boolean,
-            'status' => true,
+            'id_biodata' => Biodata::inRandomOrder()->first()->id ?? Biodata::factory(),
+            'pekerjaan' => $this->faker->jobTitle(),
+            'penghasilan' => $this->faker->randomElement([null, '500000', '1000000', '2000000']),
+            'wafat' => $this->faker->boolean(),
+            'created_by' => User::inRandomOrder()->first()->id ?? User::factory(),
         ];
     }
 }

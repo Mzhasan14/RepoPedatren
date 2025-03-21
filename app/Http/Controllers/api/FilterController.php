@@ -29,12 +29,12 @@ class FilterController extends Controller
         // 🔹 Filter jenis kelamin (dari biodata)
         if ($request->filled('jenis_kelamin')) {
             $jenis_kelamin = strtolower($request->jenis_kelamin);
-            if ($jenis_kelamin == 'laki-laki') {
+            if ($jenis_kelamin == 'laki-laki' || $jenis_kelamin == 'ayah') {
                 $query->where('biodata.jenis_kelamin', 'l');
-            } else if ($jenis_kelamin == 'perempuan') {
-                $query->where('biodata.jenis_kelamin', 'p');
+            } else if ($jenis_kelamin == 'perempuan' || $jenis_kelamin == 'ibu') {
+               $query->where('biodata.jenis_kelamin', 'p');
             }
-        }
+        } 
 
         if ($request->filled('smartcard')) {
             if (strtolower($request->smartcard) === 'mempunyai') {

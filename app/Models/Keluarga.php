@@ -13,37 +13,25 @@ class Keluarga extends Model
     use SoftDeletes;
     //
     protected $table = 'keluarga';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
 
     protected $fillable = [
         'no_kk',
-        'status_wali',
+        'id_biodata',
         'id_status_keluarga',
+        'wali',
         'created_by',
         'updated_by',
+        'deleted_by',
         'status'
     ];
 
     public function biodata() {
-        return $this->belongsTo(Biodata::class, 'no_kk', 'no_kk');
+        return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
     public function statusKeluarga() {
         return $this->belongsTo(Status_keluarga::class, 'id_status_keluarga','id');
     }
-
-    // public function createdBy()
-    // {
-    //     return $this->belongsTo(user::class, 'created_by');
-    // }
-    // public function updatedBy()
-    // {
-    //     return $this->belongsTo(user::class, 'updated_by');
-    // }
-
 
     public function scopeActive($query)
     {
