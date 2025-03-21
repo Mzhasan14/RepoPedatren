@@ -106,6 +106,7 @@ class PesertaDidikController extends Controller
             ->groupBy(
                 'peserta_didik.id',
                 'biodata.nik',
+                'biodata.no_passport',
                 'biodata.nama',
                 'biodata.niup',
                 'wilayah.nama_wilayah',

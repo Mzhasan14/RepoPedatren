@@ -120,6 +120,7 @@ class OrangTuaController extends Controller
             ->groupBy(
                 'orang_tua.id',
                 'biodata.nik',
+                'biodata.no_passport',
                 'biodata.nama',
                 'biodata.no_telepon',
                 'biodata.no_telepon_2',
