@@ -105,6 +105,7 @@ class PesertaDidikController extends Controller
             )
             ->groupBy(
                 'peserta_didik.id',
+                'biodata.nik',
                 'biodata.nama',
                 'biodata.niup',
                 'wilayah.nama_wilayah',
@@ -321,17 +322,17 @@ class PesertaDidikController extends Controller
             ->select(
                 'peserta_didik.id',
                 DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
-                'keluarga.no_kk', // Mengambil dari keluarga, bukan biodata
+                'keluarga.no_kk',
                 'biodata.nama',
                 'biodata.niup',
                 'lembaga.nama_lembaga',
                 'wilayah.nama_wilayah',
-                DB::raw("COALESCE(ibu.nama, 'Tidak Diketahui') as nama_ibu"), // Nama ibu
-                DB::raw("COALESCE(ayah.nama, 'Tidak Diketahui') as nama_ayah"), // Nama ayah
+                DB::raw("COALESCE(ibu.nama, 'Tidak Diketahui') as nama_ibu"),
+                DB::raw("COALESCE(ayah.nama, 'Tidak Diketahui') as nama_ayah"),
                 DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as kota_asal"),
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil"),
-                'peserta_didik.created_at', // Tambahkan created_at
-                'peserta_didik.updated_at'  // Tambahkan updated_at
+                'peserta_didik.created_at',
+                'peserta_didik.updated_at'
             )
             ->groupBy(
                 'peserta_didik.id',

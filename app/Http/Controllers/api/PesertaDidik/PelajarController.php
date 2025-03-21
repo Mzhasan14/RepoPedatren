@@ -165,8 +165,8 @@ class PelajarController extends Controller
                 'rombel.nama_rombel',
                 'wilayah.nama_wilayah',
                 DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as kota_asal"),
-                'biodata.created_at',
-                'biodata.updated_at',
+                'pelajar.created_at',
+                'pelajar.updated_at',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
@@ -180,8 +180,8 @@ class PelajarController extends Controller
                 'rombel.nama_rombel',
                 'wilayah.nama_wilayah',
                 'kabupaten.nama_kabupaten',
-                'biodata.created_at',
-                'biodata.updated_at',
+                'pelajar.created_at',
+                'pelajar.updated_at',
             );
 
         // Filter Umum (Alamat dan Jenis Kelamin)

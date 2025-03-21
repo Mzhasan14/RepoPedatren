@@ -97,7 +97,7 @@ class OrangTuaController extends Controller
 
     public function orang_tua(Request $request)
     {
-        $query = OrangTua::active()
+        $query = OrangTua::Active()
             ->join('biodata', 'orang_tua.id_biodata', '=', 'biodata.id')
             ->leftjoin('peserta_didik', 'biodata.id', '=', 'peserta_didik.id_biodata')
             ->leftjoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
@@ -108,13 +108,13 @@ class OrangTuaController extends Controller
             ->leftjoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
             ->select(
                 'orang_tua.id',
-                'biodata.nik',
+                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
                 'biodata.nama',
                 'biodata.no_telepon',
                 'biodata.no_telepon_2',
                 DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as kota_asal"),
-                'orang_tua.updated_at as tanggal_update',
-                'orang_tua.created_at as tanggal_input',
+                'biodata.updated_at as tanggal_update',
+                'biodata.created_at as tanggal_input',
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
