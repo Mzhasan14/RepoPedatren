@@ -35,7 +35,6 @@ class PengajarController extends Controller
             'id_pegawai'   => 'required|integer',
             'id_golongan'  => 'required|integer',
             'id_lembaga'   => 'required|integer',
-            'mapel'        => 'required|string|max:255',
             'created_by'   => 'required|integer',
             'status'       => 'required|boolean',
         ]);
@@ -64,7 +63,6 @@ class PengajarController extends Controller
             'id_pegawai'   => 'required|integer',
             'id_golongan'  => 'required|integer',
             'id_lembaga'   => 'required|integer',
-            'mapel'        => 'required|string|max:255',
             'updated_by'   => 'nullable|integer',
             'status'       => 'required|boolean',
         ]);
@@ -86,26 +84,6 @@ class PengajarController extends Controller
         return new PdResource(true, 'Data berhasil dihapus', $pengajar);
     }
 
-    public function Pengajar()
-    {
-        $pengajar = Biodata::join('pegawai', 'biodata.id', '=', 'pegawai.id_biodata')
-            ->join('pengajar', 'pegawai.id', '=', 'pengajar.id_pegawai')
-            ->select(
-                'pengajar.id as id_pengajar',
-                'biodata.nama',
-                'biodata.niup',
-                'biodata.nama_pendidikan_terakhir',
-                'biodata.image_url'
-            )
-            ->get();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Data berhasil ditampilkan',
-            'data' => $pengajar
-        ]);
-    }
-
     public function filterPengajar(Request $request)
     {
         $query = Pengajar::Active()
@@ -117,15 +95,47 @@ class PengajarController extends Controller
             ->leftJoin('entitas_pegawai','entitas_pegawai.id_pegawai','=','pegawai.id')
             ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
             ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+            ->leftJoin('materi_ajar','materi_ajar.id_pengajar','=','pengajar.id')
             ->select(
                 'pengajar.id',
                 'biodata.nama',
                 'biodata.niup',
+                DB::raw("TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE()) AS umur"),
+                DB::raw("
+                GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', ') AS daftar_materi"),
+                DB::raw("
+                CONCAT(
+                    FLOOR(SUM(DISTINCT materi_ajar.jumlah_menit) / 60), ' jam ',
+                    MOD(SUM(DISTINCT materi_ajar.jumlah_menit), 60), ' menit'
+                ) AS total_waktu_materi
+            "),     
+                DB::raw("COUNT(DISTINCT materi_ajar.nama_materi) AS total_materi"),
+                DB::raw("
+                CASE 
+                    WHEN TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, CURDATE())) = 0 
+                    THEN CONCAT('Belum setahun sejak ', DATE_FORMAT(entitas_pegawai.tanggal_masuk, '%Y-%m-%d'))
+                    ELSE CONCAT(TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, CURDATE())), ' Tahun sejak ', DATE_FORMAT(entitas_pegawai.tanggal_masuk, '%Y-%m-%d'))
+                END AS masa_kerja"),
+                'golongan.nama_golongan',
+                'biodata.nama_pendidikan_terakhir',
+                DB::raw("DATE_FORMAT(pengajar.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                DB::raw("DATE_FORMAT(pengajar.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                 'lembaga.nama_lembaga',    
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                )->groupBy('pengajar.id', 'biodata.nama', 'biodata.niup','lembaga.nama_lembaga');
-                
-
+                )   
+                 ->groupBy(
+                    'pengajar.id',
+                    'biodata.nama',
+                    'biodata.niup',
+                    'biodata.tanggal_lahir',
+                    'golongan.nama_golongan',
+                    'biodata.nama_pendidikan_terakhir',
+                    'pengajar.updated_at',
+                    'pengajar.created_at',
+                    'lembaga.nama_lembaga',
+                    'entitas_pegawai.tanggal_masuk',
+                    'entitas_pegawai.tanggal_keluar'
+                );   
         // 🔹 Terapkan filter umum (lokasi & jenis kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
 
@@ -142,19 +152,21 @@ class PengajarController extends Controller
             $query->where('golongan.nama_golongan', strtolower($request->golongan));
         }
 
-
+        // 🔹Materi Ajar
         if ($request->has('materi_ajar')) {
             if (strtolower($request->materi_ajar) === 'materi ajar 1') {
-                // Hanya pengajar yang memiliki 1 mapel (tidak ada koma atau pemisah lain)
-                $query->whereRaw("pengajar.mapel NOT REGEXP '[,\\n]'");
+                // Hanya pengajar yang memiliki 1 materi ajar
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 1');
             } elseif (strtolower($request->materi_ajar) === 'materi ajar lebih dari 1') {
-                // Hanya pengajar yang memiliki lebih dari 1 mapel (terdeteksi ada koma atau enter)
-                $query->whereRaw("pengajar.mapel REGEXP '[,\\n]'");
+                // Hanya pengajar yang memiliki lebih dari 1 materi ajar
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 1');
             }
         }
-             
         
-        
+            // 🔹 Filter Jabatan
+        if ($request->has('jabatan')) {
+            $query->where('pengajar.jabatan', strtolower($request->jabatan));
+        }     
         // Filter Masa Kerja
         $masaKerja = $request->input('masa_kerja'); // Mengambil input dari request
         $today = now(); // Menggunakan tanggal saat ini
@@ -185,9 +197,15 @@ class PengajarController extends Controller
             }
         }
 
-                // Filter Warga Pesantren
+        // Filter Warga Pesantren
         if ($request->filled('warga_pesantren')) {
-            $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren == 'iya' ? 1 : 0));
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
+            }
         }
 
                 // Filter Umur
@@ -246,6 +264,15 @@ class PengajarController extends Controller
                     "id" => $item->id,
                     "nama" => $item->nama,
                     "niup" => $item->niup,
+                    "umur" => $item->umur,
+                    "daftar_materi" => $item->daftar_materi,
+                    "total_waktu_materi" => $item->total_waktu_materi,
+                    "total_materi" => $item->total_materi,
+                    "masa_kerja" => $item->masa_kerja,
+                    "golongan" => $item->nama_golongan,
+                    "pendidikan_terakhir" => $item->nama_pendidikan_terakhir,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "lembaga" => $item->nama_lembaga,
                     "foto_profil" => url($item->foto_profil)
                 ];

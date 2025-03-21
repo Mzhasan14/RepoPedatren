@@ -104,10 +104,31 @@ class PengurusController extends Controller
                                 'pengurus.id',
                                 'biodata.nama',
                                 'biodata.nik',
-                                'pengurus.jabatan',
+                                'biodata.niup',
+                                'pengurus.keterangan_jabatan as jabatan',
+                                DB::raw("TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE()) AS umur"),
+                                'pengurus.satuan_kerja',
+                                'pengurus.jabatan as jenis',
+                                'golongan.nama_golongan',
+                                'biodata.nama_pendidikan_terakhir as pendidikan_terakhir',
+                                DB::raw("DATE_FORMAT(pengurus.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                                DB::raw("DATE_FORMAT(pengurus.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                                )->groupBy('pengurus.id', 'biodata.nama', 'biodata.nik', 'pengurus.jabatan');
-                                
+                                )    
+                                ->groupBy(
+                                    'biodata.niup',
+                                    'pengurus.id',
+                                    'biodata.nama',
+                                    'biodata.nik',
+                                    'pengurus.keterangan_jabatan',
+                                    'biodata.tanggal_lahir',
+                                    'pengurus.satuan_kerja',
+                                    'pengurus.jabatan',
+                                    'golongan.nama_golongan',
+                                    'biodata.nama_pendidikan_terakhir',
+                                    'pengurus.updated_at',
+                                    'pengurus.created_at'
+                                );
        $query = $this->filterController->applyCommonFilters($query, $request);
                // Filter Satuan Kerja
         if ($request->filled('satuan_kerja')) {
@@ -121,8 +142,15 @@ class PengurusController extends Controller
         if ($request->filled('golongan')) {
             $query->where('golongan.nama_golongan', strtolower($request->golongan));
         }
+        // Filter Warga Pesantren
         if ($request->filled('warga_pesantren')) {
-            $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren) == 'iya' ? 1 : 0);
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
+            }
         }
                 // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {
@@ -188,7 +216,15 @@ class PengurusController extends Controller
                     "id" => $item->id,
                     "nama" => $item->nama,
                     "nik" => $item->nik,
+                    "niup" => $item->niup,
                     "jabatan" => $item->jabatan,
+                    "umur" => $item->umur,
+                    "satuan_kerja" => $item->satuan_kerja,
+                    "jenis" =>$item->jenis,
+                    "golongan" => $item->nama_golongan,
+                    "pendidikan_terakhir" => $item->pendidikan_terakhir,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })

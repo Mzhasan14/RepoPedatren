@@ -135,8 +135,14 @@ class PegawaiController extends Controller
             }
         }
                 // Filter Warga Pesantren 
-            if ($request->filled('warga_pesantren')) {
-            $query->where('pegawai.warga_pesantren', strtolower($request->warga_pesantren == 'iya' ? 1 : 0));
+         if ($request->filled('warga_pesantren')) {
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
+            }
         }
             // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {

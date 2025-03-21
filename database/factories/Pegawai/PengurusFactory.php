@@ -23,6 +23,15 @@ class PengurusFactory extends Factory
             'id_golongan' => (new GolonganFactory())->create()->id,
             'satuan_kerja' => $this->faker->company,
             'jabatan' => $this->faker->jobTitle,
+            'keterangan_jabatan' => $this->faker->randomElement([
+                'Pengasuh',
+                'Ketua Dewan Pengasuh',
+                'Wakil Ketua Pengasuh',
+                'Sekretaris Dewan Pengasuh',
+                'Anggota Dewan Pengasuh',
+                'Guru Pembimbing',
+                'Dosen Tamu'
+            ]),
             'created_by' => 1,
             'status' => $this->faker->boolean,
         ];

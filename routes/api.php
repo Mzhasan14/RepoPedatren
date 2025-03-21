@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\Pegawai\{
     EntitasController,
     PengurusController,
     KaryawanController,
+    MateriAjarController
 };
 use App\Models\Peserta_didik;
 
@@ -131,7 +132,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
     Route::apiResource('/anakpegawai',AnakPegawaiController::class);
-    Route::get('/list/pengajar', [PengajarController::class, 'Pengajar']);
+    Route::apiResource('/materiAjar', MateriAjarController::class);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/list/pengajars', [PengajarController::class, 'filterPengajar']);
     Route::get('/list/pengurus',[PengurusController::class,'dataPengurus']);

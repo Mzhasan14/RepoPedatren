@@ -109,16 +109,22 @@ class KaryawanController extends Controller
             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
         }
                 // Filter Jenis Jabatan
-        if ($request->filled('Jenis_Jabatan')){
-            $query->where('golongan.nama_golongan',strtolower($request->Jenis_Jabatan));
+        if ($request->filled('jabatan')){
+            $query->where('karyawan.jabatan',strtolower($request->jabatan));
         }
                 // Filter Golongan Jabatan
         if ($request->filled('golongan_jabatan')){
             $query->where('kategori_golongan.nama_kategori_golongan',strtolower($request->golongan_jabatan));
         }
-                // Filter Warga Pesantren
-        if ($request->filled('warga_pesantren')) {
-            $query->where('pegawai.warga_pesantren', $request->warga_pesantren == 'iyaa' ? 1 : 0);
+                // Filter Warga Pesantren 
+         if ($request->filled('warga_pesantren')) {
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
+            }
         }
                 // Filter Pemberkasan (Lengkap / Tidak Lengkap)
         if ($request->filled('pemberkasan')) {

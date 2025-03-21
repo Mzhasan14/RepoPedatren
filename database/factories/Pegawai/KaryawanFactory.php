@@ -22,6 +22,7 @@ class KaryawanFactory extends Factory
             'id_pegawai' => (new PegawaiFactory())->create()->id,
             'id_golongan' => (new GolonganFactory())->create()->id,
             'keterangan' => $this->faker->paragraph,
+            'jabatan' => $this->faker->jobTitle,
             'created_by' => 1,
             'status' => $this->faker->boolean,
         ];

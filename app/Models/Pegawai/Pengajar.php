@@ -44,4 +44,8 @@ class Pengajar extends Model
     {
         return $query->where('pengajar.status',true);
     }
+    public function MateriAjarPengajar()
+    {
+        return $this->belongsTo(MateriAjar::class,'id_pengajar','id');
+    }
 }

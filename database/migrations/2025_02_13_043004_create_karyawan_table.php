@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_pegawai')->unique();
             $table->unsignedBigInteger('id_golongan');
             $table->text('keterangan');
+            $table->string('jabatan');
             $table->unsignedBigInteger('created_by');
             $table->boolean('status');
             $table->timestamps();
@@ -28,7 +29,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_pegawai');
             $table->unsignedBigInteger('id_golongan');
             $table->string('satuan_kerja');
-            $table->string('jabatan');
+            $table->string('jabatan'); // kulturan, tetap, kontrak, pengkaderan 
+            $table->string('keterangan_jabatan'); // contohnya : pengasuh, ketua dewan pengasuh
             $table->unsignedBigInteger('created_by');
             $table->boolean('status');
             $table->timestamps();
