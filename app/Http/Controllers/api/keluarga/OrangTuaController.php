@@ -95,14 +95,14 @@ class OrangTuaController extends Controller
     }
 
 
-    public function orang_tua(Request $request)
+    public function orangTua(Request $request)
     {
         $query = OrangTua::Active()
             ->join('biodata', 'orang_tua.id_biodata', '=', 'biodata.id')
+            ->leftjoin('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
             ->leftjoin('peserta_didik', 'biodata.id', '=', 'peserta_didik.id_biodata')
             ->leftjoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
             ->leftjoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
-            ->leftjoin('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
             ->leftjoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
             ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
             ->leftjoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
@@ -144,7 +144,7 @@ class OrangTuaController extends Controller
                         ->join('biodata as b_anak', 'k_anak.id_biodata', '=', 'b_anak.id')
                         ->whereColumn('k_anak.no_kk', 'keluarga.no_kk') // Pastikan dalam satu KK
                         ->where('k_anak.id_status_keluarga', 3) // Status keluarga = Anak
-                        ->where('b_anak.jenis_kelamin', 'L'); // Jenis kelamin = L (Laki-laki)
+                        ->where('b_anak.jenis_kelamin', 'p'); // Jenis kelamin = L (Laki-laki)
                 });
             } elseif ($jenis_kelamin_peserta_didik === 'santri/pelajar putri') {
                 // Filter untuk orang tua yang memiliki anak perempuan dalam satu KK
@@ -154,7 +154,7 @@ class OrangTuaController extends Controller
                         ->join('biodata as b_anak', 'k_anak.id_biodata', '=', 'b_anak.id')
                         ->whereColumn('k_anak.no_kk', 'keluarga.no_kk') // Pastikan dalam satu KK
                         ->where('k_anak.id_status_keluarga', 3) // Status keluarga = Anak
-                        ->where('b_anak.jenis_kelamin', 'P'); // Jenis kelamin = P (Perempuan)
+                        ->where('b_anak.jenis_kelamin', 'p'); // Jenis kelamin = P (Perempuan)
                 });
             }
         }
@@ -254,10 +254,10 @@ class OrangTuaController extends Controller
             "data" => $hasil->map(function ($item) {
                 return [
                     "id" => $item->id,
-                    "nik" => $item->nik,
+                    "nik/no_passport" => $item->identitas,
                     "nama" => $item->nama,
                     "no_telepon" => $item->no_telepon,
-                    "no_telepon_2" => $item->no_telepon,
+                    "no_telepon_2" => $item->no_telepon_2,
                     "nama_kabupaten" => $item->kota_asal,
                     "tanggal_update" => $item->tanggal_update,
                     "tanggal_input" => $item->tanggal_input,

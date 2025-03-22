@@ -69,7 +69,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Grouping API
-Route::prefix('v1')->group(function () {
+Route::prefix('data-pokok')->group(function () {
 
     //Biodata
     Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
@@ -80,20 +80,20 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/crud/pelajar', PelajarController::class);
     Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/peserta-didik', [PesertaDidikController::class, 'pesertaDidik']);
-    Route::get('/peserta-didik/bersaudara-kandung', [PesertaDidikController::class, 'bersaudaraKandung']);
-    Route::get('/peserta-didik/santri', [SantriController::class, 'pesertaDidikSantri']);
-    Route::get('/peserta-didik/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
+    Route::get('/peserta-didik/bersaudara', [PesertaDidikController::class, 'bersaudaraKandung']);
+    Route::get('/santri', [SantriController::class, 'pesertaDidikSantri']);
+    Route::get('/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
+    Route::get('/alumni', [AlumniController::class, 'alumni']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
-    Route::get('/alumni', [AlumniController::class, 'alumni']);
-    
+
     // 🏫 Keluarga
     Route::apiResource('/crud/keluarga', KeluargaController::class);
     Route::get('/keluarga',[KeluargaController::class,'keluarga']);
     Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/crud/orangtua', OrangTuaController::class);
-    Route::get('/orangtua',[OrangTuaController::class,'orang_tua']);
-    Route::get('/wali', [KeluargaController::class, 'dataWali']);
+    Route::get('/orangtua',[OrangTuaController::class,'orangTua']);
+    Route::get('/wali', [KeluargaController::class, 'wali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);

@@ -50,6 +50,10 @@ class PesertaDidikController extends Controller
     public function show($id)
     {
         $pesertaDidik = Peserta_didik::findOrFail($id);
+
+        $query = Peserta_didik::join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
+           ;
+        
         return new PdResource(true, 'Detail Peserta Didik', $pesertaDidik);
     }
 
@@ -332,8 +336,8 @@ class PesertaDidikController extends Controller
                 DB::raw("COALESCE(ayah.nama, 'Tidak Diketahui') as nama_ayah"),
                 DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as kota_asal"),
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil"),
-                'peserta_didik.created_at',
-                'peserta_didik.updated_at'
+                'biodata.created_at',
+                'biodata.updated_at'
             )
             ->groupBy(
                 'peserta_didik.id',
@@ -347,10 +351,9 @@ class PesertaDidikController extends Controller
                 'kabupaten.nama_kabupaten',
                 'ibu.nama',
                 'ayah.nama',
-                'peserta_didik.created_at',
-                'peserta_didik.updated_at'
+                'biodata.created_at',
+                'biodata.updated_at'
             );
-
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
