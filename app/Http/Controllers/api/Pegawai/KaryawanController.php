@@ -98,11 +98,31 @@ class KaryawanController extends Controller
                         ->select(
                             'karyawan.id',
                             'biodata.nama',
+                            'biodata.niup',
                             'biodata.nik',
-                            'karyawan.keterangan as Keterangan',
+                            DB::raw("TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE()) AS umur"),
+                            'karyawan.keterangan_jabatan as KeteranganJabatan',
                             'lembaga.nama_lembaga',
+                            'karyawan.jabatan',
+                            'golongan.nama_golongan',
+                            'biodata.nama_pendidikan_terakhir as pendidikanTerakhir',
+                            DB::raw("DATE_FORMAT(karyawan.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                            DB::raw("DATE_FORMAT(karyawan.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                             DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                            )->groupBy('karyawan.id', 'biodata.nama','biodata.nik','karyawan.keterangan','lembaga.nama_lembaga');
+                            )->groupBy(
+                                'karyawan.id', 
+                                'biodata.nama',
+                                'biodata.nik',
+                                'biodata.niup',
+                                'biodata.tanggal_lahir',
+                                'karyawan.keterangan_jabatan',
+                                'lembaga.nama_lembaga',
+                                'karyawan.jabatan',
+                                'golongan.nama_golongan',
+                                'biodata.nama_pendidikan_terakhir',
+                                'karyawan.updated_at',
+                                'karyawan.created_at',
+                            );
         $query = $this->filterController->applyCommonFilters($query, $request);
                 // Filter Lembaga
         if ($request->filled('lembaga')) {
@@ -189,9 +209,16 @@ class KaryawanController extends Controller
                 return [
                     "id" => $item->id,
                     "nama" => $item->nama,
+                    "niup" => $item->niup,
                     "nik" => $item->nik,
-                    "Keterangan" => $item->Keterangan,
+                    "umur" => $item->umur,
+                    "KeteranganJabatan" => $item->KeteranganJabatan,
                     "lembaga" => $item->nama_lembaga,
+                    "jenis" => $item->jabatan,
+                    "golongan" => $item->nama_golongan,
+                    "pendidikanTerakhir" => $item->pendidikanTerakhir,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })

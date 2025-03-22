@@ -99,13 +99,28 @@ class PegawaiController extends Controller
                         ->select(
                             'pegawai.id as id',
                             'biodata.nama as nama',
+                            'biodata.niup',
+                            'pengurus.id as pengurus',
+                            'karyawan.id as karyawan',
+                            'pengajar.id as pengajar',
+                            DB::raw("TIMESTAMPDIFF(YEAR, biodata.tanggal_lahir, CURDATE()) AS umur"),
                             DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
                             GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
                             GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
                             GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
                         )) as status"),
+                            'biodata.nama_pendidikan_terakhir as pendidikanTerkahir',
                             DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                            )->groupBy('pegawai.id', 'biodata.nama');
+                            )->groupBy(
+                                'pegawai.id', 
+                                'biodata.nama',
+                                'biodata.niup',
+                                'pengurus.id',
+                                'karyawan.id',
+                                'pengajar.id',
+                                'biodata.tanggal_lahir',
+                                'biodata.nama_pendidikan_terakhir'
+                            );
 
 
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -208,7 +223,12 @@ class PegawaiController extends Controller
                 return [
                     "id" => $item->id,
                     "nama" => $item->nama,
+                    "niup" => $item->niup,
+                    "umur" => $item->umur,
                     "status" => $item->status,
+                    "pengurus" => $item->pengurus ? true : false,
+                    "karyawan" => $item->karyawan ? true : false,
+                    "pengajar" => $item->pengajar ? true : false,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })
