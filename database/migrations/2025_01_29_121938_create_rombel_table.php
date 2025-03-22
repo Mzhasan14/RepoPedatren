@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('rombel', function (Blueprint $table) {
             $table->id();
             $table->string('nama_rombel')->nullable(false);
+            $table->enum('gender_rombel', ['putra', 'putri']);
             $table->unsignedBigInteger('id_kelas');
             $table->unsignedBigInteger('created_by')->nullable(false);
             $table->unsignedBigInteger('updated_by')->nullable();

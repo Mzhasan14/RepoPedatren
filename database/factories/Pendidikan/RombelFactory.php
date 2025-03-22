@@ -24,6 +24,9 @@ class RombelFactory extends Factory
             'id_kelas' => (new KelasFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
+            'gender_rombel' => $this->faker->randomElement(
+                'putra', 'putri'
+            ),
         ];
     }
 }
