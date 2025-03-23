@@ -138,9 +138,9 @@ class PengurusController extends Controller
         if ($request->filled('jabatan')) {
             $query->where('pengurus.jabatan', strtolower($request->jabatan));
         }
-                // Filter Golongan Jabatn
-        if ($request->filled('golongan')) {
-            $query->where('golongan.nama_golongan', strtolower($request->golongan));
+                // Filter Golongan Jabatan
+        if ($request->filled('golongan_jabatan')) {
+            $query->where('kategori_golongan.nama_kategori_golongan', strtolower($request->golongan));
         }
         // Filter Warga Pesantren
         if ($request->filled('warga_pesantren')) {

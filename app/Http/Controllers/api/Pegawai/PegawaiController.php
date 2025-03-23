@@ -86,6 +86,7 @@ class PegawaiController extends Controller
     {
         $query = Pegawai::Active()
                         ->join('biodata','biodata.id','pegawai.id_biodata')
+                        ->leftJoin('kabupaten','kabupaten.id','biodata.id_kabupaten')
                         ->leftJoin('pengajar','pengajar.id_pegawai','=','pegawai.id')
                         ->leftJoin('pengurus','pengurus.id_pegawai','=','pegawai.id')
                         ->leftJoin('karyawan','karyawan.id_pegawai','=','pegawai.id')
@@ -137,18 +138,31 @@ class PegawaiController extends Controller
                 }
             }
         }
-                // Filter Entitas 
-            if ($request->filled('entitas')) {
-            $entitas = strtolower($request->entitas); // Ubah ke huruf kecil untuk konsistensi
-        
+        if ($request->filled('entitas')) {
+            $entitas = strtolower($request->entitas); 
+            
             if ($entitas == 'pengajar') {
-                $query->whereNotNull('pengajar.id'); 
+                $query->whereNotNull('pengajar.id');
             } elseif ($entitas == 'pengurus') {
                 $query->whereNotNull('pengurus.id');
             } elseif ($entitas == 'karyawan') {
                 $query->whereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengajar pengurus') {
+                $query->whereNotNull('pengajar.id')
+                      ->orWhereNotNull('pengurus.id');
+            } elseif ($entitas == 'pengajar karyawan') {
+                $query->whereNotNull('pengajar.id')
+                      ->orWhereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengurus karyawan') {
+                $query->whereNotNull('pengurus.id')
+                      ->orWhereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengajar pengurus karyawan') {
+                $query->whereNotNull('pengajar.id')
+                      ->orWhereNotNull('pengurus.id')
+                      ->orWhereNotNull('karyawan.id');
             }
         }
+        
                 // Filter Warga Pesantren 
          if ($request->filled('warga_pesantren')) {
             if (strtolower($request->warga_pesantren) === 'memiliki niup') {
@@ -226,6 +240,7 @@ class PegawaiController extends Controller
                     "niup" => $item->niup,
                     "umur" => $item->umur,
                     "status" => $item->status,
+                    "pendidikanTerkahir" => $item->pendidikanTerkahir,
                     "pengurus" => $item->pengurus ? true : false,
                     "karyawan" => $item->karyawan ? true : false,
                     "pengajar" => $item->pengajar ? true : false,

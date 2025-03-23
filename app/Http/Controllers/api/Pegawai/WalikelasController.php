@@ -103,11 +103,31 @@ class WalikelasController extends Controller
                                 'wali_kelas.id as id',
                                 'biodata.nama',
                                 'biodata.niup',
+                                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
+                                'biodata.jenis_kelamin',
                                 'lembaga.nama_lembaga',
                                 'kelas.nama_kelas',
+                                'rombel.gender_rombel',
+                                DB::raw("CONCAT(wali_kelas.jumlah_murid, ' pelajar') as jumlah_murid"),
                                 'rombel.nama_rombel',
+                                DB::raw("DATE_FORMAT(wali_kelas.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                                DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                            )->groupBy('wali_kelas.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga', 'kelas.nama_kelas', 'rombel.nama_rombel');
+                            )->groupBy(
+                                'wali_kelas.id', 
+                                'biodata.nama', 
+                                'biodata.niup', 
+                                'lembaga.nama_lembaga', 
+                                'kelas.nama_kelas', 
+                                'rombel.nama_rombel',
+                                'biodata.nik',
+                                'biodata.no_passport',
+                                'rombel.gender_rombel',
+                                'biodata.jenis_kelamin',
+                                'wali_kelas.jumlah_murid',
+                                'wali_kelas.updated_at',
+                                'wali_kelas.created_at',
+                            );
                                 
         $query = $this->filterController->applyCommonFilters($query, $request);
         // Filter Lembaga
@@ -126,9 +146,9 @@ class WalikelasController extends Controller
         // Filter Gender Rombel
         if ($request->filled('gender_rombel')) {
             if (strtolower($request->gender_rombel) === 'putra') {
-                $query->where('biodata.jenis_kelamin', 'L');
+                $query->where('rombel.gender_rombel', 'putra');
             } elseif (strtolower($request->gender_rombel) === 'putri') {
-                $query->where('biodata.jenis_kelamin', 'P');
+                $query->where('rombel.gender_rombel', 'putri');
             }
         }
         // Filter No Telepon
@@ -170,9 +190,15 @@ class WalikelasController extends Controller
                     "id" => $item->id,
                     "nama" => $item->nama,
                     "niup" => $item->niup,
+                    "NIK/No.Passport" => $item->identitas,
+                    "JenisKelamin" => $item->jenis_kelamin,
                     "lembaga" => $item->nama_lembaga,
                     "kelas" => $item->nama_kelas,
+                    "GenderRombel" => $item->gender_rombel,
+                    "JumlahMurid" => $item->jumlah_murid,
                     "rombel" => $item->nama_rombel,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })

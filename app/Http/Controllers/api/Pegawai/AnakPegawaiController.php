@@ -88,25 +88,53 @@ class AnakPegawaiController extends Controller
     public function dataAnakpegawai(Request $request)
     {
         $query = AnakPegawai::Active()
-                            ->join('peserta_didik','peserta_didik.id','=','anak_pegawai.id_peserta_didik')
+                            ->leftJoin('peserta_didik','peserta_didik.id','=','anak_pegawai.id_peserta_didik')
                             ->join('biodata','biodata.id','peserta_didik.id_biodata')
+                            ->leftJoin('kabupaten','kabupaten.id','biodata.id_kabupaten')
                             ->leftJoin('pelajar','pelajar.id_peserta_didik','=','peserta_didik.id')
                             ->leftJoin('lembaga','lembaga.id','=','pelajar.id_lembaga')
                             ->leftJoin('jurusan','jurusan.id','=','pelajar.id_jurusan')
                             ->leftJoin('kelas','kelas.id','=','pelajar.id_kelas')
-                            ->leftJoin('rombel','lembaga.id','=','pelajar.id_rombel')
+                            ->leftJoin('rombel','rombel.id','=','pelajar.id_rombel')
                             ->leftJoin('pegawai','pegawai.id','=','anak_pegawai.id_pegawai')
                             ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
                             ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
                             ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+                            ->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
+                            ->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
+                            ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
+                            ->leftjoin('domisili', 'santri.id_domisili', '=', 'domisili.id')
                             ->select(
                                 'anak_pegawai.id',
                                 'biodata.nama',
                                 'biodata.niup',
-                                'lembaga.nama_lembaga',
+                                'santri.nis',
+                                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
+                                'kabupaten.nama_kabupaten',
+                                DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
+                                DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
+                                DB::raw("GROUP_CONCAT(DISTINCT kelas.nama_kelas SEPARATOR ', ') as kelas"),
+                                'wilayah.nama_wilayah',
+                                'blok.nama_blok',
+                                'kamar.nama_kamar',
+                                DB::raw("DATE_FORMAT(anak_pegawai.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                                DB::raw("DATE_FORMAT(anak_pegawai.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                                )
-                                ->groupBy('anak_pegawai.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga'); 
+                            )
+                            ->groupBy(
+                                'anak_pegawai.id', 
+                                'biodata.nama', 
+                                'biodata.niup', 
+                                'santri.nis',
+                                'biodata.nik', 
+                                'biodata.no_passport',
+                                'wilayah.nama_wilayah',
+                                'blok.nama_blok',
+                                'kamar.nama_kamar',
+                                'kabupaten.nama_kabupaten',
+                                'anak_pegawai.updated_at',
+                                'anak_pegawai.created_at'
+                            ); 
         
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -114,11 +142,7 @@ class AnakPegawaiController extends Controller
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);
-            $query->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
-                ->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
-                ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
-                ->leftjoin('domisili', 'santri.id_domisili', '=', 'domisili.id')
-                ->where('wilayah.nama_wilayah', $wilayah);
+            $query->where('wilayah.nama_wilayah', $wilayah);
             if ($request->filled('blok')) {
                 $blok = strtolower($request->blok);
                 $query->where('blok.nama_blok', $blok);
@@ -145,24 +169,28 @@ class AnakPegawaiController extends Controller
 
         // Filter Status Warga Pesantren
         if ($request->filled('warga_pesantren')) {
-            $warga_pesantren = strtolower($request->warga_pesantren);
-            if ($warga_pesantren == 'iya') {
-                $query->whereNotNull('santri.id');
-            } else if ($warga_pesantren == 'tidak') {
-                $query->whereNull('santri.id');
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
             }
         }
 
-        //filter semua status
+        // Filter semua status
         if ($request->filled('semua_status')) {
-            $entitas = strtolower($request->semua_status); // Ubah ke huruf kecil untuk konsistensi
-        
+            $entitas = strtolower($request->semua_status); 
+            
             if ($entitas == 'pelajar') {
                 $query->whereNotNull('pelajar.id'); 
             } elseif ($entitas == 'santri') {
                 $query->whereNotNull('santri.id');
+            } elseif ($entitas == 'pelajar dan santri') {
+                $query->whereNotNull('pelajar.id')->whereNotNull('santri.id');
             }
         }
+
 
         // Filter Angkatan Pelajar
         if ($request->filled('angkatan_pelajar')) {
@@ -176,12 +204,12 @@ class AnakPegawaiController extends Controller
 
         // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
         }
 
@@ -203,16 +231,6 @@ class AnakPegawaiController extends Controller
         if ($request->filled('sort_order')) {
             $sortOrder = strtolower($request->sort_order) == 'desc' ? 'desc' : 'asc';
             $query->orderBy('anak_pegawai.id', $sortOrder);
-        }
-
-        // Filter Status
-        if ($request->filled('status')) {
-            $status = strtolower($request->status);
-            if ($status == 'aktif') {
-                $query->Active();
-            } else if ($status == 'tidak aktif') {
-                $query->NonActive();
-            }
         }
 
         // Filter Pemberkasan (Lengkap / Tidak Lengkap)
@@ -255,7 +273,17 @@ class AnakPegawaiController extends Controller
                     "id" => $item->id,
                     "nama" => $item->nama,
                     "niup" => $item->niup,
-                    "lembaga" => $item->nama_lembaga,
+                    "nis" => $item->nis,
+                    "NIK/no.Passport" => $item->identitas,
+                    "jurusan" => $item->jurusan,
+                    "kelas" => $item->kelas,
+                    "wilayah" => $item->nama_wilayah,
+                    "blok" => $item->nama_blok,
+                    "kamar" => $item->nama_kamar,
+                    "asal_kota" => $item->nama_kabupaten,
+                    "lembaga" => $item->lembaga,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })

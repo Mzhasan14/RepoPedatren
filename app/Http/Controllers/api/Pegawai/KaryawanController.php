@@ -89,6 +89,7 @@ class KaryawanController extends Controller
         $query = Karyawan::Active()
                         ->join('pegawai','pegawai.id','=','karyawan.id_pegawai')
                         ->join('biodata','biodata.id','=','pegawai.id_biodata')
+                        ->leftJoin('kabupaten','kabupaten.id','biodata.id_kabupaten')
                         ->leftJoin('golongan','golongan.id','=','karyawan.id_golongan')
                         ->leftJoin('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')
                         ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
