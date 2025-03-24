@@ -139,6 +139,22 @@ class AnakPegawaiController extends Controller
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
 
+        // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('anak_pegawai.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('anak_pegawai.updated_at', '=', $search); // Tgl Update
+                    });
+        }
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);

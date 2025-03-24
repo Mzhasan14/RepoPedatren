@@ -130,6 +130,22 @@ class WalikelasController extends Controller
                             );
                                 
         $query = $this->filterController->applyCommonFilters($query, $request);
+        // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('wali_kelas.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('wali_kelas.updated_at', '=', $search); // Tgl Update
+                    });
+        }
         // Filter Lembaga
         if ($request->filled('lembaga')) {
             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));

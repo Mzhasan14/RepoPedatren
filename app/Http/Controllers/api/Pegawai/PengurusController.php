@@ -130,6 +130,22 @@ class PengurusController extends Controller
                                     'pengurus.created_at'
                                 );
        $query = $this->filterController->applyCommonFilters($query, $request);
+                // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('pengurus.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('pengurus.updated_at', '=', $search); // Tgl Update
+                    });
+        }
                // Filter Satuan Kerja
         if ($request->filled('satuan_kerja')) {
             $query->where('pengurus.satuan_kerja', strtolower($request->satuan_kerja));

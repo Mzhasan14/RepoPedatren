@@ -139,6 +139,22 @@ class PengajarController extends Controller
                 );   
         // 🔹 Terapkan filter umum (lokasi & jenis kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
+                // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('pengajar.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('pengajar.updated_at', '=', $search); // Tgl Update
+                    });
+        }
 
         if ($request->has('lembaga')) {
             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
