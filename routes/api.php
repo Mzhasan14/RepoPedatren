@@ -164,3 +164,5 @@ Route::prefix('data-pokok')->group(function () {
 Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
 Route::get('/menu-wilayah',[AnakPegawaiController::class,'menuWilayahBlokKamar']);
 Route::get('/menu-negara',[AnakPegawaiController::class,'menuNegaraProvinsiKabupatenKecamatan']);
+Route::get('/menu-lembaga',[AnakPegawaiController::class,'menuLembagaJurusanKelasRombel']);
+Route::get('/menu-angkatan',[AnakPegawaiController::class,'getAngkatan']);

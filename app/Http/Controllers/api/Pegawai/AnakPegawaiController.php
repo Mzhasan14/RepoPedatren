@@ -428,5 +428,153 @@ class AnakPegawaiController extends Controller
     ];
 
     return response()->json($result);
-}
+    }
+
+    public function menuLembagaJurusanKelasRombel()
+    {
+        $data = DB::table('rombel as r') // Mulai dari tabel rombel
+            ->select(
+                'l.id as lembaga_id',
+                'l.nama_lembaga',
+                'j.id as jurusan_id',
+                'j.id_lembaga',
+                'j.nama_jurusan',
+                'k.id as kelas_id',
+                'k.id_jurusan',
+                'k.nama_kelas',
+                'r.id as rombel_id',
+                'r.id_kelas',
+                'r.nama_rombel'
+            )
+            ->rightJoin('kelas as k', 'r.id_kelas', '=', 'k.id')
+            ->rightJoin('jurusan as j', 'k.id_jurusan', '=', 'j.id')
+            ->rightJoin('lembaga as l', 'j.id_lembaga', '=', 'l.id')
+            ->orderBy('l.id') // Urutkan berdasarkan lembaga.id
+            ->get();
+
+        $lembaga = [];
+
+        foreach ($data as $row) {
+            if (!isset($lembaga[$row->lembaga_id])) {
+                $lembaga[$row->lembaga_id] = [
+                    'id' => $row->lembaga_id,
+                    'nama_lembaga' => $row->nama_lembaga,
+                    'jurusan' => [],
+                ];
+            }
+
+            if (!is_null($row->jurusan_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id])) {
+                $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id] = [
+                    'id' => $row->jurusan_id,
+                    'id_lembaga' => $row->id_lembaga,
+                    'nama_jurusan' => $row->nama_jurusan,
+                    'kelas' => [],
+                ];
+            }
+
+            if (!is_null($row->kelas_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id])) {
+                $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id] = [
+                    'id' => $row->kelas_id,
+                    'id_jurusan' => $row->id_jurusan,
+                    'nama_kelas' => $row->nama_kelas,
+                    'rombel' => [],
+                ];
+            }
+
+            if (!is_null($row->rombel_id)) {
+                $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id]['rombel'][] = [
+                    'id' => $row->rombel_id,
+                    'id_kelas' => $row->id_kelas,
+                    'nama_rombel' => $row->nama_rombel,
+                ];
+            }
+        }
+
+        $result = [
+            'lembaga' => array_values(array_map(function ($lembagaItem) {
+                $lembagaItem['jurusan'] = array_values(array_map(function ($jurusan) {
+                    $jurusan['kelas'] = array_values(array_map(function ($kelas) {
+                        $kelas['rombel'] = array_values($kelas['rombel']);
+                        return $kelas;
+                    }, $jurusan['kelas']));
+                    return $jurusan;
+                }, $lembagaItem['jurusan']));
+                return $lembagaItem;
+            }, $lembaga)),
+        ];
+
+        return response()->json($result);
+    }
+
+    public function getAngkatan()
+    {
+        // Ambil angkatan masuk pelajar
+        $angkatanMasukPelajar = DB::table('pelajar')
+            ->selectRaw('YEAR(tanggal_masuk_pelajar) as tahun')
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tahun' => $item->tahun,
+                    'label' => 'Masuk Tahun ' . $item->tahun
+                ];
+            });
+
+        // Ambil angkatan masuk santri
+        $angkatanMasukSantri = DB::table('santri')
+            ->selectRaw('YEAR(tanggal_masuk_santri) as tahun')
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tahun' => $item->tahun,
+                    'label' => 'Masuk Tahun ' . $item->tahun
+                ];
+            });
+
+        // Ambil angkatan keluar pelajar
+        $angkatanKeluarPelajar = DB::table('pelajar')
+            ->selectRaw('YEAR(tanggal_keluar_pelajar) as tahun')
+            ->whereNotNull('tanggal_keluar_pelajar')
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tahun' => $item->tahun,
+                    'label' => 'Keluar Tahun ' . $item->tahun
+                ];
+            });
+
+        // Ambil angkatan keluar santri
+        $angkatanKeluarSantri = DB::table('santri')
+            ->selectRaw('YEAR(tanggal_keluar_santri) as tahun')
+            ->whereNotNull('tanggal_keluar_santri')
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tahun' => $item->tahun,
+                    'label' => 'Keluar Tahun ' . $item->tahun
+                ];
+            });
+
+        // Format response JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'angkatan_masuk' => [
+                    'pelajar' => $angkatanMasukPelajar,
+                    'santri' => $angkatanMasukSantri
+                ],
+                'angkatan_keluar' => [
+                    'pelajar' => $angkatanKeluarPelajar,
+                    'santri' => $angkatanKeluarSantri
+                ]
+            ]
+        ]);
+    }
 }
