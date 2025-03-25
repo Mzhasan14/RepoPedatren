@@ -26,4 +26,8 @@ class Catatan_afektif extends Model
     {
         return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');
     }
+    public function ScopeActive($query)
+    {
+        return $query->where('catatan_afektif.status',true);
+    }
 }

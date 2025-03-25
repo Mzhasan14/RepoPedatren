@@ -88,37 +88,77 @@ class AnakPegawaiController extends Controller
     public function dataAnakpegawai(Request $request)
     {
         $query = AnakPegawai::Active()
-                            ->join('peserta_didik','peserta_didik.id','=','anak_pegawai.id_peserta_didik')
+                            ->leftJoin('peserta_didik','peserta_didik.id','=','anak_pegawai.id_peserta_didik')
                             ->join('biodata','biodata.id','peserta_didik.id_biodata')
+                            ->leftJoin('kabupaten','kabupaten.id','biodata.id_kabupaten')
                             ->leftJoin('pelajar','pelajar.id_peserta_didik','=','peserta_didik.id')
                             ->leftJoin('lembaga','lembaga.id','=','pelajar.id_lembaga')
                             ->leftJoin('jurusan','jurusan.id','=','pelajar.id_jurusan')
                             ->leftJoin('kelas','kelas.id','=','pelajar.id_kelas')
-                            ->leftJoin('rombel','lembaga.id','=','pelajar.id_rombel')
+                            ->leftJoin('rombel','rombel.id','=','pelajar.id_rombel')
                             ->leftJoin('pegawai','pegawai.id','=','anak_pegawai.id_pegawai')
                             ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
                             ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
                             ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
+                            ->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
+                            ->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
+                            ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
+                            ->leftjoin('domisili', 'santri.id_domisili', '=', 'domisili.id')
                             ->select(
                                 'anak_pegawai.id',
                                 'biodata.nama',
                                 'biodata.niup',
-                                'lembaga.nama_lembaga',
+                                'santri.nis',
+                                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
+                                'kabupaten.nama_kabupaten',
+                                DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
+                                DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
+                                DB::raw("GROUP_CONCAT(DISTINCT kelas.nama_kelas SEPARATOR ', ') as kelas"),
+                                'wilayah.nama_wilayah',
+                                'blok.nama_blok',
+                                'kamar.nama_kamar',
+                                DB::raw("DATE_FORMAT(anak_pegawai.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+                                DB::raw("DATE_FORMAT(anak_pegawai.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-                                )
-                                ->groupBy('anak_pegawai.id', 'biodata.nama', 'biodata.niup', 'lembaga.nama_lembaga'); 
+                            )
+                            ->groupBy(
+                                'anak_pegawai.id', 
+                                'biodata.nama', 
+                                'biodata.niup', 
+                                'santri.nis',
+                                'biodata.nik', 
+                                'biodata.no_passport',
+                                'wilayah.nama_wilayah',
+                                'blok.nama_blok',
+                                'kamar.nama_kamar',
+                                'kabupaten.nama_kabupaten',
+                                'anak_pegawai.updated_at',
+                                'anak_pegawai.created_at'
+                            ); 
         
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
 
+        // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('anak_pegawai.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('anak_pegawai.updated_at', '=', $search); // Tgl Update
+                    });
+        }
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);
-            $query->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
-                ->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
-                ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
-                ->leftjoin('domisili', 'santri.id_domisili', '=', 'domisili.id')
-                ->where('wilayah.nama_wilayah', $wilayah);
+            $query->where('wilayah.nama_wilayah', $wilayah);
             if ($request->filled('blok')) {
                 $blok = strtolower($request->blok);
                 $query->where('blok.nama_blok', $blok);
@@ -145,24 +185,28 @@ class AnakPegawaiController extends Controller
 
         // Filter Status Warga Pesantren
         if ($request->filled('warga_pesantren')) {
-            $warga_pesantren = strtolower($request->warga_pesantren);
-            if ($warga_pesantren == 'iya') {
-                $query->whereNotNull('santri.id');
-            } else if ($warga_pesantren == 'tidak') {
-                $query->whereNull('santri.id');
+            if (strtolower($request->warga_pesantren) === 'memiliki niup') {
+                // Hanya tampilkan data yang memiliki NIUP
+                $query->whereNotNull('biodata.niup')->where('biodata.niup', '!=', '');
+            } elseif (strtolower($request->warga_pesantren) === 'tidak memiliki niup') {
+                // Hanya tampilkan data yang tidak memiliki NIUP
+                $query->whereNull('biodata.niup')->orWhereRaw("TRIM(biodata.niup) = ''");
             }
         }
 
-        //filter semua status
+        // Filter semua status
         if ($request->filled('semua_status')) {
-            $entitas = strtolower($request->semua_status); // Ubah ke huruf kecil untuk konsistensi
-        
+            $entitas = strtolower($request->semua_status); 
+            
             if ($entitas == 'pelajar') {
                 $query->whereNotNull('pelajar.id'); 
             } elseif ($entitas == 'santri') {
                 $query->whereNotNull('santri.id');
+            } elseif ($entitas == 'pelajar dan santri') {
+                $query->whereNotNull('pelajar.id')->whereNotNull('santri.id');
             }
         }
+
 
         // Filter Angkatan Pelajar
         if ($request->filled('angkatan_pelajar')) {
@@ -176,12 +220,12 @@ class AnakPegawaiController extends Controller
 
         // Filter No Telepon
         if ($request->filled('phone_number')) {
-            if ($request->phone_number == true) {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($request->phone_number == false) {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
+            if (strtolower($request->phone_number) === 'mempunyai') {
+                // Hanya tampilkan data yang memiliki nomor telepon
+                $query->whereNotNull('biodata.no_telepon')->where('biodata.no_telepon', '!=', '');
+            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                // Hanya tampilkan data yang tidak memiliki nomor telepon
+                $query->whereNull('biodata.no_telepon')->orWhere('biodata.no_telepon', '');
             }
         }
 
@@ -203,16 +247,6 @@ class AnakPegawaiController extends Controller
         if ($request->filled('sort_order')) {
             $sortOrder = strtolower($request->sort_order) == 'desc' ? 'desc' : 'asc';
             $query->orderBy('anak_pegawai.id', $sortOrder);
-        }
-
-        // Filter Status
-        if ($request->filled('status')) {
-            $status = strtolower($request->status);
-            if ($status == 'aktif') {
-                $query->Active();
-            } else if ($status == 'tidak aktif') {
-                $query->NonActive();
-            }
         }
 
         // Filter Pemberkasan (Lengkap / Tidak Lengkap)
@@ -255,10 +289,144 @@ class AnakPegawaiController extends Controller
                     "id" => $item->id,
                     "nama" => $item->nama,
                     "niup" => $item->niup,
-                    "lembaga" => $item->nama_lembaga,
+                    "nis" => $item->nis,
+                    "NIK/no.Passport" => $item->identitas,
+                    "jurusan" => $item->jurusan,
+                    "kelas" => $item->kelas,
+                    "wilayah" => $item->nama_wilayah,
+                    "blok" => $item->nama_blok,
+                    "kamar" => $item->nama_kamar,
+                    "asal_kota" => $item->nama_kabupaten,
+                    "lembaga" => $item->lembaga,
+                    "tgl_update" => $item->tgl_update,
+                    "tgl_input" => $item->tgl_input,
                     "foto_profil" => url($item->foto_profil)
                 ];
             })
         ]);
     }
+    public function menuWilayahBlokKamar()
+    {
+        $data = DB::table('kamar as k')
+            ->select(
+                'w.id as wilayah_id',
+                'w.nama_wilayah',
+                'b.id as blok_id',
+                'b.id_wilayah',
+                'b.nama_blok',
+                'k.id as kamar_id',
+                'k.id_blok',
+                'k.nama_kamar'
+            )
+            ->rightJoin('blok as b', 'k.id_blok', '=', 'b.id')
+            ->rightJoin('wilayah as w', 'b.id_wilayah', '=', 'w.id')
+            ->orderBy('w.id')
+            ->get();
+
+        $wilayahs = [];
+
+        foreach ($data as $row) {
+            if (!isset($wilayahs[$row->wilayah_id])) {
+                $wilayahs[$row->wilayah_id] = [
+                    'id' => $row->wilayah_id,
+                    'nama_wilayah' => $row->nama_wilayah,
+                    'blok' => [],
+                ];
+            }
+
+            if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
+                $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
+                    'id' => $row->blok_id,
+                    'id_wilayah' => $row->id_wilayah,
+                    'nama_blok' => $row->nama_blok,
+                    'kamar' => [],
+                ];
+            }
+
+            if (!is_null($row->kamar_id)) {
+                $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
+                    'id' => $row->kamar_id,
+                    'id_blok' => $row->id_blok,
+                    'nama_kamar' => $row->nama_kamar,
+                ];
+            }
+        }
+
+        $result = [
+            'wilayah' => array_values(array_map(function ($wilayah) {
+                $wilayah['blok'] = array_values($wilayah['blok']);
+                return $wilayah;
+            }, $wilayahs)),
+        ];
+
+        return response()->json($result);
+    }
+    public function menuNegaraProvinsiKabupatenKecamatan()
+{
+    $data = DB::table('kecamatan as kc') // Mulai dari tabel kecamatan
+        ->select(
+            'n.id as negara_id', 'n.nama_negara',
+            'p.id as provinsi_id', 'p.id_negara', 'p.nama_provinsi',
+            'kb.id as kabupaten_id', 'kb.id_provinsi', 'kb.nama_kabupaten',
+            'kc.id as kecamatan_id', 'kc.id_kabupaten', 'kc.nama_kecamatan'
+        )
+        ->rightJoin('kabupaten as kb', 'kc.id_kabupaten', '=', 'kb.id')
+        ->rightJoin('provinsi as p', 'kb.id_provinsi', '=', 'p.id')
+        ->rightJoin('negara as n', 'p.id_negara', '=', 'n.id')
+        ->orderBy('n.id') // Urutkan berdasarkan kecamatan.id
+        ->get();
+
+    $negara = [];
+
+    foreach ($data as $row) {
+        if (!isset($negara[$row->negara_id])) {
+            $negara[$row->negara_id] = [
+                'id' => $row->negara_id,
+                'nama_negara' => $row->nama_negara,
+                'provinsi' => [],
+            ];
+        }
+
+        if (!is_null($row->provinsi_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id])) {
+            $negara[$row->negara_id]['provinsi'][$row->provinsi_id] = [
+                'id' => $row->provinsi_id,
+                'id_negara' => $row->id_negara,
+                'nama_provinsi' => $row->nama_provinsi,
+                'kabupaten' => [],
+            ];
+        }
+
+        if (!is_null($row->kabupaten_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id])) {
+            $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id] = [
+                'id' => $row->kabupaten_id,
+                'id_provinsi' => $row->id_provinsi,
+                'nama_kabupaten' => $row->nama_kabupaten,
+                'kecamatan' => [],
+            ];
+        }
+
+        if (!is_null($row->kecamatan_id)) {
+            $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id]['kecamatan'][] = [
+                'id' => $row->kecamatan_id,
+                'id_kabupaten' => $row->id_kabupaten,
+                'nama_kecamatan' => $row->nama_kecamatan,
+            ];
+        }
+    }
+
+    $result = [
+        'negara' => array_values(array_map(function ($negaraItem) {
+            $negaraItem['provinsi'] = array_values(array_map(function ($provinsi) {
+                $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
+                    $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
+                    return $kabupaten;
+                }, $provinsi['kabupaten']));
+                return $provinsi;
+            }, $negaraItem['provinsi']));
+            return $negaraItem;
+        }, $negara)),
+    ];
+
+    return response()->json($result);
+}
 }

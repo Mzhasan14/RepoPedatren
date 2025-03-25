@@ -161,3 +161,6 @@ Route::prefix('data-pokok')->group(function () {
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'khadam']);
 });
+Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
+Route::get('/menu-wilayah',[AnakPegawaiController::class,'menuWilayahBlokKamar']);
+Route::get('/menu-negara',[AnakPegawaiController::class,'menuNegaraProvinsiKabupatenKecamatan']);

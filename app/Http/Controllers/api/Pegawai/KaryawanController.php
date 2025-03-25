@@ -89,6 +89,7 @@ class KaryawanController extends Controller
         $query = Karyawan::Active()
                         ->join('pegawai','pegawai.id','=','karyawan.id_pegawai')
                         ->join('biodata','biodata.id','=','pegawai.id_biodata')
+                        ->leftJoin('kabupaten','kabupaten.id','biodata.id_kabupaten')
                         ->leftJoin('golongan','golongan.id','=','karyawan.id_golongan')
                         ->leftJoin('kategori_golongan','kategori_golongan.id','=','golongan.id_kategori_golongan')
                         ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
@@ -124,6 +125,22 @@ class KaryawanController extends Controller
                                 'karyawan.created_at',
                             );
         $query = $this->filterController->applyCommonFilters($query, $request);
+                // Filter Search
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+    
+            $query->where(function ($q) use ($search) {
+                $q->where('biodata.nik', 'LIKE', "%$search%")
+                    ->orWhere('biodata.no_passport', 'LIKE', "%$search%")
+                    ->orWhere('biodata.nama', 'LIKE', "%$search%")
+                    ->orWhere('biodata.niup', 'LIKE', "%$search%")
+                    ->orWhere('lembaga.nama_lembaga', 'LIKE', "%$search%")
+                    ->orWhere('wilayah.nama_wilayah', 'LIKE', "%$search%")
+                    ->orWhere('kabupaten.nama_kabupaten', 'LIKE', "%$search%")
+                    ->orWhereDate('karyawan.created_at', '=', $search) // Tgl Input
+                    ->orWhereDate('karyawan.updated_at', '=', $search); // Tgl Update
+                    });
+        }
                 // Filter Lembaga
         if ($request->filled('lembaga')) {
             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
