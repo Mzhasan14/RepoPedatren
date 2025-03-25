@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\api\keluarga;
 
 use Illuminate\Http\Request;
-use App\Models\Status_keluarga;
+use App\Models\HubunganKeluarga;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +15,7 @@ class StatusKeluargaController extends Controller
      */
     public function index()
     {
-        $statusKeluarga = Status_keluarga::Active()->latest()->paginate(5);
+        $statusKeluarga = HubunganKeluarga::Active()->latest()->paginate(5);
         return new PdResource(true, 'List Status Keluarga', $statusKeluarga);
     }
 
@@ -34,7 +34,7 @@ class StatusKeluargaController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $statusKeluarga = Status_keluarga::create($validator->validated());
+        $statusKeluarga = HubunganKeluarga::create($validator->validated());
         return new PdResource(true, 'Data berhasil Ditambah', $statusKeluarga);
     }
 
@@ -43,7 +43,7 @@ class StatusKeluargaController extends Controller
      */
     public function show(string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
+        $statusKeluarga = HubunganKeluarga::findOrFail($id);
         return new PdResource(true, 'detail data', $statusKeluarga);
     }
 
@@ -52,7 +52,7 @@ class StatusKeluargaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
+        $statusKeluarga = HubunganKeluarga::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'nama_status' => 'required',
@@ -72,7 +72,7 @@ class StatusKeluargaController extends Controller
      */
     public function destroy(string $id)
     {
-        $statusKeluarga = Status_keluarga::findOrFail($id);
+        $statusKeluarga = HubunganKeluarga::findOrFail($id);
 
         $statusKeluarga->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);

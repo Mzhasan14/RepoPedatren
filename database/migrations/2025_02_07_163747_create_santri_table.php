@@ -13,26 +13,18 @@ return new class extends Migration
     {
         Schema::create('santri', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_peserta_didik');
-            $table->unsignedBigInteger('id_wilayah')->nullable();
-            $table->unsignedBigInteger('id_blok')->nullable();
-            $table->unsignedBigInteger('id_kamar')->nullable();
-            $table->unsignedBigInteger('id_domisili')->nullable();
+            $table->uuid('id_peserta_didik');
             $table->string('nis', 11)->unique();
-            $table->year('angkatan');
-            $table->date('tanggal_masuk');
-            $table->date('tanggal_keluar')->nullable();
-            $table->enum('status', ['aktif', 'cuti', 'mutasi', 'lulus', 'do', 'berhenti', 'nonaktif'])->default('aktif');
+            $table->year('angkatan_santri');
+            $table->date('tanggal_masuk_santri');
+            $table->date('tanggal_keluar_santri')->nullable();
+            $table->enum('status_santri', ['aktif', 'cuti', 'mutasi', 'alumni', 'do', 'berhenti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
-            $table->foreign('id_blok')->references('id')->on('blok')->onDelete('cascade');
-            $table->foreign('id_kamar')->references('id')->on('kamar')->onDelete('cascade');
-            $table->foreign('id_domisili')->references('id')->on('domisili')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');

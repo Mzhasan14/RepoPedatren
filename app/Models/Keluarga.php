@@ -17,8 +17,6 @@ class Keluarga extends Model
     protected $fillable = [
         'no_kk',
         'id_biodata',
-        'id_status_keluarga',
-        'wali',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -29,8 +27,8 @@ class Keluarga extends Model
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
-    public function statusKeluarga() {
-        return $this->belongsTo(Status_keluarga::class, 'id_status_keluarga','id');
+    public function hubunganKeluarga() {
+        return $this->belongsTo(HubunganKeluarga::class, 'id_hubungan_keluarga','id');
     }
 
     public function scopeActive($query)

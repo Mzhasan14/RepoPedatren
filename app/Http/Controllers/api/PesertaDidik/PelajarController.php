@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\api\FilterController;
+use App\Models\Peserta_didik;
 
 class PelajarController extends Controller
 {
@@ -142,20 +143,30 @@ class PelajarController extends Controller
 
     public function pesertaDidikPelajar(Request $request)
     {
-        $query = Pelajar::Active()
-            ->leftjoin('peserta_didik', 'pelajar.id_peserta_didik', 'peserta_didik.id')
+        $query = Peserta_didik::Active()
+            ->join('pelajar', function ($join) {
+                $join->on('pelajar.id_peserta_didik', '=', 'peserta_didik.id')
+                    ->where('pelajar.status_pelajar', true);
+            })
             ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
             ->leftJoin('kabupaten', 'kabupaten.id', '=', 'biodata.id_kabupaten')
             ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
             ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-            ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id')
-            ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-            ->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-            ->leftJoin('lembaga', 'pelajar.id_lembaga', '=', 'lembaga.id')
-            ->leftJoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
-            ->leftjoin('wilayah', 'santri.id_wilayah', '=', 'wilayah.id')
+            ->join('pendidikan_pelajar', function ($join) {
+                $join->on('pendidikan_pelajar.id_peserta_didik', '=', 'peserta_didik.id')
+                    ->where('pendidikan_pelajar.status', 'aktif');
+            })
+            ->leftjoin('domisili_santri', function ($join) {
+                $join->on('domisili_santri.id_peserta_didik', '=', 'peserta_didik.id')
+                    ->where('domisili_santri.status', 'aktif');
+            })
+            ->leftJoin('rombel', 'pendidikan_pelajar.id_rombel', '=', 'rombel.id')
+            ->leftJoin('kelas', 'pendidikan_pelajar.id_kelas', '=', 'kelas.id')
+            ->leftJoin('jurusan', 'pendidikan_pelajar.id_jurusan', '=', 'jurusan.id')
+            ->leftjoin('lembaga', 'pendidikan_pelajar.id_lembaga', '=', 'lembaga.id')
+            ->leftjoin('wilayah', 'domisili_santri.id_wilayah', '=', 'wilayah.id')
             ->select(
-                'pelajar.id',
+                'peserta_didik.id',
                 'pelajar.no_induk',
                 'biodata.nama',
                 'biodata.niup',
@@ -170,7 +181,7 @@ class PelajarController extends Controller
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
-                'pelajar.id',
+                'peserta_didik.id',
                 'pelajar.no_induk',
                 'biodata.nama',
                 'biodata.niup',
@@ -190,8 +201,8 @@ class PelajarController extends Controller
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);
-            $query->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
-                ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
+            $query->leftjoin('blok', 'domisili_santri.id_blok', '=', 'blok.id')
+                ->leftjoin('kamar', 'domisili_santri.id_kamar', '=', 'kamar.id')
                 ->where('wilayah.nama_wilayah', $wilayah);
             if ($request->filled('blok')) {
                 $blok = strtolower($request->blok);
@@ -207,9 +218,9 @@ class PelajarController extends Controller
         if ($request->filled('lembaga')) {
             $query->where('lembaga.nama_lembaga', $request->lembaga);
             if ($request->filled('jurusan')) {
-                $query->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-                    ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-                    ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id');
+                $query->leftJoin('jurusan', 'pendidikan_pelajar.id_jurusan', '=', 'jurusan.id')
+                    ->leftJoin('kelas', 'pendidikan_pelajar.id_kelas', '=', 'kelas.id')
+                    ->leftJoin('rombel', 'pendidikan_pelajar.id_rombel', '=', 'rombel.id');
                 $query->where('jurusan.nama_jurusan', $request->jurusan);
                 if ($request->filled('kelas')) {
                     $query->where('kelas.nama_kelas', $request->kelas);
@@ -223,27 +234,28 @@ class PelajarController extends Controller
         // Filter Status
         if ($request->filled('status')) {
             $status = strtolower($request->status);
-            if ($status == 'santri') {
-                $query->whereNotNull('santri.id');
-            } else if ($status == 'santri non pelajar') {
-                $query->whereNotNull('santri.id')->whereNull('pelajar.id');
-            } else if ($status == 'pelajar') {
+            $query->leftJoin('santri', function ($join) {
+                $join->on('santri.id_peserta_didik', '=', 'peserta_didik.id')
+                    ->where('santri.status_santri', 'aktif');
+            });
+            if ($status == 'pelajar') {
                 $query->whereNotNull('pelajar.id');
             } else if ($status == 'pelajar non santri') {
                 $query->whereNotNull('pelajar.id')->whereNull('santri.id');
             } else if ($status == 'santri-pelajar' || $status == 'pelajar-santri') {
-                $query->whereNotNull('pelajar.id')->whereNotNull('santri.id');
+                $query->whereNotNull('pelajar.id')
+                    ->whereNotNull('santri.id');
             }
         }
 
         // Filter Angkatan Pelajar
         if ($request->filled('angkatan_pelajar')) {
-            $query->where('pelajar.angkatan', $request->angkatan_pelajar);
+            $query->where('pelajar.angkatan_pelajar', $request->angkatan_pelajar);
         }
 
         // Filter Angkatan Santri
         if ($request->filled('angkatan_santri')) {
-            $query->where('santri.angkatan', $request->angkatan_santri);
+            $query->where('santri.angkatan_santri', $request->angkatan_santri);
         }
 
         // Filter Status Warga Pesantren
@@ -304,7 +316,7 @@ class PelajarController extends Controller
         // Filter Sort By
         if ($request->filled('sort_by')) {
             $sort_by = strtolower($request->sort_by);
-            $allowedSorts = ['nama', 'niup', 'angkatan', 'jenis kelamin', 'tempat lahir'];
+            $allowedSorts = ['nama', 'niup', 'jenis_kelamin'];
             if (in_array($sort_by, $allowedSorts)) {
                 $query->orderBy($sort_by, 'asc'); // Default ascending
             }
@@ -331,8 +343,8 @@ class PelajarController extends Controller
             return response()->json([
                 "status" => "error",
                 "message" => "Data tidak ditemukan",
-                "code" => 404
-            ], 404);
+                "data" => []
+            ], 200);
         }
 
         return response()->json([

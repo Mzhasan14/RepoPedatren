@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\User;
 use App\Models\Biodata;
 use App\Models\OrangTua;
+use App\Models\OrangTuaWali;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class OrangTuaFactory extends Factory
 {
-    protected $model = OrangTua::class;
+    protected $model = OrangTuaWali::class;
     /**
      * Define the model's default state.
      *

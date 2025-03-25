@@ -18,44 +18,25 @@ class Santri extends Model
     protected $table = 'santri';
     protected $fillable = [
         'id_peserta_didik',
-        'id_wilayah',
-        'id_blok',
-        'id_kamar',
-        'id_domisili',
         'nis',
-        'angkatan',
-        'tanggal_masuk',
-        'tanggal_keluar',
-        'status',
+        'angkatan_santri',
+        'tanggal_masuk_santri',
+        'tanggal_keluar_santri',
+        'status_santri',
         'created_by',
         'updated_by',
         'deleted_by'
     ];
 
+
+
     public function scopeActive($query)
     {
-        return $query->where('santri.status', true);
+        return $query->where('santri.status_santri', 'aktif');
     }
 
     public function pesertaDidik()
     {
         return $this->BelongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
-    }
-
-    public function wilayah()
-    {
-        return $this->BelongsTo(Wilayah::class, 'id_wilayah', 'id');
-    }
-    public function blok()
-    {
-        return $this->BelongsTo(Blok::class, 'id_blok', 'id');
-    }
-    public function kamar()
-    {
-        return $this->BelongsTo(Kamar::class, 'id_kamar', 'id');
-    }
-    public function domisili()
-    {
-        return $this->BelongsTo(Domisili::class, 'id_domisili', 'id');
     }
 }

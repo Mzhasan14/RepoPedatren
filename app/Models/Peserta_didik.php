@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Rombel;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Lembaga;
+use App\Models\Pegawai\AnakPegawai;
 use App\Models\Kewilayahan\Domisili;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Pegawai\AnakPegawai;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,12 +19,22 @@ class Peserta_didik extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'peserta_didik';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'id_biodata',
         'status',
         'created_by',
         'updated_by'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
 
     public function scopeActive($query)
     {
@@ -42,7 +53,7 @@ class Peserta_didik extends Model
 
     public function santri()
     {
-        return $this->hasOne(Santri::class, 'id_santri', 'id');
+        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id');
     }
 
     public function waliAsuh()
@@ -77,15 +88,15 @@ class Peserta_didik extends Model
 
     public function pelajarAktif()
     {
-        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
+        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id')->where('status_pelajar', 'aktif');
     }
 
     public function santriAktif()
     {
-        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
+        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status_santri', 'aktif');
     }
     public function AnakpegawaiPesertaDidik()
     {
-        return $this->hasMany(AnakPegawai::class,'id_peserta_didik','id');
+        return $this->hasMany(AnakPegawai::class, 'id_peserta_didik', 'id');
     }
 }

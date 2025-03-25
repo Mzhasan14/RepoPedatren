@@ -2,18 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Keluarga;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Status_keluarga extends Model
+class HubunganKeluarga extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    //
-    use SoftDeletes;
-
-    protected $table = 'status_keluarga';
+    protected $table = 'hubungan_keluarga';
 
     protected $fillable = [
         'nama_status',
@@ -28,7 +26,8 @@ class Status_keluarga extends Model
         return $query->where('status', true);
     }
 
-    public function keluarga() {
-        return $this->hasMany(Keluarga::class, 'id_status_keluarga');
+    public function orangTuaWali()
+    {
+        return $this->hasMany(Keluarga::class, 'id_hubungan_keluarga', 'id');
     }
 }

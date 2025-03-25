@@ -33,13 +33,12 @@ class AlumniController extends Controller
             ->leftJoin('provinsi', 'biodata.id_provinsi', '=', 'provinsi.id')
             ->leftJoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
             ->leftJoin('kecamatan', 'biodata.id_kecamatan', '=', 'kecamatan.id')
-            ->leftJoin('desa', 'biodata.id_desa', '=', 'desa.id')
             ->select(
                 'peserta_didik.id',
                 'biodata.nama',
                 DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as alamat"),
                 DB::raw("CONCAT('pendidikan terakhir: ', COALESCE(lembaga.nama_lembaga, 'Tidak Diketahui'), ' (', 
-            IFNULL(YEAR(riwayat_pelajar.tanggal_keluar), 'Belum Lulus'), ')') as nama_lembaga"),
+            IFNULL(YEAR(riwayat_pelajar.tanggal_keluar_pelajar), 'Belum Lulus'), ')') as nama_lembaga"),
                 DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
@@ -47,11 +46,11 @@ class AlumniController extends Controller
                 'biodata.nama',
                 'kabupaten.nama_kabupaten',
                 'lembaga.nama_lembaga',
-                'riwayat_pelajar.tanggal_keluar'
+                'riwayat_pelajar.tanggal_keluar_pelajar'
             )
             ->where(function ($query) {
-                $query->where('riwayat_pelajar.status', 'alumni')
-                    ->orWhere('riwayat_santri.status', 'alumni');
+                $query->where('riwayat_pelajar.status_pelajar', 'alumni')
+                    ->orWhere('riwayat_santri.status_santri', 'alumni');
             });
 
 

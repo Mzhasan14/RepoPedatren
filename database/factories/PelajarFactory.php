@@ -23,17 +23,13 @@ class PelajarFactory extends Factory
     {
         return [
             'id_peserta_didik' => Peserta_Didik::whereDoesntHave('pelajarAktif')->inRandomOrder()->first()?->id ?? Peserta_Didik::factory(),
-            'id_lembaga' =>  (new LembagaFactory())->create()->id,
-            'id_jurusan' =>  (new JurusanFactory())->create()->id,
-            'id_kelas' =>  (new KelasFactory())->create()->id,
-            'id_rombel' =>  (new RombelFactory())->create()->id,
-            'tanggal_masuk' => $this->faker->date,
-            'angkatan' => $this->faker->year,
-            'tanggal_keluar' => null,
+            'tanggal_masuk_pelajar' => $this->faker->date,
+            'angkatan_pelajar' => $this->faker->year,
+            'tanggal_keluar_pelajar' => null,
             'no_induk' => $this->faker->unique()->numerify('########'),
             'created_by' => 1,
             'updated_by' => null,
-            'status' => $this->faker->randomElement([
+            'status_pelajar' => $this->faker->randomElement([
                 'aktif'
             ]),
         ];

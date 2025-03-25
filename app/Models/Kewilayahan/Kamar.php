@@ -32,9 +32,4 @@ class Kamar extends Model
     {
         return $this->belongsTo(Blok::class, 'id_blok', 'id');
     }
-
-    public function domisili()
-    {
-        return $this->hasMany(Domisili::class, 'id_kamar', 'id');
-    }
 }

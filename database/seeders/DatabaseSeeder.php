@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
-use Database\Seeders\SantriSeeder;
 use Illuminate\Support\Facades\Hash;
-use Database\Seeders\Alamat\DesaSeeder;
 use Database\Seeders\Alamat\NegaraSeeder;
 use Database\Seeders\BerkasSeeder;
 use Database\Seeders\Alamat\ProvinsiSeeder;
@@ -90,38 +88,31 @@ class DatabaseSeeder extends Seeder
             WilayahSeeder::class,
             BlokSeeder::class,
             KamarSeeder::class,
-            DomisiliSeeder::class,
+            KabupatenSeeder::class,
+            KecamatanSeeder::class,
+            ProvinsiSeeder::class,
+            NegaraSeeder::class,
+            HubunganKeluargaSeeder::class,
             BiodataSeeder::class,
+            BioSeeder::class,
+            PesertaDidikSeeder::class,
+            PelajarSantriSeeder::class,
             KategoriGolonganSeeder::class,
             GolonganSeeder::class,
             PegawaiSeeder::class,
-
             EntitasPegawai::class,
             PengajarSeeder::class,
-
             KaryawanSeeder::class,
             WaliKelasSeeder::class,
             PengurusSeeder::class,
             JenisBerkasSeeder::class,
             BerkasSeeder::class,
-            // StatusKeluargaSeeder::class,
-            // KeluargaSeeder::class,
-            // OrangTuaSeeder::class,
             PelanggaranSeeder::class,
             PerizinanSeeder::class,
-            // PesertaDidikSeeder::class,
-            // PelajarSeeder::class,
-            // SantriSeeder::class,
             KhadamSeeder::class,
-
             Anak_AsuhSeeder::class,
             Grup_WaliAsuhSeeder::class,
             Wali_AsuhSeeder::class,
-            DesaSeeder::class,
-            KabupatenSeeder::class,
-            KecamatanSeeder::class,
-            ProvinsiSeeder::class,
-            NegaraSeeder::class,
             CatatanAfektifSeeder::class,
             CatatanKognitifSeeder::class,
             AnakPegawaiSeeder::class,

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pelanggaran', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_peserta_didik');
+            $table->uuid('id_peserta_didik');
             $table->enum('status_pelanggaran', ['Belum diproses', 'Sedang diproses', 'Sudah diproses'])->default('Belum diproses');
             $table->enum('jenis_putusan', ['Belum ada putusan', 'Disanksi', 'Dibebaskan'])->default('Belum ada putusan');
             $table->enum('jenis_pelanggaran', ['Ringan', 'Sedang', 'Berat'])->default('Ringan');

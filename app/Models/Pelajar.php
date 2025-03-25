@@ -17,15 +17,11 @@ class Pelajar extends Model
     protected $table = 'pelajar';
     protected $fillable = [
         'id_peserta_didik',
-        'id_lembaga',
-        'id_jurusan',
-        'id_kelas',
-        'id_rombel',
         'no_induk',
-        'angkatan',
-        'tanggal_masuk',
-        'tanggal_keluar',
-        'status',
+        'angkatan_pelajar',
+        'tanggal_masuk_pelajar',
+        'tanggal_keluar_pelajar',
+        'status_pelajar',
         'created_by',
         'updated_by',
         'deleted_by'
@@ -33,28 +29,11 @@ class Pelajar extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('pelajar.status', true);
+        return $query->where('pelajar.status_pelajar', 'aktif');
     }
 
     public function pesertaDidik()
     {
         return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
-    }
-
-    public function lembaga()
-    {
-        return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');
-    }
-    public function jurusan()
-    {
-        return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
-    }
-    public function kelas()
-    {
-        return $this->belongsTo(Kelas::class, 'id_kelas', 'id');
-    }
-    public function rombel()
-    {
-        return $this->belongsTo(Rombel::class, 'id_rombel', 'id');
     }
 }

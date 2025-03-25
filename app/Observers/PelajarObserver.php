@@ -28,7 +28,7 @@ class PelajarObserver
      */
     public function updated(Pelajar $pelajar)
     {
-        if (in_array($pelajar->status, ['lulus', 'do', 'berhenti', 'cuti'])) {
+        if (in_array($pelajar->status_pelajar, ['lulus', 'do', 'berhenti', 'cuti'])) {
             DB::transaction(function () use ($pelajar) {
                 RiwayatPelajar::create([
                     'id_peserta_didik' => $pelajar->id_peserta_didik,
@@ -37,10 +37,10 @@ class PelajarObserver
                     'id_kelas' => $pelajar->id_kelas,
                     'id_rombel' => $pelajar->id_rombel,
                     'no_induk' => $pelajar->no_induk,
-                    'angkatan' => $pelajar->angkatan,
-                    'tanggal_masuk' => $pelajar->tanggal_masuk,
-                    'tanggal_keluar' => now(),
-                    'status' => $pelajar->status === 'lulus' ? 'alumni' : $pelajar->status,
+                    'angkatan_pelajar' => $pelajar->angkatan_pelajar,
+                    'tanggal_masuk_pelajar' => $pelajar->tanggal_masuk_pelajar,
+                    'tanggal_keluar_pelajar' => now(),
+                    'status_pelajar' => $pelajar->status_pelajar === 'lulus' ? 'alumni' : $pelajar->status,
                     'created_by' => $pelajar->created_by
                 ]);
             });

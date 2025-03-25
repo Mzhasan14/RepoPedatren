@@ -17,7 +17,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_provinsi')->nullable();
             $table->unsignedBigInteger('id_kabupaten')->nullable();
             $table->unsignedBigInteger('id_kecamatan')->nullable();
-            $table->unsignedBigInteger('id_desa')->nullable();
+            $table->string('jalan')->nullable();
+            $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
             $table->char('niup', 11)->nullable();
             $table->string('no_passport')->nullable();
@@ -31,11 +32,11 @@ return new class extends Migration
             $table->enum(
                 'jenjang_pendidikan_terakhir',
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
-            );
+            )->nullable();
             $table->string('nama_pendidikan_terakhir')->nullable();
-            $table->tinyInteger('anak_keberapa');
-            $table->tinyInteger('dari_saudara');
-            $table->string('tinggal_bersama', 40);
+            $table->tinyInteger('anak_keberapa')->nullable();
+            $table->tinyInteger('dari_saudara')->nullable();
+            $table->string('tinggal_bersama', 40)->nullable();
             $table->string('smartcard')->nullable();
             $table->boolean('status');
             $table->unsignedBigInteger('created_by');
@@ -52,7 +53,6 @@ return new class extends Migration
             $table->foreign('id_provinsi')->references('id')->on('provinsi')->onDelete('cascade');
             $table->foreign('id_kabupaten')->references('id')->on('kabupaten')->onDelete('cascade');
             $table->foreign('id_kecamatan')->references('id')->on('kecamatan')->onDelete('cascade');
-            $table->foreign('id_desa')->references('id')->on('desa')->onDelete('cascade');
             $table->fullText('nama');
         });
     }

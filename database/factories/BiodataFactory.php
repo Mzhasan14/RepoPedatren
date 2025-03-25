@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Arr;
-use Database\Factories\Alamat\DesaFactory;
 use Database\Factories\Alamat\KabupatenFactory;
 use Database\Factories\Alamat\KecamatanFactory;
 use Database\Factories\Alamat\NegaraFactory;
@@ -27,14 +26,14 @@ class BiodataFactory extends Factory
             'id_provinsi' =>  (new ProvinsiFactory())->create()->id,
             'id_kabupaten' =>  (new KabupatenFactory())->create()->id,
             'id_kecamatan' =>  (new KecamatanFactory())->create()->id,
-            'id_desa' =>  (new DesaFactory())->create()->id,
+            'jalan' =>  $this->faker->streetAddress,
+            'kode_pos' =>  $this->faker->postcode,
             'nama' => $this->faker->name(),
             'niup' => $this->faker->unique()->numerify('###########'),
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),
             'tanggal_lahir' => $this->faker->date(),
             'tempat_lahir' => $this->faker->city(),
             'nik' => $this->faker->unique()->numerify('###############'),
-            // 'no_kk' => $this->faker->numerify('###############'),
             'no_telepon' => $this->faker->phoneNumber(),
             'no_telepon_2' => $this->faker->phoneNumber(),
             'email' => $this->faker->unique()->safeEmail(),
