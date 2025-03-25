@@ -305,4 +305,58 @@ class AnakPegawaiController extends Controller
             })
         ]);
     }
+    public function menuWilayahBlokKamar()
+    {
+        $data = DB::table('kamar as k')
+            ->select(
+                'w.id as wilayah_id',
+                'w.nama_wilayah',
+                'b.id as blok_id',
+                'b.id_wilayah',
+                'b.nama_blok',
+                'k.id as kamar_id',
+                'k.id_blok',
+                'k.nama_kamar'
+            )
+            ->rightJoin('blok as b', 'k.id_blok', '=', 'b.id')
+            ->rightJoin('wilayah as w', 'b.id_wilayah', '=', 'w.id')
+            ->orderBy('w.id')
+            ->get();
+            $wilayahs = [];
+
+                    foreach ($data as $row) {
+                        if (!isset($wilayahs[$row->wilayah_id])) {
+                            $wilayahs[$row->wilayah_id] = [
+                                'id' => $row->wilayah_id,
+                                'nama' => $row->nama_wilayah,
+                                'blok' => [],
+                            ];
+                        }
+
+                        if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
+                            $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
+                                'id' => $row->blok_id,
+                                'id_wilayah' => $row->id_wilayah,
+                                'nama' => $row->nama_blok,
+                                'kamar' => [],
+                            ];
+                        }
+            if (!is_null($row->kamar_id)) {
+                            $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
+                                'id' => $row->kamar_id,
+                                'id_blok' => $row->id_blok,
+                                'nama' => $row->nama_kamar,
+                            ];
+                        }
+                    }
+
+                    $result = [
+                        'wilayah' => array_values(array_map(function ($wilayah) {
+                            $wilayah['blok'] = array_values($wilayah['blok']);
+                            return $wilayah;
+                        }, $wilayahs)),
+                    ];
+
+                    return response()->json($result);
+                }
 }

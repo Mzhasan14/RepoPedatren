@@ -149,3 +149,4 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/khadam', [KhadamController::class, 'khadam']);
 });
 Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
+Route::get('/menu-wilayah',[AnakPegawaiController::class,'menuWilayahBlokKamar']);
