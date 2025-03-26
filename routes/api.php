@@ -61,7 +61,8 @@ use App\Http\Controllers\Api\Pegawai\{
     EntitasController,
     PengurusController,
     KaryawanController,
-    MateriAjarController
+    MateriAjarController,
+    DropdownController
 };
 use App\Models\OrangTuaWali;
 use App\Models\Peserta_didik;
@@ -161,8 +162,13 @@ Route::prefix('data-pokok')->group(function () {
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'khadam']);
 });
-Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
-Route::get('/menu-wilayah',[AnakPegawaiController::class,'menuWilayahBlokKamar']);
-Route::get('/menu-negara',[AnakPegawaiController::class,'menuNegaraProvinsiKabupatenKecamatan']);
-Route::get('/menu-lembaga',[AnakPegawaiController::class,'menuLembagaJurusanKelasRombel']);
-Route::get('/menu-angkatan',[AnakPegawaiController::class,'getAngkatan']);
+
+Route::prefix('dropdown')->group(function () {
+    Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
+    Route::get('/wilayah',[DropdownController::class,'menuWilayahBlokKamar']);
+    Route::get('/negara',[DropdownController::class,'menuNegaraProvinsiKabupatenKecamatan']);
+    Route::get('/lembaga',[DropdownController::class,'menuLembagaJurusanKelasRombel']);
+    Route::get('/angkatan',[DropdownController::class,'getAngkatan']);
+    Route::get('/golongan',[DropdownController::class,'menuKategoriGolonganAndGolongan']);
+    Route::get('/materi-ajar',[DropdownController::class,'menuMateriAjar']);
+});
