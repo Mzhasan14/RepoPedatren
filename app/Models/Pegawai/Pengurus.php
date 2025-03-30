@@ -10,13 +10,12 @@ class Pengurus extends Model
     use HasFactory;
 
     protected $table = 'pengurus';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
+    public $incrementing = false;
+    protected $keyType = 'string';
+
 
     protected $guarded = [
-        'id'
+        'created_at'
     ];
     
     public function scopeActive($query)

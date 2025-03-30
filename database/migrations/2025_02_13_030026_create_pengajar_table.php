@@ -13,10 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pengajar', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->unsignedBigInteger('id_pegawai');
             $table->unsignedBigInteger('id_golongan');
             $table->string('jabatan');
+            $table->date('tahun_masuk');
+            $table->date('tahun_keluar')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
@@ -27,7 +29,7 @@ return new class extends Migration
         });
         Schema::create('materi_ajar', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_pengajar');
+            $table->uuid('id_pengajar');
             $table->string('nama_materi');
             $table->integer('jumlah_menit')->nullable()->default(0); // Simpan dalam satuan menit
             $table->unsignedBigInteger('created_by');

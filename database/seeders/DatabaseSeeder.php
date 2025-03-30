@@ -34,6 +34,7 @@ use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Kewaliasuhan\Grup_WaliAsuhSeeder;
 use Database\Seeders\Pegawai\AnakPegawaiSeeder;
 use Database\Seeders\Pegawai\MateriAjarSeeder;
+use Database\Seeders\Pegawai\RiwayatJabatanKaryawanSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -116,7 +117,8 @@ class DatabaseSeeder extends Seeder
             CatatanAfektifSeeder::class,
             CatatanKognitifSeeder::class,
             AnakPegawaiSeeder::class,
-            MateriAjarSeeder::class
+            MateriAjarSeeder::class,
+            RiwayatJabatanKaryawanSeeder::class,
         ]);
     }
 }

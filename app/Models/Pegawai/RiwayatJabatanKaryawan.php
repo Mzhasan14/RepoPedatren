@@ -5,11 +5,11 @@ namespace App\Models\Pegawai;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Karyawan extends Model
+class RiwayatJabatanKaryawan extends Model
 {
     use HasFactory;
 
-    protected $table = 'karyawan';
+    protected $table = 'riwayat_jabatan_karyawan';
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -17,8 +17,4 @@ class Karyawan extends Model
     protected $guarded = [
         'created_at'
     ];
-    public function ScopeActive($query)
-    {
-        return $query->where('karyawan.status',true);
-    }
 }

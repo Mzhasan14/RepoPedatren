@@ -12,8 +12,11 @@ class Pengajar extends Model
     use HasFactory;
 
     protected $table = 'pengajar';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $guarded = [
-        'id'
+        'created_at'
     ];
 
     public function biodata()

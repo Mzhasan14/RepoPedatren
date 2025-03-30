@@ -139,7 +139,7 @@ class DropdownController extends Controller
         }
         public function menuLembagaJurusanKelasRombel()
         {
-            $data = Rombel::rightJoin('kelas as k', 'r.id_kelas', '=', 'k.id')
+            $data = Rombel::rightJoin('kelas as k', 'rombel.id_kelas', '=', 'k.id')
             ->rightJoin('jurusan as j', 'k.id_jurusan', '=', 'j.id')
             ->rightJoin('lembaga as l', 'j.id_lembaga', '=', 'l.id')
                 ->select(
