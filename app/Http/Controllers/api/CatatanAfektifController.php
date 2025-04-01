@@ -96,17 +96,19 @@ class CatatanAfektifController extends Controller
     {
         $query = Catatan_afektif::Active()
                                 ->join('santri as CatatanSantri','CatatanSantri.id','=','catatan_afektif.id_santri')
-                                ->leftJoin('domisili','domisili.id','=','CatatanSantri.id_domisili')
-                                ->leftJoin('wilayah','wilayah.id','=','CatatanSantri.id_wilayah')
-                                ->leftJoin('blok','blok.id','=','CatatanSantri.id_blok')
-                                ->leftJoin('kamar','kamar.id','=','CatatanSantri.id_kamar')
+                                ->leftJoin('peserta_didik as PesertaSantri','PesertaSantri.id','=','CatatanSantri.id_peserta_didik')
+                                ->leftJoin('domisili_santri','domisili_santri.id_peserta_didik','=','PesertaSantri.id')
+                                // ->leftJoin('domisili','domisili.id','=','CatatanSantri.id_domisili')
+                                ->leftJoin('wilayah','wilayah.id','=','domisili_santri.id_wilayah')
+                                ->leftJoin('blok','blok.id','=','domisili_santri.id_blok')
+                                ->leftJoin('kamar','kamar.id','=','domisili_santri.id_kamar')
                                 ->leftJoin('wali_asuh','wali_asuh.id','=','catatan_afektif.id_wali_asuh')
                                 ->leftJoin('peserta_didik as CatatanPeserta','CatatanPeserta.id','=','CatatanSantri.id_peserta_didik')
-                                ->leftJoin('pelajar','pelajar.id_peserta_didik','=','CatatanPeserta.id')
-                                ->leftJoin('lembaga','lembaga.id','pelajar.id_lembaga')
-                                ->leftJoin('jurusan','jurusan.id','pelajar.id_jurusan')
-                                ->leftJoin('kelas','kelas.id','pelajar.id_kelas')
-                                ->leftJoin('rombel','rombel.id','pelajar.id_rombel')
+                                ->leftJoin('pendidikan_pelajar','pendidikan_pelajar.id_peserta_didik','=','CatatanPeserta.id')
+                                ->leftJoin('lembaga','lembaga.id','pendidikan_pelajar.id_lembaga')
+                                ->leftJoin('jurusan','jurusan.id','pendidikan_pelajar.id_jurusan')
+                                ->leftJoin('kelas','kelas.id','pendidikan_pelajar.id_kelas')
+                                ->leftJoin('rombel','rombel.id','pendidikan_pelajar.id_rombel')
                                 ->join('biodata as CatatanBiodata','CatatanBiodata.id','=','CatatanPeserta.id_biodata')
                                 ->leftJoin('santri as PencatatSantri','PencatatSantri.nis','=','wali_asuh.nis')
                                 ->leftJoin('peserta_didik as PencatatPeserta','PencatatPeserta.id','=','PencatatSantri.id_peserta_didik')
@@ -114,7 +116,7 @@ class CatatanAfektifController extends Controller
                                 ->select(
                                     'catatan_afektif.id',
                                     'CatatanBiodata.nama',
-                                    DB::raw("GROUP_CONCAT(DISTINCT domisili.nama_domisili SEPARATOR ', ') as domisili"),
+                                    // DB::raw("GROUP_CONCAT(DISTINCT domisili.nama_domisili SEPARATOR ', ') as domisili"),
                                     DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
                                     DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
                                     DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
@@ -141,7 +143,7 @@ class CatatanAfektifController extends Controller
                                     'PencatatBiodata.nama',
                                     'wali_asuh.id',
                                     'catatan_afektif.created_at'
-                                );
+                                )->distinct();
         // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
             $query->join('negara', 'CatatanBiodata.id_negara', '=', 'negara.id')
@@ -248,12 +250,12 @@ class CatatanAfektifController extends Controller
             "current_page" => $hasil->currentPage(),
             "per_page" => $hasil->perPage(),
             "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
+            "data" => $hasil->flatMap(function ($item) {
                 return [
                     [
                         'id_santri' => $item->id,
                         'nama_santri' => $item->nama,
-                        'domisili' => $item->domisili,
+                        // 'domisili' => $item->domisili,
                         'blok' => $item->blok,
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
@@ -268,7 +270,7 @@ class CatatanAfektifController extends Controller
                     [
                         'id_santri' => $item->id,
                         'nama_santri' => $item->nama,
-                        'domisili' => $item->domisili,
+                        // 'domisili' => $item->domisili,
                         'blok' => $item->blok,
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
@@ -283,7 +285,7 @@ class CatatanAfektifController extends Controller
                     [
                         'id_santri' => $item->id,
                         'nama_santri' => $item->nama,
-                        'domisili' => $item->domisili,
+                        // 'domisili' => $item->domisili,
                         'blok' => $item->blok,
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
