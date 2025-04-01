@@ -162,9 +162,17 @@ Route::prefix('data-pokok')->group(function () {
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'khadam']);
 });
-
+Route::prefix('detail')->group(function () {
+    Route::get('/list/pengurus/{id}',[PengurusController::class,'getPengurus']);
+    Route::get('/list/pengajar/{id}', [PengajarController::class, 'getPengajar']);
+    Route::get('/list/karyawan/{id}',[KaryawanController::class,'getKaryawan']);
+    Route::get('/list/pegawai/{id}',[PegawaiController::class,'getPegawai']);
+    Route::get('/list/anakpegawai/{id}',[AnakPegawaiController::class,'getAnakPegawai']);
+    Route::get('/list/walikelas/{id}',[WalikelasController::class,'getWalikelas']);
+});
 Route::prefix('dropdown')->group(function () {
     Route::get('/catatan-afektif',[CatatanAfektifController::class,'dataCatatanAfektif']);
+    Route::get('/catatan-kognitif',[CatatanKognitifController::class,'dataCatatanKognitif']);
     Route::get('/wilayah',[DropdownController::class,'menuWilayahBlokKamar']);
     Route::get('/negara',[DropdownController::class,'menuNegaraProvinsiKabupatenKecamatan']);
     Route::get('/lembaga',[DropdownController::class,'menuLembagaJurusanKelasRombel']);

@@ -17,6 +17,11 @@ class Catatan_kognitif extends Model
         'id'
     ];
 
+
+    public function ScopeActive($query)
+    {
+        return $query->where('catatan_kognitif.status',true);
+    }
     public function PesertaDidikCatatanKognitif()
     {
         return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
