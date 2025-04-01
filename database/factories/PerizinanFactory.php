@@ -20,15 +20,15 @@ class PerizinanFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'id_peserta_didik' => (new PesertaDidikFactory())->create()->id,
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
             'pembuat' => $this->faker->name,
             'biktren' => $this->faker->word,
             'kamtib' => rand(1, 50),
             'alasan_izin' => $this->faker->sentence,
             'alamat_tujuan' => $this->faker->address,
-            'tanggal_mulai' => $this->faker->date,
-            'tanggal_akhir' => $this->faker->date,
+            'tanggal_mulai' => $this->faker->datetime,
+            'tanggal_akhir' => $this->faker->datetime,
             'jenis_izin' => $this->faker->randomElement(['Personal', 'Rombongan']),
             'status_izin' => $this->faker->randomElement(['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok', 'perizinan ditolak', 'dibatalkan']),
             'status_kembali' => $this->faker->randomElement(['telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu']),

@@ -2,11 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Peserta_didik;
-use Database\Factories\Pendidikan\JurusanFactory;
-use Database\Factories\Pendidikan\KelasFactory;
-use Database\Factories\Pendidikan\LembagaFactory;
-use Database\Factories\Pendidikan\RombelFactory;
+use Illuminate\Support\Str;
+use App\Models\PesertaDidik;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +19,8 @@ class PelajarFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => Peserta_Didik::whereDoesntHave('pelajarAktif')->inRandomOrder()->first()?->id ?? Peserta_Didik::factory(),
+            'id' => (string) Str::uuid(),
+            'id_peserta_didik' => PesertaDidik::whereDoesntHave('pelajarAktif')->inRandomOrder()->first()?->id ?? PesertaDidik::factory(),
             'tanggal_masuk_pelajar' => $this->faker->date,
             'angkatan_pelajar' => $this->faker->year,
             'tanggal_keluar_pelajar' => null,

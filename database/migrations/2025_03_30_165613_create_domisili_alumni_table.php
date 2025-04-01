@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('domisili_santri', function (Blueprint $table) {
+        Schema::create('domisili_alumni', function (Blueprint $table) {
             $table->id();
             $table->uuid('id_santri');
             $table->unsignedBigInteger('id_wilayah')->nullable();
             $table->unsignedBigInteger('id_blok')->nullable();
             $table->unsignedBigInteger('id_kamar')->nullable();
             $table->datetime('tanggal_masuk');
-            $table->datetime('tanggal_keluar')->nullable();
+            $table->datetime('tanggal_keluar');
             $table->enum('status', ['aktif', 'keluar']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('id_santri')->references('id_santri')->on('alumni_santri')->onDelete('cascade');
         });
     }
 
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('domisili_santri');
+        Schema::dropIfExists('domisili_alumni');
     }
 };

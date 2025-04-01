@@ -89,32 +89,41 @@ class KhadamController extends Controller
 
     public function khadam(Request $request)
     {
-        $query = Khadam::join('biodata', 'khadam.id_biodata', '=', 'biodata.id')
-            ->leftjoin('berkas', 'biodata.id', '=', 'berkas.id_biodata')
-            ->leftjoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-            ->leftjoin('peserta_didik', 'peserta_didik.id_biodata', '=', 'biodata.id')
-            ->leftjoin('pelajar', 'peserta_didik.id', '=', 'pelajar.id_peserta_didik')
-            ->leftjoin('santri', 'peserta_didik.id', '=', 'santri.id_peserta_didik')
-            ->leftjoin('lembaga as lp', 'pelajar.id_lembaga', '=', 'lp.id')
-            ->leftjoin('pegawai', 'biodata.id', '=', 'pegawai.id_biodata')
-            ->leftjoin('lembaga as lg', 'pegawai.id_lembaga', '=', 'lg.id')
+        $query = DB::table('khadam as k')
+            ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+            ->leftJoin('berkas as br', function ($join) {
+                $join->on('b.id', '=', 'br.id_biodata')
+                    ->where('br.id_jenis_berkas', '=', function ($query) {
+                        $query->select('id')
+                            ->from('jenis_berkas')
+                            ->where('nama_jenis_berkas', 'Pas foto')
+                            ->limit(1);
+                    })
+                    ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+            })
+            ->leftJoin('warga_pesantren as wp', function ($join) {
+                $join->on('b.id', '=', 'wp.id_biodata')
+                    ->where('wp.status', true);
+            })
+            ->where('k.status', true)
             ->select(
-                'khadam.id',
-                'biodata.niup',
-                DB::raw("COALESCE(biodata.nik, biodata.no_passport) as identitas"),
-                'biodata.nama',
-                'khadam.keterangan',
-                'biodata.created_at',
-                'biodata.updated_at',
-                DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
+                'k.id',
+                'wp.niup',
+                DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
+                'b.nama',
+                'k.keterangan',
+                'b.created_at',
+                'b.updated_at',
+                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
             )
             ->groupBy(
-                'khadam.id',
-                'biodata.niup',
-                'biodata.nama',
-                'biodata.created_at',
-                'biodata.updated_at',
+                'k.id',
+                'wp.niup',
+                'b.nama',
+                'b.created_at',
+                'b.updated_at',
             );
+
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);

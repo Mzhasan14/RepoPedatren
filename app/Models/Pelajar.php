@@ -2,11 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Rombel;
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Lembaga;
-use App\Observers\PelajarObserver;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +11,8 @@ class Pelajar extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'pelajar';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'id_peserta_didik',
         'no_induk',
@@ -27,6 +25,14 @@ class Pelajar extends Model
         'deleted_by'
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
+
     public function scopeActive($query)
     {
         return $query->where('pelajar.status_pelajar', 'aktif');
@@ -34,6 +40,11 @@ class Pelajar extends Model
 
     public function pesertaDidik()
     {
-        return $this->belongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
+        return $this->belongsTo(PesertaDidik::class, 'id_peserta_didik', 'id');
+    }
+
+    public function pendidikanPelajar()
+    {
+        return $this->hasMany(PendidikanPelajar::class, 'id_pelajar', 'id');
     }
 }

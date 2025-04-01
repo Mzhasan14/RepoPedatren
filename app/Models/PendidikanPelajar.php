@@ -14,6 +14,10 @@ class PendidikanPelajar extends Model
 
     protected $guarded = ['id'];
 
+    public function pelajar()
+    {
+        return $this->belongsTo(Pelajar::class, 'id_pelajar', 'id');
+    }
     public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');

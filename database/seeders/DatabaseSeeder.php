@@ -108,15 +108,20 @@ class DatabaseSeeder extends Seeder
             JenisBerkasSeeder::class,
             BerkasSeeder::class,
             PelanggaranSeeder::class,
+            WaliAnakAsuhSeeder::class,
             PerizinanSeeder::class,
             KhadamSeeder::class,
-            Anak_AsuhSeeder::class,
-            Grup_WaliAsuhSeeder::class,
-            Wali_AsuhSeeder::class,
+            // Anak_AsuhSeeder::class,
+            // Grup_WaliAsuhSeeder::class,
+            // Wali_AsuhSeeder::class,
             CatatanAfektifSeeder::class,
             CatatanKognitifSeeder::class,
             AnakPegawaiSeeder::class,
-            MateriAjarSeeder::class
+            MateriAjarSeeder::class,
+            WargaPesantrenSeeder::class,
+            PengunjungMahrom::class,
+            AlumniSeeder::class
+
         ]);
     }
 }

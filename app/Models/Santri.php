@@ -2,12 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Peserta_didik;
-use App\Models\Kewilayahan\Blok;
-use App\Models\Kewilayahan\Kamar;
-use App\Observers\SantriObserver;
-use App\Models\Kewilayahan\Wilayah;
-use App\Models\Kewilayahan\Domisili;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +11,8 @@ class Santri extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'santri';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'id_peserta_didik',
         'nis',
@@ -28,7 +25,13 @@ class Santri extends Model
         'deleted_by'
     ];
 
-
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
 
     public function scopeActive($query)
     {
@@ -37,6 +40,11 @@ class Santri extends Model
 
     public function pesertaDidik()
     {
-        return $this->BelongsTo(Peserta_didik::class, 'id_peserta_didik', 'id');
+        return $this->BelongsTo(PesertaDidik::class, 'id_peserta_didik', 'id');
+    }
+
+    public function domisiliSantri()
+    {
+        return $this->BelongsTo(DomisiliSantri::class, 'id_santri', 'id');
     }
 }

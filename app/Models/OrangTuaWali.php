@@ -18,7 +18,6 @@ class OrangTuaWali extends Model
         'wali',
         'pekerjaan',
         'penghasilan',
-        'wafat',
         'created_by',
         'updated_by',
         'deleted_by',

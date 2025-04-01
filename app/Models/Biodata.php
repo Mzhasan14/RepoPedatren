@@ -36,10 +36,11 @@ class Biodata extends Model
         'tinggal_bersama',
         'smartcard',
         'status',
+        'wafat',
         'created_by',
         'updated_by',
         'deleted_by',
-        
+
     ];
 
     public function berkas()
@@ -54,12 +55,12 @@ class Biodata extends Model
 
     public function peserta_didik()
     {
-        return $this->hasOne(Peserta_didik::class, 'id_biodata', 'id');
+        return $this->hasOne(PesertaDidik::class, 'id_biodata', 'id');
     }
 
     public function pegawai()
     {
-        return $this->hasMany(Pegawai::class,'id_biodata', 'id');
+        return $this->hasMany(Pegawai::class, 'id_biodata', 'id');
     }
 
     public function khadam()
@@ -67,7 +68,12 @@ class Biodata extends Model
         return $this->hasMany(Khadam::class, 'id_biodata', 'id');
     }
 
-    public function keluarga() {
+    public function keluarga()
+    {
         return $this->hasMany(Keluarga::class, 'no_kk', 'no_kk');
+    }
+    public function wargaPesantren()
+    {
+        return $this->hasMany(Keluarga::class, 'id_biodata', 'id');
     }
 }

@@ -10,6 +10,7 @@ use App\Models\OrangTua;
 use Faker\Factory as Faker;
 use Illuminate\Support\Str;
 use App\Models\OrangTuaWali;
+use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
 use App\Models\Status_keluarga;
 use Illuminate\Database\Seeder;
@@ -92,7 +93,7 @@ class KeluargasSeeder extends Seeder
                 ]);
 
                 // Assign Peserta Didik
-                $pesertaDidik = Peserta_didik::create([
+                $pesertaDidik = PesertaDidik::create([
                     'id_biodata' => $biodata->id,
                     'status' => true,
                     'created_by' => 1

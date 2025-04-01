@@ -17,21 +17,19 @@ use App\Http\Controllers\Api\PesertaDidik\{
     PesertaDidikController,
     PelajarController,
     SantriController,
-    AlumniController
+    AlumniController,
 };
 
 use App\Http\Controllers\Api\keluarga\{
     KeluargaController,
     StatusKeluargaController,
-    OrangTuaController,
     OrangTuaWaliController
 };
 
 use App\Http\Controllers\Api\Alamat\{
     ProvinsiController,
     KabupatenController,
-    KecamatanController,
-    DesaController
+    KecamatanController
 };
 use App\Http\Controllers\api\formulir\PesertaDidikFormulir;
 use App\Http\Controllers\Api\Kewaliasuhan\{
@@ -63,8 +61,6 @@ use App\Http\Controllers\Api\Pegawai\{
     KaryawanController,
     MateriAjarController
 };
-use App\Models\OrangTuaWali;
-use App\Models\Peserta_didik;
 
 // Route untuk autentikasi
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -85,19 +81,22 @@ Route::prefix('formulir')->group(function () {
 Route::prefix('data-pokok')->group(function () {
 
     //Biodata
-    Route::get('{id}/warga-pesantren',[BiodataController::class, 'WargaPesantren']);
     Route::apiResource('/biodata', BiodataController::class);
 
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud/peserta_didik', PesertaDidikController::class);
     Route::apiResource('/crud/pelajar', PelajarController::class);
     Route::apiResource('/crud/santri', SantriController::class);
-    Route::get('/peserta-didik', [PesertaDidikController::class, 'getPesertaDidik']);
-    Route::get('/peserta-didik/bersaudara', [PesertaDidikController::class, 'bersaudaraKandung']);
-    Route::get('/santri', [SantriController::class, 'pesertaDidikSantri']);
-    Route::get('/pelajar', [PelajarController::class, 'pesertaDidikPelajar']);
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
+    Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
+    Route::get('/pesertadidik-bersaudara/{id}', [PesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/pesertadidik/{id}', [PesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/santri', [SantriController::class, 'getAllSantri']);
+    Route::get('/santri/{id}', [SantriController::class, 'getDetailSantri']);
+    Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
+    Route::get('/pelajar/{id}', [PelajarController::class, 'getDetailPelajar']);
     Route::get('/alumni', [AlumniController::class, 'alumni']);
-    Route::get('/peserta-didik/{id}/biodata', [PesertaDidikController::class, 'getBiodata']);
+    Route::get('/alumni/{id}', [AlumniController::class, 'getDetailAlumni']);
     Route::apiResource('/catatan-afektif',CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif',CatatanKognitifController::class);
 

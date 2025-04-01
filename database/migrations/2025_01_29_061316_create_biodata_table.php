@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('jalan')->nullable();
             $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
-            $table->char('niup', 11)->nullable();
+            // $table->char('niup', 11)->nullable();
             $table->string('no_passport')->nullable();
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->date('tanggal_lahir');
@@ -39,6 +39,7 @@ return new class extends Migration
             $table->string('tinggal_bersama', 40)->nullable();
             $table->string('smartcard')->nullable();
             $table->boolean('status');
+            $table->boolean('wafat')->default(false);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

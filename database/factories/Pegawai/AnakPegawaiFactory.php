@@ -3,6 +3,7 @@
 namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\AnakPegawai;
+use Database\Factories\PesertaDidikFactory;
 use Database\Factories\Peserta_didikFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +22,7 @@ class AnakPegawaiFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new Peserta_didikFactory())->create()->id,
+            'id_peserta_didik' => (new PesertaDidikFactory())->create()->id,
             'id_pegawai' => (new PegawaiFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),

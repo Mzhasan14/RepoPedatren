@@ -21,7 +21,7 @@ class Berkas extends Model
         'status'
     ];
 
-    public function Berkas()
+    public function jenisBerkas()
     {
         return $this->belongsTo(Berkas::class,'id_jenis_berkas','id');
     }

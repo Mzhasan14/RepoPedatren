@@ -20,8 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('kamtib');
             $table->text('alasan_izin');
             $table->text('alamat_tujuan');
-            $table->date('tanggal_mulai');
-            $table->date('tanggal_akhir');
+            $table->datetime('tanggal_mulai');
+            $table->datetime('tanggal_akhir');
             $table->enum('jenis_izin', ['Personal', 'Rombongan']);
             $table->enum('status_izin', ['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok', 'perizinan ditolak', 'dibatalkan']);
             $table->enum('status_kembali', ['telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu'])->nullable();

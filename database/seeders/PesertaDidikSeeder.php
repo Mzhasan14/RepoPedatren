@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
+use Database\Factories\PesertaDidikFactory;
 use Database\Factories\Peserta_didikFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 
 class PesertaDidikSeeder extends Seeder
 {
@@ -13,7 +14,7 @@ class PesertaDidikSeeder extends Seeder
      */
     public function run(): void
     {
-        (new Peserta_didikFactory())->count(200)->create();
+        (new PesertaDidikFactory())->count(200)->create();
         
     }
 }

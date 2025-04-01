@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use App\Models\Biodata;
+use App\Models\HubunganKeluarga;
 use App\Models\Keluarga;
 use App\Models\Status_keluarga;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,7 +25,7 @@ class KeluargaFactory extends Factory
         return [
             'no_kk' => $this->faker->numerify('###############'),
             'id_biodata' => Biodata::inRandomOrder()->first()->id ?? Biodata::factory(),
-            'id_status_keluarga' => Status_keluarga::inRandomOrder()->first()->id ?? Status_keluarga::factory(),
+            'id_status_keluarga' => HubunganKeluarga::inRandomOrder()->first()->id ?? HubunganKeluarga::factory(),
             'created_by' => User::inRandomOrder()->first()->id ?? User::factory(),
             'status' => true,
         ];

@@ -20,7 +20,7 @@ class JenisBerkas extends Model
         'status'
     ];
 
-    public function JenisBerkas()
+    public function berkas()
     {
         return $this->hasMany(Berkas::class,'id_jenis_berkas','id');
     }

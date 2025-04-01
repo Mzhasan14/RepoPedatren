@@ -2,11 +2,13 @@
 
 namespace Database\Factories;
 
+use Illuminate\Support\Str;
+use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
 use Database\Factories\Kewilayahan\BlokFactory;
-use Database\Factories\Kewilayahan\DomisiliFactory;
 use Database\Factories\Kewilayahan\KamarFactory;
 use Database\Factories\Kewilayahan\WilayahFactory;
+use Database\Factories\Kewilayahan\DomisiliFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +24,8 @@ class SantriFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => Peserta_Didik::whereDoesntHave('santriAktif')->inRandomOrder()->first()?->id ?? Peserta_Didik::factory(),
+            'id' => (string) Str::uuid(),
+            'id_peserta_didik' => PesertaDidik::whereDoesntHave('santriAktif')->inRandomOrder()->first()?->id ?? PesertaDidik::factory(),
             'nis' => $this->faker->unique()->numerify('###########'),
             'angkatan_santri' => $this->faker->year,
             'tanggal_masuk_santri' => $this->faker->date,

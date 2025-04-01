@@ -29,7 +29,7 @@ class BiodataFactory extends Factory
             'jalan' =>  $this->faker->streetAddress,
             'kode_pos' =>  $this->faker->postcode,
             'nama' => $this->faker->name(),
-            'niup' => $this->faker->unique()->numerify('###########'),
+            // 'niup' => $this->faker->unique()->numerify('###########'),
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),
             'tanggal_lahir' => $this->faker->date(),
             'tempat_lahir' => $this->faker->city(),

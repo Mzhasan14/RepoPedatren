@@ -13,6 +13,10 @@ class DomisiliSantri extends Model
 
     protected $guarded = ['id'];
 
+    public function santri()
+    {
+        return $this->BelongsTo(Santri::class, 'id_santri', 'id');
+    }
     public function wilayah()
     {
         return $this->BelongsTo(Wilayah::class, 'id_wilayah', 'id');
