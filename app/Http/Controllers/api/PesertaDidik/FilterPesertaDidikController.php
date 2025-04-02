@@ -253,7 +253,7 @@ class FilterPesertaDidikController extends Controller
             } else {
                 $query->whereRaw('0 = 1');
             }
-        }   
+        }
         return $query;
     }
 }

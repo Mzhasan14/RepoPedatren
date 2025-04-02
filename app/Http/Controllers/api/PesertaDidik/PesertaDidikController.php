@@ -86,10 +86,15 @@ class PesertaDidikController extends Controller
                 ->leftJoin('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
                 ->leftJoin('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
                 ->leftJoin('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
+                ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
+                ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
+                ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
                 // Join untuk data santri dan domisili santri
                 ->leftJoin('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->leftJoin('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
                 ->leftJoin('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
+                ->leftjoin('blok as bl', 'ds.id_blok', '=', 'bl.id')
+                ->leftjoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
                 ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
                 ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
                 ->leftJoin('berkas as br', function ($join) {
