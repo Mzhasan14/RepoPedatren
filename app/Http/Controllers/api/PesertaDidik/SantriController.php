@@ -464,13 +464,13 @@ class SantriController extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons error dengan status 404
-        if ($results->isEmpty()) {
+         // Jika data kosong
+         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
+                'status'  => 'succes',
+                'message' => 'Data Kosong',
                 'data'    => []
-            ], 404);
+            ], 200); 
         }
 
         // Format data output agar mudah dipahami
@@ -926,7 +926,7 @@ class SantriController extends Controller
             // Ambil detail santri dari fungsi helper
             $data = $this->formDetailSantri($santri->id);
             if (empty($data)) {
-                return response()->json(['error detail santri' => 'Data tidak ditemukan'], 404);
+                return response()->json(['error detail santri' => 'Data Kosong'], 200);
             }
 
             return response()->json($data, 200);

@@ -172,10 +172,10 @@ class PesertaDidikController extends Controller
         // Jika data tidak ditemukan, kembalikan respons error dengan status 404
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
+                'status'  => 'succes',
+                'message' => 'Data Kosong',
                 'data'    => []
-            ], 404);
+            ], 200); 
         }
 
         // Format data output agar mudah dipahami
@@ -330,13 +330,13 @@ class PesertaDidikController extends Controller
             ], 500);
         }
 
-        // Jika data kosong, kembalikan respons dengan status 404
+        // Jika data kosong
         if ($results->isEmpty()) {
             return response()->json([
-                "status"  => "error",
-                "message" => "Data tidak ditemukan",
-                "data"    => []
-            ], 404);
+                'status'  => 'succes',
+                'message' => 'Data Kosong',
+                'data'    => []
+            ], 200); 
         }
 
         // Format output data agar mudah dipahami
@@ -788,7 +788,7 @@ class PesertaDidikController extends Controller
             // Ambil detail peserta didik dari fungsi helper
             $data = $this->formDetailPesertaDidik($pesertaDidik->id);
             if (empty($data)) {
-                return response()->json(['error' => 'Data tidak ditemukan'], 404);
+                return response()->json(['error' => 'Data Kosong'], 200);
             }
 
             return response()->json($data, 200);

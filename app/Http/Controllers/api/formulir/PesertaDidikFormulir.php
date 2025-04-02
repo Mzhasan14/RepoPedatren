@@ -83,10 +83,10 @@ class PesertaDidikFormulir extends Controller
         // Jika data tidak ditemukan, kembalikan respons error 404
         if (!$biodata) {
             return response()->json([
-                "status"  => "error",
-                "message" => "Data tidak ditemukan",
+                "status"  => "succes",
+                "message" => "Data Kosong",
                 "data"    => []
-            ], 404);
+            ], 200);
         }
 
         // Format dan kembalikan data dalam format JSON
@@ -149,12 +149,13 @@ class PesertaDidikFormulir extends Controller
                 ->where('peserta_didik.id', $id)
                 ->first();
 
+            // Jika data tidak ditemukan, kembalikan respons error 404
             if (!$peserta) {
                 return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Data tidak ditemukan',
-                    'data'    => []
-                ], 404);
+                    "status"  => "succes",
+                    "message" => "Data Kosong",
+                    "data"    => []
+                ], 200);
             }
 
             // Ambil data orang tua/wali
@@ -216,13 +217,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data kosong, kembalikan respons error 404
+        // Jika data kosong
         if ($data->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
+                'status'  => 'succes',
+                'message' => 'Data Kosong',
                 'data'    => []
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -262,13 +263,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan response error dengan kode 404
+        // Jika data tidak ditemukan
         if ($santriData->isEmpty()) {
             return response()->json([
-                "status"  => "error",
-                "message" => "Data tidak ditemukan",
+                "status"  => "succes",
+                "message" => "Data Kosong",
                 "data"    => []
-            ], 404);
+            ], 200);
         }
 
         // Mapping hasil query ke format respons JSON
@@ -314,13 +315,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons dengan status 404
+        // Jika data tidak ditemukan
         if ($domisiliData->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
-                'data'    => []
-            ], 404);
+                "status"  => "succes",
+                "message" => "Data Kosong",
+                "data"    => []
+            ], 200);
         }
 
         // Format output data
@@ -375,13 +376,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons error dengan kode 404
+        // Jika data tidak ditemukan
         if ($pendidikanData->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
-                'data'    => []
-            ], 404);
+                "status"  => "succes",
+                "message" => "Data Kosong",
+                "data"    => []
+            ], 200);
         }
 
         // Mapping hasil query ke format respons JSON
@@ -428,13 +429,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons error dengan status 404
+        // Jika data tidak ditemukan
         if ($berkasData->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
-                'data'    => []
-            ], 404);
+                "status"  => "succes",
+                "message" => "Data Kosong",
+                "data"    => []
+            ], 200);
         }
 
         // Mapping hasil query ke format respons JSON
@@ -478,13 +479,13 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons error dengan status 404
+        // Jika data tidak ditemukan
         if ($wargaPesantrenData->isEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
-                'data'    => []
-            ], 404);
+                "status"  => "succes",
+                "message" => "Data Kosong",
+                "data"    => []
+            ], 200);
         }
 
         // Mapping hasil query ke format respons JSON
