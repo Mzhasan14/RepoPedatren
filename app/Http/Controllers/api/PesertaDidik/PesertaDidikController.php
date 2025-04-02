@@ -27,11 +27,6 @@ class PesertaDidikController extends Controller
         $this->filterUmum = new FilterController();
     }
 
-    public function index()
-    {
-        $pesertaDidik = PesertaDidik::Active()->latest()->paginate(10);
-        return new PdResource(true, 'List Peserta Didik', $pesertaDidik);
-    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -50,13 +45,6 @@ class PesertaDidikController extends Controller
         $pesertaDidik = PesertaDidik::create($validator->validated());
 
         return new PdResource(true, 'Data berhasil ditambah', $pesertaDidik);
-    }
-
-    public function show($id)
-    {
-        $pesertaDidik = PesertaDidik::findOrFail($id);
-
-        return new PdResource(true, 'Detail Peserta Didik', $pesertaDidik);
     }
 
     public function update(Request $request, $id)
@@ -84,7 +72,7 @@ class PesertaDidikController extends Controller
 
         $pesertaDidik->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
-    }
+    }   
 
     /**
      * Fungsi untuk mengambil Tampilan awal peserta didik.

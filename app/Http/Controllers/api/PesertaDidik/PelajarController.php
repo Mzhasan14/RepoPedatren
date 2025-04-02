@@ -27,13 +27,6 @@ class PelajarController extends Controller
         $this->filterController = new FilterPesertaDidikController();
         $this->filterUmum = new FilterController();
     }
-
-
-    public function index()
-    {
-        $pelajar = Pelajar::Active()->latest()->paginate(10);
-        return new PdResource(true, 'Data Pelajar', $pelajar);
-    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

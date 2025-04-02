@@ -37,9 +37,9 @@ class FilterController extends Controller
         if ($request->filled('jenis_kelamin')) {
             $jenis_kelamin = strtolower($request->jenis_kelamin);
             if ($jenis_kelamin == 'laki-laki' || $jenis_kelamin == 'ayah') {
-                $query->where('biodata.jenis_kelamin', 'l');
+                $query->where('b.jenis_kelamin', 'l');
             } elseif ($jenis_kelamin == 'perempuan' || $jenis_kelamin == 'ibu') {
-                $query->where('biodata.jenis_kelamin', 'p');
+                $query->where('b.jenis_kelamin', 'p');
             } else {
                 // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
                 $query->whereRaw('0 = 1');
