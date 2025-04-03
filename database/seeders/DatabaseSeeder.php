@@ -45,43 +45,45 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@example.com',
-            'password' => Hash::make('superadmin'), // Password: superadmin
-            'role' => 'superadmin',
-            'email_verified_at' => now(),
-            'remember_token' => Str::random(10),
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Super Admin',
+        //     'email' => 'superadmin@example.com',
+        //     'password' => Hash::make('superadmin'), // Password: superadmin
+        //     'role' => 'superadmin',
+        //     'email_verified_at' => now(),
+        //     'remember_token' => Str::random(10),
+        // ]);
 
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('admin'), // Password: admin
-            'role' => 'admin',
-            'email_verified_at' => now(),
-            'remember_token' => Str::random(10),
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Admin',
+        //     'email' => 'admin@example.com',
+        //     'password' => Hash::make('admin'), // Password: admin
+        //     'role' => 'admin',
+        //     'email_verified_at' => now(),
+        //     'remember_token' => Str::random(10),
+        // ]);
 
-        User::factory()->create([
-            'name' => 'Staff',
-            'email' => 'staff@example.com',
-            'password' => Hash::make('staff'), // Password: staff
-            'role' => 'staff',
-            'email_verified_at' => now(),
-            'remember_token' => Str::random(10),
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Staff',
+        //     'email' => 'staff@example.com',
+        //     'password' => Hash::make('staff'), // Password: staff
+        //     'role' => 'staff',
+        //     'email_verified_at' => now(),
+        //     'remember_token' => Str::random(10),
+        // ]);
 
-        User::factory()->create([
-            'name' => 'Santri',
-            'email' => 'santri@example.com',
-            'password' => Hash::make('santri'), // Password: santri
-            'role' => 'santri',
-            'email_verified_at' => now(),
-            'remember_token' => Str::random(10),
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Santri',
+        //     'email' => 'santri@example.com',
+        //     'password' => Hash::make('santri'), // Password: santri
+        //     'role' => 'santri',
+        //     'email_verified_at' => now(),
+        //     'remember_token' => Str::random(10),
+        // ]);
 
         $this->call([
+            RoleSeeder::class,
+            UserSeeder::class,
             LembagaSeeder::class,
             JurusanSeeder::class,
             KelasSeeder::class,
@@ -119,14 +121,11 @@ class DatabaseSeeder extends Seeder
             CatatanKognitifSeeder::class,
             AnakPegawaiSeeder::class,
             MateriAjarSeeder::class,
-<<<<<<< HEAD
             WargaPesantrenSeeder::class,
             PengunjungMahrom::class,
-            AlumniSeeder::class
-
-=======
+            AlumniSeeder::class,
             RiwayatJabatanKaryawanSeeder::class,
->>>>>>> 39f1121a78a59cf46804750b1accd1b99a2a8389
+            
         ]);
     }
 }
