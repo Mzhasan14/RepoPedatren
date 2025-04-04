@@ -462,13 +462,20 @@ class PesertaDidikFormulir extends Controller
         }
 
         try {
-            $wargaPesantrenData = DB::table('peserta_didik')
-                ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-                ->join('warga_pesantren', 'warga_pesantren.id_biodata', '=', 'biodata.id')
-                ->where('peserta_didik.id', $id)
+            $wargaPesantrenData = DB::table('peserta_didik as pd')
+                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                        ->whereRaw('wp.id = (
+                        select max(wp2.id)
+                        from warga_pesantren as wp2
+                        where wp2.id_biodata = b.id
+                     )');
+                })
+                ->where('pd.id', $id)
                 ->select(
-                    'warga_pesantren.niup',
-                    'warga_pesantren.status'
+                    'wp.niup',
+                    'wp.status'
                 )
                 ->get();
         } catch (\Exception $e) {
