@@ -72,7 +72,7 @@ class PesertaDidikController extends Controller
 
         $pesertaDidik->delete();
         return new PdResource(true, 'Data berhasil dihapus', null);
-    }   
+    }
 
     /**
      * Fungsi untuk mengambil Tampilan awal peserta didik.
@@ -95,17 +95,31 @@ class PesertaDidikController extends Controller
                 ->leftJoin('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
                 ->leftjoin('blok as bl', 'ds.id_blok', '=', 'bl.id')
                 ->leftjoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                        ->where('br.id_jenis_berkas', '=', function ($query) {
-                            $query->select('id')
-                                ->from('jenis_berkas')
-                                ->where('nama_jenis_berkas', 'Pas foto')
-                                ->limit(1);
-                        })
-                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                         ->where('br.id_jenis_berkas', '=', function ($query) {
+                             $query->select('id')
+                                   ->from('jenis_berkas')
+                                   ->where('nama_jenis_berkas', 'Pas foto')
+                                   ->limit(1);
+                         })
+                         ->whereRaw('br.id = (
+                            select max(b2.id) 
+                            from berkas as b2 
+                            where b2.id_biodata = b.id 
+                              and b2.id_jenis_berkas = br.id_jenis_berkas
+                         )');
                 })
                 ->where('pd.status', true)
                 ->where(function ($q) {
@@ -114,14 +128,14 @@ class PesertaDidikController extends Controller
                         $sub->whereNotNull('s.id')
                             ->where('s.status_santri', 'aktif')
                             ->whereNotNull('ds.id')
-                            ->where('ds.status', 'aktif');
+                            ->where('ds.status', true);
                     })
                         ->orWhere(function ($sub) {
                             // Kondisi untuk data pelajar lengkap dan aktif
                             $sub->whereNotNull('p.id')
                                 ->where('p.status_pelajar', 'aktif')
                                 ->whereNotNull('pp.id')
-                                ->where('pp.status', 'aktif');
+                                ->where('pp.status', true);
                         });
                 })
                 ->select([
@@ -180,7 +194,7 @@ class PesertaDidikController extends Controller
                 'status'  => 'succes',
                 'message' => 'Data Kosong',
                 'data'    => []
-            ], 200); 
+            ], 200);
         }
 
         // Format data output agar mudah dipahami
@@ -219,13 +233,18 @@ class PesertaDidikController extends Controller
                 ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                        ->where('br.id_jenis_berkas', '=', function ($query) {
-                            $query->select('id')
-                                ->from('jenis_berkas')
-                                ->where('nama_jenis_berkas', 'Pas foto')
-                                ->limit(1);
-                        })
-                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                         ->where('br.id_jenis_berkas', '=', function ($query) {
+                             $query->select('id')
+                                   ->from('jenis_berkas')
+                                   ->where('nama_jenis_berkas', 'Pas foto')
+                                   ->limit(1);
+                         })
+                         ->whereRaw('br.id = (
+                            select max(b2.id) 
+                            from berkas as b2 
+                            where b2.id_biodata = b.id 
+                              and b2.id_jenis_berkas = br.id_jenis_berkas
+                         )');
                 })
                 ->leftJoin('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
                 ->leftJoin('santri as s', 's.id_peserta_didik', '=', 'pd.id')
@@ -235,11 +254,20 @@ class PesertaDidikController extends Controller
                 })
                 ->leftJoin('domisili_santri as ds', function ($join) {
                     $join->on('ds.id_santri', '=', 's.id')
-                        ->where('ds.status', 'aktif');
+                        ->where('ds.status', true);
                 })
                 ->leftJoin('lembaga', 'pp.id_lembaga', '=', 'lembaga.id')
                 ->leftJoin('wilayah', 'ds.id_wilayah', '=', 'wilayah.id')
-                ->leftJoin('warga_pesantren', 'b.id', '=', 'warga_pesantren.id_biodata')
+                 ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 // Join derived table untuk mengambil nama ibu dan ayah
                 ->leftJoin(DB::raw('(
                  SELECT k.no_kk,
@@ -268,8 +296,8 @@ class PesertaDidikController extends Controller
                         ->orWhere('p.status_pelajar', 'aktif');
                 })
                 ->where(function ($q) {
-                    $q->where('ds.status', 'aktif')
-                        ->orWhere('pp.status', 'aktif');
+                    $q->where('ds.status', true)
+                        ->orWhere('pp.status', true);
                 })
                 ->whereIn('keluarga.no_kk', function ($subquery) {
                     $subquery->select('no_kk')
@@ -286,7 +314,7 @@ class PesertaDidikController extends Controller
                     DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
                     'keluarga.no_kk',
                     'b.nama',
-                    'warga_pesantren.niup',
+                    'wp.niup',
                     'lembaga.nama_lembaga',
                     'wilayah.nama_wilayah',
                     DB::raw("CONCAT('Kab. ', kb.nama_kabupaten) as kota_asal"),
@@ -302,7 +330,7 @@ class PesertaDidikController extends Controller
                     'b.no_passport',
                     'keluarga.no_kk',
                     'b.nama',
-                    'warga_pesantren.niup',
+                    'wp.niup',
                     'lembaga.nama_lembaga',
                     'wilayah.nama_wilayah',
                     'kb.nama_kabupaten',
@@ -341,7 +369,7 @@ class PesertaDidikController extends Controller
                 'status'  => 'succes',
                 'message' => 'Data Kosong',
                 'data'    => []
-            ], 200); 
+            ], 200);
         }
 
         // Format output data agar mudah dipahami
@@ -382,7 +410,16 @@ class PesertaDidikController extends Controller
             $biodata = DB::table('peserta_didik as pd')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
                 ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
-                ->leftJoin('berkas as br', 'b.id', '=', 'br.id_biodata')
+                ->leftJoin('berkas as br', function ($join) {
+                    $join->on('b.id', '=', 'br.id_biodata')
+                        ->where('br.id_jenis_berkas', '=', function ($query) {
+                            $query->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                })
                 ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
                 ->leftJoin('kecamatan as kc', 'b.id_kecamatan', '=', 'kc.id')
                 ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')

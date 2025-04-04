@@ -85,6 +85,42 @@ class FilterPesertaDidikController extends Controller
         return $query;
     }
 
+    public function applyStatusAlumniFilter($query, Request $request)
+    {
+        if ($request->filled('status_alumni')) {
+            switch (strtolower($request->status_alumni)) {
+                case 'alumni santri':
+                    $query->whereNotNull('s.id');
+                    break;
+                case 'alumni santri non pelajar':
+                    $query->whereNotNull('s.id')->whereNull('p.id');
+                    break;
+                case 'alumni santri tetapi masih pelajar aktif':
+                    $query->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
+                        ->whereNotNull('s.id')->whereNotNull('p.id');
+                    break;
+                case 'alumni pelajar':
+                    $query->whereNotNull('p.id');
+                    break;
+                case 'alumni pelajar non santri':
+                    $query->whereNotNull('p.id')->whereNull('s.id');
+                    break;
+                case 'alumni pelajar tetapi masih santri aktif':
+                    $query->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
+                        ->whereNotNull('p.id')->whereNotNull('s.id');
+                    break;
+                case 'alumni pelajar sekaligus santri':
+                case 'alumni santri sekaligus pelajar':
+                    $query->whereNotNull('p.id')->whereNotNull('s.id');
+                    break;
+                default:
+                    $query->whereRaw('0 = 1');
+                    break;
+            }
+        }
+        return $query;
+    }
+
     // Filter Status Warga Pesantren (berdasarkan NIUP)
     public function applyStatusWargaPesantrenFilter($query, Request $request)
     {

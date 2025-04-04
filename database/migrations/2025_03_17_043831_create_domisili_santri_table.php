@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_kamar')->nullable();
             $table->datetime('tanggal_masuk');
             $table->datetime('tanggal_keluar')->nullable();
-            $table->enum('status', ['aktif', 'keluar']);
+            $table->boolean('status')->default(true);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

@@ -5,9 +5,11 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Database\Seeders\Alamat\NegaraSeeder;
 use Database\Seeders\BerkasSeeder;
+use Illuminate\Support\Facades\Hash;
+use Database\Seeders\JenisBerkasSeeder;
+use Database\Seeders\DataKeluargaSeeder;
+use Database\Seeders\Alamat\NegaraSeeder;
 use Database\Seeders\Alamat\ProvinsiSeeder;
 use Database\Seeders\Pegawai\PegawaiSeeder;
 use Database\Seeders\Alamat\KabupatenSeeder;
@@ -22,18 +24,13 @@ use Database\Seeders\Pendidikan\KelasSeeder;
 use Database\Seeders\Kewilayahan\KamarSeeder;
 use Database\Seeders\Pegawai\WaliKelasSeeder;
 use Database\Seeders\Pendidikan\RombelSeeder;
+use Database\Seeders\Pegawai\MateriAjarSeeder;
 use Database\Seeders\Pendidikan\JurusanSeeder;
 use Database\Seeders\Pendidikan\LembagaSeeder;
-use Database\Seeders\Kewilayahan\WilayahSeeder;
-use Database\Seeders\JenisBerkasSeeder;
-use Database\Seeders\Kewilayahan\DomisiliSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Database\Seeders\Kewaliasuhan\Anak_AsuhSeeder;
-use Database\Seeders\Kewaliasuhan\Wali_AsuhSeeder;
-use Database\Seeders\Pegawai\KategoriGolonganSeeder;
-use Database\Seeders\Kewaliasuhan\Grup_WaliAsuhSeeder;
+use Database\Seeders\Kewilayahan\WilayahSeeder;
 use Database\Seeders\Pegawai\AnakPegawaiSeeder;
-use Database\Seeders\Pegawai\MateriAjarSeeder;
+use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Pegawai\RiwayatJabatanKaryawanSeeder;
 
 class DatabaseSeeder extends Seeder
@@ -97,7 +94,7 @@ class DatabaseSeeder extends Seeder
             NegaraSeeder::class,
             HubunganKeluargaSeeder::class,
             BiodataSeeder::class,
-            BioSeeder::class,
+            DataKeluargaSeeder::class,
             PesertaDidikSeeder::class,
             PelajarSantriSeeder::class,
             KategoriGolonganSeeder::class,
@@ -123,7 +120,6 @@ class DatabaseSeeder extends Seeder
             MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
             PengunjungMahrom::class,
-            AlumniSeeder::class,
             RiwayatJabatanKaryawanSeeder::class,
             
         ]);

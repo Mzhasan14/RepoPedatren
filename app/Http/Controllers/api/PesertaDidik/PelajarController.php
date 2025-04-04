@@ -386,16 +386,30 @@ class PelajarController extends Controller
                 ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
                 ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
                 ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                        ->where('br.id_jenis_berkas', '=', function ($query) {
-                            $query->select('id')
-                                ->from('jenis_berkas')
-                                ->where('nama_jenis_berkas', 'Pas foto')
-                                ->limit(1);
-                        })
-                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                         ->where('br.id_jenis_berkas', '=', function ($query) {
+                             $query->select('id')
+                                   ->from('jenis_berkas')
+                                   ->where('nama_jenis_berkas', 'Pas foto')
+                                   ->limit(1);
+                         })
+                         ->whereRaw('br.id = (
+                            select max(b2.id) 
+                            from berkas as b2 
+                            where b2.id_biodata = b.id 
+                              and b2.id_jenis_berkas = br.id_jenis_berkas
+                         )');
                 })
                 ->leftJoin('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->leftJoin('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
@@ -404,7 +418,7 @@ class PelajarController extends Controller
                 ->leftJoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
                 ->where('pd.status', true)
                 ->where('p.status_pelajar', 'aktif')
-                ->where('pp.status', 'aktif')
+                ->where('pp.status', true)
                 ->select([
                     'p.id',
                     'p.no_induk',

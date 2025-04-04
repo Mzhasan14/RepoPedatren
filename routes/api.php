@@ -78,7 +78,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 
 // Untuk Data Pokok Nanti
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin'])->group(function () {
-    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
+   
 });
 
 Route::prefix('formulir')->group(function () {
@@ -102,6 +102,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/pelajar', PelajarController::class);
     Route::apiResource('/crud/santri', SantriController::class);
    
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
     Route::get('/pesertadidik-bersaudara/{id}', [PesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pesertadidik/{id}', [PesertaDidikController::class, 'getDetailPesertaDidik']);
@@ -172,7 +173,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/pelanggaran', PelanggaranController::class);
 
     // Khadam
-    Route::get('/khadam', [KhadamController::class, 'khadam']);
+    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
+    Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
 });
 Route::prefix('detail')->group(function () {
     Route::get('/list/pengurus/{id}', [PengurusController::class, 'getPengurus']);
