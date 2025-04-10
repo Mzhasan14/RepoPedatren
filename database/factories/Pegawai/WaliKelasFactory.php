@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Factories\Pegawai;
-
+use Illuminate\Support\Str;
 use App\Models\Pegawai\WaliKelas;
 use Database\Factories\Pendidikan\RombelFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,6 +20,7 @@ class WaliKelasFactory extends Factory
     public function definition(): array
     {
         return [
+            'id' => (string) Str::uuid(),
             'id_pengajar' => (new PengajarFactory())->create()->id,
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
             'created_by' => 1,

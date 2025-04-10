@@ -31,7 +31,7 @@ return new class extends Migration
         });
         Schema::create('entitas_pegawai', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_pegawai');
+            $table->uuid('id_pegawai');
             $table->unsignedBigInteger('id_golongan');
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();

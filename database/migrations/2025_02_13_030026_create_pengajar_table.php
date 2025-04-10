@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('pengajar', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('id_pegawai');
+            $table->uuid('id_pegawai');
             $table->unsignedBigInteger('id_golongan');
             $table->string('jabatan');
             $table->date('tahun_masuk');

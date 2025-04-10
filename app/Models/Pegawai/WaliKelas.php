@@ -10,13 +10,12 @@ class WaliKelas extends Model
     use HasFactory;
 
     protected $table = 'wali_kelas';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
+    public $incrementing = false;
+    protected $keyType = 'string';
+
 
     protected $guarded = [
-        'id'
+        'created_at'
     ];
 
     public function WaliKelasPengajar()
