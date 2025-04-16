@@ -49,7 +49,7 @@ return new class extends Migration
                 $table->foreign('id_hubungan_keluarga')->references('id')->on('hubungan_keluarga')->onDelete('cascade');
             });
 
-            // Tabel anggota_keluarga (Data Keluarga dalam Satu KK)
+            // Tabel keluarga (Data Keluarga dalam Satu KK)
             Schema::create('keluarga', function (Blueprint $table) {
                 $table->id();
                 $table->char('no_kk', 16)->nullable();

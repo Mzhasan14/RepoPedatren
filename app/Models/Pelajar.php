@@ -43,7 +43,7 @@ class Pelajar extends Model
         return $this->belongsTo(PesertaDidik::class, 'id_peserta_didik', 'id');
     }
 
-    public function pendidikanPelajar()
+    public function pendidikan()
     {
         return $this->hasMany(PendidikanPelajar::class, 'id_pelajar', 'id');
     }

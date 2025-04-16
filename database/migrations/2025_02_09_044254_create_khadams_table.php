@@ -12,9 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('khadam', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->unsignedBigInteger('id_biodata')->unique();
             $table->string('keterangan');
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_akhir')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');

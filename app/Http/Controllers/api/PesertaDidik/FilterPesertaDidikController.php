@@ -206,7 +206,7 @@ class FilterPesertaDidikController extends Controller
     public function applySorting($query, Request $request)
     {
         if ($request->filled('sort_by')) {
-            $allowedSorts = ['nama', 'niup', 'jenis_kelamin'];
+            $allowedSorts = ['id', 'nama', 'niup', 'jenis_kelamin'];
             $sortBy = strtolower($request->sort_by);
             if (in_array($sortBy, $allowedSorts)) {
                 $sortOrder = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';

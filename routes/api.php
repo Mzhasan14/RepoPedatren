@@ -77,8 +77,14 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Untuk Data Pokok Nanti
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin'])->group(function () {
-   
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
+   // Route CRUD
+   Route::middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
+    // CRUD Pelajar
+    Route::post('/pelajar', [PelajarController::class, 'store']);
+    Route::put('/pelajar/{id}', [PelajarController::class, 'update']);
+    Route::delete('/pelajar/{id}', [PelajarController::class, 'destroy']);
+   });
 });
 
 Route::prefix('formulir')->group(function () {
@@ -99,9 +105,8 @@ Route::prefix('data-pokok')->group(function () {
 
     // 🏫 Santri & Peserta Didik
     Route::apiResource('/crud/peserta_didik', PesertaDidikController::class);
-    Route::apiResource('/crud/pelajar', PelajarController::class);
+    // Route::post('/pelajar', [PelajarController::class, 'store']);
     Route::apiResource('/crud/santri', SantriController::class);
-   
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
     Route::get('/pesertadidik-bersaudara/{id}', [PesertaDidikController::class, 'getDetailPesertaDidik']);

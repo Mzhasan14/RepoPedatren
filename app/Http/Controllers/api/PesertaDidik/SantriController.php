@@ -152,231 +152,6 @@ class SantriController extends Controller
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
 
-    // public function pesertaDidikSantri(Request $request)
-    // {
-    //     $query = PesertaDidik::Active()
-    //         ->join('santri', function ($join) {
-    //             $join->on('santri.id_peserta_didik', '=', 'peserta_didik.id')
-    //                 ->where('santri.status_santri', 'aktif');
-    //         })
-    //         ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-    //         ->leftjoin('kabupaten', 'biodata.id_kabupaten', '=', 'kabupaten.id')
-    //         ->leftJoin('berkas', 'berkas.id_biodata', '=', 'biodata.id')
-    //         ->leftJoin('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-    //         ->leftJoin('pendidikan_pelajar', function ($join) {
-    //             $join->on('pendidikan_pelajar.id_pelajar', '=', 'peserta_didik.id')
-    //                 ->where('pendidikan_pelajar.status', 'aktif');
-    //         })
-    //         ->join('domisili_santri', function ($join) {
-    //             $join->on('domisili_santri.id_santri', '=', 'peserta_didik.id')
-    //                 ->where('domisili_santri.status', 'aktif');
-    //         })
-    //         ->leftjoin('wilayah', 'domisili_santri.id_wilayah', '=', 'wilayah.id')
-    //         ->leftjoin('blok', 'domisili_santri.id_blok', '=', 'blok.id')
-    //         ->leftjoin('kamar', 'domisili_santri.id_kamar', '=', 'kamar.id')
-    //         ->leftjoin('lembaga', 'pendidikan_pelajar.id_lembaga', '=', 'lembaga.id')
-    //         ->select(
-    //             'peserta_didik.id',
-    //             'santri.nis',
-    //             'biodata.nama',
-    //             'biodata.niup',
-    //             'kamar.nama_kamar',
-    //             'blok.nama_blok',
-    //             'lembaga.nama_lembaga',
-    //             'wilayah.nama_wilayah',
-    //             DB::raw("CONCAT('Kab. ', kabupaten.nama_kabupaten) as kota_asal"),
-    //             'santri.created_at',
-    //             'santri.updated_at',
-    //             DB::raw("COALESCE(MAX(berkas.file_path), 'default.jpg') as foto_profil")
-    //         )
-    //         ->groupBy(
-    //             'peserta_didik.id',
-    //             'biodata.nama',
-    //             'santri.nis',
-    //             'wilayah.nama_wilayah',
-    //             'biodata.niup',
-    //             'kamar.nama_kamar',
-    //             'blok.nama_blok',
-    //             'lembaga.nama_lembaga',
-    //             'kabupaten.nama_kabupaten',
-    //             'santri.created_at',
-    //             'santri.updated_at',
-    //         );
-
-    //     // Filter Umum (Alamat dan Jenis Kelamin)
-    //     $query = $this->filterController->applyCommonFilters($query, $request);
-
-    //     // Filter Wilayah
-    //     if ($request->filled('wilayah')) {
-    //         $wilayah = strtolower($request->wilayah);
-    //         $query->leftjoin('blok', 'domisili_santri.id_blok', '=', 'blok.id')
-    //             ->leftjoin('kamar', 'domisili_santri.id_kamar', '=', 'kamar.id')
-    //             ->where('wilayah.nama_wilayah', $wilayah);
-    //         if ($request->filled('blok')) {
-    //             $blok = strtolower($request->blok);
-    //             $query->where('blok.nama_blok', $blok);
-    //             if ($request->filled('kamar')) {
-    //                 $kamar = strtolower($request->kamar);
-    //                 $query->where('kamar.nama_kamar', $kamar);
-    //             }
-    //         }
-    //     }
-
-    //     // Filter Lembaga
-    //     if ($request->filled('lembaga')) {
-    //         $query->where('lembaga.nama_lembaga', $request->lembaga);
-    //         if ($request->filled('jurusan')) {
-    //             $query->leftJoin('jurusan', 'pendidikan_pelajar.id_jurusan', '=', 'jurusan.id')
-    //                 ->leftJoin('kelas', 'pendidikan_pelajar.id_kelas', '=', 'kelas.id')
-    //                 ->leftJoin('rombel', 'pendidikan_pelajar.id_rombel', '=', 'rombel.id');
-    //             $query->where('jurusan.nama_jurusan', $request->jurusan);
-    //             if ($request->filled('kelas')) {
-    //                 $query->where('kelas.nama_kelas', $request->kelas);
-    //                 if ($request->filled('rombel')) {
-    //                     $query->where('rombel.nama_rombel', $request->rombel);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // Filter Status
-    //     if ($request->filled('status')) {
-    //         $status = strtolower($request->status);
-    //         $query->leftJoin('pelajar', function ($join) {
-    //             $join->on('pelajar.id_peserta_didik', '=', 'peserta_didik.id')
-    //                 ->where('pelajar.status_pelajar', 'aktif');
-    //         });
-    //         if ($status == 'santri') {
-    //             $query->whereNotNull('santri.id');
-    //         } else if ($status == 'santri non pelajar') {
-    //             $query->whereNotNull('santri.id')->whereNull('pelajar.id');
-    //         } else if ($status == 'santri-pelajar' || $status == 'pelajar-santri') {
-    //             $query->whereNotNull('pelajar.id')->whereNotNull('santri.id');
-    //         }
-    //     }
-
-    //     // Filter Angkatan Pelajar
-    //     if ($request->filled('angkatan_pelajar')) {
-    //         $query->where('pelajar.angkatan_pelajar', $request->angkatan_pelajar);
-    //     }
-
-    //     // Filter Angkatan Santri
-    //     if ($request->filled('angkatan_santri')) {
-    //         $query->where('santri.angkatan_santri', $request->angkatan_santri);
-    //     }
-
-    //     // Filter Status Warga Pesantren
-    //     if ($request->filled('warga_pesantren')) {
-    //         $warga_pesantren = strtolower($request->warga_pesantren);
-    //         if ($warga_pesantren == 'memiliki niup') {
-    //             $query->whereNotNull('biodata.niup');
-    //         } else if ($warga_pesantren == 'tanpa niup') {
-    //             $query->whereNull('biodata.niup');
-    //         }
-    //     }
-
-    //     // Filter Smartcard
-    //     if ($request->filled('smartcard')) {
-    //         $smartcard = strtolower($request->smartcard);
-    //         if ($smartcard == 'memiliki smartcard') {
-    //             $query->whereNotNull('biodata.smartcard');
-    //         } else if ($smartcard == 'tanpa smartcard') {
-    //             $query->whereNull('biodata.smartcard');
-    //         }
-    //     }
-
-    //     // Filter No Telepon
-    //     if ($request->filled('phone_number')) {
-    //         $phone_number = strtolower($request->phone_number);
-    //         if ($phone_number == 'memiliki phone number') {
-    //             $query->whereNotNull('biodata.no_telepon')
-    //                 ->where('biodata.no_telepon', '!=', '');
-    //         } else if ($phone_number == 'tidak ada phone number') {
-    //             $query->whereNull('biodata.no_telepon')
-    //                 ->where('biodata.no_telepon', '=', '');
-    //         }
-    //     }
-
-    //     // Filter Pemberkasan (Lengkap / Tidak Lengkap)
-    //     if ($request->filled('pemberkasan')) {
-    //         $pemberkasan = strtolower($request->pemberkasan);
-    //         if ($pemberkasan == 'tidak ada berkas') {
-    //             $query->whereNull('berkas.id_biodata');
-    //         } else if ($pemberkasan == 'tidak ada foto diri') {
-    //             $query->where('berkas.id_jenis_berkas', 4) // ID untuk Foto Diri (sesuaikan dengan yang Anda punya)
-    //                 ->whereNull('berkas.file_path');
-    //         } else if ($pemberkasan == 'memiliki foto diri') {
-    //             $query->where('berkas.id_jenis_berkas', 4)
-    //                 ->whereNotNull('berkas.file_path');
-    //         } else if ($pemberkasan == 'tidak ada kk') {
-    //             $query->where('berkas.id_jenis_berkas', 1) // ID untuk Kartu Keluarga (sesuaikan)
-    //                 ->whereNull('berkas.file_path');
-    //         } else if ($pemberkasan == 'tidak ada akta kelahiran') {
-    //             $query->where('berkas.id_jenis_berkas', 3) // ID untuk Akta Kelahiran (sesuaikan)
-    //                 ->whereNull('berkas.file_path');
-    //         } else if ($pemberkasan == 'tidak ada ijazah') {
-    //             $query->where('berkas.id_jenis_berkas', 5) // ID untuk Ijazah (sesuaikan)
-    //                 ->whereNull('berkas.file_path');
-    //         }
-    //     }
-
-    //     // Filter Sort By
-    //     if ($request->filled('sort_by')) {
-    //         $sort_by = strtolower($request->sort_by);
-    //         $allowedSorts = ['nama', 'niup', 'jenis_kelamin'];
-    //         if (in_array($sort_by, $allowedSorts)) {
-    //             $query->orderBy($sort_by, 'asc'); // Default ascending
-    //         }
-    //     }
-
-    //     // Filter Sort Order
-    //     if ($request->filled('sort_order')) {
-    //         $sortOrder = strtolower($request->sort_order) == 'desc' ? 'desc' : 'asc';
-    //         $query->orderBy('peserta_didik.id', $sortOrder);
-    //     }
-
-    //     // Ambil jumlah data per halaman (default 10 jika tidak diisi)
-    //     $perPage = $request->input('limit', 25);
-
-    //     // Ambil halaman saat ini (jika ada)
-    //     $currentPage = $request->input('page', 1);
-
-    //     // Menerapkan pagination ke hasil
-    //     $hasil = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
-
-    //     // Jika Data Kosong
-    //     if ($hasil->isEmpty()) {
-    //         return response()->json([
-    //             "status" => "error",
-    //             "message" => "Data tidak ditemukan",
-    //             "data" => []
-    //         ], 200);
-    //     }
-
-    //     return response()->json([
-    //         "total_data" => $hasil->total(),
-    //         "current_page" => $hasil->currentPage(),
-    //         "per_page" => $hasil->perPage(),
-    //         "total_pages" => $hasil->lastPage(),
-    //         "data" => $hasil->map(function ($item) {
-    //             return [
-    //                 "id" => $item->id,
-    //                 "nis" => $item->nis,
-    //                 "nama" => $item->nama,
-    //                 "niup" => $item->niup,
-    //                 "kamar" => $item->nama_kamar,
-    //                 "blok" => $item->nama_blok,
-    //                 "lembaga" => $item->nama_lembaga,
-    //                 "wilayah" => $item->nama_wilayah,
-    //                 "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s'),
-    //                 "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-    //                 "foto_profil" => url($item->foto_profil)
-    //             ];
-    //         })
-    //     ]);
-    // }
-
     /**
      * Fungsi untuk mengambil Tampilan awal santri.
      */
@@ -386,15 +161,21 @@ class SantriController extends Controller
             // Bangun query dasar dengan join dan alias tabel
             $query = DB::table('peserta_didik as pd')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
-                ->join('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
+                ->join('santri as s', function ($join) {
+                    $join->on('pd.id', '=', 's.id_peserta_didik')
+                        ->where('s.status_santri', 'aktif');
+                })
+                ->join('domisili_santri as ds', function ($join) {
+                    $join->on('s.id', '=', 'ds.id_santri')
+                        ->where('ds.status', true);
+                })
                 ->join('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
                 ->leftjoin('blok as bl', 'ds.id_blok', '=', 'bl.id')
                 ->leftjoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
                 ->leftJoin('warga_pesantren as wp', function ($join) {
                     $join->on('b.id', '=', 'wp.id_biodata')
-                         ->where('wp.status', true)
-                         ->whereRaw('wp.id = (
+                        ->where('wp.status', true)
+                        ->whereRaw('wp.id = (
                             select max(wp2.id) 
                             from warga_pesantren as wp2 
                             where wp2.id_biodata = b.id 
@@ -404,28 +185,31 @@ class SantriController extends Controller
                 ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                         ->where('br.id_jenis_berkas', '=', function ($query) {
-                             $query->select('id')
-                                   ->from('jenis_berkas')
-                                   ->where('nama_jenis_berkas', 'Pas foto')
-                                   ->limit(1);
-                         })
-                         ->whereRaw('br.id = (
+                        ->where('br.id_jenis_berkas', '=', function ($query) {
+                            $query->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (
                             select max(b2.id) 
                             from berkas as b2 
                             where b2.id_biodata = b.id 
                               and b2.id_jenis_berkas = br.id_jenis_berkas
                          )');
                 })
-                ->leftJoin('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
-                ->leftJoin('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
+                ->leftJoin('pelajar as p', function ($join) {
+                    $join->on('p.id_peserta_didik', '=', 'pd.id')
+                        ->where('p.status_pelajar', 'aktif');
+                })
+                ->leftJoin('pendidikan_pelajar as pp', function ($join) {
+                    $join->on('pp.id_pelajar', '=', 'p.id')
+                        ->where('pp.status', true);
+                })
                 ->leftJoin('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
                 ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
                 ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
                 ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
-                ->where('pd.status', true)
-                ->where('s.status_santri', 'aktif')
-                ->where('ds.status', true)
                 ->select(
                     's.id',
                     's.nis',
@@ -478,13 +262,13 @@ class SantriController extends Controller
             ], 500);
         }
 
-         // Jika data kosong
-         if ($results->isEmpty()) {
+        // Jika data kosong
+        if ($results->isEmpty()) {
             return response()->json([
                 'status'  => 'succes',
                 'message' => 'Data Kosong',
                 'data'    => []
-            ], 200); 
+            ], 200);
         }
 
         // Format data output agar mudah dipahami
@@ -532,8 +316,6 @@ class SantriController extends Controller
                 ->leftJoin('provinsi as pv', 'b.id_provinsi', '=', 'pv.id')
                 ->leftJoin('negara as ng', 'b.id_negara', '=', 'ng.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
-                ->where('s.status_santri', 'aktif')
                 ->select(
                     'k.no_kk',
                     DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -589,11 +371,9 @@ class SantriController extends Controller
                 "foto_profil"          => URL::to($biodata->foto_profil)
             ];
 
-            /*
-             * Query Data Keluarga: Mengambil data keluarga, orang tua/wali beserta hubungannya.
-             */
-            $keluarga = DB::table('peserta_didik as pd')
-                ->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
+            // Query Data Keluarga: Mengambil data keluarga, orang tua/wali beserta hubungannya.
+            $keluarga = DB::table('santri as s')
+                ->join('peserta_didik as pd', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
                 ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
                 ->leftJoin('keluarga as k_ortu', 'k_anak.no_kk', '=', 'k_ortu.no_kk')
@@ -601,7 +381,6 @@ class SantriController extends Controller
                 ->join('biodata as b_ortu', 'orang_tua_wali.id_biodata', '=', 'b_ortu.id')
                 ->join('hubungan_keluarga', 'orang_tua_wali.id_hubungan_keluarga', '=', 'hubungan_keluarga.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'b_ortu.nama',
                     'b_ortu.nik',
@@ -611,25 +390,31 @@ class SantriController extends Controller
                 )
                 ->get();
 
-            // Ambil data saudara kandung (peserta didik lain dalam KK yang sama, tetapi bukan orang tua/wali)
+            // Ambil nomor KK dan id biodata pelajar dari tabel keluarga
+            $noKk = DB::table('santri as s')
+                ->join('peserta_didik as pd', 's.id_peserta_didik', '=', 'pd.id')
+                ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
+                ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
+                ->where('s.id', $idSantri)
+                ->value('k_anak.no_kk');
+
+            $currentBiodataId = DB::table('santri as s')
+                ->join('peserta_didik as pd', 's.id_peserta_didik', '=', 'pd.id')
+                ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
+                ->where('s.id', $idSantri)
+                ->value('b_anak.id');
+
+            // Kumpulan id biodata dari orang tua/wali yang harus dikecualikan
+            $excludedIds = DB::table('orang_tua_wali')
+                ->pluck('id_biodata')
+                ->toArray();
+
+            // Ambil data saudara kandung (anggota keluarga lain dalam KK yang sama, dari semua tabel terkait)
             $saudara = DB::table('keluarga as k_saudara')
                 ->join('biodata as b_saudara', 'k_saudara.id_biodata', '=', 'b_saudara.id')
-                ->where('k_saudara.no_kk', function ($query) use ($idSantri) {
-                    $query->select('k_anak.no_kk')
-                        ->from('peserta_didik as pd')
-                        ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
-                        ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
-                        ->where('pd.id', $idSantri)
-                        ->limit(1);
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) {
-                    $query->select('id_biodata')->from('orang_tua_wali');
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) use ($idSantri) {
-                    $query->select('id_biodata')
-                        ->from('peserta_didik')
-                        ->where('id', $idSantri);
-                })
+                ->where('k_saudara.no_kk', $noKk)
+                ->whereNotIn('k_saudara.id_biodata', $excludedIds)
+                ->where('k_saudara.id_biodata', '!=', $currentBiodataId)
                 ->select(
                     'b_saudara.nama',
                     'b_saudara.nik',
@@ -639,10 +424,12 @@ class SantriController extends Controller
                 )
                 ->get();
 
+            // Jika terdapat data saudara, gabungkan dengan data keluarga
             if ($saudara->isNotEmpty()) {
                 $keluarga = $keluarga->merge($saudara);
             }
 
+            // Siapkan output data
             if ($keluarga->isNotEmpty()) {
                 $data['Keluarga'] = $keluarga->map(function ($item) {
                     return [
@@ -658,7 +445,6 @@ class SantriController extends Controller
             $santri = DB::table('peserta_didik as pd')
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     's.nis',
                     's.tanggal_masuk_santri',
@@ -730,7 +516,6 @@ class SantriController extends Controller
                 ->join('peserta_didik as pd', 'pr.id_peserta_didik', '=', 'pd.id')
                 ->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     DB::raw("CONCAT(pr.tanggal_mulai, ' s/d ', pr.tanggal_akhir) as tanggal"),
                     'pr.keterangan',
@@ -762,7 +547,6 @@ class SantriController extends Controller
                 ->join('blok as bl', 'ds.id_blok', '=', 'bl.id')
                 ->join('kamar as km', 'ds.id_kamar', '=', 'km.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'km.nama_kamar',
                     'bl.nama_blok',
@@ -794,7 +578,6 @@ class SantriController extends Controller
                 ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
                 ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'p.no_induk',
                     'l.nama_lembaga',
@@ -825,7 +608,6 @@ class SantriController extends Controller
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_afektif as ca', 's.id', '=', 'ca.id_santri')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'ca.kebersihan_nilai',
                     'ca.kebersihan_tindak_lanjut',
@@ -855,7 +637,6 @@ class SantriController extends Controller
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_kognitif as ck', 's.id', '=', 'ck.id_santri')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'ck.kebahasaan_nilai',
                     'ck.kebahasaan_tindak_lanjut',
@@ -897,7 +678,6 @@ class SantriController extends Controller
                 ->join('santri as s', 'pengunjung_mahrom.id_santri', '=', 's.id')
                 ->join('peserta_didik as pd', 's.id_peserta_didik', '=', 'pd.id')
                 ->where('s.id', $idSantri)
-                ->where('pd.status', true)
                 ->select(
                     'pengunjung_mahrom.nama_pengunjung',
                     'pengunjung_mahrom.tanggal'
@@ -911,6 +691,27 @@ class SantriController extends Controller
                         'Tanggal' => $item->tanggal,
                     ];
                 });
+            }
+
+            // khadam
+            $khadam = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
+                ->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
+                ->where('s.id', $idSantri)
+                ->select(
+                    'kh.keterangan',
+                    'tanggal_mulai',
+                    'tanggal_akhir',
+                )
+                ->first();
+
+            if ($khadam) {
+                $data['Khadam'] = [
+                    'keterangan' => $khadam->keterangan,
+                    'tanggal_mulai' => $khadam->tanggal_mulai,
+                    'tanggal_akhir' => $khadam->tanggal_akhir,
+                ];
             }
 
             return $data;

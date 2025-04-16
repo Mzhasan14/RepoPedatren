@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Khadam;
 use App\Models\JenisBerkas;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -92,44 +93,44 @@ class KhadamController extends Controller
     public function getAllKhadam(Request $request)
     {
         $query = DB::table('khadam as kh')
-        ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
-        ->leftJoin('berkas as br', function ($join) {
-            $join->on('b.id', '=', 'br.id_biodata')
-                 ->where('br.id_jenis_berkas', '=', function ($query) {
-                     $query->select('id')
-                           ->from('jenis_berkas')
-                           ->where('nama_jenis_berkas', 'Pas foto')
-                           ->limit(1);
-                 })
-                 ->whereRaw('br.id = (
+            ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+            ->leftJoin('berkas as br', function ($join) {
+                $join->on('b.id', '=', 'br.id_biodata')
+                    ->where('br.id_jenis_berkas', '=', function ($query) {
+                        $query->select('id')
+                            ->from('jenis_berkas')
+                            ->where('nama_jenis_berkas', 'Pas foto')
+                            ->limit(1);
+                    })
+                    ->whereRaw('br.id = (
                     select max(b2.id) 
                     from berkas as b2 
                     where b2.id_biodata = b.id 
                       and b2.id_jenis_berkas = br.id_jenis_berkas
                  )');
-        })
-        ->leftJoin('warga_pesantren as wp', function ($join) {
-            $join->on('b.id', '=', 'wp.id_biodata')
-                 ->where('wp.status', true)
-                 ->whereRaw('wp.id = (
+            })
+            ->leftJoin('warga_pesantren as wp', function ($join) {
+                $join->on('b.id', '=', 'wp.id_biodata')
+                    ->where('wp.status', true)
+                    ->whereRaw('wp.id = (
                     select max(wp2.id) 
                     from warga_pesantren as wp2 
                     where wp2.id_biodata = b.id 
                       and wp2.status = true
                  )');
-        })
-        ->where('kh.status', true)
-        ->select(
-             'kh.id',
-             'wp.niup',
-             DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
-             'b.nama',
-             'kh.keterangan',
-             'b.created_at',
-             'b.updated_at',
-             DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
-        );
-    
+            })
+            ->where('kh.status', true)
+            ->select(
+                'kh.id',
+                'wp.niup',
+                DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
+                'b.nama',
+                'kh.keterangan',
+                'b.created_at',
+                'b.updated_at',
+                DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
+            );
+
 
         // Filter Umum (Alamat dan Jenis Kelamin)
         $query = $this->filterController->applyCommonFilters($query, $request);
@@ -271,23 +272,37 @@ class KhadamController extends Controller
             // Query Biodata beserta data terkait
             $biodata = DB::table('khadam as kh')
                 ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                        ->where('wp.status', true)
+                        ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                        ->where('br.id_jenis_berkas', '=', function ($query) {
-                            $query->select('id')
-                                ->from('jenis_berkas')
-                                ->where('nama_jenis_berkas', 'Pas foto')
-                                ->limit(1);
-                        })
-                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                         ->where('br.id_jenis_berkas', '=', function ($query) {
+                             $query->select('id')
+                                   ->from('jenis_berkas')
+                                   ->where('nama_jenis_berkas', 'Pas foto')
+                                   ->limit(1);
+                         })
+                         ->whereRaw('br.id = (
+                            select max(b2.id) 
+                            from berkas as b2 
+                            where b2.id_biodata = b.id 
+                              and b2.id_jenis_berkas = br.id_jenis_berkas
+                         )');
                 })
                 ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
                 ->leftJoin('kecamatan as kc', 'b.id_kecamatan', '=', 'kc.id')
                 ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')
                 ->leftJoin('provinsi as pv', 'b.id_provinsi', '=', 'pv.id')
                 ->leftJoin('negara as ng', 'b.id_negara', '=', 'ng.id')
-                ->where('pd.id', $idKhadam)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'k.no_kk',
                     DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -346,15 +361,14 @@ class KhadamController extends Controller
             /*
              * Query Data Keluarga: Mengambil data keluarga, orang tua/wali beserta hubungannya.
              */
-            $keluarga = DB::table('peserta_didik as pd')
-                ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
-                ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
+            $keluarga = DB::table('khadam as kh')
+                ->join('biodata as b_kh', 'kh.id_biodata', '=', 'b_kh.id')
+                ->join('keluarga as k_anak', 'b_kh.id', '=', 'k_anak.id_biodata')
                 ->leftJoin('keluarga as k_ortu', 'k_anak.no_kk', '=', 'k_ortu.no_kk')
                 ->join('orang_tua_wali', 'k_ortu.id_biodata', '=', 'orang_tua_wali.id_biodata')
                 ->join('biodata as b_ortu', 'orang_tua_wali.id_biodata', '=', 'b_ortu.id')
                 ->join('hubungan_keluarga', 'orang_tua_wali.id_hubungan_keluarga', '=', 'hubungan_keluarga.id')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'b_ortu.nama',
                     'b_ortu.nik',
@@ -364,25 +378,27 @@ class KhadamController extends Controller
                 )
                 ->get();
 
-            // Ambil data saudara kandung (peserta didik lain dalam KK yang sama, tetapi bukan orang tua/wali)
+            // Ambil No KK dari id khadam
+            $noKk = DB::table('khadam as kh')
+                ->join('biodata as b_kh', 'kh.id_biodata', '=', 'b_kh.id')
+                ->join('keluarga as k', 'b_kh.id', '=', 'k.id_biodata')
+                ->where('kh.id', $idKhadam)
+                ->value('k.no_kk');
+
+            // Ambil semua id_biodata dari peserta_didik, pegawai, dan khadam
+            $excludedIds = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+
+            $idBiodataKhadam = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->where('kh.id', $idKhadam)
+                ->value('b.id');
+
+            // Cari semua anggota keluarga (bisa dari pd, pegawai, khadam) dalam KK yang sama
             $saudara = DB::table('keluarga as k_saudara')
                 ->join('biodata as b_saudara', 'k_saudara.id_biodata', '=', 'b_saudara.id')
-                ->where('k_saudara.no_kk', function ($query) use ($idKhadam) {
-                    $query->select('k_anak.no_kk')
-                        ->from('peserta_didik as pd')
-                        ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
-                        ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
-                        ->where('pd.id', $idKhadam)
-                        ->limit(1);
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) {
-                    $query->select('id_biodata')->from('orang_tua_wali');
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) use ($idKhadam) {
-                    $query->select('id_biodata')
-                        ->from('peserta_didik')
-                        ->where('id', $idKhadam);
-                })
+                ->where('k_saudara.no_kk', $noKk)
+                ->whereNotIn('k_saudara.id_biodata', $excludedIds)
+                ->where('k_saudara.id_biodata', '!=', $idBiodataKhadam)
                 ->select(
                     'b_saudara.nama',
                     'b_saudara.nik',
@@ -408,10 +424,11 @@ class KhadamController extends Controller
             }
 
             // Data Status Santri
-            $santri = DB::table('peserta_didik as pd')
+            $santri = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
                 ->join('santri', 'santri.id_peserta_didik', '=', 'pd.id')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'santri.nis',
                     'santri.tanggal_masuk_santri',
@@ -430,7 +447,9 @@ class KhadamController extends Controller
             }
 
             // Data Kewaliasuhan
-            $kewaliasuhan = DB::table('peserta_didik')
+            $kewaliasuhan = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as peserta_didik', 'peserta_didik.id_biodata', '=', 'b.id')
                 ->join('santri', 'santri.id_peserta_didik', '=', 'peserta_didik.id')
                 ->leftJoin('wali_asuh', 'santri.id', '=', 'wali_asuh.id_santri')
                 ->leftJoin('anak_asuh', 'santri.id', '=', 'anak_asuh.id_santri')
@@ -447,7 +466,7 @@ class KhadamController extends Controller
                 ->leftJoin('santri as santri_wali', 'wali_asuh_data.id_santri', '=', 'santri_wali.id')
                 ->leftJoin('peserta_didik as pd_wali', 'santri_wali.id_peserta_didik', '=', 'pd_wali.id')
                 ->leftJoin('biodata as bio_wali', 'pd_wali.id_biodata', '=', 'bio_wali.id')
-                ->where('peserta_didik.id', $idKhadam)
+                ->where('kh.id', $idKhadam)
                 ->havingRaw('relasi_santri IS NOT NULL') // Filter untuk menghindari hasil NULL
                 ->select(
                     'grup_wali_asuh.nama_grup',
@@ -481,8 +500,9 @@ class KhadamController extends Controller
             // Data Perizinan
             $perizinan = DB::table('perizinan as p')
                 ->join('peserta_didik as pd', 'p.id_peserta_didik', '=', 'pd.id')
+                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+                ->join('khadam as kh', 'kh.id_biodata', '=', 'b.id')
                 ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
                 ->select(
                     DB::raw("CONCAT(p.tanggal_mulai, ' s/d ', p.tanggal_akhir) as tanggal"),
                     'p.keterangan',
@@ -507,14 +527,15 @@ class KhadamController extends Controller
             }
 
             // Data Domisili Santri
-            $domisili = DB::table('peserta_didik as pd')
+            $domisili = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
                 ->join('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
                 ->join('blok as bl', 'ds.id_blok', '=', 'bl.id')
                 ->join('kamar as km', 'ds.id_kamar', '=', 'km.id')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'km.nama_kamar',
                     'bl.nama_blok',
@@ -537,15 +558,16 @@ class KhadamController extends Controller
             }
 
             // Data Pendidikan (Pelajar)
-            $pelajar = DB::table('peserta_didik as pd')
+            $pelajar = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
                 ->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
                 ->join('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
                 ->join('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
                 ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
                 ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
                 ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'p.no_induk',
                     'l.nama_lembaga',
@@ -572,11 +594,12 @@ class KhadamController extends Controller
             }
 
             // Catatan Afektif Peserta Didik
-            $afektif = DB::table('peserta_didik as pd')
+            $afektif = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_afektif as ca', 's.id', '=', 'ca.id_santri')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'ca.kebersihan_nilai',
                     'ca.kebersihan_tindak_lanjut',
@@ -602,11 +625,12 @@ class KhadamController extends Controller
             }
 
             // Catatan Kognitif Peserta Didik
-            $kognitif = DB::table('peserta_didik as pd')
+            $kognitif = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
                 ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_kognitif as ck', 's.id', '=', 'ck.id_santri')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'ck.kebahasaan_nilai',
                     'ck.kebahasaan_tindak_lanjut',
@@ -647,8 +671,9 @@ class KhadamController extends Controller
             $pengunjung = DB::table('pengunjung_mahrom')
                 ->join('santri', 'pengunjung_mahrom.id_santri', '=', 'santri.id')
                 ->join('peserta_didik as pd', 'santri.id_peserta_didik', '=', 'pd.id')
-                ->where('pd.id', $idKhadam)
-                ->where('pd.status', true)
+                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+                ->join('khadam as kh', 'b.id', '=', 'kh.id_biodata')
+                ->where('kh.id', $idKhadam)
                 ->select(
                     'pengunjung_mahrom.nama_pengunjung',
                     'pengunjung_mahrom.tanggal'
@@ -664,10 +689,58 @@ class KhadamController extends Controller
                 });
             }
 
+           // khadam
+            $khadam = DB::table('khadam as kh')
+                ->where('kh.id', $idKhadam)
+                ->select(
+                    'kh.keterangan',
+                    'tanggal_mulai',
+                    'tanggal_akhir',
+                )
+                ->first();
+
+            if ($khadam) {
+                $data['Khadam'] = [
+                    'keterangan' => $khadam->keterangan,
+                    'tanggal_mulai' => $khadam->tanggal_mulai,
+                    'tanggal_akhir' => $khadam->tanggal_akhir,
+                ];
+            }
+            
             return $data;
         } catch (\Exception $e) {
             Log::error("Error in formDetailPesertaDidik: " . $e->getMessage());
             return ['error' => 'Terjadi kesalahan pada server'];
+        }
+    }
+
+    /**
+     * Method publik untuk mengembalikan detail khadam dalam response JSON.
+     */
+    public function getDetailKhadam($id)
+    {
+        // Validasi bahwa ID adalah UUID
+        if (!Str::isUuid($id)) {
+            return response()->json(['error' => 'ID tidak valid'], 400);
+        }
+
+        try {
+            // Cari data peserta didik berdasarkan UUID
+            $khadam = Khadam::find($id);
+            if (!$khadam) {
+                return response()->json(['error' => 'Data tidak ditemukan'], 404);
+            }
+
+            // Ambil detail peserta didik dari fungsi helper
+            $data = $this->formDetailKhadam($khadam->id);
+            if (empty($data)) {
+                return response()->json(['error' => 'Data Kosong'], 200);
+            }
+
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            Log::error("Error in getDetailKhadam: " . $e->getMessage());
+            return response()->json(['error' => 'Terjadi kesalahan pada server'], 500);
         }
     }
 }

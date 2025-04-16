@@ -13,7 +13,7 @@ class KhadamSeeder extends Seeder
      */
     public function run(): void
     {
-        (new KhadamFactory())->count(5)->create();
+        (new KhadamFactory())->count(100)->create();
         
     }
 }

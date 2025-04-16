@@ -47,13 +47,13 @@ class AlumniController extends Controller
             ->leftJoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
             ->leftJoin('berkas as br', function ($join) {
                 $join->on('b.id', '=', 'br.id_biodata')
-                     ->where('br.id_jenis_berkas', '=', function ($query) {
-                         $query->select('id')
-                               ->from('jenis_berkas')
-                               ->where('nama_jenis_berkas', 'Pas foto')
-                               ->limit(1);
-                     })
-                     ->whereRaw('br.id = (
+                    ->where('br.id_jenis_berkas', '=', function ($query) {
+                        $query->select('id')
+                            ->from('jenis_berkas')
+                            ->where('nama_jenis_berkas', 'Pas foto')
+                            ->limit(1);
+                    })
+                    ->whereRaw('br.id = (
                         select max(b2.id) 
                         from berkas as b2 
                         where b2.id_biodata = b.id 
@@ -62,8 +62,8 @@ class AlumniController extends Controller
             })
             ->leftJoin('warga_pesantren as wp', function ($join) {
                 $join->on('b.id', '=', 'wp.id_biodata')
-                     ->where('wp.status', true)
-                     ->whereRaw('wp.id = (
+                    ->where('wp.status', true)
+                    ->whereRaw('wp.id = (
                         select max(wp2.id) 
                         from warga_pesantren as wp2 
                         where wp2.id_biodata = b.id 
@@ -74,6 +74,10 @@ class AlumniController extends Controller
             ->where(function ($q) {
                 $q->whereNotNull('s.id')
                     ->orWhereNotNull('p.id');
+            })
+            ->where(function ($q) {
+                $q->where('s.status_santri', 'alumni')
+                    ->orWhere('p.status_pelajar', 'alumni');
             })
             ->select(
                 'pd.id',
@@ -150,15 +154,6 @@ class AlumniController extends Controller
         try {
             // Query Biodata beserta data terkait
             $biodata = DB::table('peserta_didik as pd')
-                ->leftJoin('pelajar as p', function ($join) {
-                    $join->on('p.id_peserta_didik', '=', 'pd.id')
-                        ->where('p.status_pelajar', 'alumni');
-                })
-                ->leftJoin('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
-
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
                 ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
                 ->leftJoin('berkas as br', function ($join) {
@@ -176,14 +171,7 @@ class AlumniController extends Controller
                 ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')
                 ->leftJoin('provinsi as pv', 'b.id_provinsi', '=', 'pv.id')
                 ->leftJoin('negara as ng', 'b.id_negara', '=', 'ng.id')
-                ->where(function ($q) {
-                    $q->whereNotNull('s.id')
-                        ->orWhereNotNull('p.id');
-                })
-                ->where(function ($q) use ($idPesertaDidik) {
-                    $q->where('p.id_peserta_didik', $idPesertaDidik)
-                        ->orWhere('s.id_peserta_didik', $idPesertaDidik);
-                })
+                ->where('pd.id', $idPesertaDidik)
                 ->select(
                     'k.no_kk',
                     DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -239,33 +227,15 @@ class AlumniController extends Controller
                 "foto_profil"          => URL::to($biodata->foto_profil)
             ];
 
-            /*
-             * Query Data Keluarga: Mengambil data keluarga, orang tua/wali beserta hubungannya.
-             */
+            // Query Data Keluarga: Mengambil data keluarga, orang tua/wali beserta hubungannya.
             $keluarga = DB::table('peserta_didik as pd')
-                ->leftJoin('pelajar as p', function ($join) {
-                    $join->on('p.id_peserta_didik', '=', 'pd.id')
-                        ->where('p.status_pelajar', 'alumni');
-                })
-                ->leftJoin('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
                 ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
                 ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
                 ->leftJoin('keluarga as k_ortu', 'k_anak.no_kk', '=', 'k_ortu.no_kk')
                 ->join('orang_tua_wali', 'k_ortu.id_biodata', '=', 'orang_tua_wali.id_biodata')
                 ->join('biodata as b_ortu', 'orang_tua_wali.id_biodata', '=', 'b_ortu.id')
                 ->join('hubungan_keluarga', 'orang_tua_wali.id_hubungan_keluarga', '=', 'hubungan_keluarga.id')
-
-                ->where(function ($q) {
-                    $q->whereNotNull('s.id')
-                        ->orWhereNotNull('p.id');
-                })
-                ->where(function ($q) use ($idPesertaDidik) {
-                    $q->where('p.id_peserta_didik', $idPesertaDidik)
-                        ->orWhere('s.id_peserta_didik', $idPesertaDidik);
-                })
+                ->where('pd.id', $idPesertaDidik)
                 ->select(
                     'b_ortu.nama',
                     'b_ortu.nik',
@@ -275,41 +245,29 @@ class AlumniController extends Controller
                 )
                 ->get();
 
-            // Ambil data saudara kandung (peserta didik lain dalam KK yang sama, tetapi bukan orang tua/wali)
+            // Ambil nomor KK dan id biodata peserta didik dari tabel keluarga
+            $noKk = DB::table('peserta_didik as pd')
+                ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
+                ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
+                ->where('pd.id', $idPesertaDidik)
+                ->value('k_anak.no_kk');
+
+            $currentBiodataId = DB::table('peserta_didik as pd')
+                ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
+                ->where('pd.id', $idPesertaDidik)
+                ->value('b_anak.id');
+
+            // Kumpulan id biodata dari orang tua/wali yang harus dikecualikan
+            $excludedIds = DB::table('orang_tua_wali')
+                ->pluck('id_biodata')
+                ->toArray();
+
+            // Ambil data saudara kandung (anggota keluarga lain dalam KK yang sama, dari semua tabel terkait)
             $saudara = DB::table('keluarga as k_saudara')
                 ->join('biodata as b_saudara', 'k_saudara.id_biodata', '=', 'b_saudara.id')
-                ->where('k_saudara.no_kk', function ($query) use ($idPesertaDidik) {
-                    $query->select('k_anak.no_kk')
-                        ->from('peserta_didik as pd')
-                        ->leftJoin('pelajar as p', function ($join) {
-                            $join->on('p.id_peserta_didik', '=', 'pd.id')
-                                ->where('p.status_pelajar', 'alumni');
-                        })
-                        ->leftJoin('santri as s', function ($join) {
-                            $join->on('s.id_peserta_didik', '=', 'pd.id')
-                                ->where('s.status_santri', 'alumni');
-                        })
-                        ->join('biodata as b_anak', 'pd.id_biodata', '=', 'b_anak.id')
-                        ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
-
-                        ->where(function ($q) {
-                            $q->whereNotNull('s.id')
-                                ->orWhereNotNull('p.id');
-                        })
-                        ->where(function ($q) use ($idPesertaDidik) {
-                            $q->where('p.id_peserta_didik', $idPesertaDidik)
-                                ->orWhere('s.id_peserta_didik', $idPesertaDidik);
-                        })
-                        ->limit(1);
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) {
-                    $query->select('id_biodata')->from('orang_tua_wali');
-                })
-                ->whereNotIn('k_saudara.id_biodata', function ($query) use ($idPesertaDidik) {
-                    $query->select('id_biodata')
-                        ->from('peserta_didik')
-                        ->where('id', $idPesertaDidik);
-                })
+                ->where('k_saudara.no_kk', $noKk)
+                ->whereNotIn('k_saudara.id_biodata', $excludedIds)
+                ->where('k_saudara.id_biodata', '!=', $currentBiodataId)
                 ->select(
                     'b_saudara.nama',
                     'b_saudara.nik',
@@ -319,10 +277,12 @@ class AlumniController extends Controller
                 )
                 ->get();
 
+            // Jika terdapat data saudara, gabungkan dengan data keluarga
             if ($saudara->isNotEmpty()) {
                 $keluarga = $keluarga->merge($saudara);
             }
 
+            // Siapkan output data
             if ($keluarga->isNotEmpty()) {
                 $data['Keluarga'] = $keluarga->map(function ($item) {
                     return [
@@ -336,11 +296,8 @@ class AlumniController extends Controller
 
             // Data Status Santri
             $santri = DB::table('peserta_didik as pd')
-                ->join('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
-                ->where('s.id_peserta_didik', $idPesertaDidik)
+                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
+                ->where('pd.id', $idPesertaDidik)
                 ->select(
                     's.nis',
                     's.tanggal_masuk_santri',
@@ -360,10 +317,7 @@ class AlumniController extends Controller
 
             // Data Kewaliasuhan
             $kewaliasuhan = DB::table('peserta_didik as pd')
-                ->join('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
+                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->leftJoin('wali_asuh', 's.id', '=', 'wali_asuh.id_santri')
                 ->leftJoin('anak_asuh', 's.id', '=', 'anak_asuh.id_santri')
                 ->leftJoin('grup_wali_asuh', 'grup_wali_asuh.id', '=', 'wali_asuh.id_grup_wali_asuh')
@@ -439,10 +393,7 @@ class AlumniController extends Controller
 
             // Data Domisili Santri
             $domisili = DB::table('peserta_didik as pd')
-                ->join('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
+                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
                 ->join('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
                 ->join('blok as bl', 'ds.id_blok', '=', 'bl.id')
@@ -471,10 +422,7 @@ class AlumniController extends Controller
 
             // Data Pendidikan (Pelajar)
             $pelajar = DB::table('peserta_didik as pd')
-                ->join('pelajar as p', function ($join) {
-                    $join->on('p.id_peserta_didik', '=', 'pd.id')
-                        ->where('p.status_pelajar', 'alumni');
-                })
+                ->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
                 ->join('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
                 ->join('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
                 ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
@@ -508,10 +456,7 @@ class AlumniController extends Controller
 
             // Catatan Afektif Peserta Didik
             $afektif = DB::table('peserta_didik as pd')
-                ->join('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
+                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_afektif as ca', 's.id', '=', 'ca.id_santri')
                 ->where('pd.id', $idPesertaDidik)
                 ->select(
@@ -540,10 +485,7 @@ class AlumniController extends Controller
 
             // Catatan Kognitif Peserta Didik
             $kognitif = DB::table('peserta_didik as pd')
-                ->join('santri as s', function ($join) {
-                    $join->on('s.id_peserta_didik', '=', 'pd.id')
-                        ->where('s.status_santri', 'alumni');
-                })
+                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
                 ->join('catatan_kognitif as ck', 's.id', '=', 'ck.id_santri')
                 ->where('pd.id', $idPesertaDidik)
                 ->select(
@@ -583,16 +525,13 @@ class AlumniController extends Controller
             }
 
             // Data Kunjungan Mahrom
-            $pengunjung = DB::table('pengunjung_mahrom')
-                ->join('santri as s', function ($join) {
-                    $join->on('pengunjung_mahrom.id_santri', '=', 's.id')
-                        ->where('s.status_santri', 'alumni');
-                })
+            $pengunjung = DB::table('pengunjung_mahrom as pm')
+                ->join('santri as s', 's.id', '=', 'pm.id_santri')
                 ->join('peserta_didik as pd', 's.id_peserta_didik', '=', 'pd.id')
                 ->where('pd.id', $idPesertaDidik)
                 ->select(
-                    'pengunjung_mahrom.nama_pengunjung',
-                    'pengunjung_mahrom.tanggal'
+                    'pm.nama_pengunjung',
+                    'pm.tanggal'
                 )
                 ->get();
 
@@ -603,6 +542,26 @@ class AlumniController extends Controller
                         'Tanggal' => $item->tanggal,
                     ];
                 });
+            }
+
+            // khadam
+            $khadam = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                ->join('peserta_didik as pd', 'pd.id_biodata', '=', 'b.id')
+                ->where('pd.id', $idPesertaDidik)
+                ->select(
+                    'kh.keterangan',
+                    'tanggal_mulai',
+                    'tanggal_akhir',
+                )
+                ->first();
+
+            if ($khadam) {
+                $data['Khadam'] = [
+                    'keterangan' => $khadam->keterangan,
+                    'tanggal_mulai' => $khadam->tanggal_mulai,
+                    'tanggal_akhir' => $khadam->tanggal_akhir,
+                ];
             }
 
             return $data;
