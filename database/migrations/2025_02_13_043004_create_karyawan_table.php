@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('karyawan', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('id_pegawai')->unique();
+            $table->uuid('id_pegawai')->unique();
             $table->unsignedBigInteger('id_golongan');
             $table->string('jabatan')->nullable();// kulturan, tetap, kontrak, pengkaderan 
             $table->unsignedBigInteger('created_by');
@@ -25,7 +25,7 @@ return new class extends Migration
         });
         Schema::create('pengurus', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('id_pegawai');
+            $table->uuid('id_pegawai');
             $table->unsignedBigInteger('id_golongan');
             $table->string('satuan_kerja');
             $table->string('jabatan')->nullable(); // kulturan, tetap, kontrak, pengkaderan 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alamat\Kecamatan;
+use App\Models\Catatan_afektif;
 use App\Models\Kewilayahan\Kamar;
 use App\Models\Pegawai\KategoriGolongan;
 use App\Models\Pegawai\Pengajar;
@@ -349,6 +350,20 @@ class DropdownController extends Controller
         ]);
     }
 
+    public function getPeriodeOptions()
+{
+    $periodes = Catatan_afektif::Active()
+        ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as periode")
+        ->groupBy('periode')
+        ->orderBy('periode', 'desc')
+        ->get()
+        ->pluck('periode');
+
+    // Tambahkan opsi "Semua"
+    $result = collect(['Semua'])->merge($periodes);
+
+    return response()->json($result);
+}
     // public function menuJenisKelamin($tipe)
     // {
     //     // Cek tipe entitas yang diminta

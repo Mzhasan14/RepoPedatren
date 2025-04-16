@@ -3,6 +3,7 @@
 namespace App\Models\Pegawai;
 
 use App\Models\Peserta_didik;
+use App\Models\PesertaDidik;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,18 +12,16 @@ class AnakPegawai extends Model
     use HasFactory;
 
     protected $table = 'anak_pegawai';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $guarded = [
-        'id'
+        'created_at'
     ];
 
     public function AnakpegawaiPesertaDidik()
     {
-        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
+        return $this->belongsTo(PesertaDidik::class,'id_peserta_didik','id');
     }
     public function anakPegawai()
     {

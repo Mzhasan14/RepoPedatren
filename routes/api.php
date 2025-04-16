@@ -166,12 +166,12 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/anakpegawai', AnakPegawaiController::class);
     Route::apiResource('/materiAjar', MateriAjarController::class);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
-    Route::get('/list/pengajars', [PengajarController::class, 'filterPengajar']);
-    Route::get('/list/pengurus', [PengurusController::class, 'dataPengurus']);
-    Route::get('/list/walikelas', [WalikelasController::class, 'dataWalikelas']);
-    Route::get('list/karyawans', [KaryawanController::class, 'dataKaryawan']);
-    Route::get('/list/pegawais', [PegawaiController::class, 'dataPegawai']);
-    Route::get('/list/anakpegawais', [AnakPegawaiController::class, 'dataAnakpegawai']);
+    Route::get('/pengajars', [PengajarController::class, 'filterPengajar']);
+    Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
+    Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
+    Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
+    Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
+    Route::get('/anakpegawais', [AnakPegawaiController::class, 'getAllAnakpegawai']);
 
     // 🚨 Administrasi
     Route::apiResource('/perizinan', PerizinanController::class);
@@ -182,12 +182,12 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
 });
 Route::prefix('detail')->group(function () {
-    Route::get('/list/pengurus/{id}', [PengurusController::class, 'getPengurus']);
-    Route::get('/list/pengajar/{id}', [PengajarController::class, 'getPengajar']);
-    Route::get('/list/karyawan/{id}', [KaryawanController::class, 'getKaryawan']);
-    Route::get('/list/pegawai/{id}', [PegawaiController::class, 'getPegawai']);
-    Route::get('/list/anakpegawai/{id}', [AnakPegawaiController::class, 'getAnakPegawai']);
-    Route::get('/list/walikelas/{id}', [WalikelasController::class, 'getWalikelas']);
+    Route::get('/pengurus/{id}', [PengurusController::class, 'getPengurus']);
+    Route::get('/pengajar/{id}', [PengajarController::class, 'getPengajar']);
+    Route::get('/karyawan/{id}', [KaryawanController::class, 'getKaryawan']);
+    Route::get('pegawai/{id}', [PegawaiController::class, 'getPegawai']);
+    Route::get('/anakpegawai/{id}', [AnakPegawaiController::class, 'getAnakPegawai']);
+    Route::get('/walikelas/{id}', [WalikelasController::class, 'getWalikelas']);
 });
 Route::prefix('dropdown')->group(function () {
     Route::get('/catatan-afektif', [CatatanAfektifController::class, 'dataCatatanAfektif']);
@@ -196,6 +196,7 @@ Route::prefix('dropdown')->group(function () {
     Route::get('/negara', [DropdownController::class, 'menuNegaraProvinsiKabupatenKecamatan']);
     Route::get('/lembaga', [DropdownController::class, 'menuLembagaJurusanKelasRombel']);
     Route::get('/angkatan', [DropdownController::class, 'getAngkatan']);
+    Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
 });
