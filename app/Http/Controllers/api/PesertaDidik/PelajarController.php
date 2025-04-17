@@ -7,14 +7,11 @@ use App\Models\Pelajar;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Models\PendidikanPelajar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\api\FilterController;
-use Illuminate\Validation\ValidationException;
 
 class PelajarController extends Controller
 {
@@ -26,197 +23,6 @@ class PelajarController extends Controller
         // Inisialisasi controller filter
         $this->filterController = new FilterPesertaDidikController();
         $this->filterUmum = new FilterController();
-    }
-    /**
-     * Store data pelajar dan pendidikan pelajar
-     */
-    public function store(Request $request)
-    {
-        // Validasi input (sesuaikan rules sesuai kebutuhan)
-        try {
-            $validated = $request->validate([
-                'id_peserta_didik'      => 'required|uuid|exists:peserta_didik,id',
-                'no_induk'              => 'nullable|unique:pelajar,no_induk',
-                'angkatan_pelajar'      => 'required|digits:4',
-                'tanggal_masuk_pelajar' => 'required|date',
-                'tanggal_keluar_pelajar' => 'nullable|date',
-                'status_pelajar'        => 'required|in:aktif,cuti,mutasi,alumni,do,berhenti,nonaktif',
-                // Pendidikan Pelajar
-                'id_lembaga'            => 'required|integer|exists:lembaga,id',
-                'id_jurusan'            => 'nullable|integer|exists:jurusan,id',
-                'id_kelas'              => 'nullable|integer|exists:kelas,id',
-                'id_rombel'             => 'nullable|integer|exists:rombel,id',
-                'tanggal_masuk'         => 'required|date',
-                'tanggal_keluar'        => 'nullable|date',
-                'status'                => 'boolean',
-            ]);
-        } catch (ValidationException $e) {
-            // Jika validasi gagal, kembalikan response JSON dengan detail error
-            return response()->json([
-                'error'   => 'Validasi gagal',
-                'details' => $e->errors()
-            ], 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Simpan data pelajar
-            $pelajar = Pelajar::create([
-                'id_peserta_didik'      => $validated['id_peserta_didik'],
-                'no_induk'              => $validated['no_induk'] ?? null,
-                'angkatan_pelajar'      => $validated['angkatan_pelajar'],
-                'tanggal_masuk_pelajar' => $validated['tanggal_masuk_pelajar'],
-                'tanggal_keluar_pelajar' => $validated['tanggal_keluar_pelajar'] ?? null,
-                'status_pelajar'        => $validated['status_pelajar'],
-                'created_by'            => Auth::id()
-            ]);
-
-            // Simpan data pendidikan pelajar dengan mengaitkan id pelajar
-            $pendidikan = PendidikanPelajar::create([
-                'id_pelajar'    => $pelajar->id,
-                'id_lembaga'    => $validated['id_lembaga'],
-                'id_jurusan'    => $validated['id_jurusan'] ?? null,
-                'id_kelas'      => $validated['id_kelas'] ?? null,
-                'id_rombel'     => $validated['id_rombel'] ?? null,
-                'tanggal_masuk' => $validated['tanggal_masuk'],
-                'tanggal_keluar' => $validated['tanggal_keluar'] ?? null,
-                'status'        => $validated['status'] ?? true,
-                'created_by'    => Auth::id()
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'message'             => 'Data berhasil dibuat',
-                'pelajar'             => $pelajar,
-                'pendidikan_pelajar'  => $pendidikan,
-            ], 201);
-        } catch (Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'error'   => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Update data pelajar dan pendidikan pelajar
-     */
-    public function update(Request $request, $id)
-    {
-        // Validasi input (sesuaikan rules sesuai kebutuhan)
-        try {
-            $validated = $request->validate([
-                'id_peserta_didik'      => 'required|uuid|exists:peserta_didik,id',
-                'no_induk'              => 'sometimes|nullable|unique:pelajar,no_induk,' . $id . ',id',
-                'angkatan_pelajar'      => 'sometimes|required|digits:4',
-                'tanggal_masuk_pelajar' => 'sometimes|required|date',
-                'tanggal_keluar_pelajar' => 'sometimes|nullable|date',
-                'status_pelajar'        => 'sometimes|required|in:aktif,cuti,mutasi,alumni,do,berhenti,nonaktif',
-                // Pendidikan Pelajar
-                'id_lembaga'            => 'sometimes|required|integer|exists:lembaga,id',
-                'id_jurusan'            => 'sometimes|nullable|integer|exists:jurusan,id',
-                'id_kelas'              => 'sometimes|nullable|integer|exists:kelas,id',
-                'id_rombel'             => 'sometimes|nullable|integer|exists:rombel,id',
-                'tanggal_masuk'         => 'sometimes|required|date',
-                'tanggal_keluar'        => 'sometimes|nullable|date',
-                'status'                => 'sometimes|boolean',
-            ]);
-        } catch (ValidationException $e) {
-            // Jika validasi gagal, kembalikan response JSON dengan detail error
-            return response()->json([
-                'error'   => 'Validasi gagal',
-                'details' => $e->errors()
-            ], 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Temukan data pelajar
-            $pelajar = Pelajar::find($id);
-
-            // Update data pelajar
-            $pelajar->update(array_merge($validated, [
-                'updated_by' => Auth::id()
-            ]));
-
-            // Update data pendidikan pelajar
-            // Asumsi: relasi one-to-one antara pelajar dan pendidikan_pelajar
-            $pendidikan = $pelajar->pendidikan;
-            if ($pendidikan) {
-                $pendidikan->update(array_merge($validated, [
-                    'updated_by' => Auth::id()
-                ]));
-            } else {
-                // Jika data pendidikan tidak ada, bisa dibuat data baru
-                $pendidikan = PendidikanPelajar::create([
-                    'id_pelajar'    => $pelajar->id,
-                    'id_lembaga'    => $validated['id_lembaga'] ?? null,
-                    'id_jurusan'    => $validated['id_jurusan'] ?? null,
-                    'id_kelas'      => $validated['id_kelas'] ?? null,
-                    'id_rombel'     => $validated['id_rombel'] ?? null,
-                    'tanggal_masuk' => $validated['tanggal_masuk'] ?? null,
-                    'tanggal_keluar' => $validated['tanggal_keluar'] ?? null,
-                    'status'        => $validated['status'] ?? true,
-                    'created_by'    => Auth::id()
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'message'             => 'Data berhasil diupdate',
-                'pelajar'             => $pelajar,
-                'pendidikan_pelajar'  => $pendidikan,
-            ]);
-        } catch (Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Hapus (soft delete) data pelajar dan relasinya
-     */
-    public function destroy($id)
-    {
-        try {
-
-            DB::beginTransaction();
-
-            // Temukan data pelajar berdasarkan ID
-            $pelajar = Pelajar::findOrFail($id);
-
-            //set nonaktif status pelajar
-            $pelajar->update(['status_pelajar' => 'nonaktif']);
-
-            // Update kolom deleted_by untuk data pelajar
-            $pelajar->update(['deleted_by' => Auth::id()]);
-
-            // Update kolom deleted_by untuk semua data pendidikan terkait sebelum dihapus
-            $pelajar->pendidikan()->update(['deleted_by' => Auth::id()]);
-
-            // Hapus data pelajar
-            $pelajar->delete();
-
-            // Hapus data pendidikan yang terkait dengan pelajar
-            $pelajar->pendidikan()->delete();
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Data berhasil dihapus'
-            ]);
-        } catch (Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     /**
@@ -377,8 +183,26 @@ class PelajarController extends Controller
             $biodata = DB::table('peserta_didik as pd')
                 ->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
-                ->leftJoin('berkas as br', 'b.id', '=', 'br.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
+                ->leftJoin('berkas as br', function ($join) {
+                    $join->on('b.id', '=', 'br.id_biodata')
+                        ->where('br.id_jenis_berkas', '=', function ($query) {
+                            $query->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                })
                 ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
                 ->leftJoin('kecamatan as kc', 'b.id_kecamatan', '=', 'kc.id')
                 ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')

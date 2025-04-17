@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Biodata;
 use Illuminate\Support\Str;
+use App\Models\PesertaDidik;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,11 +20,12 @@ class PesertaDidikFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
-            'id_biodata' => Biodata::inRandomOrder()->first()?->id,
-            'created_by' => 1,
-            'updated_by' => null,
-            'status' => true,
+            'id'          => (string) Str::uuid(),
+            // Ini akan memanggil Biodata::factory()->create() secara otomatis
+            'id_biodata'  => Biodata::factory(),
+            'created_by'  => 1,
+            'updated_by'  => null,
+            'status'      => true,
         ];
     }
 }

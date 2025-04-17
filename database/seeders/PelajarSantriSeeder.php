@@ -71,9 +71,9 @@ class PelajarSantriSeeder extends Seeder
                     'id_kelas' => $faker->randomElement($kelasIds),
                     'id_rombel' => $faker->randomElement($rombelIds),
                     'status' => true,
-                    'tanggal_masuk' => $faker->dateTime(),
+                    'tanggal_masuk' => $faker->date(),
                     // Set tanggal_keluar hanya jika status pelajar alumni
-                    'tanggal_keluar' => $statusPelajar === 'alumni' ? $faker->dateTime() : null,
+                    'tanggal_keluar' => $statusPelajar === 'alumni' ? $faker->date() : null,
                     'created_by' => 1,
                     'updated_by' => null,
                     'deleted_by' => null,

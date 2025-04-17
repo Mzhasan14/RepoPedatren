@@ -26,10 +26,28 @@ class AlumniController extends Controller
 
     public function alumni(Request $request)
     {
+        // Sub-query untuk pelajar: ambil tanggal_keluar_pelajar terbaru per peserta_didik
+        $subPelajar = DB::table('pelajar')
+            ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar_pelajar) as max_tgl_keluar'))
+            ->where('status_pelajar', 'alumni')
+            ->groupBy('id_peserta_didik');
+
+        // Sub-query untuk santri: ambil tanggal_keluar_santri terbaru per peserta_didik
+        $subSantri = DB::table('santri')
+            ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar_santri) as max_tgl_keluar'))
+            ->where('status_santri', 'alumni')
+            ->groupBy('id_peserta_didik');
+
         $query = DB::table('peserta_didik as pd')
             ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+
+            // join ke pelajar terbaru
+            ->leftJoinSub($subPelajar, 'latest_p', function ($join) {
+                $join->on('latest_p.id_peserta_didik', '=', 'pd.id');
+            })
             ->leftJoin('pelajar as p', function ($join) {
                 $join->on('p.id_peserta_didik', '=', 'pd.id')
+                    ->whereColumn('p.tanggal_keluar_pelajar', 'latest_p.max_tgl_keluar')
                     ->where('p.status_pelajar', 'alumni');
             })
             ->leftJoin('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
@@ -37,47 +55,53 @@ class AlumniController extends Controller
             ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
             ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
             ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
+
+            // join ke santri terbaru
+            ->leftJoinSub($subSantri, 'latest_s', function ($join) {
+                $join->on('latest_s.id_peserta_didik', '=', 'pd.id');
+            })
             ->leftJoin('santri as s', function ($join) {
                 $join->on('s.id_peserta_didik', '=', 'pd.id')
+                    ->whereColumn('s.tanggal_keluar_santri', 'latest_s.max_tgl_keluar')
                     ->where('s.status_santri', 'alumni');
             })
             ->leftJoin('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
             ->leftJoin('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
             ->leftJoin('blok as bl', 'ds.id_blok', '=', 'bl.id')
             ->leftJoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
+
+            // join berkas & warga_pesantren tidak berubah logikanya
             ->leftJoin('berkas as br', function ($join) {
                 $join->on('b.id', '=', 'br.id_biodata')
-                    ->where('br.id_jenis_berkas', '=', function ($query) {
-                        $query->select('id')
+                    ->where('br.id_jenis_berkas', '=', function ($q) {
+                        $q->select('id')
                             ->from('jenis_berkas')
                             ->where('nama_jenis_berkas', 'Pas foto')
                             ->limit(1);
                     })
                     ->whereRaw('br.id = (
-                        select max(b2.id) 
-                        from berkas as b2 
-                        where b2.id_biodata = b.id 
-                          and b2.id_jenis_berkas = br.id_jenis_berkas
-                     )');
+             select max(b2.id)
+             from berkas b2
+             where b2.id_biodata = b.id
+               and b2.id_jenis_berkas = br.id_jenis_berkas
+         )');
             })
             ->leftJoin('warga_pesantren as wp', function ($join) {
                 $join->on('b.id', '=', 'wp.id_biodata')
                     ->where('wp.status', true)
                     ->whereRaw('wp.id = (
-                        select max(wp2.id) 
-                        from warga_pesantren as wp2 
-                        where wp2.id_biodata = b.id 
-                          and wp2.status = true
-                     )');
+             select max(wp2.id)
+             from warga_pesantren wp2
+             where wp2.id_biodata = b.id
+               and wp2.status = true
+         )');
             })
-            ->leftjoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
+            ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
+
+            // pastikan hanya yg alumni salah satu saja
             ->where(function ($q) {
-                $q->whereNotNull('s.id')
-                    ->orWhereNotNull('p.id');
-            })
-            ->where(function ($q) {
-                $q->where('s.status_santri', 'alumni')
-                    ->orWhere('p.status_pelajar', 'alumni');
+                $q->whereNotNull('p.id')
+                    ->orWhereNotNull('s.id');
             })
             ->select(
                 'pd.id',
@@ -89,17 +113,6 @@ class AlumniController extends Controller
                 DB::raw('YEAR(s.tanggal_masuk_santri) as tahun_masuk_santri'),
                 DB::raw('YEAR(s.tanggal_keluar_santri) as tahun_keluar_santri'),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil")
-            )
-            ->groupBy(
-                'pd.id',
-                'wp.niup',
-                'b.nama',
-                'kb.nama_kabupaten',
-                'l.nama_lembaga',
-                'tahun_keluar_pelajar',
-                'tahun_masuk_santri',
-                'tahun_keluar_santri',
-                'br.file_path'
             );
 
         // Filter Umum (Alamat dan Jenis Kelamin)
@@ -155,7 +168,16 @@ class AlumniController extends Controller
             // Query Biodata beserta data terkait
             $biodata = DB::table('peserta_didik as pd')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                        ->where('wp.status', true)
+                        ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
                         ->where('br.id_jenis_berkas', '=', function ($query) {

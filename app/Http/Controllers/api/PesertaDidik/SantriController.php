@@ -3,19 +3,13 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Models\Santri;
-use App\Models\JenisBerkas;
 use Illuminate\Support\Str;
-use App\Models\PesertaDidik;
 use Illuminate\Http\Request;
-use App\Models\Peserta_didik;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\Rule;
-use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\api\FilterController;
 
 class SantriController extends Controller
@@ -28,128 +22,6 @@ class SantriController extends Controller
         // Inisialisasi controller filter
         $this->filterController = new FilterPesertaDidikController();
         $this->filterUmum = new FilterController();
-    }
-
-    public function index()
-    {
-        $santri = Santri::Active()->latest()->paginate(10);
-        return new PdResource(true, 'Data Santri', $santri);
-    }
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_peserta_didik' => [
-                'required',
-                'integer',
-                Rule::unique('santri', 'id_peserta_didik')
-            ],
-            'id_wilayah' => ['required', 'integer', Rule::exists('wilayah', 'id')],
-            'id_blok' => [
-                'nullable',
-                'integer',
-                Rule::exists('blok', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_wilayah')) {
-                        $query->where('id_wilayah', $request->id_wilayah);
-                    }
-                }),
-            ],
-            'id_kamar' => [
-                'nullable',
-                'integer',
-                Rule::exists('kamar', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_blok')) {
-                        $query->where('id_blok', $request->id_blok);
-                    }
-                }),
-            ],
-            'id_domisili' => [
-                'nullable',
-                'integer',
-                Rule::exists('domisili', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_kamar')) {
-                        $query->where('id_kamar', $request->id_kamar);
-                    }
-                }),
-            ],
-            'nis' => [
-                'nullable',
-                'string',
-                'size:11',
-                Rule::unique('santri', 'nis')
-            ],
-            'tanggal_masuk_santri' => 'required|date',
-            'tanggal_keluar_santri' => 'nullable|date',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $santri = Santri::create($validator->validated());
-
-        return new PdResource(true, 'Data berhasil ditambah', $santri);
-    }
-
-    public function show($id)
-    {
-        $santri = Santri::findOrFail($id);
-        return new PdResource(true, 'Detail Peserta Didik', $santri);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $santri = Santri::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'id_wilayah' => ['required', 'integer', Rule::exists('wilayah', 'id')],
-            'id_blok' => [
-                'nullable',
-                'integer',
-                Rule::exists('blok', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_wilayah')) {
-                        $query->where('id_wilayah', $request->id_wilayah);
-                    }
-                }),
-            ],
-            'id_kamar' => [
-                'nullable',
-                'integer',
-                Rule::exists('kamar', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_blok')) {
-                        $query->where('id_blok', $request->id_blok);
-                    }
-                }),
-            ],
-            'id_domisili' => [
-                'nullable',
-                'integer',
-                Rule::exists('domisili', 'id')->where(function ($query) use ($request) {
-                    if ($request->filled('id_kamar')) {
-                        $query->where('id_kamar', $request->id_kamar);
-                    }
-                }),
-            ],
-            'tanggal_keluar_santri' => 'nullable|date',
-            'updated_by' => 'required|integer',
-            'status_santri' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $santri->update($validator->validated());
-
-        return new PdResource(true, 'Data berhasil diubah', $santri);
-    }
-
-    public function destroy($id)
-    {
-        $santri = Santri::findOrFail($id);
-
-        $santri->delete();
-        return new PdResource(true, 'Data berhasil dihapus', null);
     }
 
     /**
@@ -308,8 +180,26 @@ class SantriController extends Controller
             $biodata = DB::table('peserta_didik as pd')
                 ->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
-                ->leftJoin('berkas as br', 'b.id', '=', 'br.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
+                ->leftJoin('berkas as br', function ($join) {
+                    $join->on('b.id', '=', 'br.id_biodata')
+                        ->where('br.id_jenis_berkas', '=', function ($query) {
+                            $query->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (select max(b2.id) from berkas as b2 where b2.id_biodata = b.id and b2.id_jenis_berkas = br.id_jenis_berkas)');
+                })
                 ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
                 ->leftJoin('kecamatan as kc', 'b.id_kecamatan', '=', 'kc.id')
                 ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')

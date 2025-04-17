@@ -7,12 +7,9 @@ use Illuminate\Support\Str;
 use App\Models\PesertaDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\Rule;
-use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\api\FilterController;
 
 class PesertaDidikController extends Controller
@@ -27,53 +24,6 @@ class PesertaDidikController extends Controller
         $this->filterUmum = new FilterController();
     }
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_biodata' => [
-                'required',
-                'integer',
-                Rule::unique('peserta_didik', 'id_biodata')
-            ],
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $pesertaDidik = PesertaDidik::create($validator->validated());
-
-        return new PdResource(true, 'Data berhasil ditambah', $pesertaDidik);
-    }
-
-    public function update(Request $request, $id)
-    {
-
-        $pesertaDidik = PesertaDidik::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $pesertaDidik->update($validator->validated());
-
-        return new PdResource(true, 'Data berhasil diubah', $pesertaDidik);
-    }
-
-    public function destroy($id)
-    {
-        $pesertaDidik = PesertaDidik::findOrFail($id);
-
-        $pesertaDidik->delete();
-        return new PdResource(true, 'Data berhasil dihapus', null);
-    }
-
     /**
      * Fungsi untuk mengambil Tampilan awal peserta didik.
      */
@@ -82,7 +32,6 @@ class PesertaDidikController extends Controller
         try {
             $query = DB::table('peserta_didik as pd')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                // Join untuk data pelajar dan pendidikan pelajar
                 ->leftJoin('pelajar as p', function ($join) {
                     $join->on('p.id_peserta_didik', '=', 'pd.id')
                         ->where('p.status_pelajar', 'aktif');
@@ -95,7 +44,6 @@ class PesertaDidikController extends Controller
                 ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
                 ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
                 ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
-                // Join untuk data santri dan domisili santri
                 ->leftJoin('santri as s', function ($join) {
                     $join->on('s.id_peserta_didik', '=', 'pd.id')
                         ->where('s.status_santri', 'aktif');
@@ -160,7 +108,7 @@ class PesertaDidikController extends Controller
                     DB::raw("CONCAT('Kab. ', kb.nama_kabupaten) AS kota_asal"),
                     'b.created_at',
                     'b.updated_at',
-                    DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
+                    DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                 ])
                 ->groupBy([
                     'pd.id',
@@ -298,34 +246,52 @@ class PesertaDidikController extends Controller
                 JOIN hubungan_keluarga hk ON hk.id = otw.id_hubungan_keluarga
                 GROUP BY k.no_kk
             ) as parents'), 'keluarga.no_kk', '=', 'parents.no_kk')
-            ->where('pd.status', true)
-            ->where(function ($q) {
-                $q->where(function ($sub) {
-                    // Kondisi untuk data santri lengkap dan aktif
-                    $sub->whereNotNull('s.id')
-                        ->where('s.status_santri', 'aktif')
-                        ->whereNotNull('ds.id')
-                        ->where('ds.status', true);
-                })
-                    ->orWhere(function ($sub) {
-                        // Kondisi untuk data pelajar lengkap dan aktif
-                        $sub->whereNotNull('p.id')
-                            ->where('p.status_pelajar', 'aktif')
-                            ->whereNotNull('pp.id')
-                            ->where('pp.status', true);
-                    });
-            })
+
             // Hanya tampilkan peserta didik yang memiliki saudara kandung (lebih dari 1 peserta didik per no_kk)
-            ->whereIn('keluarga.no_kk', function ($subquery) {
-                $subquery->select('no_kk')
-                    ->from('keluarga')
-                    ->whereNotIn('id_biodata', function ($q) {
-                        $q->select('id_biodata')
-                            ->from('orang_tua_wali');
+            ->whereIn('keluarga.no_kk', function ($sub) {
+                $sub->select('k2.no_kk')
+                    ->from('keluarga as k2')
+                    // pastikan semua anak punya peserta_didik aktif
+                    ->join('peserta_didik as pd2', 'k2.id_biodata', '=', 'pd2.id_biodata')
+                    ->where('pd2.status', true)
+                    // pelajar aktif + pendidikan aktif
+                    ->leftJoin('pelajar as p2', function($j){
+                        $j->on('p2.id_peserta_didik','=', 'pd2.id')
+                          ->where('p2.status_pelajar','aktif');
                     })
-                    ->groupBy('no_kk')
+                    ->leftJoin('pendidikan_pelajar as pp2', function($j){
+                        $j->on('pp2.id_pelajar','=', 'p2.id')
+                          ->where('pp2.status', true);
+                    })
+                    // santri aktif + domisili aktif
+                    ->leftJoin('santri as s2', function($j){
+                        $j->on('s2.id_peserta_didik','=', 'pd2.id')
+                          ->where('s2.status_santri','aktif');
+                    })
+                    ->leftJoin('domisili_santri as ds2', function($j){
+                        $j->on('ds2.id_santri','=', 's2.id')
+                          ->where('ds2.status', true);
+                    })
+                    // buang orang tua
+                    ->whereNotIn('k2.id_biodata', function($q){
+                        $q->select('id_biodata')->from('orang_tua_wali');
+                    })
+                    // harus punya EITHER pelajar lengkap OR santri lengkap (boleh keduanya)
+                    ->where(function($q){
+                        $q->where(function($q2){
+                                $q2->whereNotNull('s2.id')
+                                   ->whereNotNull('ds2.id');
+                            })
+                          ->orWhere(function($q2){
+                                $q2->whereNotNull('p2.id')
+                                   ->whereNotNull('pp2.id');
+                            });
+                    })
+                    ->groupBy('k2.no_kk')
+                    // minimal 2 anggota yang lolos semua kriteria
                     ->havingRaw('COUNT(*) > 1');
             })
+            
             ->select(
                 'pd.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -427,7 +393,16 @@ class PesertaDidikController extends Controller
             // Query Biodata beserta data terkait
             $biodata = DB::table('peserta_didik as pd')
                 ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                         ->where('wp.status', true)
+                         ->whereRaw('wp.id = (
+                            select max(wp2.id) 
+                            from warga_pesantren as wp2 
+                            where wp2.id_biodata = b.id 
+                              and wp2.status = true
+                         )');
+                })
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
                         ->where('br.id_jenis_berkas', '=', function ($query) {
@@ -707,8 +682,8 @@ class PesertaDidikController extends Controller
                     'j.nama_jurusan',
                     'k.nama_kelas',
                     'r.nama_rombel',
-                    'p.tanggal_masuk_pelajar',
-                    'p.tanggal_keluar_pelajar'
+                    'pp.tanggal_masuk',
+                    'pp.tanggal_keluar'
                 )
                 ->get();
 
@@ -720,8 +695,8 @@ class PesertaDidikController extends Controller
                         'nama_jurusan' => $item->nama_jurusan,
                         'nama_kelas'   => $item->nama_kelas ?? "-",
                         'nama_rombel'  => $item->nama_rombel ?? "-",
-                        'tahun_masuk'  => $item->tanggal_masuk_pelajar,
-                        'tahun_lulus'  => $item->tanggal_keluar_pelajar ?? "-",
+                        'tahun_masuk'  => $item->tanggal_masuk,
+                        'tahun_lulus'  => $item->tanggal_keluar ?? "-",
                     ];
                 });
             }

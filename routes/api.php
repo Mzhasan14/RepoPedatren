@@ -64,17 +64,17 @@ use App\Http\Controllers\Api\Pegawai\{
     DropdownController
 };
 
-// Route untuk autentikasi
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 // Endpoint untuk registrasi dan login
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 // Endpoint logout hanya bisa diakses oleh pengguna yang sudah terautentikasi
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Route untuk autentikasi
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 
 // Untuk Data Pokok Nanti
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {

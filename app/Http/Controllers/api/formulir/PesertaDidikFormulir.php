@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\api\formulir;
 
-use App\Models\Santri;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;

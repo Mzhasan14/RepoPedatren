@@ -18,8 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_jurusan')->nullable();
             $table->unsignedBigInteger('id_kelas')->nullable();
             $table->unsignedBigInteger('id_rombel')->nullable();
-            $table->datetime('tanggal_masuk');
-            $table->datetime('tanggal_keluar')->nullable();
+            $table->date('tanggal_masuk');
+            $table->date('tanggal_keluar')->nullable();
             $table->boolean('status')->default(true);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

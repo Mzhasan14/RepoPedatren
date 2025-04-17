@@ -3,12 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Support\Str;
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Rombel;
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Lembaga;
 use App\Models\Pegawai\AnakPegawai;
-use App\Models\Kewilayahan\Domisili;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Database\Eloquent\Model;
