@@ -35,7 +35,6 @@ class PesertaDidikFormulir extends Controller
                 ->leftJoin('kabupaten', 'b_ortu.id_kabupaten', '=', 'kabupaten.id')
                 ->leftJoin('kecamatan', 'b_ortu.id_kecamatan', '=', 'kecamatan.id')
                 ->where('peserta_didik.id', $id)
-                ->where('peserta_didik.status', true)
                 ->select(
                     // Data Anak
                     DB::raw("CASE 
@@ -244,14 +243,14 @@ class PesertaDidikFormulir extends Controller
             // Query untuk mengambil data santri
             $santriData = DB::table('santri')
                 ->where('santri.id_peserta_didik', $id)
-                ->where('santri.status_santri', 'aktif')
+                ->where('santri.status', 'aktif')
                 ->select(
                     'santri.nis',
                     DB::raw("CONCAT(
-                        'Sejak ', DATE_FORMAT(santri.tanggal_masuk_santri, '%d %b %Y'), 
-                        ' Sampai ', IFNULL(DATE_FORMAT(santri.tanggal_keluar_santri, '%d %b %Y'), 'Sekarang')
+                        'Sejak ', DATE_FORMAT(santri.tanggal_masuk, '%d %b %Y'), 
+                        ' Sampai ', IFNULL(DATE_FORMAT(santri.tanggal_keluar, '%d %b %Y'), 'Sekarang')
                     ) as periode"),
-                    'santri.tanggal_masuk_santri'
+                    'santri.tanggal_masuk'
                 )
                 ->get();
         } catch (\Exception $e) {
@@ -357,7 +356,7 @@ class PesertaDidikFormulir extends Controller
                 ->leftJoin('kelas', 'pendidikan_pelajar.id_kelas', '=', 'kelas.id')
                 ->leftJoin('rombel', 'pendidikan_pelajar.id_rombel', '=', 'rombel.id')
                 ->where('peserta_didik.id', $id)
-                ->where('pelajar.status_pelajar', 'aktif')
+                ->where('pelajar.status', 'aktif')
                 ->select(
                     'lembaga.nama_lembaga',
                     'jurusan.nama_jurusan',

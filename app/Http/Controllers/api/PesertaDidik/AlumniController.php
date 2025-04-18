@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\PesertaDidik;
 use Illuminate\Support\Str;
 use App\Models\PesertaDidik;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
@@ -26,114 +27,168 @@ class AlumniController extends Controller
 
     public function alumni(Request $request)
     {
-        // Sub-query untuk pelajar: ambil tanggal_keluar_pelajar terbaru per peserta_didik
-        $subPelajar = DB::table('pelajar')
-            ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar_pelajar) as max_tgl_keluar'))
-            ->where('status_pelajar', 'alumni')
-            ->groupBy('id_peserta_didik');
+        try {
+            // Sub‐query untuk pelajar (alumni terbaru per peserta)
+            $latestPelajar = DB::table('pelajar')
+                ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar) as max_tanggal_keluar'))
+                ->where('status', 'alumni')
+                ->groupBy('id_peserta_didik');
 
-        // Sub-query untuk santri: ambil tanggal_keluar_santri terbaru per peserta_didik
-        $subSantri = DB::table('santri')
-            ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar_santri) as max_tgl_keluar'))
-            ->where('status_santri', 'alumni')
-            ->groupBy('id_peserta_didik');
+            // Sub‐query untuk santri (alumni terbaru per peserta)
+            $latestSantri = DB::table('santri')
+                ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar) as max_tanggal_keluar'))
+                ->where('status', 'alumni')
+                ->groupBy('id_peserta_didik');
 
-        $query = DB::table('peserta_didik as pd')
-            ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+            // Sub‐query untuk riwayat_pendidikan (alumni terbaru per peserta)
+            $latestRiwayat = DB::table('riwayat_pendidikan')
+                ->select('id_peserta_didik', DB::raw('MAX(tanggal_keluar) as max_tanggal_keluar'))
+                ->where('status', 'alumni')
+                ->groupBy('id_peserta_didik');
 
-            // join ke pelajar terbaru
-            ->leftJoinSub($subPelajar, 'latest_p', function ($join) {
-                $join->on('latest_p.id_peserta_didik', '=', 'pd.id');
-            })
-            ->leftJoin('pelajar as p', function ($join) {
-                $join->on('p.id_peserta_didik', '=', 'pd.id')
-                    ->whereColumn('p.tanggal_keluar_pelajar', 'latest_p.max_tgl_keluar')
-                    ->where('p.status_pelajar', 'alumni');
-            })
-            ->leftJoin('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
-            ->leftJoin('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
-            ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
-            ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
-            ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
+            $query = DB::table('peserta_didik as pd')
+                // biodata dasar
+                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
 
-            // join ke santri terbaru
-            ->leftJoinSub($subSantri, 'latest_s', function ($join) {
-                $join->on('latest_s.id_peserta_didik', '=', 'pd.id');
-            })
-            ->leftJoin('santri as s', function ($join) {
-                $join->on('s.id_peserta_didik', '=', 'pd.id')
-                    ->whereColumn('s.tanggal_keluar_santri', 'latest_s.max_tgl_keluar')
-                    ->where('s.status_santri', 'alumni');
-            })
-            ->leftJoin('domisili_santri as ds', 'ds.id_santri', '=', 's.id')
-            ->leftJoin('wilayah as w', 'ds.id_wilayah', '=', 'w.id')
-            ->leftJoin('blok as bl', 'ds.id_blok', '=', 'bl.id')
-            ->leftJoin('kamar as km', 'ds.id_kamar', '=', 'km.id')
+                // JOIN ke pelajar terbaru
+                ->leftJoinSub($latestPelajar, 'lp', function ($join) {
+                    $join->on('lp.id_peserta_didik', '=', 'pd.id');
+                })
+                ->leftJoin('pelajar as p', function ($join) {
+                    $join->on('p.id_peserta_didik', '=', 'lp.id_peserta_didik')
+                        ->on('p.tanggal_keluar',         '=', 'lp.max_tanggal_keluar')
+                        ->where('p.status', 'alumni');
+                })
 
-            // join berkas & warga_pesantren tidak berubah logikanya
-            ->leftJoin('berkas as br', function ($join) {
-                $join->on('b.id', '=', 'br.id_biodata')
-                    ->where('br.id_jenis_berkas', '=', function ($q) {
-                        $q->select('id')
-                            ->from('jenis_berkas')
-                            ->where('nama_jenis_berkas', 'Pas foto')
-                            ->limit(1);
-                    })
-                    ->whereRaw('br.id = (
-             select max(b2.id)
-             from berkas b2
-             where b2.id_biodata = b.id
-               and b2.id_jenis_berkas = br.id_jenis_berkas
-         )');
-            })
-            ->leftJoin('warga_pesantren as wp', function ($join) {
-                $join->on('b.id', '=', 'wp.id_biodata')
-                    ->where('wp.status', true)
-                    ->whereRaw('wp.id = (
-             select max(wp2.id)
-             from warga_pesantren wp2
-             where wp2.id_biodata = b.id
-               and wp2.status = true
-         )');
-            })
-            ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
+                // JOIN ke santri terbaru
+                ->leftJoinSub($latestSantri, 'ls', function ($join) {
+                    $join->on('ls.id_peserta_didik', '=', 'pd.id');
+                })
+                ->leftJoin('santri as s', function ($join) {
+                    $join->on('s.id_peserta_didik', '=', 'ls.id_peserta_didik')
+                        ->on('s.tanggal_keluar',         '=', 'ls.max_tanggal_keluar')
+                        ->where('s.status', 'alumni');
+                })
 
-            // pastikan hanya yg alumni salah satu saja
-            ->where(function ($q) {
-                $q->whereNotNull('p.id')
-                    ->orWhereNotNull('s.id');
-            })
-            ->select(
-                'pd.id',
-                'wp.niup',
-                'b.nama',
-                DB::raw("CONCAT('Kab. ', kb.nama_kabupaten) as alamat"),
-                'l.nama_lembaga',
-                DB::raw('YEAR(p.tanggal_keluar_pelajar) as tahun_keluar_pelajar'),
-                DB::raw('YEAR(s.tanggal_masuk_santri) as tahun_masuk_santri'),
-                DB::raw('YEAR(s.tanggal_keluar_santri) as tahun_keluar_santri'),
-                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil")
-            );
+                // JOIN ke riwayat_pendidikan terbaru (untuk lembaga)
+                ->leftJoinSub($latestRiwayat, 'lr', function ($join) {
+                    $join->on('lr.id_peserta_didik', '=', 'pd.id');
+                })
+                ->leftJoin('riwayat_pendidikan as rp', function ($join) {
+                    $join->on('rp.id_peserta_didik',   '=', 'lr.id_peserta_didik')
+                        ->on('rp.tanggal_keluar',       '=', 'lr.max_tanggal_keluar')
+                        ->where('rp.status', 'alumni');
+                })
+                ->leftJoin('lembaga as l', 'rp.id_lembaga', '=', 'l.id')
 
-        // Filter Umum (Alamat dan Jenis Kelamin)
-        $query = $this->filterUmum->applyCommonFilters($query, $request);
+                // DOMISILI, WILAYAH, BLOK, KAMAR (tidak berubah)
+                ->leftJoin('riwayat_domisili as rd', function ($join) {
+                    $join->on('rd.id_peserta_didik', '=', 'pd.id')
+                        ->where('rd.status', 'alumni');
+                })
+                ->leftJoin('wilayah as w', 'rd.id_wilayah', '=', 'w.id')
+                ->leftJoin('blok    as bl', 'rd.id_blok',    '=', 'bl.id')
+                ->leftJoin('kamar   as km', 'rd.id_kamar',   '=', 'km.id')
 
-        // Terapkan filter-filter terpisah
-        $query = $this->filterController->applyWilayahFilter($query, $request);
-        $query = $this->filterController->applyLembagaPendidikanFilter($query, $request);
-        $query = $this->filterController->applyStatusWargaPesantrenFilter($query, $request);
-        $query = $this->filterController->applySorting($query, $request);
-        $query = $this->filterController->applyAngkatanPelajar($query, $request);
-        $query = $this->filterController->applyPhoneNumber($query, $request);
-        $query = $this->filterController->applyWafat($query, $request);
-        $query = $this->filterController->applyStatusAlumniFilter($query, $request);
+                // Warga pesantren: ambil yang status=true dan id paling besar
+                ->leftJoin('warga_pesantren as wp', function ($join) {
+                    $join->on('b.id', '=', 'wp.id_biodata')
+                        ->where('wp.status', true)
+                        ->whereRaw('wp.id = (
+                                    select max(wp2.id)
+                                    from warga_pesantren wp2
+                                    where wp2.id_biodata = b.id
+                                    and wp2.status = true
+                                )');
+                })
 
-        // Pagination: batasi jumlah data per halaman (default 25)
-        $perPage     = $request->input('limit', 25);
-        $currentPage = $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+                // Kabupaten
+                ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
 
-        // Jika Data Kosong
+                // Berkas (pas foto) terbaru
+                ->leftJoin('berkas as br', function ($join) {
+                    $join->on('b.id', '=', 'br.id_biodata')
+                        ->where('br.id_jenis_berkas', function ($q) {
+                            $q->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (
+                                select max(b2.id)
+                                from berkas b2
+                                where b2.id_biodata = b.id
+                                and b2.id_jenis_berkas = br.id_jenis_berkas
+                        )');
+                        })
+
+                // Hanya yang aktif dan punya rekam alumni di salah satu tabel
+                ->where('pd.status', true)
+                ->where(function ($q) {
+                    $q->whereNotNull('p.id')
+                        ->orWhereNotNull('s.id');
+                })
+
+                // Pilih kolom yang diinginkan
+                ->select([
+                    'pd.id',
+                    'wp.niup',
+                    'b.nama',
+                    DB::raw("CONCAT('Kab. ', kb.nama_kabupaten) as alamat"),
+
+                    // alumni pelajar terbaru
+                    DB::raw('YEAR(p.tanggal_keluar) as tahun_keluar_pelajar'),
+
+                    // alumni santri terbaru
+                    DB::raw('YEAR(s.tanggal_masuk) as tahun_masuk_santri'),
+                    DB::raw('YEAR(s.tanggal_keluar) as tahun_keluar_santri'),
+
+                    // lembaga dari riwayat pendidikan terbaru
+                    'l.nama_lembaga',
+
+                    // foto profil
+                    DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil"),
+                ])
+                ->groupBy([
+                    'pd.id',
+                    'b.nama',
+                    'wp.niup',
+                    'kb.nama_kabupaten',
+                    'l.nama_lembaga',
+                    'rp.tanggal_keluar',
+                    's.tanggal_masuk',
+                    's.tanggal_keluar',
+                    'br.file_path'
+                ]);
+
+
+            // Terapkan filter umum (contoh: filter alamat dan jenis kelamin)
+            $query = $this->filterUmum->applyCommonFilters($query, $request);
+
+            // Terapkan filter-filter terpisah
+            $query = $this->filterController->applyWilayahFilter($query, $request);
+            $query = $this->filterController->applyLembagaPendidikanFilter($query, $request);
+            $query = $this->filterController->applyStatusWargaPesantrenFilter($query, $request);
+            $query = $this->filterController->applySorting($query, $request);
+            $query = $this->filterController->applyAngkatanPelajar($query, $request);
+            $query = $this->filterController->applyPhoneNumber($query, $request);
+            $query = $this->filterController->applyWafat($query, $request);
+            $query = $this->filterController->applyStatusAlumniFilter($query, $request);
+
+
+            // Pagination: batasi jumlah data per halaman (default 25)
+            $perPage     = $request->input('limit', 25);
+            $currentPage = $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Exception $e) {
+            Log::error("Error in getAllPesertaDidik: " . $e->getMessage());
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server'
+            ], 500);
+        }
+
+        // Jika data tidak ditemukan, kembalikan respons error dengan status 404
         if ($results->isEmpty()) {
             return response()->json([
                 'status'  => 'succes',
@@ -142,25 +197,175 @@ class AlumniController extends Controller
             ], 200);
         }
 
+        // Format data output agar mudah dipahami
+        $formattedData = $results->map(function ($item) {
+            return [
+                "id_peserta_didik" => $item->id,
+                "nama" => $item->nama,
+                "kabupaten" => $item->alamat,
+                "lembaga" => $item->nama_lembaga,
+                "tahun_masuk_pelajar" => $item->tahun_keluar_pelajar,
+                "tahun_masuk_santri" => $item->tahun_masuk_santri,
+                "tahun_keluar_santri" => $item->tahun_keluar_santri,
+                "foto_profil" => url($item->foto_profil)
+            ];
+        });
+
+        // Kembalikan respon JSON dengan data yang sudah diformat
         return response()->json([
-            "total_data" => $results->total(),
+            "total_data"   => $results->total(),
             "current_page" => $results->currentPage(),
-            "per_page" => $results->perPage(),
-            "total_pages" => $results->lastPage(),
-            "data" => $results->map(function ($item) {
-                return [
-                    "id_peserta_didik" => $item->id,
-                    "nama" => $item->nama,
-                    "kabupaten" => $item->alamat,
-                    "lembaga" => $item->nama_lembaga,
-                    "tahun_masuk_pelajar" => $item->tahun_keluar_pelajar,
-                    "tahun_masuk_santri" => $item->tahun_masuk_santri,
-                    "tahun_keluar_santri" => $item->tahun_keluar_santri,
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formattedData
         ]);
     }
+    // public function alumni(Request $request)
+    // {
+    //     try {
+    //         $query = DB::table('peserta_didik as pd')
+    //             ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+    //             ->leftJoin('riwayat_pendidikan as rp', function ($join) {
+    //                 $join->on('rp.id_peserta_didik', '=', 'pd.id')
+    //                     ->where('rp.status', 'alumni');
+    //             })
+    //             ->leftJoin('lembaga as l', 'rp.id_lembaga', '=', 'l.id')
+    //             ->leftJoin('jurusan as j', 'rp.id_jurusan', '=', 'j.id')
+    //             ->leftJoin('kelas as k', 'rp.id_kelas', '=', 'k.id')
+    //             ->leftJoin('rombel as r', 'rp.id_rombel', '=', 'r.id')
+    //             ->leftJoin('santri as s', function ($join) {
+    //                 $join->on('s.id_peserta_didik', '=', 'pd.id')
+    //                     ->where('s.status', 'alumni');
+    //             })
+    //             ->leftJoin('riwayat_domisili as rd', function ($join) {
+    //                 $join->on('rd.id_peserta_didik', '=', 'pd.id')
+    //                     ->where('rd.status', 'keluar');
+    //             })
+    //             ->leftJoin('wilayah as w', 'rd.id_wilayah', '=', 'w.id')
+    //             ->leftjoin('blok as bl', 'rd.id_blok', '=', 'bl.id')
+    //             ->leftjoin('kamar as km', 'rd.id_kamar', '=', 'km.id')
+    //             ->leftJoin('warga_pesantren as wp', function ($join) {
+    //                 $join->on('b.id', '=', 'wp.id_biodata')
+    //                     ->where('wp.status', true)
+    //                     ->whereRaw('wp.id = (
+    //                             select max(wp2.id) 
+    //                             from warga_pesantren as wp2 
+    //                             where wp2.id_biodata = b.id 
+    //                               and wp2.status = true
+    //                          )');
+    //             })
+    //             ->leftJoin('kabupaten as kb', 'kb.id', '=', 'b.id_kabupaten')
+    //             ->leftJoin('berkas as br', function ($join) {
+    //                 $join->on('b.id', '=', 'br.id_biodata')
+    //                     ->where('br.id_jenis_berkas', '=', function ($query) {
+    //                         $query->select('id')
+    //                             ->from('jenis_berkas')
+    //                             ->where('nama_jenis_berkas', 'Pas foto')
+    //                             ->limit(1);
+    //                     })
+    //                     ->whereRaw('br.id = (
+    //                             select max(b2.id) 
+    //                             from berkas as b2 
+    //                             where b2.id_biodata = b.id 
+    //                               and b2.id_jenis_berkas = br.id_jenis_berkas
+    //                          )');
+    //             })
+    //             ->where(function ($q) {
+    //                 $q->where(function ($sub) {
+    //                     // Kondisi untuk data santri lengkap dan aktif
+    //                     $sub->where('s.status', 'alumni');
+    //                 })
+    //                     ->orWhere(function ($sub) {
+    //                         // Kondisi untuk data pelajar lengkap dan alumni
+    //                         $sub->where('rp.status', 'alumni');
+    //                     });
+    //             })
+    //             ->select([
+    //                 'pd.id',
+    //                 'wp.niup',
+    //                 'b.nama',
+    //                 DB::raw("CONCAT('Kab. ', kb.nama_kabupaten) as alamat"),
+    //                 'l.nama_lembaga',
+    //                 DB::raw('YEAR(rp.tanggal_keluar) as tahun_keluar_pelajar'),
+    //                 DB::raw('YEAR(s.tanggal_masuk) as tahun_masuk_santri'),
+    //                 DB::raw('YEAR(s.tanggal_keluar) as tahun_keluar_santri'),
+    //                 'b.created_at',
+    //                 'b.updated_at',
+    //                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
+    //             ])
+    //             ->groupBy([
+    //                 'pd.id',
+    //                 'wp.niup',
+    //                 'b.nama',
+    //                 'kb.nama_kabupaten',
+    //                 'l.nama_lembaga',
+    //                 'rp.tanggal_keluar',
+    //                 's.tanggal_masuk',
+    //                 's.tanggal_keluar',
+    //                 'b.created_at',
+    //                 'b.updated_at',
+    //                 'br.file_path'
+    //             ]);
+
+
+    //         // Terapkan filter umum (contoh: filter alamat dan jenis kelamin)
+    //         $query = $this->filterUmum->applyCommonFilters($query, $request);
+
+    //         // Terapkan filter-filter terpisah
+    //         $query = $this->filterController->applyWilayahFilter($query, $request);
+    //         $query = $this->filterController->applyLembagaPendidikanFilter($query, $request);
+    //         $query = $this->filterController->applyStatusWargaPesantrenFilter($query, $request);
+    //         $query = $this->filterController->applySorting($query, $request);
+    //         $query = $this->filterController->applyAngkatanPelajar($query, $request);
+    //         $query = $this->filterController->applyPhoneNumber($query, $request);
+    //         $query = $this->filterController->applyWafat($query, $request);
+    //         $query = $this->filterController->applyStatusAlumniFilter($query, $request);
+
+    //         // Pagination: batasi jumlah data per halaman (default 25)
+    //         $perPage     = $request->input('limit', 25);
+    //         $currentPage = $request->input('page', 1);
+    //         $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+    //     } catch (\Exception $e) {
+    //         Log::error("Error in getAllAlumni: " . $e->getMessage());
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'Terjadi kesalahan pada server'
+    //         ], 500);
+    //     }
+
+    //     // Jika data tidak ditemukan, kembalikan respons error dengan status 404
+    //     if ($results->isEmpty()) {
+    //         return response()->json([
+    //             'status'  => 'succes',
+    //             'message' => 'Data Kosong',
+    //             'data'    => []
+    //         ], 200);
+    //     }
+
+    //     // Format data output agar mudah dipahami
+    //     $formattedData = $results->map(function ($item) {
+    //         return [
+    //             "id_peserta_didik" => $item->id,
+    //             "nama" => $item->nama,
+    //             "kabupaten" => $item->alamat,
+    //             "lembaga" => $item->nama_lembaga,
+    //             "tahun_masuk_pelajar" => $item->tahun_keluar_pelajar,
+    //             "tahun_masuk_santri" => $item->tahun_masuk_santri,
+    //             "tahun_keluar_santri" => $item->tahun_keluar_santri,
+    //             "foto_profil" => url($item->foto_profil)
+    //         ];
+    //     });
+
+    //     // Kembalikan respon JSON dengan data yang sudah diformat
+    //     return response()->json([
+    //         "total_data"   => $results->total(),
+    //         "current_page" => $results->currentPage(),
+    //         "per_page"     => $results->perPage(),
+    //         "total_pages"  => $results->lastPage(),
+    //         "data"         => $formattedData
+    //     ]);
+    // }
+
 
     public function formDetailAlumni($idPesertaDidik)
     {
@@ -322,8 +527,8 @@ class AlumniController extends Controller
                 ->where('pd.id', $idPesertaDidik)
                 ->select(
                     's.nis',
-                    's.tanggal_masuk_santri',
-                    's.tanggal_keluar_santri'
+                    's.tanggal_masuk',
+                    's.tanggal_keluar'
                 )
                 ->get();
 
@@ -331,8 +536,8 @@ class AlumniController extends Controller
                 $data['Status_Santri']['Santri'] = $santri->map(function ($item) {
                     return [
                         'Nis'           => $item->nis,
-                        'Tanggal_Mulai' => $item->tanggal_masuk_santri,
-                        'Tanggal_Akhir' => $item->tanggal_keluar_santri ?? "-",
+                        'Tanggal_Mulai' => $item->tanggal_masuk,
+                        'Tanggal_Akhir' => $item->tanggal_keluar ?? "-",
                     ];
                 });
             }
@@ -362,7 +567,7 @@ class AlumniController extends Controller
                     DB::raw("CASE 
                             WHEN wali_asuh.id IS NOT NULL THEN 'Wali Asuh'
                             WHEN anak_asuh.id IS NOT NULL THEN 'Anak Asuh'
-                        END as status_santri"),
+                        END as status"),
                     DB::raw("CASE 
                             WHEN wali_asuh.id IS NOT NULL THEN GROUP_CONCAT(DISTINCT bio_anak.nama SEPARATOR ', ')
                             WHEN anak_asuh.id IS NOT NULL THEN GROUP_CONCAT(DISTINCT bio_wali.nama SEPARATOR ', ')
@@ -379,8 +584,8 @@ class AlumniController extends Controller
                 $data['Status_Santri']['Kewaliasuhan'] = $kewaliasuhan->map(function ($item) {
                     return [
                         'group'   => $item->nama_grup ?? '-',
-                        'Sebagai' => $item->status_santri,
-                        $item->status_santri === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh'
+                        'Sebagai' => $item->status,
+                        $item->status === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh'
                         => $item->relasi_santri ?? "-",
                     ];
                 });
@@ -442,109 +647,109 @@ class AlumniController extends Controller
                 });
             }
 
-            // Data Pendidikan (Pelajar)
-            $pelajar = DB::table('peserta_didik as pd')
-                ->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
-                ->join('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
-                ->join('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
-                ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
-                ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
-                ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
-                ->where('pd.id', $idPesertaDidik)
-                ->select(
-                    'p.no_induk',
-                    'l.nama_lembaga',
-                    'j.nama_jurusan',
-                    'k.nama_kelas',
-                    'r.nama_rombel',
-                    'p.tanggal_masuk_pelajar',
-                    'p.tanggal_keluar_pelajar'
-                )
-                ->get();
+            // // Data Pendidikan (Pelajar)
+            // $pelajar = DB::table('peserta_didik as pd')
+            //     ->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
+            //     ->join('pendidikan_pelajar as pp', 'pp.id_pelajar', '=', 'p.id')
+            //     ->join('lembaga as l', 'pp.id_lembaga', '=', 'l.id')
+            //     ->leftJoin('jurusan as j', 'pp.id_jurusan', '=', 'j.id')
+            //     ->leftJoin('kelas as k', 'pp.id_kelas', '=', 'k.id')
+            //     ->leftJoin('rombel as r', 'pp.id_rombel', '=', 'r.id')
+            //     ->where('pd.id', $idPesertaDidik)
+            //     ->select(
+            //         'pp.no_induk',
+            //         'l.nama_lembaga',
+            //         'j.nama_jurusan',
+            //         'k.nama_kelas',
+            //         'r.nama_rombel',
+            //         'p.tanggal_masuk',
+            //         'p.tanggal_keluar'
+            //     )
+            //     ->get();
 
-            if ($pelajar->isNotEmpty()) {
-                $data['Pendidikan'] = $pelajar->map(function ($item) {
-                    return [
-                        'no_induk'     => $item->no_induk,
-                        'nama_lembaga' => $item->nama_lembaga,
-                        'nama_jurusan' => $item->nama_jurusan,
-                        'nama_kelas'   => $item->nama_kelas ?? "-",
-                        'nama_rombel'  => $item->nama_rombel ?? "-",
-                        'tahun_masuk'  => $item->tanggal_masuk_pelajar,
-                        'tahun_lulus'  => $item->tanggal_keluar_pelajar ?? "-",
-                    ];
-                });
-            }
+            // if ($pelajar->isNotEmpty()) {
+            //     $data['Pendidikan'] = $pelajar->map(function ($item) {
+            //         return [
+            //             'no_induk'     => $item->no_induk,
+            //             'nama_lembaga' => $item->nama_lembaga,
+            //             'nama_jurusan' => $item->nama_jurusan,
+            //             'nama_kelas'   => $item->nama_kelas ?? "-",
+            //             'nama_rombel'  => $item->nama_rombel ?? "-",
+            //             'tahun_masuk'  => $item->tanggal_masuk,
+            //             'tahun_lulus'  => $item->tanggal_keluar ?? "-",
+            //         ];
+            //     });
+            // }
 
-            // Catatan Afektif Peserta Didik
-            $afektif = DB::table('peserta_didik as pd')
-                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
-                ->join('catatan_afektif as ca', 's.id', '=', 'ca.id_santri')
-                ->where('pd.id', $idPesertaDidik)
-                ->select(
-                    'ca.kebersihan_nilai',
-                    'ca.kebersihan_tindak_lanjut',
-                    'ca.kepedulian_nilai',
-                    'ca.kepedulian_tindak_lanjut',
-                    'ca.akhlak_nilai',
-                    'ca.akhlak_tindak_lanjut'
-                )
-                ->latest('ca.created_at')
-                ->first();
+            // // Catatan Afektif Peserta Didik
+            // $afektif = DB::table('peserta_didik as pd')
+            //     ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
+            //     ->join('catatan_afektif as ca', 's.id', '=', 'ca.id_santri')
+            //     ->where('pd.id', $idPesertaDidik)
+            //     ->select(
+            //         'ca.kebersihan_nilai',
+            //         'ca.kebersihan_tindak_lanjut',
+            //         'ca.kepedulian_nilai',
+            //         'ca.kepedulian_tindak_lanjut',
+            //         'ca.akhlak_nilai',
+            //         'ca.akhlak_tindak_lanjut'
+            //     )
+            //     ->latest('ca.created_at')
+            //     ->first();
 
-            if ($afektif) {
-                $data['Catatan_Progress']['Afektif'] = [
-                    'Keterangan' => [
-                        'kebersihan'               => $afektif->kebersihan_nilai ?? "-",
-                        'tindak_lanjut_kebersihan' => $afektif->kebersihan_tindak_lanjut ?? "-",
-                        'kepedulian'               => $afektif->kepedulian_nilai ?? "-",
-                        'tindak_lanjut_kepedulian' => $afektif->kepedulian_tindak_lanjut ?? "-",
-                        'akhlak'                   => $afektif->akhlak_nilai ?? "-",
-                        'tindak_lanjut_akhlak'     => $afektif->akhlak_tindak_lanjut ?? "-",
-                    ]
-                ];
-            }
+            // if ($afektif) {
+            //     $data['Catatan_Progress']['Afektif'] = [
+            //         'Keterangan' => [
+            //             'kebersihan'               => $afektif->kebersihan_nilai ?? "-",
+            //             'tindak_lanjut_kebersihan' => $afektif->kebersihan_tindak_lanjut ?? "-",
+            //             'kepedulian'               => $afektif->kepedulian_nilai ?? "-",
+            //             'tindak_lanjut_kepedulian' => $afektif->kepedulian_tindak_lanjut ?? "-",
+            //             'akhlak'                   => $afektif->akhlak_nilai ?? "-",
+            //             'tindak_lanjut_akhlak'     => $afektif->akhlak_tindak_lanjut ?? "-",
+            //         ]
+            //     ];
+            // }
 
-            // Catatan Kognitif Peserta Didik
-            $kognitif = DB::table('peserta_didik as pd')
-                ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
-                ->join('catatan_kognitif as ck', 's.id', '=', 'ck.id_santri')
-                ->where('pd.id', $idPesertaDidik)
-                ->select(
-                    'ck.kebahasaan_nilai',
-                    'ck.kebahasaan_tindak_lanjut',
-                    'ck.baca_kitab_kuning_nilai',
-                    'ck.baca_kitab_kuning_tindak_lanjut',
-                    'ck.hafalan_tahfidz_nilai',
-                    'ck.hafalan_tahfidz_tindak_lanjut',
-                    'ck.furudul_ainiyah_nilai',
-                    'ck.furudul_ainiyah_tindak_lanjut',
-                    'ck.tulis_alquran_nilai',
-                    'ck.tulis_alquran_tindak_lanjut',
-                    'ck.baca_alquran_nilai',
-                    'ck.baca_alquran_tindak_lanjut'
-                )
-                ->latest('ck.created_at')
-                ->first();
+            // // Catatan Kognitif Peserta Didik
+            // $kognitif = DB::table('peserta_didik as pd')
+            //     ->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
+            //     ->join('catatan_kognitif as ck', 's.id', '=', 'ck.id_santri')
+            //     ->where('pd.id', $idPesertaDidik)
+            //     ->select(
+            //         'ck.kebahasaan_nilai',
+            //         'ck.kebahasaan_tindak_lanjut',
+            //         'ck.baca_kitab_kuning_nilai',
+            //         'ck.baca_kitab_kuning_tindak_lanjut',
+            //         'ck.hafalan_tahfidz_nilai',
+            //         'ck.hafalan_tahfidz_tindak_lanjut',
+            //         'ck.furudul_ainiyah_nilai',
+            //         'ck.furudul_ainiyah_tindak_lanjut',
+            //         'ck.tulis_alquran_nilai',
+            //         'ck.tulis_alquran_tindak_lanjut',
+            //         'ck.baca_alquran_nilai',
+            //         'ck.baca_alquran_tindak_lanjut'
+            //     )
+            //     ->latest('ck.created_at')
+            //     ->first();
 
-            if ($kognitif) {
-                $data['Catatan_Progress']['Kognitif'] = [
-                    'Keterangan' => [
-                        'kebahasaan'                      => $kognitif->kebahasaan_nilai ?? "-",
-                        'tindak_lanjut_kebahasaan'        => $kognitif->kebahasaan_tindak_lanjut ?? "-",
-                        'baca_kitab_kuning'               => $kognitif->baca_kitab_kuning_nilai ?? "-",
-                        'tindak_lanjut_baca_kitab_kuning' => $kognitif->baca_kitab_kuning_tindak_lanjut ?? "-",
-                        'hafalan_tahfidz'                 => $kognitif->hafalan_tahfidz_nilai ?? "-",
-                        'tindak_lanjut_hafalan_tahfidz'   => $kognitif->hafalan_tahfidz_tindak_lanjut ?? "-",
-                        'furudul_ainiyah'                 => $kognitif->furudul_ainiyah_nilai ?? "-",
-                        'tindak_lanjut_furudul_ainiyah'   => $kognitif->furudul_ainiyah_tindak_lanjut ?? "-",
-                        'tulis_alquran'                   => $kognitif->tulis_alquran_nilai ?? "-",
-                        'tindak_lanjut_tulis_alquran'     => $kognitif->tulis_alquran_tindak_lanjut ?? "-",
-                        'baca_alquran'                    => $kognitif->baca_alquran_nilai ?? "-",
-                        'tindak_lanjut_baca_alquran'      => $kognitif->baca_alquran_tindak_lanjut ?? "-",
-                    ]
-                ];
-            }
+            // if ($kognitif) {
+            //     $data['Catatan_Progress']['Kognitif'] = [
+            //         'Keterangan' => [
+            //             'kebahasaan'                      => $kognitif->kebahasaan_nilai ?? "-",
+            //             'tindak_lanjut_kebahasaan'        => $kognitif->kebahasaan_tindak_lanjut ?? "-",
+            //             'baca_kitab_kuning'               => $kognitif->baca_kitab_kuning_nilai ?? "-",
+            //             'tindak_lanjut_baca_kitab_kuning' => $kognitif->baca_kitab_kuning_tindak_lanjut ?? "-",
+            //             'hafalan_tahfidz'                 => $kognitif->hafalan_tahfidz_nilai ?? "-",
+            //             'tindak_lanjut_hafalan_tahfidz'   => $kognitif->hafalan_tahfidz_tindak_lanjut ?? "-",
+            //             'furudul_ainiyah'                 => $kognitif->furudul_ainiyah_nilai ?? "-",
+            //             'tindak_lanjut_furudul_ainiyah'   => $kognitif->furudul_ainiyah_tindak_lanjut ?? "-",
+            //             'tulis_alquran'                   => $kognitif->tulis_alquran_nilai ?? "-",
+            //             'tindak_lanjut_tulis_alquran'     => $kognitif->tulis_alquran_tindak_lanjut ?? "-",
+            //             'baca_alquran'                    => $kognitif->baca_alquran_nilai ?? "-",
+            //             'tindak_lanjut_baca_alquran'      => $kognitif->baca_alquran_tindak_lanjut ?? "-",
+            //         ]
+            //     ];
+            // }
 
             // Data Kunjungan Mahrom
             $pengunjung = DB::table('pengunjung_mahrom as pm')

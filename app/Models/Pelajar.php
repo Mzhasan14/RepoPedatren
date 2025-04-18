@@ -13,17 +13,8 @@ class Pelajar extends Model
     protected $table = 'pelajar';
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = [
-        'id_peserta_didik',
-        'no_induk',
-        'angkatan_pelajar',
-        'tanggal_masuk_pelajar',
-        'tanggal_keluar_pelajar',
-        'status_pelajar',
-        'created_by',
-        'updated_by',
-        'deleted_by'
-    ];
+
+    protected $guarded = ['id'];
 
     protected static function boot()
     {
@@ -32,19 +23,5 @@ class Pelajar extends Model
             $model->id = (string) Str::uuid();
         });
     }
-
-    public function scopeActive($query)
-    {
-        return $query->where('pelajar.status_pelajar', 'aktif');
-    }
-
-    public function pesertaDidik()
-    {
-        return $this->belongsTo(PesertaDidik::class, 'id_peserta_didik', 'id');
-    }
-
-    public function pendidikan()
-    {
-        return $this->hasMany(PendidikanPelajar::class, 'id_pelajar', 'id');
-    }
+    
 }

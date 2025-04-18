@@ -95,7 +95,7 @@ class DatabaseSeeder extends Seeder
             HubunganKeluargaSeeder::class,
             BiodataSeeder::class,
             DataKeluargaSeeder::class,
-            PesertaDidikSeeder::class,
+            // PesertaDidikSeeder::class,
             PelajarSantriSeeder::class,
             KategoriGolonganSeeder::class,
             GolonganSeeder::class,

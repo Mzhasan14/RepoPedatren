@@ -27,12 +27,11 @@ class SantriFactory extends Factory
             'id' => (string) Str::uuid(),
             'id_peserta_didik' => PesertaDidik::whereDoesntHave('santriAktif')->inRandomOrder()->first()?->id ?? PesertaDidik::factory(),
             'nis' => $this->faker->unique()->numerify('###########'),
-            'angkatan_santri' => $this->faker->year,
-            'tanggal_masuk_santri' => $this->faker->date,
-            'tanggal_keluar_santri' => null,
+            'tanggal_masuk' => $this->faker->date,
+            'tanggal_keluar' => null,
             'created_by' => 1,
             'updated_by' => null,
-            'status_santri' => $this->faker->randomElement([
+            'status' => $this->faker->randomElement([
                 'aktif'
             ]),
         ];

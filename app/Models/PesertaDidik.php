@@ -18,7 +18,6 @@ class PesertaDidik extends Model
     protected $keyType = 'string';
     protected $fillable = [
         'id_biodata',
-        'status',
         'created_by',
         'updated_by'
     ];
@@ -39,11 +38,6 @@ class PesertaDidik extends Model
     public function biodata()
     {
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
-    }
-
-    public function pelajar()
-    {
-        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id');
     }
 
     public function santri()
@@ -81,17 +75,14 @@ class PesertaDidik extends Model
         return $this->hasMany(Catatan_afektif::class, 'id_peserta_didik', 'id');
     }
 
-    public function pelajarAktif()
-    {
-        return $this->hasOne(Pelajar::class, 'id_peserta_didik', 'id')->where('status_pelajar', 'aktif');
-    }
-
     public function santriAktif()
     {
-        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status_santri', 'aktif');
+        return $this->hasOne(Santri::class, 'id_peserta_didik', 'id')->where('status', 'aktif');
     }
     public function AnakpegawaiPesertaDidik()
     {
         return $this->hasMany(AnakPegawai::class, 'id_peserta_didik', 'id');
     }
+
+    
 }

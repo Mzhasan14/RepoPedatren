@@ -57,25 +57,30 @@ class FilterPesertaDidikController extends Controller
         if ($request->filled('status')) {
             switch (strtolower($request->status)) {
                 case 'santri':
-                    $query->whereNotNull('s.id')
-                        ->where('s.status_santri', 'aktif');
+                    $query->where('s.status', 'aktif');
                     break;
                 case 'santri non pelajar':
-                    $query->whereNotNull('s.id')->whereNull('p.id')
-                        ->where('s.status_santri', 'aktif');
+                    $query->where('s.status', 'aktif')
+                    ->where(function ($q) {
+                        $q->whereNull('p.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('p.status', '!=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'pelajar':
-                    $query->whereNotNull('p.id')->where('p.status_pelajar', 'aktif');
+                    $query->where('p.status', 'aktif');
                     break;
                 case 'pelajar non santri':
-                    $query->whereNotNull('p.id')->whereNull('s.id')
-                        ->where('p.status_pelajar', 'aktif');
+                    $query->where('p.status', 'aktif')
+                    ->where(function ($q) {
+                        $q->whereNull('s.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('s.status', '!=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'santri-pelajar':
                 case 'pelajar-santri':
                     $query->whereNotNull('p.id')->whereNotNull('s.id')
-                        ->where('p.status_pelajar', 'aktif')
-                        ->where('s.status_santri', 'aktif');
+                        ->where('p.status', 'aktif')
+                        ->where('s.status', 'aktif');
                     break;
                 default:
                     $query->whereRaw('0 = 1');
@@ -90,28 +95,44 @@ class FilterPesertaDidikController extends Controller
         if ($request->filled('status_alumni')) {
             switch (strtolower($request->status_alumni)) {
                 case 'alumni santri':
-                    $query->whereNotNull('s.id');
+                    $query->where('s.status', 'alumni');
                     break;
                 case 'alumni santri non pelajar':
-                    $query->whereNotNull('s.id')->whereNull('p.id');
+                    $query->where('s.status', 'alumni')
+                    ->where(function ($q) {
+                        $q->whereNull('p.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('p.status', '!=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
-                    $query->join('pelajar as p', 'p.id_peserta_didik', '=', 'pd.id')
-                        ->whereNotNull('s.id')->whereNotNull('p.id');
+                    $query->where('s.status', 'alumni')
+                    ->where(function ($q) {
+                        $q->whereNotNull('p.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('p.status', '=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'alumni pelajar':
-                    $query->whereNotNull('p.id');
+                    $query->where('p.status', 'alumni');
                     break;
                 case 'alumni pelajar non santri':
-                    $query->whereNotNull('p.id')->whereNull('s.id');
+                    $query->where('p.status', 'alumni')
+                    ->where(function ($q) {
+                        $q->whereNull('s.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('s.status', '!=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->join('santri as s', 's.id_peserta_didik', '=', 'pd.id')
-                        ->whereNotNull('p.id')->whereNotNull('s.id');
+                    $query->where('p.status', 'alumni')
+                    ->where(function ($q) {
+                        $q->whereNotNull('s.id') // Tidak punya riwayat pendidikan sama sekali
+                          ->orWhere('s.status', '=', 'aktif'); // Atau punya tapi tidak aktif
+                    });
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
-                    $query->whereNotNull('p.id')->whereNotNull('s.id');
+                    $query->whereNotNull('p.id')->whereNotNull('s.id')
+                        ->where('p.status', 'alumni')
+                        ->where('s.status', 'alumni');
                     break;
                 default:
                     $query->whereRaw('0 = 1');

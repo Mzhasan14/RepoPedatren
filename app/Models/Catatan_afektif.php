@@ -20,7 +20,7 @@ class Catatan_afektif extends Model
 
     public function PesertaDidikCatatanAfektif()
     {
-        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
+        return $this->belongsTo(PesertaDidik::class,'id_peserta_didik','id');
     }
     public function WaliAsuhCatatanAfektif()
     {

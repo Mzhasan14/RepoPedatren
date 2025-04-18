@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('peserta_didik', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->unsignedBigInteger('id_biodata')->unique();
-            $table->boolean('status');
+            $table->boolean('status')->default(true);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

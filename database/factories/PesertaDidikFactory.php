@@ -23,9 +23,9 @@ class PesertaDidikFactory extends Factory
             'id'          => (string) Str::uuid(),
             // Ini akan memanggil Biodata::factory()->create() secara otomatis
             'id_biodata'  => Biodata::factory(),
+            'status'     => true,
             'created_by'  => 1,
             'updated_by'  => null,
-            'status'      => true,
         ];
     }
 }

@@ -16,10 +16,9 @@ class Santri extends Model
     protected $fillable = [
         'id_peserta_didik',
         'nis',
-        'angkatan_santri',
-        'tanggal_masuk_santri',
-        'tanggal_keluar_santri',
-        'status_santri',
+        'tanggal_masuk',
+        'tanggal_keluar',
+        'status',
         'created_by',
         'updated_by',
         'deleted_by'
@@ -35,7 +34,7 @@ class Santri extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('santri.status_santri', 'aktif');
+        return $query->where('santri.status', 'aktif');
     }
 
     public function pesertaDidik()
