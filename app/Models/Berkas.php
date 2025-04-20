@@ -23,12 +23,12 @@ class Berkas extends Model
 
     public function jenisBerkas()
     {
-        return $this->belongsTo(Berkas::class,'id_jenis_berkas','id');
+        return $this->belongsTo(JenisBerkas::class,'id_jenis_berkas','id');
     }
 
     public function biodata()
     {
-        $this->belongsTo(Biodata::class, 'id_biodata', 'id');
+        return $this->belongsTo(Biodata::class, 'id_biodata');
     }
 
 }

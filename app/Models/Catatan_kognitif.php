@@ -24,7 +24,7 @@ class Catatan_kognitif extends Model
     }
     public function PesertaDidikCatatanKognitif()
     {
-        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik','id');
+        return $this->belongsTo(PesertaDidik::class,'id_peserta_didik','id');
     }
     public function WaliAsuhCatatanKognitif()
     {

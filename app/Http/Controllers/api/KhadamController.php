@@ -10,189 +10,95 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use App\Services\FilterKhadamService;
 
 class KhadamController extends Controller
 {
-    protected $filterController;
+    private FilterKhadamService $filterController;
 
-    public function __construct(FilterController $filterController)
+    public function __construct(FilterKhadamService $filterController)
     {
         $this->filterController = $filterController;
     }
 
     public function getAllKhadam(Request $request)
     {
-        $query = DB::table('khadam as kh')
-            ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
-            ->leftJoin('berkas as br', function ($join) {
-                $join->on('b.id', '=', 'br.id_biodata')
-                    ->where('br.id_jenis_berkas', '=', function ($query) {
-                        $query->select('id')
-                            ->from('jenis_berkas')
-                            ->where('nama_jenis_berkas', 'Pas foto')
-                            ->limit(1);
-                    })
-                    ->whereRaw('br.id = (
-                    select max(b2.id) 
-                    from berkas as b2 
-                    where b2.id_biodata = b.id 
-                      and b2.id_jenis_berkas = br.id_jenis_berkas
-                 )');
-            })
-            ->leftJoin('warga_pesantren as wp', function ($join) {
-                $join->on('b.id', '=', 'wp.id_biodata')
-                    ->where('wp.status', true)
-                    ->whereRaw('wp.id = (
-                    select max(wp2.id) 
-                    from warga_pesantren as wp2 
-                    where wp2.id_biodata = b.id 
-                      and wp2.status = true
-                 )');
-            })
-            ->where('kh.status', true)
-            ->select(
-                'kh.id',
-                'wp.niup',
-                DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
-                'b.nama',
-                'kh.keterangan',
-                'b.created_at',
-                'b.updated_at',
-                DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
-            );
+        try {
+            // 1) Ambil ID jenis berkas 'Pas foto'
+            $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
 
+            // Subqueries: ID terakhir berkas pas foto
+            $fotoLast = DB::table('berkas')
+                ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+                ->where('id_jenis_berkas', $pasFotoId)
+                ->groupBy('id_biodata');
 
-        // Filter Umum (Alamat dan Jenis Kelamin)
-        $query = $this->filterController->applyCommonFilters($query, $request);
+            // Subqueries: ID terakhir warga pesantren yang aktif
+            $wpLast = DB::table('warga_pesantren')
+                ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('id_biodata');
 
-        // Filter Wilayah
-        if ($request->filled('wilayah')) {
-            $wilayah = strtolower($request->wilayah);
-            $query->leftjoin('blok', 'santri.id_blok', '=', 'blok.id')
-                ->leftjoin('kamar', 'santri.id_kamar', '=', 'kamar.id')
-                ->where('wilayah.nama_wilayah', $wilayah);
-            if ($request->filled('blok')) {
-                $blok = strtolower($request->blok);
-                $query->where('blok.nama_blok', $blok);
-                if ($request->filled('kamar')) {
-                    $kamar = strtolower($request->kamar);
-                    $query->where('kamar.nama_kamar', $kamar);
-                }
-            }
-        }
+            $query = DB::table('khadam as kh')
+                ->join('biodata as b', 'kh.id_biodata', '=', 'b.id')
+                // join berkas pas foto terakhir
+                ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.id_biodata'))
+                ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+                // join warga pesantren terakhir (NIUP)
+                ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.id_biodata'))
+                ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+                ->where('kh.status', true)
+                ->select(
+                    'kh.id',
+                    'wp.niup',
+                    DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
+                    'b.nama',
+                    'kh.keterangan',
+                    'b.created_at',
+                    'b.updated_at',
+                    DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
+                );
 
-        // Filter Lembaga
-        if ($request->filled('lembaga')) {
-            $query->where('lembaga.nama_lembaga', $request->lembaga);
-            if ($request->filled('jurusan')) {
-                $query->leftJoin('jurusan', 'pelajar.id_jurusan', '=', 'jurusan.id')
-                    ->leftJoin('kelas', 'pelajar.id_kelas', '=', 'kelas.id')
-                    ->leftJoin('rombel', 'pelajar.id_rombel', '=', 'rombel.id');
-                $query->where('jurusan.nama_jurusan', $request->jurusan);
-                if ($request->filled('kelas')) {
-                    $query->where('kelas.nama_kelas', $request->kelas);
-                    if ($request->filled('rombel')) {
-                        $query->where('rombel.nama_rombel', $request->rombel);
-                    }
-                }
-            }
-        }
+            // Terapkan filter dan pagination
+            $query = $this->filterController->applyAllFilters($query, $request);
 
-        // Filter Status Warga Pesantren
-        if ($request->filled('warga_pesantren')) {
-            $warga_pesantren = strtolower($request->warga_pesantren);
-            if ($warga_pesantren == 'memiliki niup') {
-                $query->whereNotNull('biodata.niup');
-            } else if ($warga_pesantren == 'tanpa niup') {
-                $query->whereNull('biodata.niup');
-            }
-        }
-
-        // Filter Smartcard
-        if ($request->filled('smartcard')) {
-            $smartcard = strtolower($request->smartcard);
-            if ($smartcard == 'memiliki smartcard') {
-                $query->whereNotNull('biodata.smartcard');
-            } else if ($smartcard == 'tanpa smartcard') {
-                $query->whereNull('biodata.smartcard');
-            }
-        }
-
-        // Filter No Telepon
-        if ($request->filled('phone_number')) {
-            $phone_number = strtolower($request->phone_number);
-            if ($phone_number == 'memiliki phone number') {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($phone_number == 'tidak ada phone number') {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
-            }
-        }
-
-        // Filter Pemberkasan (Lengkap / Tidak Lengkap)
-        if ($request->filled('pemberkasan')) {
-            $pemberkasan = strtolower($request->pemberkasan);
-            switch ($pemberkasan) {
-                case 'tidak ada berkas':
-                    $query->whereNull('br.id_biodata');
-                    break;
-                case 'tidak ada foto diri':
-                    $query->where('br.id_jenis_berkas', 4)->whereNull('br.file_path');
-                    break;
-                case 'memiliki foto diri':
-                    $query->where('br.id_jenis_berkas', 4)->whereNotNull('br.file_path');
-                    break;
-                case 'tidak ada kk':
-                    $query->where('br.id_jenis_berkas', 1)->whereNull('br.file_path');
-                    break;
-                case 'tidak ada akta kelahiran':
-                    $query->where('br.id_jenis_berkas', 3)->whereNull('br.file_path');
-                    break;
-                case 'tidak ada ijazah':
-                    $query->where('br.id_jenis_berkas', 5)->whereNull('br.file_path');
-                    break;
-                default:
-                    $query->whereRaw('0 = 1');
-                    break;
-            }
-        }
-
-        // Ambil jumlah data per halaman (default 10 jika tidak diisi)
-        $perPage = $request->input('limit', 25);
-
-        // Ambil halaman saat ini (jika ada)
-        $currentPage = $request->input('page', 1);
-
-        // Menerapkan pagination ke hasil
-        $hasil = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
-
-        // Jika Data Kosong
-        if ($hasil->isEmpty()) {
+            $perPage     = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[KhadamController] Error: {$e->getMessage()}");
             return response()->json([
-                "status" => "succes",
-                "message" => "Data Kosong",
-                "code" => 200
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
+        }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
             ], 200);
         }
 
+        $formatted = collect($results->items())->map(fn($item) => [
+            "id_khadam" => $item->id,
+            "niup" => $item->niup ?? '-',
+            "nama" => $item->nama,
+            "keterangan" => $item->keterangan,
+            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            "foto_profil" => url($item->foto_profil)
+        ]);
+
         return response()->json([
-            "total_data" => $hasil->total(),
-            "current_page" => $hasil->currentPage(),
-            "per_page" => $hasil->perPage(),
-            "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
-                return [
-                    "id_khadam" => $item->id,
-                    "niup" => $item->niup,
-                    "nama" => $item->nama,
-                    "keterangan" => $item->keterangan,
-                    "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s'),
-                    "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+            'total_data'   => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page'     => $results->perPage(),
+            'total_pages'  => $results->lastPage(),
+            'data'         => $formatted,
         ]);
     }
 
@@ -214,13 +120,13 @@ class KhadamController extends Controller
                 })
                 ->leftJoin('berkas as br', function ($join) {
                     $join->on('b.id', '=', 'br.id_biodata')
-                         ->where('br.id_jenis_berkas', '=', function ($query) {
-                             $query->select('id')
-                                   ->from('jenis_berkas')
-                                   ->where('nama_jenis_berkas', 'Pas foto')
-                                   ->limit(1);
-                         })
-                         ->whereRaw('br.id = (
+                        ->where('br.id_jenis_berkas', '=', function ($query) {
+                            $query->select('id')
+                                ->from('jenis_berkas')
+                                ->where('nama_jenis_berkas', 'Pas foto')
+                                ->limit(1);
+                        })
+                        ->whereRaw('br.id = (
                             select max(b2.id) 
                             from berkas as b2 
                             where b2.id_biodata = b.id 
@@ -619,7 +525,7 @@ class KhadamController extends Controller
                 });
             }
 
-           // khadam
+            // khadam
             $khadam = DB::table('khadam as kh')
                 ->where('kh.id', $idKhadam)
                 ->select(
@@ -636,7 +542,7 @@ class KhadamController extends Controller
                     'tanggal_akhir' => $khadam->tanggal_akhir,
                 ];
             }
-            
+
             return $data;
         } catch (\Exception $e) {
             Log::error("Error in formDetailPesertaDidik: " . $e->getMessage());

@@ -23,16 +23,25 @@ class Keluarga extends Model
         'status'
     ];
 
-    public function biodata() {
+  // Di model Keluarga
+public function biodataDetail()
+{
+    return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
+}
+
+
+    public function biodata()
+    {
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
     }
 
-    public function hubunganKeluarga() {
-        return $this->belongsTo(HubunganKeluarga::class, 'id_hubungan_keluarga','id');
+    public function hubunganKeluarga()
+    {
+        return $this->belongsTo(HubunganKeluarga::class, 'id_hubungan_keluarga', 'id');
     }
 
     public function scopeActive($query)
     {
         return $query->where('keluarga.status', true);
     }
-} 
+}

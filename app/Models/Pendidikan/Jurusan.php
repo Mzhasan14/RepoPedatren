@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Models\Pendidikan;
+use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\RiwayatPendidikan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Jurusan extends Model
 {
@@ -29,11 +31,10 @@ class Jurusan extends Model
         return $query->where('status', true);
     }
 
-    public function peserta_didik()
+    public function RiwayatPendidikan()
     {
-        $this->hasMany(Peserta_didik::class, 'id_jurusan', 'id');
+        $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
     }
-
     public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'id_lembaga', 'id');

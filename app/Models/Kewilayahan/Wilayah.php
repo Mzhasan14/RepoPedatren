@@ -3,6 +3,7 @@
 namespace App\Models\Kewilayahan;
 
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use App\Models\RiwayatDomisili;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,6 +25,12 @@ class Wilayah extends Model
         'deleted_by',
         'status',
     ];
+
+    public function RiwayatDomisili()
+    {
+        $this->hasMany(RiwayatDomisili::class, 'id_wilayah', 'id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);

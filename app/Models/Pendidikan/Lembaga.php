@@ -2,12 +2,14 @@
 
 namespace App\Models\Pendidikan;
 
-use App\Models\Pegawai\Pengajar;
 use App\Models\Pelajar;
+use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Pegawai\Pengajar;
+use App\Models\RiwayatPendidikan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Lembaga extends Model
 {
@@ -26,6 +28,11 @@ class Lembaga extends Model
         'deleted_by',
         'status',
     ];
+
+    public function RiwayatPendidikan()
+    {
+        $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
+    }
 
     public function scopeActive($query)
     {

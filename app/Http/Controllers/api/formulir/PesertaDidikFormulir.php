@@ -150,7 +150,7 @@ class PesertaDidikFormulir extends Controller
             // Jika data tidak ditemukan, kembalikan respons error 404
             if (!$peserta) {
                 return response()->json([
-                    "status"  => "succes",
+                    "status"  => "success",
                     "message" => "Data Kosong",
                     "data"    => []
                 ], 200);
@@ -170,13 +170,18 @@ class PesertaDidikFormulir extends Controller
                 )
                 ->get();
 
-            // Ambil data saudara kandung (peserta didik lain dengan no_kk yang sama, 
-            // namun tidak terdaftar sebagai orang tua/wali)
+            // Ambil data saudara kandung:
+            // - yang punya no_kk sama
+            // - bukan orang tua/wali
+            // - **bukan** peserta didik yang sedang di-request ($peserta->biodata_id)
             $siblings = DB::table('keluarga')
                 ->where('no_kk', $peserta->no_kk)
+                // exclude id_biodata yang terdaftar di orang_tua_wali
                 ->whereNotIn('id_biodata', function ($query) {
                     $query->select('id_biodata')->from('orang_tua_wali');
                 })
+                // exclude biodata peserta didik yang sedang di-request
+                ->where('keluarga.id_biodata', '!=', $peserta->biodata_id)
                 ->join('biodata', 'keluarga.id_biodata', '=', 'biodata.id')
                 ->select('biodata.id', 'biodata.nama', 'biodata.nik')
                 ->get();
@@ -292,17 +297,17 @@ class PesertaDidikFormulir extends Controller
         }
 
         try {
-            $domisiliData = DB::table('santri')
-                ->join('peserta_didik', 'santri.id_peserta_didik', '=', 'peserta_didik.id')
-                ->join('domisili_santri', 'domisili_santri.id_santri', '=', 'santri.id')
-                ->join('wilayah', 'domisili_santri.id_wilayah', '=', 'wilayah.id')
-                ->join('blok', 'domisili_santri.id_blok', '=', 'blok.id')
-                ->join('kamar', 'domisili_santri.id_kamar', '=', 'kamar.id')
-                ->where('peserta_didik.id', $id)
+            $domisiliData = DB::table('peserta_didik as pd') 
+                ->join('riwayat_domisili as rd', 'rd.id_peserta_didik', '=', 'pd.id')
+                ->join('wilayah as w', 'rd.id_wilayah', '=', 'w.id')
+                ->join('blok as bl', 'rd.id_blok', '=', 'bl.id')
+                ->join('kamar as km', 'rd.id_kamar', '=', 'km.id')
+                ->where('pd.id', $id)
                 ->select(
-                    'wilayah.nama_wilayah',
-                    'kamar.nama_kamar',
-                    DB::raw("CONCAT('Sejak ', DATE_FORMAT(domisili_santri.tanggal_masuk, '%d %b %Y %H:%i:%s'), ' Sampai ', COALESCE(DATE_FORMAT(domisili_santri.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')) as periode")
+                    'w.nama_wilayah',
+                    'bl.nama_blok',
+                    'km.nama_kamar',
+                    DB::raw("CONCAT('Sejak ', DATE_FORMAT(rd.tanggal_masuk, '%d %b %Y %H:%i:%s'), ' Sampai ', COALESCE(DATE_FORMAT(rd.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')) as periode")
                 )
                 ->get();
         } catch (\Exception $e) {
@@ -326,6 +331,7 @@ class PesertaDidikFormulir extends Controller
         $formattedData = $domisiliData->map(function ($item) {
             return [
                 'wilayah' => $item->nama_wilayah,
+                'blok' => $item->nama_blok,
                 'kamar'   => $item->nama_kamar,
                 'periode' => $item->periode,
             ];
@@ -348,21 +354,19 @@ class PesertaDidikFormulir extends Controller
 
         try {
             // Query untuk mengambil data pendidikan pelajar beserta relasi terkait
-            $pendidikanData = DB::table('pelajar')
-                ->join('peserta_didik', 'pelajar.id_peserta_didik', '=', 'peserta_didik.id')
-                ->join('pendidikan_pelajar', 'pendidikan_pelajar.id_pelajar', '=', 'pelajar.id')
-                ->join('lembaga', 'pendidikan_pelajar.id_lembaga', '=', 'lembaga.id')
-                ->leftJoin('jurusan', 'pendidikan_pelajar.id_jurusan', '=', 'jurusan.id')
-                ->leftJoin('kelas', 'pendidikan_pelajar.id_kelas', '=', 'kelas.id')
-                ->leftJoin('rombel', 'pendidikan_pelajar.id_rombel', '=', 'rombel.id')
-                ->where('peserta_didik.id', $id)
-                ->where('pelajar.status', 'aktif')
+            $pendidikanData = DB::table('peserta_didik as pd')
+                ->join('riwayat_pendidikan as rp', 'rp.id_peserta_didik', '=', 'pd.id')
+                ->join('lembaga as l', 'rp.id_lembaga', '=', 'l.id')
+                ->leftJoin('jurusan as j', 'rp.id_jurusan', '=', 'j.id')
+                ->leftJoin('kelas as k', 'rp.id_kelas', '=', 'k.id')
+                ->leftJoin('rombel as r', 'rp.id_rombel', '=', 'r.id')
+                ->where('pd.id', $id)
                 ->select(
-                    'lembaga.nama_lembaga',
-                    'jurusan.nama_jurusan',
+                    'l.nama_lembaga',
+                    'j.nama_jurusan',
                     DB::raw("CONCAT(
-                        'Sejak ', DATE_FORMAT(pendidikan_pelajar.tanggal_masuk, '%d %b %Y %H:%i:%s'), 
-                        ' Sampai ', IFNULL(DATE_FORMAT(pendidikan_pelajar.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')
+                        'Sejak ', DATE_FORMAT(rp.tanggal_masuk, '%d %b %Y %H:%i:%s'), 
+                        ' Sampai ', IFNULL(DATE_FORMAT(rp.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')
                     ) as periode")
                 )
                 ->get();
@@ -409,14 +413,14 @@ class PesertaDidikFormulir extends Controller
 
         try {
             // Query untuk mengambil data berkas peserta didik
-            $berkasData = DB::table('peserta_didik')
-                ->join('biodata', 'peserta_didik.id_biodata', '=', 'biodata.id')
-                ->join('berkas', 'berkas.id_biodata', '=', 'biodata.id')
-                ->join('jenis_berkas', 'berkas.id_jenis_berkas', '=', 'jenis_berkas.id')
-                ->where('peserta_didik.id', $id)
+            $berkasData = DB::table('peserta_didik as pd')
+                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+                ->join('berkas as br', 'br.id_biodata', '=', 'b.id')
+                ->join('jenis_berkas as jb', 'br.id_jenis_berkas', '=', 'jb.id')
+                ->where('pd.id', $id)
                 ->select(
-                    'jenis_berkas.nama_jenis_berkas',
-                    'berkas.file_path'
+                    'jb.nama_jenis_berkas',
+                    'br.file_path'
                 )
                 ->get();
         } catch (\Exception $e) {

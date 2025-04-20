@@ -27,6 +27,9 @@ class FilterController extends Controller
                         $query->leftJoin('kecamatan', 'b.id_kecamatan', '=', 'kecamatan.id')
                             ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
+                } else {
+                    // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
+                    $query->whereRaw('0 = 1');
                 }
             }
             // Jika ada parameter lokasi tetapi tidak sesuai (misalnya negara tidak valid),
