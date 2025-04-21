@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('warga_pesantren', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_biodata');
+            $table->unsignedBigInteger('biodata_id');
             $table->string('niup');
             $table->boolean('status');
             $table->unsignedBigInteger('created_by');
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 

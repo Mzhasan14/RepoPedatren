@@ -33,42 +33,42 @@ class Santri extends Model
         });
     }
 
-    public function catatanAfektifLatest()
-    {
-        return $this->hasOne(Catatan_afektif::class, 'id_santri')
-            ->latestOfMany('created_at');
-    }
+    // public function catatanAfektifLatest()
+    // {
+    //     return $this->hasOne(Catatan_afektif::class, 'id_santri')
+    //         ->latestOfMany('created_at');
+    // }
 
-    public function catatanKognitifLatest()
-    {
-        return $this->hasOne(Catatan_kognitif::class, 'id_santri')
-            ->latestOfMany('created_at');
-    }
+    // public function catatanKognitifLatest()
+    // {
+    //     return $this->hasOne(Catatan_kognitif::class, 'id_santri')
+    //         ->latestOfMany('created_at');
+    // }
 
-    public function riwayatDomisili()
-    {
-        return $this->hasMany(RiwayatDomisili::class, 'id_peserta_didik');
-    }
-    public function riwayatPendidikan()
-    {
-        return $this->hasMany(RiwayatPendidikan::class, 'id_peserta_didik');
-    }
-    public function kunjunganMahrom()
-    {
-        return $this->hasMany(PengunjungMahrom::class, 'id_santri');
-    }
-    public function waliAsuh()
-    {
-        return $this->hasMany(Wali_asuh::class, 'id_santri');
-    }
-    public function anakAsuh()
-    {
-        return $this->hasMany(Anak_asuh::class, 'id_santri');
-    }
-    public function khadam()
-    {
-        return $this->hasOne(Khadam::class, 'id_biodata', 'id_peserta_didik');
-    }
+    // public function riwayatDomisili()
+    // {
+    //     return $this->hasMany(RiwayatDomisili::class, 'id_peserta_didik');
+    // }
+    // public function riwayatPendidikan()
+    // {
+    //     return $this->hasMany(RiwayatPendidikan::class, 'id_peserta_didik');
+    // }
+    // public function kunjunganMahrom()
+    // {
+    //     return $this->hasMany(PengunjungMahrom::class, 'id_santri');
+    // }
+    // public function waliAsuh()
+    // {
+    //     return $this->hasMany(Wali_asuh::class, 'id_santri');
+    // }
+    // public function anakAsuh()
+    // {
+    //     return $this->hasMany(Anak_asuh::class, 'id_santri');
+    // }
+    // public function khadam()
+    // {
+    //     return $this->hasOne(Khadam::class, 'id_biodata', 'id_peserta_didik');
+    // }
 
     // public function scopeActive($query)
     // {

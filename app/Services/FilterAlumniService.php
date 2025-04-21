@@ -17,6 +17,7 @@ class FilterAlumniService
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
         $query = $this->applyStatusAlumniFilter($query, $request);
+        $query = $this->applyAngkatanSantri($query, $request);
         $query = $this->applyAngkatanPelajar($query, $request);
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyWafat($query, $request);
@@ -32,11 +33,11 @@ class FilterAlumniService
 
         // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
-            $query->join('negara', 'b.id_negara', '=', 'negara.id')
+            $query->join('negara', 'b.negara_id', '=', 'negara.id')
                 ->where('negara.nama_negara', $request->negara);
 
             if ($request->filled('provinsi')) {
-                $query->leftJoin('provinsi', 'b.id_provinsi', '=', 'provinsi.id')
+                $query->leftJoin('provinsi', 'b.provinsi_id', '=', 'provinsi.id')
                     ->where('provinsi.nama_provinsi', $request->provinsi);
 
                 if ($request->filled('kabupaten')) {
@@ -44,7 +45,7 @@ class FilterAlumniService
                     $query->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
-                        $query->leftJoin('kecamatan', 'b.id_kecamatan', '=', 'kecamatan.id')
+                        $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
                             ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
                 } else {
@@ -53,6 +54,7 @@ class FilterAlumniService
                 }
             }
         }
+
         return $query;
     }
 
@@ -73,6 +75,7 @@ class FilterAlumniService
                 $query->whereRaw('0 = 1');
             }
         }
+
         return $query;
     }
 
@@ -81,12 +84,16 @@ class FilterAlumniService
         if (! $request->filled('nama')) {
             return $query;
         }
-
-        if ($request->filled('nama')) {
-            $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$request->nama]);
-        }
-        return $query;
+    
+        // tambahkan tanda kutip ganda di awal‑akhir
+        $phrase = '"' . trim($request->nama) . '"';
+    
+        return $query->whereRaw(
+            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            [$phrase]
+        );
     }
+    
 
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder
     {
@@ -98,15 +105,15 @@ class FilterAlumniService
             $query->where('l.nama_lembaga', $request->lembaga);
 
             if ($request->filled('jurusan')) {
-                $query->join('jurusan AS j', 'rp.id_jurusan', '=', 'j.id')
+                $query->join('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
                     ->where('j.nama_jurusan', $request->jurusan);
 
                 if ($request->filled('kelas')) {
-                    $query->join('kelas AS kls', 'rp.id_kelas', '=', 'kls.id')
+                    $query->join('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
                         ->where('kls.nama_kelas', $request->kelas);
 
                     if ($request->filled('rombel')) {
-                        $query->join('rombel AS r', 'rp.id_rombel', '=', 'r.id')
+                        $query->join('rombel AS r', 'rp.rombel_id', '=', 'r.id')
                             ->where('r.nama_rombel', $request->rombel);
                     }
                 }
@@ -114,6 +121,7 @@ class FilterAlumniService
         } else {
             $query->whereRaw('0 = 1');
         }
+
         return $query;
     }
 
@@ -128,36 +136,36 @@ class FilterAlumniService
                 case 'alumni santri':
                     $query->where('s.status', 'alumni');
                     break;
-                case 'alumni santri non pelajar':
-                    $query->where('s.status', 'alumni')
-                        ->where(fn($q) => $q->whereNull('p.id')->orWhere('p.status', '!=', 'aktif'));
-                    break;
+                // case 'alumni santri non pelajar':
+                //     $query->where('s.status', 'alumni')
+                //         ->where(fn($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
+                //     break;
                 case 'alumni santri tetapi masih pelajar aktif':
-                    $query->where('s.status', 'alumni')
-                        ->where(fn($q) => $q->whereNotNull('p.id')->orWhere('p.status', '=', 'aktif'));
+                    $query->join('riwayat_pendidikan as rp2', 'rp2.santri_id', '=', 's.id')
+                    ->where(fn($q) => $q->where('s.status', 'alumni')
+                        ->where('rp2.status', '=', 'aktif'));
                     break;
                 case 'alumni pelajar':
-                    $query->where('p.status', 'alumni');
+                    $query->where('rp.status', 'alumni');
                     break;
-                case 'alumni pelajar non santri':
-                    $query->where('p.status', 'alumni')
-                        ->where(fn($q) => $q->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
-                    break;
+                // case 'alumni pelajar non santri':
+                //     $query->where('rp.status', 'alumni')
+                //         ->where('s.status', '!=', 'aktif');
+                //     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->where('p.status', 'alumni')
-                        ->where(fn($q) => $q->whereNotNull('s.id')->orWhere('s.status', '=', 'aktif'));
+                    $query->where('rp.status', 'alumni')
+                        ->where('s.status', '=', 'aktif');
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
-                    $query->whereNotNull('p.id')
-                        ->whereNotNull('s.id')
-                        ->where('p.status', 'alumni')
+                    $query->where('rp.status', 'alumni')
                         ->where('s.status', 'alumni');
                     break;
                 default:
                     $query->whereRaw('0 = 1');
             }
         }
+
         return $query;
     }
 
@@ -167,11 +175,7 @@ class FilterAlumniService
             return $query;
         }
 
-        if ($request->filled('angkatan_santri')) {
-            $query->where('s.angkatan_santri', $request->angkatan_santri);
-        } else {
-            $query->whereRaw('0 = 1');
-        }
+        $query->whereYear('s.tanggal_masuk', $request->angkatan_santri);
         return $query;
     }
 
@@ -180,11 +184,8 @@ class FilterAlumniService
         if (! $request->filled('angkatan_pelajar')) {
             return $query;
         }
-        if ($request->filled('angkatan_pelajar')) {
-            $query->where('p.angkatan_pelajar', $request->angkatan_pelajar);
-        } else {
-            $query->whereRaw('0 = 1');
-        }
+
+        $query->whereYear('rp.tanggal_masuk', $request->angkatan_pelajar);
         return $query;
     }
 
@@ -199,11 +200,12 @@ class FilterAlumniService
             if ($pn === 'memiliki phone number') {
                 $query->whereNotNull('b.no_telepon')->where('b.no_telepon', '!=', '');
             } elseif ($pn === 'tidak ada phone number') {
-                $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+                $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '', '='));
             } else {
                 $query->whereRaw('0 = 1');
             }
         }
+
         return $query;
     }
 
@@ -223,6 +225,7 @@ class FilterAlumniService
                 $query->whereRaw('0 = 1');
             }
         }
+
         return $query;
     }
 }

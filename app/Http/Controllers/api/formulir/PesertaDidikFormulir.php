@@ -9,18 +9,16 @@ use Illuminate\Support\Facades\Log;
 
 class PesertaDidikFormulir extends Controller
 {
-    // Tampilan Formulir Biodata Peserta Didik By Id
+    // Tampilan Formulir Biodata Santri By Id
     public function getBiodata($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            // Query untuk mengambil biodata peserta didik beserta relasi terkait
-            $biodata = DB::table('peserta_didik')
-                ->join('biodata as b_anak', 'peserta_didik.id_biodata', '=', 'b_anak.id')
+            $biodata = DB::table('santri as s')
+                ->join('biodata as b_anak', 's.biodata_id', '=', 'b_anak.id')
                 ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
                 ->leftJoin('keluarga as k_ortu', 'k_anak.no_kk', '=', 'k_ortu.no_kk')
                 ->join('orang_tua_wali as otw', function ($join) {
@@ -29,18 +27,14 @@ class PesertaDidikFormulir extends Controller
                 })
                 ->join('biodata as b_ortu', 'otw.id_biodata', '=', 'b_ortu.id')
                 ->join('hubungan_keluarga as hk', 'otw.id_hubungan_keluarga', '=', 'hk.id')
-                ->leftJoin('negara as negara_anak', 'b_anak.id_negara', '=', 'negara_anak.id')
-                ->leftJoin('negara as negara_ortu', 'b_ortu.id_negara', '=', 'negara_ortu.id')
-                ->leftJoin('provinsi', 'b_ortu.id_provinsi', '=', 'provinsi.id')
-                ->leftJoin('kabupaten', 'b_ortu.id_kabupaten', '=', 'kabupaten.id')
-                ->leftJoin('kecamatan', 'b_ortu.id_kecamatan', '=', 'kecamatan.id')
-                ->where('peserta_didik.id', $id)
+                ->leftJoin('negara as negara_anak', 'b_anak.negara_id', '=', 'negara_anak.id')
+                ->leftJoin('negara as negara_ortu', 'b_ortu.negara_id', '=', 'negara_ortu.id')
+                ->leftJoin('provinsi', 'b_ortu.provinsi_id', '=', 'provinsi.id')
+                ->leftJoin('kabupaten', 'b_ortu.kabupaten_id', '=', 'kabupaten.id')
+                ->leftJoin('kecamatan', 'b_ortu.kecamatan_id', '=', 'kecamatan.id')
+                ->where('s.id', $id)
                 ->select(
-                    // Data Anak
-                    DB::raw("CASE 
-                        WHEN LOWER(negara_anak.nama_negara) = 'indonesia' THEN 'WNI' 
-                        ELSE 'WNA' 
-                    END as kewarganegaraan"),
+                    DB::raw("CASE WHEN LOWER(negara_anak.nama_negara) = 'indonesia' THEN 'WNI' ELSE 'WNA' END as kewarganegaraan"),
                     'k_anak.no_kk',
                     'b_anak.no_passport',
                     'b_anak.nik',
@@ -55,7 +49,6 @@ class PesertaDidikFormulir extends Controller
                     'b_anak.jenjang_pendidikan_terakhir',
                     'b_anak.nama_pendidikan_terakhir',
 
-                    // Data Orang Tua
                     'b_ortu.no_telepon',
                     'b_ortu.no_telepon_2',
                     'b_ortu.email',
@@ -78,26 +71,24 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan, kembalikan respons error 404
         if (!$biodata) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Format dan kembalikan data dalam format JSON
         return response()->json([
             "status"  => "success",
             "message" => "Data ditemukan",
             "data"    => [
-                'data_peserta_didik' => [
+                'data_santri' => [
                     "kewarganegaraan"             => $biodata->kewarganegaraan,
                     "no_kk"                       => $biodata->no_kk,
                     "no_passport"                 => $biodata->no_passport,
                     "nik"                         => $biodata->nik,
-                    "nama_peserta_didik"          => $biodata->nama_anak,
+                    "nama_santri"                 => $biodata->nama_anak,
                     "jenis_kelamin"               => $biodata->jenis_kelamin,
                     "tempat_lahir"                => $biodata->tempat_lahir,
                     "tanggal_lahir"               => $biodata->tanggal_lahir,
@@ -126,29 +117,22 @@ class PesertaDidikFormulir extends Controller
         ]);
     }
 
-    // Tampilan Formulir Keluarga Peserta Didik By Id
+    // Tampilan Formulir Keluarga Santri By Id
     public function getKeluarga($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            // Ambil data peserta didik untuk mendapatkan no_kk dan id_biodata
-            $peserta = DB::table('peserta_didik')
-                ->join('biodata as b_anak', 'peserta_didik.id_biodata', '=', 'b_anak.id')
+            $santri = DB::table('santri as s')
+                ->join('biodata as b_anak', 's.biodata_id', '=', 'b_anak.id')
                 ->join('keluarga as k_anak', 'b_anak.id', '=', 'k_anak.id_biodata')
-                ->select(
-                    'peserta_didik.id as peserta_id',
-                    'b_anak.id as biodata_id',
-                    'k_anak.no_kk'
-                )
-                ->where('peserta_didik.id', $id)
+                ->select('s.id as santri_id', 'b_anak.id as biodata_id', 'k_anak.no_kk')
+                ->where('s.id', $id)
                 ->first();
 
-            // Jika data tidak ditemukan, kembalikan respons error 404
-            if (!$peserta) {
+            if (!$santri) {
                 return response()->json([
                     "status"  => "success",
                     "message" => "Data Kosong",
@@ -156,60 +140,41 @@ class PesertaDidikFormulir extends Controller
                 ], 200);
             }
 
-            // Ambil data orang tua/wali
             $ortu = DB::table('keluarga')
-                ->where('no_kk', $peserta->no_kk)
+                ->where('no_kk', $santri->no_kk)
                 ->join('orang_tua_wali', 'keluarga.id_biodata', '=', 'orang_tua_wali.id_biodata')
                 ->join('biodata as b_ortu', 'orang_tua_wali.id_biodata', '=', 'b_ortu.id')
                 ->join('hubungan_keluarga as hk', 'orang_tua_wali.id_hubungan_keluarga', '=', 'hk.id')
-                ->select(
-                    'b_ortu.nama',
-                    'b_ortu.nik',
-                    DB::raw("CONCAT('Orang Tua (', hk.nama_status, ')') as keterangan"),
-                    'orang_tua_wali.wali'
-                )
+                ->select('b_ortu.nama', 'b_ortu.nik', DB::raw("CONCAT('Orang Tua (', hk.nama_status, ')') as keterangan"), 'orang_tua_wali.wali')
                 ->get();
 
-            // Ambil data saudara kandung:
-            // - yang punya no_kk sama
-            // - bukan orang tua/wali
-            // - **bukan** peserta didik yang sedang di-request ($peserta->biodata_id)
             $siblings = DB::table('keluarga')
-                ->where('no_kk', $peserta->no_kk)
-                // exclude id_biodata yang terdaftar di orang_tua_wali
+                ->where('no_kk', $santri->no_kk)
                 ->whereNotIn('id_biodata', function ($query) {
                     $query->select('id_biodata')->from('orang_tua_wali');
                 })
-                // exclude biodata peserta didik yang sedang di-request
-                ->where('keluarga.id_biodata', '!=', $peserta->biodata_id)
-                ->join('biodata', 'keluarga.id_biodata', '=', 'biodata.id')
-                ->select('biodata.id', 'biodata.nama', 'biodata.nik')
+                ->where('id_biodata', '!=', $santri->biodata_id)
+                ->join('biodata as b', 'keluarga.id_biodata', '=', 'b.id')
+                ->select('b.id', 'b.nama', 'b.nik')
                 ->get();
 
-            // Gabungkan data orang tua dan saudara kandung
             if ($siblings->isEmpty()) {
-                $data = $ortu->map(function ($item) {
-                    return [
-                        'nama'       => $item->nama,
-                        'nik'        => $item->nik,
-                        'keterangan' => $item->keterangan,
-                    ];
-                });
+                $data = $ortu->map(fn($item) => [
+                    'nama'       => $item->nama,
+                    'nik'        => $item->nik,
+                    'keterangan' => $item->keterangan,
+                ]);
             } else {
-                $siblingsData = $siblings->map(function ($item) {
-                    return [
-                        'nama'       => $item->nama,
-                        'nik'        => $item->nik,
-                        'keterangan' => 'Saudara Kandung',
-                    ];
-                });
-                $ortuData = $ortu->map(function ($item) {
-                    return [
-                        'nama'       => $item->nama,
-                        'nik'        => $item->nik,
-                        'keterangan' => $item->keterangan,
-                    ];
-                });
+                $siblingsData = $siblings->map(fn($item) => [
+                    'nama'       => $item->nama,
+                    'nik'        => $item->nik,
+                    'keterangan' => 'Saudara Kandung',
+                ]);
+                $ortuData = $ortu->map(fn($item) => [
+                    'nama'       => $item->nama,
+                    'nik'        => $item->nik,
+                    'keterangan' => $item->keterangan,
+                ]);
                 $data = $ortuData->merge($siblingsData);
             }
         } catch (\Exception $e) {
@@ -220,10 +185,9 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data kosong
         if ($data->isEmpty()) {
             return response()->json([
-                'status'  => 'succes',
+                'status'  => 'success',
                 'message' => 'Data Kosong',
                 'data'    => []
             ], 200);
@@ -236,26 +200,21 @@ class PesertaDidikFormulir extends Controller
         ]);
     }
 
-    // Tampilan Formulir Status Santri Peserta Didik By Id
+    // Tampilan Formulir Status Santri By Id
     public function getSantri($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            // Query untuk mengambil data santri
             $santriData = DB::table('santri')
-                ->where('santri.id_peserta_didik', $id)
-                ->where('santri.status', 'aktif')
+                ->where('id', $id)
+                ->where('status', 'aktif')
                 ->select(
-                    'santri.nis',
-                    DB::raw("CONCAT(
-                        'Sejak ', DATE_FORMAT(santri.tanggal_masuk, '%d %b %Y'), 
-                        ' Sampai ', IFNULL(DATE_FORMAT(santri.tanggal_keluar, '%d %b %Y'), 'Sekarang')
-                    ) as periode"),
-                    'santri.tanggal_masuk'
+                    'nis',
+                    DB::raw("CONCAT('Sejak ', DATE_FORMAT(tanggal_masuk, '%d %b %Y'), ' Sampai ', IFNULL(DATE_FORMAT(tanggal_keluar, '%d %b %Y'), 'Sekarang')) as periode"),
+                    'tanggal_masuk'
                 )
                 ->get();
         } catch (\Exception $e) {
@@ -266,43 +225,38 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan
         if ($santriData->isEmpty()) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Mapping hasil query ke format respons JSON
         return response()->json([
             "status"  => "success",
             "message" => "Data ditemukan",
-            "data"    => $santriData->map(function ($item) {
-                return [
-                    "nis"     => $item->nis,
-                    "periode" => $item->periode,
-                ];
-            })
+            "data"    => $santriData->map(fn($item) => [
+                'nis'     => $item->nis,
+                'periode' => $item->periode,
+            ])
         ]);
     }
 
-    // Tampilan Formulir Domisili Peserta Didik By Id
+    // Tampilan Formulir Domisili Santri By Id
     public function getDomisiliSantri($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            $domisiliData = DB::table('peserta_didik as pd') 
-                ->join('riwayat_domisili as rd', 'rd.id_peserta_didik', '=', 'pd.id')
-                ->join('wilayah as w', 'rd.id_wilayah', '=', 'w.id')
-                ->join('blok as bl', 'rd.id_blok', '=', 'bl.id')
-                ->join('kamar as km', 'rd.id_kamar', '=', 'km.id')
-                ->where('pd.id', $id)
+            $domisiliData = DB::table('santri as s')
+                ->join('riwayat_domisili as rd', 'rd.santri_id', '=', 's.id')
+                ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
+                ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
+                ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
+                ->where('s.id', $id)
                 ->select(
                     'w.nama_wilayah',
                     'bl.nama_blok',
@@ -318,56 +272,47 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan
         if ($domisiliData->isEmpty()) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Format output data
-        $formattedData = $domisiliData->map(function ($item) {
-            return [
-                'wilayah' => $item->nama_wilayah,
-                'blok' => $item->nama_blok,
-                'kamar'   => $item->nama_kamar,
-                'periode' => $item->periode,
-            ];
-        });
+        $formatted = $domisiliData->map(fn($item) => [
+            'wilayah' => $item->nama_wilayah,
+            'blok'    => $item->nama_blok,
+            'kamar'   => $item->nama_kamar,
+            'periode' => $item->periode,
+        ]);
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $formattedData
+            'data'    => $formatted
         ]);
     }
 
-    // Tampilan Formulir Pendidikan Peserta Didik By Id
+    // Tampilan Formulir Pendidikan Santri By Id
     public function getPendidikan($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            // Query untuk mengambil data pendidikan pelajar beserta relasi terkait
-            $pendidikanData = DB::table('peserta_didik as pd')
-                ->join('riwayat_pendidikan as rp', 'rp.id_peserta_didik', '=', 'pd.id')
-                ->join('lembaga as l', 'rp.id_lembaga', '=', 'l.id')
-                ->leftJoin('jurusan as j', 'rp.id_jurusan', '=', 'j.id')
-                ->leftJoin('kelas as k', 'rp.id_kelas', '=', 'k.id')
-                ->leftJoin('rombel as r', 'rp.id_rombel', '=', 'r.id')
-                ->where('pd.id', $id)
+            $pendidikanData = DB::table('santri as s')
+                ->join('riwayat_pendidikan as rp', 'rp.santri_id', '=', 's.id')
+                ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
+                ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
+                ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
+                ->leftJoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
+                ->where('s.id', $id)
                 ->select(
                     'l.nama_lembaga',
                     'j.nama_jurusan',
-                    DB::raw("CONCAT(
-                        'Sejak ', DATE_FORMAT(rp.tanggal_masuk, '%d %b %Y %H:%i:%s'), 
-                        ' Sampai ', IFNULL(DATE_FORMAT(rp.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')
-                    ) as periode")
+                    DB::raw("CONCAT('Sejak ', DATE_FORMAT(rp.tanggal_masuk, '%d %b %Y %H:%i:%s'), ' Sampai ', IFNULL(DATE_FORMAT(rp.tanggal_keluar, '%d %b %Y %H:%i:%s'), 'Sekarang')) as periode")
                 )
                 ->get();
         } catch (\Exception $e) {
@@ -378,23 +323,19 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan
         if ($pendidikanData->isEmpty()) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Mapping hasil query ke format respons JSON
-        $data = $pendidikanData->map(function ($item) {
-            return [
-                'lembaga'  => $item->nama_lembaga,
-                'jurusan'  => $item->nama_jurusan,
-                'periode'  => $item->periode,
-            ];
-        });
+        $data = $pendidikanData->map(fn($item) => [
+            'lembaga' => $item->nama_lembaga,
+            'jurusan' => $item->nama_jurusan,
+            'periode' => $item->periode,
+        ]);
 
         return response()->json([
             'status'  => 'success',
@@ -403,25 +344,20 @@ class PesertaDidikFormulir extends Controller
         ]);
     }
 
-    // Tampilan Formulir Berkas Peserta Didik By Id
+    // Tampilan Formulir Berkas Santri By Id
     public function getBerkas($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            // Query untuk mengambil data berkas peserta didik
-            $berkasData = DB::table('peserta_didik as pd')
-                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
-                ->join('berkas as br', 'br.id_biodata', '=', 'b.id')
-                ->join('jenis_berkas as jb', 'br.id_jenis_berkas', '=', 'jb.id')
-                ->where('pd.id', $id)
-                ->select(
-                    'jb.nama_jenis_berkas',
-                    'br.file_path'
-                )
+            $berkasData = DB::table('santri as s')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->join('berkas as br', 'br.biodata_id', '=', 'b.id')
+                ->join('jenis_berkas as jb', 'br.jenis_berkas_id', '=', 'jb.id')
+                ->where('s.id', $id)
+                ->select('jb.nama_jenis_berkas', 'br.file_path')
                 ->get();
         } catch (\Exception $e) {
             Log::error("Error in getBerkas: " . $e->getMessage());
@@ -431,22 +367,18 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan
         if ($berkasData->isEmpty()) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Mapping hasil query ke format respons JSON
-        $data = $berkasData->map(function ($item) {
-            return [
-                'nama_berkas' => $item->nama_jenis_berkas,
-                'file_path'   => $item->file_path,
-            ];
-        });
+        $data = $berkasData->map(fn($item) => [
+            'nama_berkas' => $item->nama_jenis_berkas,
+            'file_path'   => $item->file_path,
+        ]);
 
         return response()->json([
             'status'  => 'success',
@@ -455,30 +387,22 @@ class PesertaDidikFormulir extends Controller
         ]);
     }
 
-    // Tampilan Formulir Status Warga Pesantren Peserta Didik By Id
+    // Tampilan Formulir Status Warga Pesantren Santri By Id
     public function getWargaPesantren($id)
     {
-        // Validasi UUID
         if (!Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
         try {
-            $wargaPesantrenData = DB::table('peserta_didik as pd')
-                ->join('biodata as b', 'pd.id_biodata', '=', 'b.id')
+            $wargaPesantrenData = DB::table('santri as s')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->leftJoin('warga_pesantren as wp', function ($join) {
-                    $join->on('b.id', '=', 'wp.id_biodata')
-                        ->whereRaw('wp.id = (
-                        select max(wp2.id)
-                        from warga_pesantren as wp2
-                        where wp2.id_biodata = b.id
-                     )');
+                    $join->on('b.id', '=', 'wp.biodata_id')
+                        ->whereRaw('(SELECT MAX(wp2.id) FROM warga_pesantren wp2 WHERE wp2.biodata_id = b.id) = wp.id');
                 })
-                ->where('pd.id', $id)
-                ->select(
-                    'wp.niup',
-                    'wp.status'
-                )
+                ->where('s.id', $id)
+                ->select('wp.niup', 'wp.status')
                 ->get();
         } catch (\Exception $e) {
             Log::error("Error in getWargaPesantren: " . $e->getMessage());
@@ -488,22 +412,18 @@ class PesertaDidikFormulir extends Controller
             ], 500);
         }
 
-        // Jika data tidak ditemukan
         if ($wargaPesantrenData->isEmpty()) {
             return response()->json([
-                "status"  => "succes",
+                "status"  => "success",
                 "message" => "Data Kosong",
                 "data"    => []
             ], 200);
         }
 
-        // Mapping hasil query ke format respons JSON
-        $data = $wargaPesantrenData->map(function ($item) {
-            return [
-                'niup'   => $item->niup,
-                'status' => $item->status,
-            ];
-        });
+        $data = $wargaPesantrenData->map(fn($item) => [
+            'niup'   => $item->niup,
+            'status' => $item->status,
+        ]);
 
         return response()->json([
             'status'  => 'success',

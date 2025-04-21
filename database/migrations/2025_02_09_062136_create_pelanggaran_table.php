@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pelanggaran', function (Blueprint $table) {
             $table->id();
-            $table->uuid('id_peserta_didik');
+            $table->uuid('santri_id');
             $table->enum('status_pelanggaran', ['Belum diproses', 'Sedang diproses', 'Sudah diproses'])->default('Belum diproses');
             $table->enum('jenis_putusan', ['Belum ada putusan', 'Disanksi', 'Dibebaskan'])->default('Belum ada putusan');
             $table->enum('jenis_pelanggaran', ['Ringan', 'Sedang', 'Berat'])->default('Ringan');
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
         });
     }
 

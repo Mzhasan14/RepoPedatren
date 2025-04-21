@@ -21,10 +21,10 @@ class KhadamFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'id_biodata' => (new BiodataFactory())->create()->id,
+            'biodata_id' => (new BiodataFactory())->create()->id,
             'keterangan' => $this->faker->sentence,
             'tanggal_mulai' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'tanggal_akhir' => $this->faker->dateTimeBetween('now', '+1 year'),
+            'tanggal_akhir' => null,
             'created_by' => 1,
             'updated_by' => null,
             'status' => true,

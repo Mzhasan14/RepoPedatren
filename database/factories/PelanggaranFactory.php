@@ -19,7 +19,7 @@ class PelanggaranFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new PesertaDidikFactory())->create()->id,
+            'santri_id' => (new SantriFactory())->create()->id,
             'status_pelanggaran' => $this->faker->randomElement(['Belum diproses', 'Sedang diproses', 'Sudah diproses']),
             'jenis_putusan' => $this->faker->randomElement(['Belum ada putusan', 'Disanksi', 'Dibebaskan']),
             'jenis_pelanggaran' => $this->faker->randomElement(['Ringan', 'Sedang', 'Berat']),

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('santri', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('id_peserta_didik');
+            $table->unsignedBigInteger('biodata_id');
             $table->string('nis')->unique()->nullable();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 

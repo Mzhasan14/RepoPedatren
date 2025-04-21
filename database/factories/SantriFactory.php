@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Biodata;
 use Illuminate\Support\Str;
 use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
@@ -25,7 +26,7 @@ class SantriFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'id_peserta_didik' => PesertaDidik::whereDoesntHave('santriAktif')->inRandomOrder()->first()?->id ?? PesertaDidik::factory(),
+            'biodata_id' => Biodata::inRandomOrder()->first()?->id ?? Biodata::factory(),
             'nis' => $this->faker->unique()->numerify('###########'),
             'tanggal_masuk' => $this->faker->date,
             'tanggal_keluar' => null,

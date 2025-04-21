@@ -23,7 +23,7 @@ class JurusanFactory extends Factory
     {
         return [
             'nama_jurusan' => $this->faker->word(),
-            'id_lembaga' => (new PendidikanLembagaFactory())->create()->id,
+            'lembaga_id' => (new PendidikanLembagaFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

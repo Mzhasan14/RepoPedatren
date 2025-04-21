@@ -18,30 +18,24 @@ class Wilayah extends Model
     protected $keyType = 'int';
     public $incrementing = true;
 
-    protected $fillable = [
-        'nama_wilayah',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
+    protected $guarded = ['id'];
 
-    public function RiwayatDomisili()
-    {
-        $this->hasMany(RiwayatDomisili::class, 'id_wilayah', 'id');
-    }
+    // public function RiwayatDomisili()
+    // {
+    //     $this->hasMany(RiwayatDomisili::class, 'id_wilayah', 'id');
+    // }
 
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function blok()
-    {
-        return $this->hasMany(Blok::class, 'id_wilayah', 'id');
-    }
+    // public function blok()
+    // {
+    //     return $this->hasMany(Blok::class, 'id_wilayah', 'id');
+    // }
 
-    public function grupKewaliasuhan() {
-        return $this->hasMany(Grup_WaliAsuh::class,'id_wilayah','id');
-    }
+    // public function grupKewaliasuhan() {
+    //     return $this->hasMany(Grup_WaliAsuh::class,'id_wilayah','id');
+    // }
 }

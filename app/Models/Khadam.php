@@ -11,22 +11,15 @@ class Khadam extends Model
 
     protected $table = 'khadam';
 
-    protected $fillable = [
-        'id_biodata',
-        'keterangan',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status'
-    ];
+    protected $guarded = ['id'];
 
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function biodata()
-    {
-        return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
-    }
+    // public function biodata()
+    // {
+    //     return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
+    // }
 }

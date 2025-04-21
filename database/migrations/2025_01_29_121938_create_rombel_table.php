@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_rombel')->nullable(false);
             $table->enum('gender_rombel', ['putra', 'putri']);
-            $table->unsignedBigInteger('id_kelas');
+            $table->unsignedBigInteger('kelas_id');
             $table->unsignedBigInteger('created_by')->nullable(false);
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_kelas')->references('id')->on('kelas')->onDelete('cascade');
+            $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
         });
     }
 

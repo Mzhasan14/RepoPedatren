@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('blok', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_wilayah');
+            $table->unsignedBigInteger('wilayah_id');
             $table->string('nama_blok');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_wilayah')->references('id')->on('wilayah')->onDelete('cascade');
+            $table->foreign('wilayah_id')->references('id')->on('wilayah')->onDelete('cascade');
         });
     }
 

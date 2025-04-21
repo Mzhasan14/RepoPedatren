@@ -14,16 +14,16 @@ class RiwayatDomisili extends Model
 
     protected $guarded = ['id'];
 
-    public function wilayah(): BelongsTo
-    {
-        return $this->belongsTo(Wilayah::class, 'id_wilayah');
-    }
-    public function blok(): BelongsTo
-    {
-        return $this->belongsTo(Blok::class, 'id_blok');
-    }
-    public function kamar(): BelongsTo
-    {
-        return $this->belongsTo(Kamar::class, 'id_kamar');
-    }
+    // public function wilayah(): BelongsTo
+    // {
+    //     return $this->belongsTo(Wilayah::class, 'id_wilayah');
+    // }
+    // public function blok(): BelongsTo
+    // {
+    //     return $this->belongsTo(Blok::class, 'id_blok');
+    // }
+    // public function kamar(): BelongsTo
+    // {
+    //     return $this->belongsTo(Kamar::class, 'id_kamar');
+    // }
 }

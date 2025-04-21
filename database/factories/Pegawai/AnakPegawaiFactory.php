@@ -3,6 +3,7 @@
 namespace Database\Factories\Pegawai;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\AnakPegawai;
+use Database\Factories\SantriFactory;
 use Database\Factories\PesertaDidikFactory;
 use Database\Factories\Peserta_didikFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,7 @@ class AnakPegawaiFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'id_peserta_didik' => (new PesertaDidikFactory())->create()->id,
+            'santri_id' => (new SantriFactory())->create()->id,
             'id_pegawai' => (new PegawaiFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),

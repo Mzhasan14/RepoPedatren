@@ -20,8 +20,8 @@ class PerizinanFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_peserta_didik' => (new PesertaDidikFactory())->create()->id,
-            'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
+            'santri_id' => (new SantriFactory())->create()->id,
+            'wali_asuh_id' => (new Wali_asuhFactory())->create()->id,
             'pembuat' => $this->faker->name,
             'biktren' => $this->faker->word,
             'kamtib' => rand(1, 50),

@@ -29,8 +29,8 @@ return new class extends Migration
 
         Schema::create('berkas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_biodata');
-            $table->unsignedBigInteger('id_jenis_berkas');
+            $table->unsignedBigInteger('biodata_id');
+            $table->unsignedBigInteger('jenis_berkas_id');
             $table->string('file_path');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -41,8 +41,8 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
-            $table->foreign('id_jenis_berkas')->references('id')->on('jenis_berkas')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
+            $table->foreign('jenis_berkas_id')->references('id')->on('jenis_berkas')->onDelete('cascade');
         });
     }
 

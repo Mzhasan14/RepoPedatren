@@ -15,69 +15,67 @@ class PengunjungMahrom extends Seeder
     public function run(): void
     {
         $pengunjungData = [];
+        $now = Carbon::now();
 
-        // Ambil semua santri
-        $santriRows = DB::table('santri')->select('id', 'id_peserta_didik')->get();
+        // Ambil semua santri (dengan biodata_id langsung di tabel santri)
+        $santriRows = DB::table('santri')
+            ->select('id as santri_id', 'biodata_id')
+            ->get();
 
         foreach ($santriRows as $santri) {
-            // Ambil peserta didik terkait
-            $peserta = DB::table('peserta_didik')
-                ->where('id', $santri->id_peserta_didik)
+            // Ambil biodata santri
+            $biodata = DB::table('biodata')
+                ->where('id', $santri->biodata_id)
                 ->first();
-            if (!$peserta) {
+
+            if (!$biodata) {
                 continue;
             }
 
-            // Ambil biodata santri dari peserta didik
-            $biodataSantri = DB::table('biodata')
-                ->where('id', $peserta->id_biodata)
+            // Ambil catatan keluarga santri (harus punya no_kk)
+            $keluarga = DB::table('keluarga')
+                ->where('id_biodata', $biodata->id)
+                ->whereNotNull('no_kk')
                 ->first();
-            if (!$biodataSantri) {
+
+            if (!$keluarga) {
                 continue;
             }
 
-            // Ambil data keluarga untuk santri (berdasarkan biodata)
-            $keluargaSantri = DB::table('keluarga')
-                ->where('id_biodata', $biodataSantri->id)
-                ->first();
-            if (!$keluargaSantri || !$keluargaSantri->no_kk) {
-                continue;
-            }
-
-            // Cari data keluarga lain dengan no_kk yang sama (mewakili orang tua)
+            // Cari anggota keluarga lain (ortu) dengan no_kk yang sama
             $parentKeluarga = DB::table('keluarga')
-                ->where('no_kk', $keluargaSantri->no_kk)
-                ->where('id_biodata', '!=', $biodataSantri->id)
+                ->where('no_kk', $keluarga->no_kk)
+                ->where('id_biodata', '!=', $biodata->id)
                 ->get();
 
             if ($parentKeluarga->isEmpty()) {
                 continue;
             }
 
-            // Untuk tiap data keluarga orang tua, cari data di orang_tua_wali dengan hubungan 'ayah' atau 'ibu'
-            foreach ($parentKeluarga as $parentKel) {
-                $parentRecord = DB::table('orang_tua_wali')
-                    ->join('hubungan_keluarga', 'orang_tua_wali.id_hubungan_keluarga', '=', 'hubungan_keluarga.id')
-                    ->join('biodata', 'orang_tua_wali.id_biodata', '=', 'biodata.id')
-                    ->where('orang_tua_wali.id_biodata', $parentKel->id_biodata)
-                    ->whereIn('hubungan_keluarga.nama_status', ['ayah', 'ibu'])
-                    ->select('biodata.nama')
+            // Untuk tiap anggota keluarga tersebut, cek di orang_tua_wali
+            foreach ($parentKeluarga as $parent) {
+                $parentRecord = DB::table('orang_tua_wali as otw')
+                    ->join('hubungan_keluarga as hk', 'otw.id_hubungan_keluarga', '=', 'hk.id')
+                    ->join('biodata as b2', 'otw.id_biodata', '=', 'b2.id')
+                    ->where('otw.id_biodata', $parent->id_biodata)
+                    ->whereIn('hk.nama_status', ['ayah', 'ibu'])
+                    ->select('b2.nama')
                     ->first();
 
                 if ($parentRecord) {
                     $pengunjungData[] = [
-                        'id_santri'         => $santri->id,
-                        'nama_pengunjung'   => $parentRecord->nama,
-                        'jumlah_rombongan'  => rand(1, 5),
-                        'tanggal'           => Carbon::now()->subDays(rand(1, 365)),
-                        'created_at'        => Carbon::now(),
-                        'updated_at'        => Carbon::now(),
+                        'santri_id'        => $santri->santri_id,
+                        'nama_pengunjung'  => $parentRecord->nama,
+                        'jumlah_rombongan' => rand(1, 5),
+                        'tanggal'          => Carbon::now()->subDays(rand(1, 365)),
+                        'created_at'       => $now,
+                        'updated_at'       => $now,
                     ];
                 }
             }
         }
 
-        // Insert data ke tabel pengunjung_mahrom jika ada data
+        // Bulk insert jika ada data
         if (!empty($pengunjungData)) {
             DB::table('pengunjung_mahrom')->insert($pengunjungData);
         }

@@ -11,24 +11,16 @@ class Berkas extends Model
 
     protected $table = 'berkas';
 
-    protected $fillable = [
-        'id_biodata',
-        'id_jenis_berkas',
-        'file_path',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status'
-    ];
+    protected $guarded = ['id'];
 
-    public function jenisBerkas()
-    {
-        return $this->belongsTo(JenisBerkas::class,'id_jenis_berkas','id');
-    }
+    // public function jenisBerkas()
+    // {
+    //     return $this->belongsTo(JenisBerkas::class,'id_jenis_berkas','id');
+    // }
 
-    public function biodata()
-    {
-        return $this->belongsTo(Biodata::class, 'id_biodata');
-    }
+    // public function biodata()
+    // {
+    //     return $this->belongsTo(Biodata::class, 'id_biodata');
+    // }
 
 }

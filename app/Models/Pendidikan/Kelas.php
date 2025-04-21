@@ -17,32 +17,25 @@ class Kelas extends Model
     protected $keyType = 'int';
     public $incrementing = true;
 
-    protected $fillable = [
-        'nama_kelas',
-        'id_jurusan',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
+    protected $guarded = ['id'];
 
     public function scopeActive($query)
     {
         return $query->where('status', true);
     }
 
-    public function RiwayatPendidikan()
-    {
-        $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
-    }
+    // public function RiwayatPendidikan()
+    // {
+    //     $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
+    // }
 
-    public function jurusan()
-    {
-        return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
-    }
+    // public function jurusan()
+    // {
+    //     return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
+    // }
 
-    public function rombel()
-    {
-        return $this->hasMany(Rombel::class, 'id_kelas', 'id');
-    }
+    // public function rombel()
+    // {
+    //     return $this->hasMany(Rombel::class, 'id_kelas', 'id');
+    // }
 }

@@ -19,7 +19,7 @@ class BlokFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_wilayah' => (new WilayahFactory())->create()->id,
+            'wilayah_id' => (new WilayahFactory())->create()->id,
             'nama_blok' => $this->faker->word,
             'created_by' => 1,
             'updated_by' => null,

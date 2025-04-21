@@ -15,26 +15,19 @@ class Blok extends Model
     protected $primaryKey = 'id';
     protected $keyType = 'int';
     public $incrementing = true;
-    protected $fillable = [
-        'nama_blok',
-        'id_wilayah',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    protected $guarded = ['id'];
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function wilayah()
-    {
-        return $this->belongsTo(Wilayah::class, 'id_wilayah', 'id');
-    }
+    // public function wilayah()
+    // {
+    //     return $this->belongsTo(Wilayah::class, 'id_wilayah', 'id');
+    // }
 
-    public function kamar()
-    {
-        return $this->hasMany(Kamar::class, 'id_blok', 'id');
-    }
+    // public function kamar()
+    // {
+    //     return $this->hasMany(Kamar::class, 'id_blok', 'id');
+    // }
 }

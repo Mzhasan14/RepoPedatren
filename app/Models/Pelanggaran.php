@@ -19,8 +19,8 @@ class Pelanggaran extends Model
         'id'
     ];
 
-    public function PelanggaranSantri()
-    {
-        return $this->belongsTo(Peserta_didik::class,'id_peserta_didik', 'id');
-    }
+    // public function PelanggaranSantri()
+    // {
+    //     return $this->belongsTo(Peserta_didik::class,'id_peserta_didik', 'id');
+    // }
 }

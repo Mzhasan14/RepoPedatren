@@ -21,37 +21,26 @@ class Lembaga extends Model
     protected $keyType = 'int';
     public $incrementing = true;
 
-    protected $fillable = [
-        'nama_lembaga',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
+    protected $guarded = ['id'];
 
-    public function RiwayatPendidikan()
-    {
-        $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
-    }
+    // public function RiwayatPendidikan()
+    // {
+    //     $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
+    // }
 
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function pelajar()
-    {
-        $this->hasMany(Pelajar::class, 'id_lembaga', 'id');
-    }
+    // public function jurusan()
+    // {
+    //     return $this->hasMany(Jurusan::class, 'id_lembaga', 'id');
+    // }
 
-    public function jurusan()
-    {
-        return $this->hasMany(Jurusan::class, 'id_lembaga', 'id');
-    }
-
-    public function pengajar()
-    {
-        return $this->hasMany(Pengajar::class, 'id_lembaga','id');
-    }
+    // public function pengajar()
+    // {
+    //     return $this->hasMany(Pengajar::class, 'id_lembaga','id');
+    // }
     
 }

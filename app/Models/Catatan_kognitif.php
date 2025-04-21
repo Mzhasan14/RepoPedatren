@@ -22,10 +22,6 @@ class Catatan_kognitif extends Model
     {
         return $query->where('catatan_kognitif.status',true);
     }
-    public function PesertaDidikCatatanKognitif()
-    {
-        return $this->belongsTo(PesertaDidik::class,'id_peserta_didik','id');
-    }
     public function WaliAsuhCatatanKognitif()
     {
         return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');

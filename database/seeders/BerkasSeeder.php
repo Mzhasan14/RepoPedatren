@@ -29,8 +29,8 @@ class BerkasSeeder extends Seeder
             foreach ($biodatas as $biodata) { 
                 foreach ($jenisBerkas as $jenis) { 
                     $dataBerkas[] = [
-                        'id_biodata' => $biodata->id,
-                        'id_jenis_berkas' => $jenis->id,
+                        'biodata_id' => $biodata->id,
+                        'jenis_berkas_id' => $jenis->id,
                         'file_path' => 'storage/berkas/' . uniqid() . '.jpg',
                         'created_by' => 1, // Sesuaikan dengan ID pengguna
                         'status' => 1, 

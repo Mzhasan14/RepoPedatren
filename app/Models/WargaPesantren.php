@@ -14,6 +14,6 @@ class WargaPesantren extends Model
 
     public function biodata()
     {
-        return $this->belongsTo(Biodata::class, 'id_biodata');
+        return $this->belongsTo(Biodata::class, 'biodata_id');
     }
 }

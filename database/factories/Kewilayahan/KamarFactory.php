@@ -19,7 +19,7 @@ class KamarFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_blok' => (new BlokFactory())->create()->id,
+            'blok_id' => (new BlokFactory())->create()->id,
             'nama_kamar' => $this->faker->word,
             'created_by' => 1,
             'updated_by' => null,

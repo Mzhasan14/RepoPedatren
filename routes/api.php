@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PesertaDidik\{
     AlumniController,
     BersaudaraController,
     DetailPesertaDidikController,
+    NonDomisiliSantriController,
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -114,6 +115,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pesertadidik-bersaudara/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pesertadidik/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
+    Route::get('/santri-nondomisili', [NonDomisiliSantriController::class, 'getAllSantri']);
+    Route::get('/santri-nondomisili/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/santri/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
     Route::get('/pelajar/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);

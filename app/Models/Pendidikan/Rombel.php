@@ -18,27 +18,20 @@ class Rombel extends Model
     protected $keyType = 'int';
     public $incrementing = true;
 
-    protected $fillable = [
-        'nama_rombel',
-        'id_kelas',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
+    protected $guarded = ['id'];
 
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function RiwayatPendidikan()
-    {
-        $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
-    }
+    // public function RiwayatPendidikan()
+    // {
+    //     $this->hasMany(RiwayatPendidikan::class, 'lembaga_id', 'id');
+    // }
 
-    public function kelas()
-    {
-        return $this->belongsTo(Lembaga::class, 'id_kelas', 'id');
-    }
+    // public function kelas()
+    // {
+    //     return $this->belongsTo(Lembaga::class, 'kelas_id', 'id');
+    // }
 }

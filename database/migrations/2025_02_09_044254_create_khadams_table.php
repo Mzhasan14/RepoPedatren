@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('khadam', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('id_biodata')->unique();
+            $table->unsignedBigInteger('biodata_id')->unique();
             $table->string('keterangan');
             $table->date('tanggal_mulai');
             $table->date('tanggal_akhir')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 

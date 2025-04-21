@@ -53,10 +53,10 @@ class DataKeluargaSeeder extends Seeder
         
                 // Insert data biodata untuk ayah
                 $currentAyahId = DB::table('biodata')->insertGetId([
-                    'id_negara'               => $faker->randomElement($negaraIds),
-                    'id_provinsi'             => $faker->randomElement($provinsiIds),
-                    'id_kabupaten'            => $faker->randomElement($kabupatenIds),
-                    'id_kecamatan'            => $faker->randomElement($kecamatanIds),
+                    'negara_id'               => $faker->randomElement($negaraIds),
+                    'provinsi_id'             => $faker->randomElement($provinsiIds),
+                    'kabupaten_id'            => $faker->randomElement($kabupatenIds),
+                    'kecamatan_id'            => $faker->randomElement($kecamatanIds),
                     'jalan'                   => $faker->streetAddress,
                     'kode_pos'                => $faker->postcode,
                     'nama'                    => $faker->name('male'),
@@ -84,10 +84,10 @@ class DataKeluargaSeeder extends Seeder
                 ]);
                 // Insert data biodata untuk ibu
                 $currentIbuId = DB::table('biodata')->insertGetId([
-                    'id_negara'               => $faker->randomElement($negaraIds),
-                    'id_provinsi'             => $faker->randomElement($provinsiIds),
-                    'id_kabupaten'            => $faker->randomElement($kabupatenIds),
-                    'id_kecamatan'            => $faker->randomElement($kecamatanIds),
+                    'negara_id'               => $faker->randomElement($negaraIds),
+                    'provinsi_id'             => $faker->randomElement($provinsiIds),
+                    'kabupaten_id'            => $faker->randomElement($kabupatenIds),
+                    'kecamatan_id'            => $faker->randomElement($kecamatanIds),
                     'jalan'                   => $faker->streetAddress,
                     'kode_pos'                => $faker->postcode,
                     'nama'                    => $faker->name('male'),
@@ -154,10 +154,10 @@ class DataKeluargaSeeder extends Seeder
             // ---------------------------
             // Insert biodata peserta didik (anak)
             $childBiodataId = DB::table('biodata')->insertGetId([
-                'id_negara'               => $faker->randomElement($negaraIds),
-                'id_provinsi'             => $faker->randomElement($provinsiIds),
-                'id_kabupaten'            => $faker->randomElement($kabupatenIds),
-                'id_kecamatan'            => $faker->randomElement($kecamatanIds),
+                'negara_id'               => $faker->randomElement($negaraIds),
+                'provinsi_id'             => $faker->randomElement($provinsiIds),
+                'kabupaten_id'            => $faker->randomElement($kabupatenIds),
+                'kecamatan_id'            => $faker->randomElement($kecamatanIds),
                 'jalan'                   => $faker->streetAddress,
                 'kode_pos'                => $faker->postcode,
                 'nama'                    => $faker->name('male'),
@@ -184,13 +184,19 @@ class DataKeluargaSeeder extends Seeder
             ]);
             
             // Insert peserta didik (anak)
-            DB::table('peserta_didik')->insertGetId([
+            DB::table('santri')->insertGetId([
                 'id'          => (string) Str::uuid(),
-                'id_biodata'  => $childBiodataId,
-                'status'      => true,
-                'created_by'  => 1,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'biodata_id' => $childBiodataId,
+                'nis' => $faker->unique()->numerify('###########'),
+                'tanggal_masuk' => $faker->date(),
+                // Set tanggal_keluar hanya jika status alumni
+                'tanggal_keluar' => null,
+                'status' =>  'aktif',
+                'created_by' => 1,
+                'updated_by' => null,
+                'deleted_by' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
             
             // Masukkan data keluarga untuk anak (gunakan no_kk yang sama dengan orang tua)

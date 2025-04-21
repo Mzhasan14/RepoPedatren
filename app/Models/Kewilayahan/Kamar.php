@@ -15,21 +15,14 @@ class Kamar extends Model
     protected $primaryKey = 'id';
     protected $keyType = 'int';
     public $incrementing = true;
-    protected $fillable = [
-        'nama_kamar',
-        'id_blok',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-        'status',
-    ];
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    protected $guarded = ['id'];
+    // public function scopeActive($query)
+    // {
+    //     return $query->where('status', true);
+    // }
 
-    public function blok()
-    {
-        return $this->belongsTo(Blok::class, 'id_blok', 'id');
-    }
+    // public function blok()
+    // {
+    //     return $this->belongsTo(Blok::class, 'id_blok', 'id');
+    // }
 }

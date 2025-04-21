@@ -25,76 +25,48 @@ class Biodata extends Model
     use HasFactory;
     use SoftDeletes;
     protected $table = 'biodata';
-    protected $fillable = [
-        'id_negara',
-        'id_provinsi',
-        'id_kabupaten',
-        'id_kecamatan',
-        'id_desa',
-        'nama',
-        'niup',
-        'jenis_kelamin',
-        'tanggal_lahir',
-        'tempat_lahir',
-        'nik',
-        'no_passport',
-        'no_kk',
-        'no_telepon',
-        'email',
-        'jenjang_pendidikan_terakhir',
-        'nama_pendidikan_terakhir',
-        'anak_keberapa',
-        'dari_saudara',
-        'tinggal_bersama',
-        'smartcard',
-        'status',
-        'wafat',
-        'created_by',
-        'updated_by',
-        'deleted_by',
+    protected $guarded = ['id'];
 
-    ];
+    // // Master lookups
+    // public function kecamatan()
+    // {
+    //     return $this->belongsTo(Kecamatan::class, 'id_kecamatan');
+    // }
+    // public function kabupaten()
+    // {
+    //     return $this->belongsTo(Kabupaten::class, 'id_kabupaten');
+    // }
+    // public function provinsi()
+    // {
+    //     return $this->belongsTo(Provinsi::class, 'id_provinsi');
+    // }
+    // public function negara()
+    // {
+    //     return $this->belongsTo(Negara::class, 'id_negara');
+    // }
 
-    // Master lookups
-    public function kecamatan()
-    {
-        return $this->belongsTo(Kecamatan::class, 'id_kecamatan');
-    }
-    public function kabupaten()
-    {
-        return $this->belongsTo(Kabupaten::class, 'id_kabupaten');
-    }
-    public function provinsi()
-    {
-        return $this->belongsTo(Provinsi::class, 'id_provinsi');
-    }
-    public function negara()
-    {
-        return $this->belongsTo(Negara::class, 'id_negara');
-    }
+    // // “Latest” polymorphic relations
+    // public function wargaPesantrenAktif()
+    // {
+    //     return $this->hasOne(WargaPesantren::class, 'id_biodata')
+    //         ->where('status', true)
+    //         ->latestOfMany('id');
+    // }
 
-    // “Latest” polymorphic relations
-    public function wargaPesantrenAktif()
-    {
-        return $this->hasOne(WargaPesantren::class, 'id_biodata')
-            ->where('status', true)
-            ->latestOfMany('id');
-    }
+    // public function pasFoto()
+    // {
+    //     // ambil sekali saja ID jenis berkas “Pas foto”
+    //     $jenisId = JenisBerkas::where('nama_jenis_berkas', 'Pas foto')->value('id');
+    //     return $this->hasOne(Berkas::class, 'id_biodata')
+    //         ->where('id_jenis_berkas', $jenisId)
+    //         ->latestOfMany('id');
+    // }
 
-    public function pasFoto()
-    {
-        // ambil sekali saja ID jenis berkas “Pas foto”
-        $jenisId = JenisBerkas::where('nama_jenis_berkas', 'Pas foto')->value('id');
-        return $this->hasOne(Berkas::class, 'id_biodata')
-            ->where('id_jenis_berkas', $jenisId)
-            ->latestOfMany('id');
-    }
-
-    // relasi keluarga (semua anggota satu no_kk)
-    public function keluarga()
-    {
-        return $this->hasMany(Keluarga::class, 'id_biodata');
-    }
+    // // relasi keluarga (semua anggota satu no_kk)
+    // public function keluarga()
+    // {
+    //     return $this->hasMany(Keluarga::class, 'id_biodata');
+    // }
 
     // public function berkas()
     // {

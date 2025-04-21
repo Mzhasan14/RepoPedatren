@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('biodata', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_negara');
-            $table->unsignedBigInteger('id_provinsi')->nullable();
-            $table->unsignedBigInteger('id_kabupaten')->nullable();
-            $table->unsignedBigInteger('id_kecamatan')->nullable();
+            $table->unsignedBigInteger('negara_id');
+            $table->unsignedBigInteger('provinsi_id')->nullable();
+            $table->unsignedBigInteger('kabupaten_id')->nullable();
+            $table->unsignedBigInteger('kecamatan_id')->nullable();
             $table->string('jalan')->nullable();
             $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
@@ -50,10 +50,10 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('id_negara')->references('id')->on('negara')->onDelete('cascade');
-            $table->foreign('id_provinsi')->references('id')->on('provinsi')->onDelete('cascade');
-            $table->foreign('id_kabupaten')->references('id')->on('kabupaten')->onDelete('cascade');
-            $table->foreign('id_kecamatan')->references('id')->on('kecamatan')->onDelete('cascade');
+            $table->foreign('negara_id')->references('id')->on('negara')->onDelete('cascade');
+            $table->foreign('provinsi_id')->references('id')->on('provinsi')->onDelete('cascade');
+            $table->foreign('kabupaten_id')->references('id')->on('kabupaten')->onDelete('cascade');
+            $table->foreign('kecamatan_id')->references('id')->on('kecamatan')->onDelete('cascade');
             $table->fullText('nama');
         });
     }

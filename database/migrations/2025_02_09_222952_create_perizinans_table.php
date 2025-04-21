@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('perizinan', function (Blueprint $table) {
             $table->id();
-            $table->uuid('id_peserta_didik');
-            $table->unsignedBigInteger('id_wali_asuh');
+            $table->uuid('santri_id');
+            $table->unsignedBigInteger('wali_asuh_id');
             $table->string('pembuat');
             $table->string('biktren');
             $table->unsignedBigInteger('kamtib');
@@ -31,8 +31,8 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_peserta_didik')->references('id')->on('peserta_didik')->onDelete('cascade');
-            $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
+            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('wali_asuh_id')->references('id')->on('wali_asuh')->onDelete('cascade');
         });
     }
 

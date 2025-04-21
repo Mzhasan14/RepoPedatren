@@ -22,10 +22,10 @@ class BiodataFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_negara' =>  (new NegaraFactory())->create()->id,
-            'id_provinsi' =>  (new ProvinsiFactory())->create()->id,
-            'id_kabupaten' =>  (new KabupatenFactory())->create()->id,
-            'id_kecamatan' =>  (new KecamatanFactory())->create()->id,
+            'negara_id' =>  (new NegaraFactory())->create()->id,
+            'provinsi_id' =>  (new ProvinsiFactory())->create()->id,
+            'kabupaten_id' =>  (new KabupatenFactory())->create()->id,
+            'kecamatan_id' =>  (new KecamatanFactory())->create()->id,
             'jalan' =>  $this->faker->streetAddress,
             'kode_pos' =>  $this->faker->postcode,
             'nama' => $this->faker->name(),
