@@ -4,25 +4,33 @@ namespace App\Http\Controllers\api\keluarga;
 
 use App\Models\OrangTuaWali;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Services\FilterOrangtuaService;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\api\FilterController;
 
 class OrangTuaWaliController extends Controller
 {
-    protected $filterController;
+    private FilterOrangtuaService $filterController;
 
-    public function __construct(FilterController $filterController)
+    public function __construct(FilterOrangtuaService $filterController)
     {
         $this->filterController = $filterController;
     }
 
+    /**
+     * Get all Peserta Didik with filters and pagination
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+
     public function index()
     {
-        $ortu = OrangTuaWali::Active()->latest()->paginate(5);
-        return new PdResource(true, 'List Orang Tua', $ortu);
+        // $ortu = OrangTuaWali::Active()->latest()->paginate(5);
+        // return new PdResource(true, 'List Orang Tua', $ortu);
     }
 
     /**
@@ -32,10 +40,13 @@ class OrangTuaWaliController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id_biodata' => 'required|exists:biodata,id',
-            'pekerjaan' => 'required|string',
+            'id_hubungan_keluarga' => 'required|string',
+            'wali' => 'nullable',
+            'pekerjaan' => 'nullable|string',
             'penghasilan' => 'nullable|integer',
-            'created_by' => 'required',
-            'status' => 'nullable'
+            'wafat'=>'nullable',
+            'status' => 'nullable',
+            'created_by' => 'required|exist:users,id'
         ]);
 
         if ($validator->fails()) {
@@ -64,10 +75,13 @@ class OrangTuaWaliController extends Controller
 
         $validator = Validator::make($request->all(), [
             'id_biodata' => 'required|exists:biodata,id',
-            'pekerjaan' => 'required|string',
+            'id_hubungan_keluarga' => 'required|string',
+            'wali' => 'nullable',
+            'pekerjaan' => 'nullable|string',
             'penghasilan' => 'nullable|integer',
-            'updated_by' => 'nullable',
-            'status' => 'nullable'
+            'wafat' => 'nullable',
+            'status' => 'nullable',
+            'updated_by' => 'required|exist:users,id'
         ]);
 
         if ($validator->fails()) {
@@ -121,104 +135,6 @@ class OrangTuaWaliController extends Controller
                 'tanggal_input'
             );
 
-        // Filter Umum (Alamat dan Jenis Kelamin)
-        $query = $this->filterController->applyCommonFilters($query, $request);
-
-        // filter jenis kelamin peserta didik
-        if ($request->filled('jenis_kelamin_peserta_didik')) {
-            $jenis_kelamin_peserta_didik = strtolower($request->jenis_kelamin_peserta_didik);
-
-            // Validasi input dan tentukan jenis kelamin
-            $jenis_kelamin = null;
-            if ($jenis_kelamin_peserta_didik === 'santri/pelajar putra') {
-                $jenis_kelamin = 'l';
-            } elseif ($jenis_kelamin_peserta_didik === 'santri/pelajar putri') {
-                $jenis_kelamin = 'p';
-            }
-
-            // Jika input valid, terapkan filter
-            if ($jenis_kelamin) {
-                $query->whereExists(function ($q) use ($jenis_kelamin) {
-                    $q->select(DB::raw(1))
-                        ->from('keluarga as k')
-                        ->join('biodata as b_anak', 'k.id_biodata', '=', 'b_anak.id')
-                        ->join('peserta_didik as pd', 'b_anak.id', '=', 'pd.id_biodata') // Pastikan anak itu peserta didik
-                        ->whereColumn('k.no_kk', 'keluarga.no_kk') // Dalam satu KK
-                        ->where('b_anak.jenis_kelamin', $jenis_kelamin)
-                        ->limit(1); // Batasi untuk mempercepat query
-                });
-            }
-        }
-
-        // filter orang tua dari
-        if ($request->filled('orangtua_dari')) {
-            $kategori = strtolower($request->orangtua_dari);
-
-            $query->whereExists(function ($subQuery) use ($kategori) {
-                $subQuery->select(DB::raw(1))
-                    ->from('keluarga as k')
-                    ->join('biodata as b_anak', 'k.id_biodata', '=', 'b_anak.id')
-                    ->join('peserta_didik as pd', 'b_anak.id', '=', 'pd.id_biodata')
-                    ->whereColumn('k.no_kk', 'keluarga.no_kk'); // Dalam satu KK
-
-                // Filter berdasarkan kategori yang dipilih
-                if ($kategori === 'santri') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik');
-                } elseif ($kategori === 'santri non-pelajar') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
-                        ->whereNotExists(function ($q) {
-                            $q->select(DB::raw(1))
-                                ->from('pelajar as p')
-                                ->whereColumn('p.id_peserta_didik', 'pd.id');
-                        });
-                } elseif ($kategori === 'pelajar') {
-                    $subQuery->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik');
-                } elseif ($kategori === 'pelajar non-santri') {
-                    $subQuery->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik')
-                        ->whereNotExists(function ($q) {
-                            $q->select(DB::raw(1))
-                                ->from('santri as s')
-                                ->whereColumn('s.id_peserta_didik', 'pd.id');
-                        });
-                } elseif ($kategori === 'santri sekaligus pelajar') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
-                        ->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik');
-                }
-            });
-        }
-
-
-        // Filter Wafat atau Hidup
-        if ($request->filled('wafat')) {
-            $wafat = strtolower($request->wafat);
-            if ($wafat == 'sudah wafat') {
-                $query->where('orang_tua_wali.wafat', true);
-            } else if ($wafat == 'masih hidup') {
-                $query->where('orang_tua_wali.wafat', false);
-            }
-        }
-
-        // Filter Smartcard
-        if ($request->filled('smartcard')) {
-            $smartcard = strtolower($request->smartcard);
-            if ($smartcard == 'memiliki smartcard') {
-                $query->whereNotNull('biodata.smartcard');
-            } else if ($smartcard == 'tanpa smartcard') {
-                $query->whereNull('biodata.smartcard');
-            }
-        }
-
-        // Filter No Telepon
-        if ($request->filled('phone_number')) {
-            $phone_number = strtolower($request->phone_number);
-            if ($phone_number == 'memiliki phone number') {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($phone_number == 'tidak ada phone number') {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
-            }
-        }
 
         // Ambil jumlah data per halaman (default 10 jika tidak diisi)
         $perPage = $request->input('limit', 25);
@@ -293,104 +209,6 @@ class OrangTuaWaliController extends Controller
                 'tanggal_input'
             )->where('orang_tua_wali.wali', true);
 
-        // Filter Umum (Alamat dan Jenis Kelamin)
-        $query = $this->filterController->applyCommonFilters($query, $request);
-
-        // filter jenis kelamin peserta didik
-        if ($request->filled('jenis_kelamin_peserta_didik')) {
-            $jenis_kelamin_peserta_didik = strtolower($request->jenis_kelamin_peserta_didik);
-
-            // Validasi input dan tentukan jenis kelamin
-            $jenis_kelamin = null;
-            if ($jenis_kelamin_peserta_didik === 'santri/pelajar putra') {
-                $jenis_kelamin = 'l';
-            } elseif ($jenis_kelamin_peserta_didik === 'santri/pelajar putri') {
-                $jenis_kelamin = 'p';
-            }
-
-            // Jika input valid, terapkan filter
-            if ($jenis_kelamin) {
-                $query->whereExists(function ($q) use ($jenis_kelamin) {
-                    $q->select(DB::raw(1))
-                        ->from('keluarga as k')
-                        ->join('biodata as b_anak', 'k.id_biodata', '=', 'b_anak.id')
-                        ->join('peserta_didik as pd', 'b_anak.id', '=', 'pd.id_biodata') // Pastikan anak itu peserta didik
-                        ->whereColumn('k.no_kk', 'keluarga.no_kk') // Dalam satu KK
-                        ->where('b_anak.jenis_kelamin', $jenis_kelamin)
-                        ->limit(1); // Batasi untuk mempercepat query
-                });
-            }
-        }
-
-        // filter orang tua dari
-        if ($request->filled('orangtua_dari')) {
-            $kategori = strtolower($request->orangtua_dari);
-
-            $query->whereExists(function ($subQuery) use ($kategori) {
-                $subQuery->select(DB::raw(1))
-                    ->from('keluarga as k')
-                    ->join('biodata as b_anak', 'k.id_biodata', '=', 'b_anak.id')
-                    ->join('peserta_didik as pd', 'b_anak.id', '=', 'pd.id_biodata')
-                    ->whereColumn('k.no_kk', 'keluarga.no_kk'); // Dalam satu KK
-
-                // Filter berdasarkan kategori yang dipilih
-                if ($kategori === 'santri') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik');
-                } elseif ($kategori === 'santri non-pelajar') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
-                        ->whereNotExists(function ($q) {
-                            $q->select(DB::raw(1))
-                                ->from('pelajar as p')
-                                ->whereColumn('p.id_peserta_didik', 'pd.id');
-                        });
-                } elseif ($kategori === 'pelajar') {
-                    $subQuery->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik');
-                } elseif ($kategori === 'pelajar non-santri') {
-                    $subQuery->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik')
-                        ->whereNotExists(function ($q) {
-                            $q->select(DB::raw(1))
-                                ->from('santri as s')
-                                ->whereColumn('s.id_peserta_didik', 'pd.id');
-                        });
-                } elseif ($kategori === 'santri sekaligus pelajar') {
-                    $subQuery->join('santri as s', 'pd.id', '=', 's.id_peserta_didik')
-                        ->join('pelajar as p', 'pd.id', '=', 'p.id_peserta_didik');
-                }
-            });
-        }
-
-
-        // Filter Wafat atau Hidup
-        if ($request->filled('wafat')) {
-            $wafat = strtolower($request->wafat);
-            if ($wafat == 'sudah wafat') {
-                $query->where('orang_tua_wali.wafat', true);
-            } else if ($wafat == 'masih hidup') {
-                $query->where('orang_tua_wali.wafat', false);
-            }
-        }
-
-        // Filter Smartcard
-        if ($request->filled('smartcard')) {
-            $smartcard = strtolower($request->smartcard);
-            if ($smartcard == 'memiliki smartcard') {
-                $query->whereNotNull('biodata.smartcard');
-            } else if ($smartcard == 'tanpa smartcard') {
-                $query->whereNull('biodata.smartcard');
-            }
-        }
-
-        // Filter No Telepon
-        if ($request->filled('phone_number')) {
-            $phone_number = strtolower($request->phone_number);
-            if ($phone_number == 'memiliki phone number') {
-                $query->whereNotNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '!=', '');
-            } else if ($phone_number == 'tidak ada phone number') {
-                $query->whereNull('biodata.no_telepon')
-                    ->where('biodata.no_telepon', '=', '');
-            }
-        }
 
         // Ambil jumlah data per halaman (default 10 jika tidak diisi)
         $perPage = $request->input('limit', 25);
