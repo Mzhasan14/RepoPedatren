@@ -13,7 +13,7 @@ class PerizinanSeeder extends Seeder
      */
     public function run(): void
     {
-        (new PerizinanFactory())->count(5)->create();
+        (new PerizinanFactory())->count(50)->create();
         
     }
 }

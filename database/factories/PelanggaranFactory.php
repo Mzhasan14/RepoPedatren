@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Santri;
 use App\Models\Pelanggaran;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,14 +20,13 @@ class PelanggaranFactory extends Factory
     public function definition(): array
     {
         return [
-            'santri_id' => (new SantriFactory())->create()->id,
+            'santri_id' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
             'status_pelanggaran' => $this->faker->randomElement(['Belum diproses', 'Sedang diproses', 'Sudah diproses']),
             'jenis_putusan' => $this->faker->randomElement(['Belum ada putusan', 'Disanksi', 'Dibebaskan']),
             'jenis_pelanggaran' => $this->faker->randomElement(['Ringan', 'Sedang', 'Berat']),
             'keterangan' => $this->faker->sentence,
             'created_by' => 1,
             'updated_by' => null,
-            'status' => true,
         ];
     }
 }

@@ -62,5 +62,29 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
         $santri->assignRole('santri');
+
+        // Buat Kamtib
+        $kamtib = User::create([
+            'name' => 'Kamtib User',
+            'email' => 'kamtib@example.com',
+            'password' => Hash::make('password'),
+        ]);
+        $kamtib->assignRole('kamtib');
+
+        // Buat biktren
+        $biktren = User::create([
+            'name' => 'Biktren User',
+            'email' => 'biktren@example.com',
+            'password' => Hash::make('password'),
+        ]);
+        $biktren->assignRole('biktren');
+
+        // Buat pengasuh
+        $pengasuh = User::create([
+            'name' => 'Pengasuh User',
+            'email' => 'pengasuh@example.com',
+            'password' => Hash::make('password'),
+        ]);
+        $pengasuh->assignRole('pengasuh');
     }
 }

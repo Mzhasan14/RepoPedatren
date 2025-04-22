@@ -91,7 +91,7 @@ class SantriController extends Controller
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[PelajarController] Error: {$e->getMessage()}");
+            Log::error("[SantriController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',

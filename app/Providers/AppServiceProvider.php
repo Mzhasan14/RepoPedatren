@@ -16,6 +16,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\FilterKhadamService::class);
         $this->app->singleton(\App\Services\FilterAlumniService::class);
         $this->app->singleton(\App\Services\FilterBersaudaraService::class);
+        $this->app->singleton(\App\Services\FilterPerizinanService::class);
 
 
         

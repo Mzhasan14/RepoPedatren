@@ -103,7 +103,7 @@ class AlumniController extends Controller
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[PelajarController] Error: {$e->getMessage()}");
+            Log::error("[AlumniController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
@@ -123,7 +123,7 @@ class AlumniController extends Controller
             "id" => $item->id,
             "nama" => $item->nama,
             "lembaga" => $item->nama_lembaga ?? '-',
-            "tahun_keluar_pelajar" => $item->tahun_keluar_pelajar ?? '-',
+            "tahun_keluar_pendidikan" => $item->tahun_keluar_pelajar ?? '-',
             "tahun_masuk_santri" => $item->tahun_masuk_santri ?? '-',
             "tahun_keluar_santri" => $item->tahun_keluar_santri ?? '-',
             "kota_asal" => $item->kota_asal,

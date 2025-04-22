@@ -341,7 +341,7 @@ class DetailPesertaDidikController extends Controller
     
             return $data;
         } catch (\Exception $e) {
-            Log::error("Error formDetailSantri: " . $e->getMessage());
+            Log::error("Error DetailPesertaDidikSantri: " . $e->getMessage());
             return ['error' => 'Terjadi kesalahan pada server'];
         }
     }

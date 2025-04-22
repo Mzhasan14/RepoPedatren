@@ -13,7 +13,7 @@ class PelanggaranSeeder extends Seeder
      */
     public function run(): void
     {
-        (new PelanggaranFactory())->count(5)->create();
+        (new PelanggaranFactory())->count(50)->create();
         
     }
 }

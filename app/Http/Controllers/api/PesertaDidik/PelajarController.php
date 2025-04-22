@@ -92,7 +92,7 @@ class PelajarController extends Controller
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[PesertaDidikController] Error: {$e->getMessage()}");
+            Log::error("[PelajarController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
