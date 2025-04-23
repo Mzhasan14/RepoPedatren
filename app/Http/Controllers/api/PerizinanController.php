@@ -121,13 +121,17 @@ class PerizinanController extends Controller
             $query = DB::table('perizinan as pr')
                 // Join ke tabel santri dan wali asuh
                 ->join('santri as s', 'pr.santri_id', '=', 's.id')
-                ->join('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+                ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
                 ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
                 ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
                 ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
                 ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
                 ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
                 ->leftjoin('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
+                ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
+                ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
+
                 // Join ke tabel users untuk biktren, pengasuh, kamtib
                 ->leftjoin('users as biktren', 'pr.biktren', '=', 'biktren.id')
                 ->leftjoin('users as pengasuh',  'pr.pengasuh',  '=', 'pengasuh.id')
@@ -148,6 +152,9 @@ class PerizinanController extends Controller
                     'bl.nama_blok',
                     'km.nama_kamar',
                     'l.nama_lembaga',
+                    'pv.nama_provinsi',
+                    'kb.nama_kabupaten',
+                    'kc.nama_kecamatan',
                     'pr.alasan_izin',
                     'pr.alamat_tujuan',
                     'pr.tanggal_mulai',
@@ -200,7 +207,7 @@ class PerizinanController extends Controller
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[PesertaDidikController] Error: {$e->getMessage()}");
+            Log::error("[PerizinanController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
@@ -223,6 +230,9 @@ class PerizinanController extends Controller
             'blok'         => $item->nama_blok ?? '-',
             'kamar'        => $item->nama_kamar ?? '-',
             'lembaga'      => $item->nama_lembaga ?? '-',
+            'provinsi'     => $item->nama_provinsi ?? '-',
+            'kabupaten'    => $item->nama_kabupaten ?? '-',
+            'kecamatan'    => $item->nama_kecamatan ?? '-',
             'alasan_izin'       => $item->alasan_izin,
             'alamat_tujuan'     => $item->alamat_tujuan,
             'tanggal_mulai'     => Carbon::parse($item->tanggal_mulai)

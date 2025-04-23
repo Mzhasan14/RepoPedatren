@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('perizinan', function (Blueprint $table) {
             $table->id();
             $table->uuid('santri_id');
-            $table->unsignedBigInteger('pengasuh');
-            $table->unsignedBigInteger('biktren');
-            $table->unsignedBigInteger('kamtib');
+            $table->unsignedBigInteger('pengasuh')->nullable();
+            $table->unsignedBigInteger('biktren')->nullable();
+            $table->unsignedBigInteger('kamtib')->nullable();
             $table->text('alasan_izin');
             $table->text('alamat_tujuan');
             $table->datetime('tanggal_mulai');

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->enum('status_pelanggaran', ['Belum diproses', 'Sedang diproses', 'Sudah diproses'])->default('Belum diproses');
             $table->enum('jenis_putusan', ['Belum ada putusan', 'Disanksi', 'Dibebaskan'])->default('Belum ada putusan');
             $table->enum('jenis_pelanggaran', ['Ringan', 'Sedang', 'Berat'])->default('Ringan');
+            $table->boolean('diproses_mahkamah')->default(false);
             $table->text('keterangan');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
