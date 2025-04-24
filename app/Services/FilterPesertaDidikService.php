@@ -10,7 +10,7 @@ class FilterPesertaDidikService
     /**
      * Panggil semua filter berurutan
      */
-    public function applyAllFilters(Builder $query, Request $request): Builder
+    public function pesertaDidikFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
@@ -25,6 +25,26 @@ class FilterPesertaDidikService
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyPemberkasan($query, $request);
         $query = $this->applySorting($query, $request);
+
+        return $query;
+    }
+
+    public function bersaudaraFilters(Builder $query, Request $request): Builder
+    {
+        $query = $this->applyAlamatFilter($query, $request);
+        $query = $this->applyJenisKelaminFilter($query, $request);
+        $query = $this->applySmartcardFilter($query, $request);
+        $query = $this->applyNamaFilter($query, $request);
+        $query = $this->applyWilayahFilter($query, $request);
+        $query = $this->applyLembagaPendidikanFilter($query, $request);
+        $query = $this->applyStatusPesertaFilter($query, $request);
+        $query = $this->applyStatusWargaPesantrenFilter($query, $request);
+        $query = $this->applyAngkatanSantri($query, $request);
+        $query = $this->applyAngkatanPelajar($query, $request);
+        $query = $this->applyPhoneNumber($query, $request);
+        $query = $this->applyPemberkasan($query, $request);
+        $query = $this->applySorting($query, $request);
+        $query = $this->applyStatusSaudara($query, $request);
 
         return $query;
     }
@@ -104,10 +124,10 @@ class FilterPesertaDidikService
         if (! $request->filled('nama')) {
             return $query;
         }
-    
+
         // tambahkan tanda kutip ganda di awal‑akhir
         $phrase = '"' . trim($request->nama) . '"';
-    
+
         return $query->whereRaw(
             "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
@@ -313,4 +333,36 @@ class FilterPesertaDidikService
 
         return $query;
     }
+
+    public function applyStatusSaudara(Builder $query, Request $request)
+    {
+        if (! $request->filled('status_saudara')) {
+            return $query;
+        }
+
+        $status_saudara = strtolower($request->status_saudara);
+        switch ($status_saudara) {
+            case 'ibu kandung terisi':
+                $query->whereNotNull('parents.nama_ibu');
+                break;
+            case 'ibu kandung tidak terisi':
+                $query->where(fn($sub) => $sub->whereNull('parents.nama_ibu')->orWhere('parents.nama_ibu', 'Tidak Diketahui'));
+                break;
+            case 'kk sama dgn ibu kandung':
+                // Pastikan sudah join subquery ibu_info di atas
+                $query->whereColumn('keluarga.no_kk', 'ibu_info.kk_ibu');
+                break;
+            case 'kk berbeda dgn ibu kandung':
+                // Pastikan sudah join subquery ibu_info di atas
+                $query->whereColumn('keluarga.no_kk', '!=', 'ibu_info.kk_ibu');
+                break;
+            default:
+                $query->whereRaw('0 = 1');
+                break;
+        }
+        return $query;
+    }
+
+    
+
 }

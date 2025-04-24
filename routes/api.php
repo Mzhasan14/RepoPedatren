@@ -111,11 +111,12 @@ Route::prefix('data-pokok')->group(function () {
     // Route::post('/pelajar', [PelajarController::class, 'store']);
     Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
-    Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
+    Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
+    Route::get('/pesertadidik/export' , [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.exportExcel');
     Route::get('/pesertadidik-bersaudara/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pesertadidik/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
-    Route::get('/santri-nondomisili', [NonDomisiliSantriController::class, 'getAllSantri']);
+    Route::get('/santri-nondomisili', [SantriController::class, 'getNonDomisili']);
     Route::get('/santri-nondomisili/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/santri/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);

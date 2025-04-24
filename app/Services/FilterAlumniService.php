@@ -10,7 +10,7 @@ class FilterAlumniService
     /**
      * Panggil semua filter berurutan
      */
-    public function applyAllFilters(Builder $query, Request $request): Builder
+    public function alumniFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
@@ -136,10 +136,10 @@ class FilterAlumniService
                 case 'alumni santri':
                     $query->where('s.status', 'alumni');
                     break;
-                // case 'alumni santri non pelajar':
-                //     $query->where('s.status', 'alumni')
-                //         ->where(fn($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
-                //     break;
+                case 'alumni santri non pelajar':
+                    $query->where('s.status', 'alumni')
+                        ->where(fn($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
+                    break;
                 case 'alumni santri tetapi masih pelajar aktif':
                     $query->join('riwayat_pendidikan as rp2', 'rp2.santri_id', '=', 's.id')
                     ->where(fn($q) => $q->where('s.status', 'alumni')
@@ -148,10 +148,10 @@ class FilterAlumniService
                 case 'alumni pelajar':
                     $query->where('rp.status', 'alumni');
                     break;
-                // case 'alumni pelajar non santri':
-                //     $query->where('rp.status', 'alumni')
-                //         ->where('s.status', '!=', 'aktif');
-                //     break;
+                case 'alumni pelajar non santri':
+                    $query->where('rp.status', 'alumni')
+                        ->where('s.status', '!=', 'aktif');
+                    break;
                 case 'alumni pelajar tetapi masih santri aktif':
                     $query->where('rp.status', 'alumni')
                         ->where('s.status', '=', 'aktif');

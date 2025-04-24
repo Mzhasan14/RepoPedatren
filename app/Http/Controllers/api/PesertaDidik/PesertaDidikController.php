@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use App\Exports\PesertaDidikExport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\FilterPesertaDidikService;
 
 class PesertaDidikController extends Controller
@@ -52,14 +54,9 @@ class PesertaDidikController extends Controller
                 // join riwayat pendidikan aktif
                 ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
                 ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-                ->leftJoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
-                ->leftJoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
-                ->leftJoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
                 // join riwayat domisili aktif
                 ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
                 ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-                ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-                ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
                 // join berkas pas foto terakhir
                 ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                 ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
@@ -94,8 +91,7 @@ class PesertaDidikController extends Controller
                 ->orderBy('s.id');
 
             // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
-
+            $query = $this->filterController->pesertaDidikFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -138,108 +134,155 @@ class PesertaDidikController extends Controller
         ]);
     }
 
-    // public function getAllPesertaDidik(Request $request)
-    // {
-    //     try {
-    //         // Eloquent query with relationships and scopes
-    //         $query = PesertaDidik::with([
-    //             'biodata.kabupaten',
-    //             'activePelajar',
-    //             'activeRiwayatPendidikan.lembaga',
-    //             'activeRiwayatPendidikan.jurusan',
-    //             'activeRiwayatPendidikan.kelas',
-    //             'activeRiwayatPendidikan.rombel',
-    //             'activeSantri',
-    //             'activeRiwayatDomisili.wilayah',
-    //             'activeRiwayatDomisili.blok',
-    //             'activeRiwayatDomisili.kamar',
-    //             'latestWargaPesantren',
-    //             'latestPasFoto'
-    //         ])
-    //             ->where('status', true);
+    /**
+     * Get all Peserta Didik Bersaudara Kandung with filters and pagination
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAllBersaudara(Request $request)
+    {
+        try {
+            // 1) Ambil ID untuk jenis berkas "Pas foto"
+            $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
 
-    //         $query = $this->filterUmum->applyCommonFilters($query, $request);
-    //         $query = $this->filterController->applyWilayahFilter($query, $request);
-    //         $query = $this->filterController->applyLembagaPendidikanFilter($query, $request);
-    //         $query = $this->filterController->applyStatusPesertaFilter($query, $request);
-    //         $query = $this->filterController->applyStatusWargaPesantrenFilter($query, $request);
-    //         $query = $this->filterController->applySorting($query, $request);
-    //         $query = $this->filterController->applyAngkatanPelajar($query, $request);
-    //         $query = $this->filterController->applyPhoneNumber($query, $request);
-    //         $query = $this->filterController->applyPemberkasan($query, $request);
+            // 2) Subquery: foto terakhir per biodata
+            $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
 
+            // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
+            $wpLast = DB::table('warga_pesantren')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('biodata_id');
 
-    //         // Apply custom filter scopes (defined in model or a trait)
-    //         // ->filterUmum($request)
-    //         // ->filterWilayah($request)
-    //         // ->filterLembagaPendidikan($request)
-    //         // ->filterStatusPeserta($request)
-    //         // ->filterStatusWargaPesantren($request)
-    //         // ->filterSorting($request)
-    //         // ->filterAngkatanPelajar($request)
-    //         // ->filterPhoneNumber($request)
-    //         // ->filterPemberkasan($request);
+            // 4) Derived table: nama ibu & ayah per no_kk
+            $parents = DB::table('orang_tua_wali AS otw')
+                ->join('keluarga AS k2', 'k2.id_biodata', '=', 'otw.id_biodata')
+                ->join('biodata AS b2', 'b2.id', '=', 'otw.id_biodata')
+                ->join('hubungan_keluarga AS hk', 'hk.id', '=', 'otw.id_hubungan_keluarga')
+                ->select([
+                    'k2.no_kk',
+                    DB::raw("MAX(CASE WHEN hk.nama_status='ibu' THEN b2.nama END) AS nama_ibu"),
+                    DB::raw("MAX(CASE WHEN hk.nama_status='ayah' THEN b2.nama END) AS nama_ayah"),
+                ])
+                ->groupBy('k2.no_kk');
 
-    //         // Pagination defaults
-    //         $perPage     = $request->input('limit', 25);
-    //         $currentPage = $request->input('page', 1);
+            // 5) Derived table: keluarga dengan >1 anak aktif
+            $siblings = DB::table('keluarga AS k2')
+                ->join('santri AS s2', function ($j) {
+                    $j->on('s2.biodata_id', '=', 'k2.id_biodata')
+                        ->where('s2.status', 'aktif');
+                })
+                ->whereNotIn('k2.id_biodata', function ($q) {
+                    $q->select('id_biodata')->from('orang_tua_wali');
+                })
+                ->select('k2.no_kk', DB::raw('COUNT(*) AS cnt'))
+                ->groupBy('k2.no_kk')
+                ->having('cnt', '>', 1);
 
-    //         // Paginate results
-    //         $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
-    //     } catch (\Exception $e) {
-    //         Log::error("Error in getAllPesertaDidik: " . $e->getMessage());
-    //         return response()->json([
-    //             'status'  => 'error',
-    //             'message' => 'Terjadi kesalahan pada server'
-    //         ], 500);
-    //     }
-
-    //     // If no data found
-    //     if ($results->isEmpty()) {
-    //         return response()->json([
-    //             'status'  => 'success',
-    //             'message' => 'Data Kosong',
-    //             'data'    => []
-    //         ], 200);
-    //     }
-
-    //     // Format data output
-    //     $formattedData = $results->getCollection()->map(function ($item) {
-    //         $biodata     = $item->biodata;
-    //         $riwayat     = $item->activeRiwayatPendidikan;
-    //         $domisili    = $item->activeRiwayatDomisili;
-    //         $berkas      = $item->latestPasFoto;
-    //         $warga       = $item->latestWargaPesantren;
-
-    //         return [
-    //             'id_peserta_didik'  => $item->id,
-    //             'nik_or_passport'   => $biodata->nik ?? $biodata->no_passport,
-    //             'nama'              => $biodata->nama,
-    //             'niup'              => $warga->niup ?? '-',
-    //             'lembaga'           => $riwayat->lembaga->nama_lembaga ?? '-',
-    //             'wilayah'           => $domisili->wilayah->nama_wilayah ?? '-',
-    //             'kota_asal'         => 'Kab. ' . ($biodata?->kabupaten?->nama_kabupaten ?? '-'),
-    //             'tgl_update'        => $item->updated_at
-    //                 ? Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s')
-    //                 : '-',
-    //             'tgl_input'         => $item->created_at
-    //                 ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s')
-    //                 : '-',
-    //             'foto_profil'       => url($berkas->file_path ?? 'default.jpg'),
-    //         ];
-    //     });
-
-    //     // Return JSON response
-    //     return response()->json([
-    //         'total_data'   => $results->total(),
-    //         'current_page' => $results->currentPage(),
-    //         'per_page'     => $results->perPage(),
-    //         'total_pages'  => $results->lastPage(),
-    //         'data'         => $formattedData
-    //     ]);
-    // }
+            // Query utama: data peserta didik bersaudara all
+            $query = DB::table('santri AS s')
+                ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
+                ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
+                // orang tua
+                ->joinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
+                // hanya keluarga dengan >1 anak aktif
+                ->joinSub($siblings, 'sib', fn($join) => $join->on('k.no_kk', '=', 'sib.no_kk'))
+                // join riwayat pendidikan aktif
+                ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+                ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
+                // join riwayat domisili aktif
+                ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+                ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+                // join berkas pas foto terakhir
+                ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+                ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+                // join warga pesantren terakhir true (NIUP)
+                ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+                ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+                ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
+                // hanya yang berstatus aktif
+                ->where('s.status', 'aktif')
+                ->select([
+                    's.id',
+                    DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
+                    'k.no_kk',
+                    'b.nama',
+                    'wp.niup',
+                    'l.nama_lembaga',
+                    'w.nama_wilayah',
+                    'br.file_path AS foto_profil',
+                    'kb.nama_kabupaten AS kota_asal',
+                    's.created_at',
+                    // ambil updated_at terbaru antar s, rp, rd
+                    DB::raw("
+                        GREATEST(
+                            s.updated_at,
+                            COALESCE(rp.updated_at, s.updated_at),
+                            COALESCE(rd.updated_at, s.updated_at)
+                        ) AS updated_at
+                    "),
+                    DB::raw("COALESCE(parents.nama_ibu, 'Tidak Diketahui') AS nama_ibu"),
+                    DB::raw("COALESCE(parents.nama_ayah, 'Tidak Diketahui') AS nama_ayah"),
+                ])
+                ->orderBy('k.no_kk');
 
 
+            // Terapkan filter dan pagination
+            $query = $this->filterController->bersaudaraFilters($query, $request);
 
+            $perPage     = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[BersaudaraController] Error: {$e->getMessage()}");
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
+        }
 
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
+        }
+
+        // Format data untuk response
+        $formatted = collect($results->items())->map(fn($item) => [
+            "id" => $item->id,
+            "nik_nopassport"   => $item->identitas,
+            "no_kk"             => $item->no_kk,
+            "nama"             => $item->nama,
+            "niup"             => $item->niup ?? '-',
+            "lembaga"          => $item->nama_lembaga ?? '-',
+            "wilayah"          => $item->nama_wilayah ?? '-',
+            "kota_asal"        => $item->kota_asal,
+            "ibu_kandung"      => $item->nama_ibu,
+            "ayah_kandung"     => $item->nama_ayah,
+            "tgl_update"       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            "tgl_input"        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            "foto_profil"      => url($item->foto_profil),
+        ]);
+
+        return response()->json([
+            "total_data"   => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
+        ]);
+    }
+
+    public function exportExcel(Request $request, FilterPesertaDidikService $filterService)
+    {
+        return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik.xlsx');
+    }
 }

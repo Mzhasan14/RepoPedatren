@@ -200,7 +200,7 @@ class PerizinanController extends Controller
                 ->orderBy('pr.id', 'desc');
 
             // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
+            $query = $this->filterController->perizinanFilters($query, $request);
 
 
             $perPage     = (int) $request->input('limit', 25);

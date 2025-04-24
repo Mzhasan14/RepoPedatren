@@ -113,12 +113,10 @@ class AnakPegawaiController extends Controller
                     "),
                     DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
                 ])
-                // Order By Yang Status lengkap
-                // ->orderByRaw('(CASE WHEN s.status = "aktif" AND rp.status = "aktif" THEN 1 ELSE 0 END) DESC')
                 ->orderBy('s.id');
 
             // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
+            $query = $this->filterController->pesertaDidikFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

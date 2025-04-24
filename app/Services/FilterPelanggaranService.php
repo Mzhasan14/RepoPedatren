@@ -10,7 +10,7 @@ class FilterPelanggaranService
     /**
      * Panggil semua filter berurutan
      */
-    public function applyAllFilters(Builder $query, Request $request): Builder
+    public function pelanggaranFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applyNamaFilter($query, $request);

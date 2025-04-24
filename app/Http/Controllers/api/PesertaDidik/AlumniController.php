@@ -97,7 +97,7 @@ class AlumniController extends Controller
 
 
             // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
+            $query = $this->filterController->alumniFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

@@ -144,8 +144,7 @@ class PelanggaranController extends Controller
             ->orderBy('pl.id', 'desc');
 
             // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
-
+            $query = $this->filterController->pelanggaranFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

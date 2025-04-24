@@ -10,7 +10,7 @@ class FilterKhadamService
     /**
      * Panggil semua filter berurutan
      */
-    public function applyAllFilters(Builder $query, Request $request): Builder
+    public function khadamFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
