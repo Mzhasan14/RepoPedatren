@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Pengurus;
+use App\Services\FilterPengurusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,118 +18,119 @@ use Illuminate\Support\Facades\Validator;
 
 class PengurusController extends Controller
 {
-    protected $filterController;
-    protected $filter;
+    private FilterPengurusService $filterController;
 
-    public function __construct()
+    public function __construct(FilterPengurusService $filterController)
     {
-        // Inisialisasi controller filter
-        $this->filterController = new FilterController();
-        $this->filter = new FilterKepegawaianController();
+        $this->filterController = $filterController;
     }
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $pengurus = Pengurus::all();
-        return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-    }
-    public function store(Request $request)
-    {
-        $validator =Validator::make($request->all(),[
-            'id_pegawai' => ['required', 'exists:pegawai,id'],
-            'id_golongan' => ['required', 'exists:golongan,id'],
-            'satuan_kerja' => ['required', 'string', 'max:255'],
-            'jabatan' => ['required', 'string', 'max:255'],
-            'created_by' => ['required', 'integer'],
-            'status' => ['required', 'boolean'],
-        ]);
-        if ($validator->fails())
-        {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
-            ]);
-        }
+    // public function index()
+    // {
+    //     $pengurus = Pengurus::all();
+    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
+    // }
+    // public function store(Request $request)
+    // {
+    //     $validator =Validator::make($request->all(),[
+    //         'id_pegawai' => ['required', 'exists:pegawai,id'],
+    //         'id_golongan' => ['required', 'exists:golongan,id'],
+    //         'satuan_kerja' => ['required', 'string', 'max:255'],
+    //         'jabatan' => ['required', 'string', 'max:255'],
+    //         'created_by' => ['required', 'integer'],
+    //         'status' => ['required', 'boolean'],
+    //     ]);
+    //     if ($validator->fails())
+    //     {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Data gagal ditambahkan',
+    //             'data' => $validator->errors()
+    //         ]);
+    //     }
 
-        $pengurus = Pengurus::create($validator->validated());
-        return new PdResource(true,'Data berhasil diitambahkan',$pengurus);
-    }
+    //     $pengurus = Pengurus::create($validator->validated());
+    //     return new PdResource(true,'Data berhasil diitambahkan',$pengurus);
+    // }
 
 
-    public function show(string $id)
-    {
-        $pengurus = Pengurus::findOrFail($id);
-        return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-    }
+    // public function show(string $id)
+    // {
+    //     $pengurus = Pengurus::findOrFail($id);
+    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
+    // }
 
-    public function update(Request $request, string $id)
-    {
-        $pengurus = Pengurus::findOrFail($id);
-        $validator =Validator::make($request->all(),[
-            'id_pegawai' =>'required', 'exists:pegawai,id',
-            'id_golongan' => 'required', 'exists:golongan,id',
-            'satuan_kerja' => 'required', 'string', 'max:255',
-            'jabatan' => 'required', 'string', 'max:255',
-            'updated_by' => 'nullable', 'integer',
-            'status' => 'required', 'boolean',
-        ]);
-        if ($validator->fails())
-        {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
-            ]);
-        }
-        $pengurus->update($validator->validated());
-        return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
+    // public function update(Request $request, string $id)
+    // {
+    //     $pengurus = Pengurus::findOrFail($id);
+    //     $validator =Validator::make($request->all(),[
+    //         'id_pegawai' =>'required', 'exists:pegawai,id',
+    //         'id_golongan' => 'required', 'exists:golongan,id',
+    //         'satuan_kerja' => 'required', 'string', 'max:255',
+    //         'jabatan' => 'required', 'string', 'max:255',
+    //         'updated_by' => 'nullable', 'integer',
+    //         'status' => 'required', 'boolean',
+    //     ]);
+    //     if ($validator->fails())
+    //     {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Data gagal ditambahkan',
+    //             'data' => $validator->errors()
+    //         ]);
+    //     }
+    //     $pengurus->update($validator->validated());
+    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
 
-    }
+    // }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        $pengurus = Pengurus::findOrFail($id);
-        $pengurus->delete();
-        return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
+    // /**
+    //  * Remove the specified resource from storage.
+    //  */
+    // public function destroy(string $id)
+    // {
+    //     $pengurus = Pengurus::findOrFail($id);
+    //     $pengurus->delete();
+    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
 
-    }
+    // }
     public function dataPengurus(Request $request)
     {
     try
         {
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
+                $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
+        // 3) Subquery: warga pesantren terakhir per biodata
+        $wpLast = DB::table('warga_pesantren')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('biodata_id');
+        // 4) Query utama
         $query = Pengurus::Active()
-                            ->leftJoin('golongan as g','pengurus.id_golongan','=','g.id')
-                            ->leftJoin('kategori_golongan as kg','g.id_kategori_golongan','=','kg.id')
-                            ->join('pegawai','pengurus.id_pegawai','pegawai.id')
-                            ->join('biodata as b','pegawai.id_biodata','=','b.id')         
-                            ->leftJoin('peserta_didik as pd','b.id','pd.id_biodata')
-                            ->leftJoin('santri as s','pd.id','s.id_peserta_didik')
-                            ->leftJoin('domisili_santri as ds','s.id','ds.id_santri')
-                            ->leftJoin('wilayah as w','ds.id_wilayah','w.id')
-                            ->leftJoin('warga_pesantren as wp','b.id','wp.id_biodata')
-                            ->leftJoin('berkas as br', function ($join) {
-                                $join->on('b.id', '=', 'br.id_biodata')
-                                     ->where('br.id_jenis_berkas', '=', function ($query) {
-                                         $query->select('id')
-                                               ->from('jenis_berkas')
-                                               ->where('nama_jenis_berkas', 'Pas foto')
-                                               ->limit(1);
-                                     })
-                                     ->whereRaw('br.id = (
-                                        select max(b2.id) 
-                                        from berkas as b2 
-                                        where b2.id_biodata = b.id 
-                                          and b2.id_jenis_berkas = br.id_jenis_berkas
-                                    )');
+                            ->leftJoin('golongan as g','pengurus.golongan_id','=','g.id')
+                            // Join Pegawai yang Berstatus Aktif
+                            ->join('pegawai', function ($join) {
+                                $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
+                                    ->where('pegawai.status', 1);
                             })
-                            ->leftJoin('kabupaten as kb','kb.id','b.id_kabupaten')
-                            ->leftJoin('lembaga as l', 'pegawai.id_lembaga', '=', 'l.id')
+                            ->join('biodata as b','pegawai.biodata_id','=','b.id')
+                            //  Join Warga Pesantren Terakhir Berstatus Aktif
+                            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+                            ->join('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')  
+                            // join berkas pas foto terakhir
+                            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+                            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+                            ->leftJoin('lembaga as l', 'pegawai.lembaga_id', '=', 'l.id')
                             ->select(
                                 'pengurus.id',
                                 'b.nama',
@@ -158,62 +160,54 @@ class PengurusController extends Controller
                                     'pengurus.updated_at',
                                     'pengurus.created_at'
                                 );
-       $query = $this->filterController->applyCommonFilters($query, $request);
-       $query = $this->filter->applySearchFilter($query, $request);
-        $query = $this->filter->applySatuanKerjaPengurusFilter($query, $request);
-        $query = $this->filter->applyJabatanPengurusFilter($query, $request);
-        $query = $this->filter->applyGolonganJabatanFilter($query, $request);
-        $query = $this->filter->applyWargaPesantrenFilter($query, $request);
-        $query = $this->filter->applyPemberkasanFilter($query, $request);
-        $query = $this->filter->applyUmurFilter($query, $request);
-        $query = $this->filter->applyPhoneFilter($query, $request);
-        
-        $onePage = $request->input('limit', 25);
+           // Terapkan filter dan pagination
+           $query = $this->filterController->applyAllFilters($query, $request);
 
-        $currentPage =  $request->input('page', 1);
-
-        $hasil = $query->paginate($onePage, ['*'], 'page', $currentPage);
-
-
+        $perPage     = (int) $request->input('limit', 25);
+        $currentPage = (int) $request->input('page', 1);
+        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        }
+        catch (\Exception $e) {
+            Log::error('Error fetching data Pengurus: ' . $e->getMessage());
+            return response()->json([
+                "status" => "error",
+                "message" => "Terjadi kesalahan saat mengambil data Pengurus",
+                "code" => 500
+            ], 500);
+        }
         // Jika Data Kosong
-        if ($hasil->isEmpty()) {
+        if ($results->isEmpty()) {
             return response()->json([
                 "status" => "error",
                 "message" => "Data tidak ditemukan",
                 "code" => 404
             ], 404);
         }
-        return response()->json([
-            "total_data" => $hasil->total(),
-            "current_page" => $hasil->currentPage(),
-            "per_page" => $hasil->perPage(),
-            "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
-                return [
-                    "id" => $item->id,
-                    "nama" => $item->nama,
-                    "nik" => $item->nik,
-                    "niup" => $item->niup,
-                    "jabatan" => $item->jabatan,
-                    "umur" => $item->umur,
-                    "satuan_kerja" => $item->satuan_kerja,
-                    "jenis" =>$item->jenis,
-                    "golongan" => $item->nama_golongan,
-                    "pendidikan_terakhir" => $item->pendidikan_terakhir,
-                    "tgl_update" => $item->tgl_update,
-                    "tgl_input" => $item->tgl_input,
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+        // Format data untuk response
+        $formatData = collect($results->items())->map(fn($item) => [
+            "id" => $item->id,
+            "nama" => $item->nama,
+            "nik" => $item->nik,
+            "niup" => $item->niup ?? "-",
+            "jabatan" => $item->jabatan,
+            "umur" => $item->umur,
+            "satuan_kerja" => $item->satuan_kerja ?? "-",
+            "jenisJabatan" =>$item->jenis,
+            "golongan" => $item->nama_golongan,
+            "pendidikan_terakhir" => $item->pendidikan_terakhir,
+            "tgl_update" => $item->tgl_update ?? "-",
+            "tgl_input" => $item->tgl_input,
+            "foto_profil" => url($item->foto_profil)
+
         ]);
-    } catch (\Exception $e) {
+        // Format Data response ke Json
         return response()->json([
-            "status" => "error",
-            "message" => "Terjadi kesalahan saat memproses data.",
-            // "error_detail" => $e->getMessage(),
-            "code" => 500
-        ], 500);
-    }
+            "total_data" => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page" => $results->perPage(),
+            "total_pages" => $results->lastPage(),
+            "data" => $formatData
+        ]);
     }
     private function formDetail($idPengurus)
     {

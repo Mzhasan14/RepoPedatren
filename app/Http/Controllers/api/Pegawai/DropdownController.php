@@ -10,6 +10,7 @@ use App\Models\Pegawai\KategoriGolongan;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pelajar;
 use App\Models\Pendidikan\Rombel;
+use App\Models\RiwayatPendidikan;
 use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,16 +19,16 @@ class DropdownController extends Controller
 {
     public function menuWilayahBlokKamar()
     {
-        $query = Kamar::rightJoin('blok as b', 'kamar.id_blok', '=', 'b.id')
-                    ->rightJoin('wilayah as w', 'b.id_wilayah', '=', 'w.id')
+        $query = Kamar::rightJoin('blok as b', 'kamar.blok_id', '=', 'b.id')
+                    ->rightJoin('wilayah as w', 'b.wilayah_id', '=', 'w.id')
                     ->select(
                             'w.id as wilayah_id',
                             'w.nama_wilayah',
                             'b.id as blok_id',
-                            'b.id_wilayah',
+                            'b.wilayah_id',
                             'b.nama_blok',
                             'kamar.id as kamar_id',
-                            'kamar.id_blok',
+                            'kamar.blok_id',
                             'kamar.nama_kamar'
                         )
                     ->orderBy('w.id')
@@ -47,7 +48,7 @@ class DropdownController extends Controller
             if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
                     'id' => $row->blok_id,
-                    'id_wilayah' => $row->id_wilayah,
+                    'wilayah_id' => $row->id_wilayah,
                     'nama_blok' => $row->nama_blok,
                     'kamar' => [],
                 ];
@@ -73,14 +74,14 @@ class DropdownController extends Controller
     }
     public function menuNegaraProvinsiKabupatenKecamatan()
     {
-        $data = Kecamatan::rightJoin('kabupaten as kb', 'kecamatan.id_kabupaten', '=', 'kb.id')
-                            ->rightJoin('provinsi as p', 'kb.id_provinsi', '=', 'p.id')
-                            ->rightJoin('negara as n', 'p.id_negara', '=', 'n.id')
+        $data = Kecamatan::rightJoin('kabupaten as kb', 'kecamatan.kabupaten_id', '=', 'kb.id')
+                            ->rightJoin('provinsi as p', 'kb.provinsi_id', '=', 'p.id')
+                            ->rightJoin('negara as n', 'p.negara_id', '=', 'n.id')
             ->select(
                 'n.id as negara_id', 'n.nama_negara',
-                'p.id as provinsi_id', 'p.id_negara', 'p.nama_provinsi',
-                'kb.id as kabupaten_id', 'kb.id_provinsi', 'kb.nama_kabupaten',
-                'kecamatan.id as kecamatan_id', 'kecamatan.id_kabupaten', 'kecamatan.nama_kecamatan'
+                'p.id as provinsi_id', 'p.negara_id', 'p.nama_provinsi',
+                'kb.id as kabupaten_id', 'kb.provinsi_id', 'kb.nama_kabupaten',
+                'kecamatan.id as kecamatan_id', 'kecamatan.kabupaten_id', 'kecamatan.nama_kecamatan'
             )
             ->orderBy('n.id') // Urutkan berdasarkan kecamatan.id
             ->get();
@@ -99,7 +100,7 @@ class DropdownController extends Controller
             if (!is_null($row->provinsi_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id])) {
                 $negara[$row->negara_id]['provinsi'][$row->provinsi_id] = [
                     'id' => $row->provinsi_id,
-                    'id_negara' => $row->id_negara,
+                    'negara_id' => $row->negara_id,
                     'nama_provinsi' => $row->nama_provinsi,
                     'kabupaten' => [],
                 ];
@@ -108,7 +109,7 @@ class DropdownController extends Controller
             if (!is_null($row->kabupaten_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id])) {
                 $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id] = [
                     'id' => $row->kabupaten_id,
-                    'id_provinsi' => $row->id_provinsi,
+                    'provinsi_id' => $row->provinsi_id,
                     'nama_kabupaten' => $row->nama_kabupaten,
                     'kecamatan' => [],
                 ];
@@ -117,7 +118,7 @@ class DropdownController extends Controller
             if (!is_null($row->kecamatan_id)) {
                 $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id]['kecamatan'][] = [
                     'id' => $row->kecamatan_id,
-                    'id_kabupaten' => $row->id_kabupaten,
+                    'kabupaten_id' => $row->kabupaten_id,
                     'nama_kecamatan' => $row->nama_kecamatan,
                 ];
             }
@@ -140,20 +141,20 @@ class DropdownController extends Controller
         }
         public function menuLembagaJurusanKelasRombel()
         {
-            $data = Rombel::rightJoin('kelas as k', 'rombel.id_kelas', '=', 'k.id')
-            ->rightJoin('jurusan as j', 'k.id_jurusan', '=', 'j.id')
-            ->rightJoin('lembaga as l', 'j.id_lembaga', '=', 'l.id')
+            $data = Rombel::rightJoin('kelas as k', 'rombel.kelas_id', '=', 'k.id')
+            ->rightJoin('jurusan as j', 'k.jurusan_id', '=', 'j.id')
+            ->rightJoin('lembaga as l', 'j.lembaga_id', '=', 'l.id')
                 ->select(
                     'l.id as lembaga_id',
                     'l.nama_lembaga',
                     'j.id as jurusan_id',
-                    'j.id_lembaga',
+                    'j.lembaga_id',
                     'j.nama_jurusan',
                     'k.id as kelas_id',
-                    'k.id_jurusan',
+                    'k.jurusan_id',
                     'k.nama_kelas',
                     'rombel.id as rombel_id',
-                    'rombel.id_kelas',
+                    'rombel.kelas_id',
                     'rombel.nama_rombel'
                 )
                 ->orderBy('l.id') // Urutkan berdasarkan lembaga.id
@@ -173,7 +174,7 @@ class DropdownController extends Controller
                 if (!is_null($row->jurusan_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id])) {
                     $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id] = [
                         'id' => $row->jurusan_id,
-                        'id_lembaga' => $row->id_lembaga,
+                        'lembaga_id' => $row->lembaga_id,
                         'nama_jurusan' => $row->nama_jurusan,
                         'kelas' => [],
                     ];
@@ -182,7 +183,7 @@ class DropdownController extends Controller
                 if (!is_null($row->kelas_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id])) {
                     $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id] = [
                         'id' => $row->kelas_id,
-                        'id_jurusan' => $row->id_jurusan,
+                        'jurusan_id' => $row->jurusan_id,
                         'nama_kelas' => $row->nama_kelas,
                         'rombel' => [],
                     ];
@@ -191,7 +192,7 @@ class DropdownController extends Controller
                 if (!is_null($row->rombel_id)) {
                     $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id]['rombel'][] = [
                         'id' => $row->rombel_id,
-                        'id_kelas' => $row->id_kelas,
+                        'kelas_id' => $row->kelas_id,
                         'nama_rombel' => $row->nama_rombel,
                     ];
                 }
@@ -216,7 +217,7 @@ class DropdownController extends Controller
         public function getAngkatan()
         {
             // Ambil angkatan masuk pelajar
-            $angkatanMasukPelajar = Pelajar::selectRaw('YEAR(tanggal_masuk_pelajar) as tahun')
+            $angkatanMasukPelajar = RiwayatPendidikan::selectRaw('YEAR(tanggal_masuk) as tahun')
                 ->groupBy('tahun')
                 ->orderBy('tahun')
                 ->get()
@@ -228,7 +229,7 @@ class DropdownController extends Controller
                 });
     
             // Ambil angkatan masuk santri
-            $angkatanMasukSantri = Santri::selectRaw('YEAR(tanggal_masuk_santri) as tahun')
+            $angkatanMasukSantri = Santri::selectRaw('YEAR(tanggal_masuk) as tahun')
                 ->groupBy('tahun')
                 ->orderBy('tahun')
                 ->get()
@@ -240,8 +241,8 @@ class DropdownController extends Controller
                 });
     
             // Ambil angkatan keluar pelajar
-            $angkatanKeluarPelajar = Pelajar::selectRaw('YEAR(tanggal_keluar_pelajar) as tahun')
-                ->whereNotNull('tanggal_keluar_pelajar')
+            $angkatanKeluarPelajar = RiwayatPendidikan::selectRaw('YEAR(tanggal_keluar) as tahun')
+                ->whereNotNull('tanggal_keluar')
                 ->groupBy('tahun')
                 ->orderBy('tahun')
                 ->get()
@@ -253,8 +254,8 @@ class DropdownController extends Controller
                 });
     
             // Ambil angkatan keluar santri
-            $angkatanKeluarSantri =Santri::selectRaw('YEAR(tanggal_keluar_santri) as tahun')
-                ->whereNotNull('tanggal_keluar_santri')
+            $angkatanKeluarSantri =Santri::selectRaw('YEAR(tanggal_keluar) as tahun')
+                ->whereNotNull('tanggal_keluar')
                 ->groupBy('tahun')
                 ->orderBy('tahun')
                 ->get()
@@ -283,7 +284,7 @@ class DropdownController extends Controller
 
         public function menuKategoriGolonganAndGolongan()
         {
-            $query = KategoriGolongan::leftJoin('golongan','kategori_golongan.id','golongan.id_kategori_golongan')
+            $query = KategoriGolongan::leftJoin('golongan','kategori_golongan.id','golongan.kategori_golongan_id')
                                     ->select(
                                         'kategori_golongan.id as kategoriGolongan_id',
                                         'kategori_golongan.nama_kategori_golongan as kategoriGolongan_nama',
@@ -324,7 +325,7 @@ class DropdownController extends Controller
     // Dropdown untuk Pengajar!!
     public function menuMateriAjar()
     {
-        $query = Pengajar::leftJoin('materi_ajar', 'pengajar.id', '=', 'materi_ajar.id_pengajar')
+        $query = Pengajar::leftJoin('materi_ajar', 'pengajar.id', '=', 'materi_ajar.pengajar_id')
                         ->select(
                             DB::raw('COUNT(DISTINCT materi_ajar.id) as total_materi')
                             )

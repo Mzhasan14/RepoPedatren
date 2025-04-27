@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('kabupaten', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_provinsi');
+            $table->unsignedBigInteger('provinsi_id');
             $table->string('nama_kabupaten');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -21,7 +21,8 @@ return new class extends Migration
             $table->boolean('status')->nullable()->default(true);
             $table->timestamps();
 
-            $table->foreign('id_provinsi')->references('id')->on('provinsi')->onDelete('cascade');
+            $table->foreign('provinsi_id')->references('id')->on('provinsi')->onDelete('cascade');
+
         });
     }
 

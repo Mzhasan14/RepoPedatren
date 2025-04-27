@@ -3,7 +3,10 @@
 namespace Database\Factories\Pegawai;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Pengajar;
+use Database\Factories\Pendidikan\JurusanFactory;
+use Database\Factories\Pendidikan\KelasFactory;
 use Database\Factories\Pendidikan\LembagaFactory;
+use Database\Factories\Pendidikan\RombelFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,13 +25,18 @@ class PengajarFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'id_pegawai' => (new PegawaiFactory())->create()->id,
-            'id_golongan' => (new GolonganFactory())->create()->id,
+            'pegawai_id' => (new PegawaiFactory())->create()->id,
+            'golongan_id' => (new GolonganFactory())->create()->id,
+            'lembaga_id' =>  (new LembagaFactory())->create()->id,
+            'jurusan_id' =>  (new JurusanFactory())->create()->id,
+            'kelas_id' =>  (new KelasFactory())->create()->id,
+            'rombel_id' =>  (new RombelFactory())->create()->id,
             'jabatan' => $this->faker->jobTitle,
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
-'tahun_keluar' => $this->faker->boolean(70) 
-    ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d') 
-    : null,
+            'tahun_akhir' => $this->faker->boolean(70) 
+                ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d') 
+                : null,
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->boolean(),

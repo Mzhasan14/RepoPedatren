@@ -13,23 +13,23 @@ return new class extends Migration
     {
         Schema::create('pegawai', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('id_biodata');
-            $table->unsignedBigInteger('id_lembaga');
-            $table->unsignedBigInteger('id_jurusan')->nullable();
-            $table->unsignedBigInteger('id_kelas')->nullable();
-            $table->unsignedBigInteger('id_rombel')->nullable();
+            $table->unsignedBigInteger('biodata_id');
+            $table->unsignedBigInteger('lembaga_id')->nullable();
+            $table->unsignedBigInteger('jurusan_id')->nullable();
+            $table->unsignedBigInteger('kelas_id')->nullable();
+            $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('warga_pesantren');
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_lembaga')->references('id')->on('lembaga')->onDelete('cascade');
-            $table->foreign('id_jurusan')->references('id')->on('jurusan')->onDelete('cascade');
-            $table->foreign('id_kelas')->references('id')->on('kelas')->onDelete('cascade');
-            $table->foreign('id_rombel')->references('id')->on('rombel')->onDelete('cascade');
-            $table->foreign('id_biodata')->references('id')->on('biodata')->onDelete('cascade');
+            $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
+            $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
+            $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
+            $table->foreign('rombel_id')->references('id')->on('rombel')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
         });
+
     }
 
     /**

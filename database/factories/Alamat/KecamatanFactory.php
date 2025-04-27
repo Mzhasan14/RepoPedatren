@@ -19,7 +19,7 @@ class KecamatanFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_kabupaten' => (new KabupatenFactory())->create()->id,
+            'kabupaten_id' => (new KabupatenFactory())->create()->id,
             'nama_kecamatan' => $this->faker->citySuffix,
             'created_by' => 1,
             'updated_by' => null,

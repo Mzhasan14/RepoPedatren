@@ -6,6 +6,7 @@ use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\Pegawai\WaliKelas;
+use App\Services\FilterWaliKelasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,14 +16,11 @@ use Illuminate\Support\Facades\Validator;
 
 class WalikelasController extends Controller
 {
-    protected $filterController;
-    protected $filter;
+    private FilterWaliKelasService $filterController;
 
-    public function __construct()
+    public function __construct(FilterWaliKelasService $filterController)
     {
-        // Inisialisasi controller filter
-        $this->filterController = new FilterController();
-        $this->filter = new FilterKepegawaianController();
+        $this->filterController = $filterController;
     }
 
     /**
@@ -97,35 +95,44 @@ class WalikelasController extends Controller
     {
     try
     {
+         // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                   ->where('nama_jenis_berkas', 'Pas foto')
+                    ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
+       // 3) Subquery: warga pesantren terakhir per biodata
+        $wpLast = DB::table('warga_pesantren')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('biodata_id');
+        // 4) Query utama
         $query = WaliKelas::Active()
-                            ->join('pengajar','pengajar.id','=','wali_kelas.id_pengajar')
-                            ->join('pegawai','pegawai.id','=','pengajar.id_pegawai')
-                            ->join('biodata as b','b.id','=','pegawai.id_biodata')  
-                            ->leftJoin('kabupaten as kb','kb.id','b.id_kabupaten')
-                            ->leftJoin('peserta_didik as pd','b.id','pd.id_biodata')
-                            ->leftJoin('santri as s','pd.id','s.id_peserta_didik')
-                            ->leftJoin('domisili_santri as ds','s.id','ds.id_santri')
-                            ->leftJoin('wilayah as w','ds.id_wilayah','w.id')
-                            ->leftJoin('warga_pesantren as wp','b.id','wp.id_biodata')
-                            ->leftJoin('berkas as br', function ($join) {
-                                $join->on('b.id', '=', 'br.id_biodata')
-                                     ->where('br.id_jenis_berkas', '=', function ($query) {
-                                         $query->select('id')
-                                               ->from('jenis_berkas')
-                                               ->where('nama_jenis_berkas', 'Pas foto')
-                                               ->limit(1);
-                                     })
-                                     ->whereRaw('br.id = (
-                                        select max(b2.id) 
-                                        from berkas as b2 
-                                        where b2.id_biodata = b.id 
-                                          and b2.id_jenis_berkas = br.id_jenis_berkas
-                                    )');
+                            // Join Pengajar Yang berstatus aktif
+                            ->join('pengajar',function($join){
+                                $join->on('wali_kelas.pengajar_id', '=', 'pengajar.id')
+                                        ->where('pengajar.status_aktif','aktif');
                             })
-                            ->leftJoin('rombel as r','r.id','=','pegawai.id_rombel')
-                            ->leftJoin('kelas as k','k.id','=','pegawai.id_kelas')
-                            ->leftJoin('jurusan as j','j.id','=','pegawai.id_jurusan')
-                            ->leftJoin('lembaga as l','l.id','=','pegawai.id_lembaga')
+                            // Join Pegawai yang Berstatus Aktif
+                            ->join('pegawai', function ($join) {
+                                    $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
+                                         ->where('pegawai.status', 1);
+                            })
+                            ->join('biodata as b','b.id','=','pegawai.biodata_id')  
+                            //  Join Warga Pesantren Terakhir Berstatus Aktif
+                            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+                            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')   
+                            // join berkas pas foto terakhir
+                            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+                            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+                            ->leftJoin('rombel as r','r.id','=','pengajar.rombel_id')
+                            ->leftJoin('kelas as k','k.id','=','pengajar.kelas_id')
+                            ->leftJoin('jurusan as j','j.id','=','pengajar.jurusan_id')
+                            ->leftJoin('lembaga as l','l.id','=','pengajar.lembaga_id')
                             ->select(
                                 'wali_kelas.id as id',
                                 'b.nama',
@@ -156,61 +163,52 @@ class WalikelasController extends Controller
                                 'wali_kelas.created_at',
                             );
                                 
-        $query = $this->filterController->applyCommonFilters($query, $request);
-        $query = $this->filter->applySearchFilter($query, $request);
-        $query = $this->filter->applyLembagaFilter($query, $request);
-        $query = $this->filter->applyGerderRombelFilter($query, $request);
-        $query = $this->filter->applyPhoneFilter($query, $request);
-
-
-        // Ambil jumlah data per halaman (default 10 jika tidak diisi)
-        $perPage = $request->input('limit', 25);
-
-        // Ambil halaman saat ini (jika ada)
-        $currentPage = $request->input('page', 1);
-
-        // Menerapkan pagination ke hasil
-        $hasil = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
-
-        // Jika Data Kosong
-        if ($hasil->isEmpty()) {
-            return response()->json([
-                "status" => "error",
-                "message" => "Data tidak ditemukan",
-                "code" => 404
-            ], 404);
-        }
-        return response()->json([
-            "total_data" => $hasil->total(),
-            "current_page" => $hasil->currentPage(),
-            "per_page" => $hasil->perPage(),
-            "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
-                return [
-                    "id" => $item->id,
-                    "nama" => $item->nama,
-                    "niup" => $item->niup,
-                    "NIK/No.Passport" => $item->identitas,
-                    "JenisKelamin" => $item->jenis_kelamin,
-                    "lembaga" => $item->nama_lembaga,
-                    "kelas" => $item->nama_kelas,
-                    "GenderRombel" => $item->gender_rombel,
-                    "JumlahMurid" => $item->jumlah_murid,
-                    "rombel" => $item->nama_rombel,
-                    "tgl_update" => $item->tgl_update,
-                    "tgl_input" => $item->tgl_input,
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+           // Terapkan filter dan pagination
+           $query = $this->filterController->applyAllFilters($query, $request);
+           $perPage     = (int) $request->input('limit', 25);
+           $currentPage = (int) $request->input('page', 1);
+           $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+           }
+           catch (\Exception $e) {
+               Log::error('Error fetching data Wali Kelas: ' . $e->getMessage());
+               return response()->json([
+                   "status" => "error",
+                   "message" => "Terjadi kesalahan saat mengambil data Wali Kelas",
+                   "code" => 500
+               ], 500);
+           }
+           // Jika Data Kosong
+           if ($results->isEmpty()) {
+               return response()->json([
+                   "status" => "error",
+                   "message" => "Data tidak ditemukan",
+                   "code" => 404
+               ], 404);
+           }
+        // Format Data Response
+        $formatData = collect($results->items())->map(fn($item)=>[
+            "id" => $item->id,
+            "nama" => $item->nama,
+            "niup" => $item->niup ?? "-",
+            "NIK/No.Passport" => $item->identitas,
+            "JenisKelamin" => $item->jenis_kelamin === 'l' ? 'Laki-laki' : ($item->jenis_kelamin === 'p' ? 'Perempuan' : 'Tidak Diketahui'),
+            "lembaga" => $item->nama_lembaga,
+            "kelas" => $item->nama_kelas,
+            "GenderRombel" => $item->gender_rombel,
+            "JumlahMurid" => $item->jumlah_murid,
+            "rombel" => $item->nama_rombel,
+            "tgl_update" => $item->tgl_update ?? "-",
+            "tgl_input" => $item->tgl_input,
+            "foto_profil" => url($item->foto_profil)
         ]);
-    } catch (\Exception $e) {
+        // Format Data Response ke Json
         return response()->json([
-            'status' => 'error',
-            'message' => 'Terjadi kesalahan pada server',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
+            "total_data" => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page" => $results->perPage(),
+            "total_pages" => $results->lastPage(),
+            "data" => $formatData
+        ]);
     }
     private function formDetail($idWalikelas)
     {
