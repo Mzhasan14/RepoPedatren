@@ -13,43 +13,51 @@ return new class extends Migration
     {
         Schema::create('karyawan', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('id_pegawai')->unique();
-            $table->unsignedBigInteger('id_golongan');
+            $table->uuid('pegawai_id')->unique();
+            $table->unsignedBigInteger('golongan_id')->nullable();
+            $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->string('jabatan')->nullable();// kulturan, tetap, kontrak, pengkaderan 
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('id_golongan')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
+            $table->foreign('golongan_id')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
         });
         Schema::create('pengurus', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('id_pegawai');
-            $table->unsignedBigInteger('id_golongan');
-            $table->string('satuan_kerja');
+            $table->uuid('pegawai_id');
+            $table->unsignedBigInteger('golongan_id')->nullable();
             $table->string('jabatan')->nullable(); // kulturan, tetap, kontrak, pengkaderan 
+            $table->string('satuan_kerja');
             $table->string('keterangan_jabatan'); // contohnya : pengasuh, ketua dewan pengasuh
-            $table->date('tahun_masuk');
-            $table->date('tahun_keluar')->nullable();
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_akhir')->nullable();
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('id_golongan')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
+            $table->foreign('golongan_id')->references('id')->on('golongan')->onDelete('cascade');
         });
         Schema::create('riwayat_jabatan_karyawan', function (Blueprint $table) {
             $table->id();
-            $table->uuid('id_karyawan'); // Relasi ke tabel karyawan
+            $table->uuid('karyawan_id'); 
             $table->string('keterangan_jabatan'); // contohnya : kepala sekolah, wakil kepala bag --- dll
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai')->nullable(); // NULL jika masih menjabat
             $table->boolean('status');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
         
-            $table->foreign('id_karyawan')->references('id')->on('karyawan')->onDelete('cascade');
-        });        
+            $table->foreign('karyawan_id')->references('id')->on('karyawan')->onDelete('cascade');
+        });       
     }
 
     /**

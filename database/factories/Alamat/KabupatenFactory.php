@@ -19,7 +19,7 @@ class KabupatenFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_provinsi' => (new ProvinsiFactory())->create()->id,
+            'provinsi_id' => (new ProvinsiFactory())->create()->id,
             'nama_kabupaten' => $this->faker->city,
             'created_by' => 1,
             'updated_by' => null,

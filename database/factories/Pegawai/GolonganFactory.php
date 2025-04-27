@@ -23,7 +23,7 @@ class GolonganFactory extends Factory
     {
         return [
             'nama_golongan' => $this->faker->randomElement(['Golongan I', 'Golongan II', 'Golongan III']),
-            'id_kategori_golongan' => (new PegawaiKategoriGolonganFactory())->create()->id,
+            'kategori_golongan_id' => (new PegawaiKategoriGolonganFactory())->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

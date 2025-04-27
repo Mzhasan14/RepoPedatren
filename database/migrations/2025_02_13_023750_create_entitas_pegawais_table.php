@@ -16,31 +16,20 @@ return new class extends Migration
             $table->id();
             $table->string('nama_kategori_golongan');
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
         });
         Schema::create('golongan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_golongan');
-            $table->unsignedBigInteger('id_kategori_golongan');
+            $table->unsignedBigInteger('kategori_golongan_id')->nullable();
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_kategori_golongan')->references('id')->on('kategori_golongan')->onDelete('cascade');
-        });
-        Schema::create('entitas_pegawai', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('id_pegawai');
-            $table->unsignedBigInteger('id_golongan');
-            $table->date('tanggal_masuk');
-            $table->date('tanggal_keluar')->nullable();
-            $table->unsignedBigInteger('created_by');
-            $table->boolean('status');
-            $table->timestamps();
-
-            $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('id_golongan')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('kategori_golongan_id')->references('id')->on('kategori_golongan')->onDelete('cascade');
         });
     }
 
@@ -49,7 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('entitas_pegawai');
         Schema::dropIfExists('golongan');
         Schema::dropIfExists('kategori_golongan');
     }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Karyawan;
+use App\Services\FilterKaryawanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,120 +19,123 @@ use Illuminate\Support\Str;
 
 class KaryawanController extends Controller
 {
-    protected $filterController;
-    protected $filter;
+    private FilterKaryawanService $filterController;
 
-    public function __construct()
+    public function __construct(FilterKaryawanService $filterController)
     {
-        // Inisialisasi controller filter
-        $this->filterController = new FilterController();
-        $this->filter = new FilterKepegawaianController();
+        $this->filterController = $filterController;
     }
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $Karyawan = Karyawan::all();
-        return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
-    }
+    // public function index()
+    // {
+    //     $Karyawan = Karyawan::all();
+    //     return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
+    // }
 
 
-    public function store(Request $request)
-    {
-        $validator =Validator::make($request->all(),[
-            'id_pegawai' => 'required', 'exists:pegawai,id', 'unique:karyawan,id_pegawai',
-            'id_golongan' => 'required', 'exists:golongan,id',
-            'keterangan' => 'required', 'string',
-            'created_by' => 'required', 'integer',
-            'status' => 'required', 'boolean',
-        ]);
-        if ($validator->fails())
-        {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
-            ]);
-        }
+    // public function store(Request $request)
+    // {
+    //     $validator =Validator::make($request->all(),[
+    //         'id_pegawai' => 'required', 'exists:pegawai,id', 'unique:karyawan,id_pegawai',
+    //         'id_golongan' => 'required', 'exists:golongan,id',
+    //         'keterangan' => 'required', 'string',
+    //         'created_by' => 'required', 'integer',
+    //         'status' => 'required', 'boolean',
+    //     ]);
+    //     if ($validator->fails())
+    //     {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Data gagal ditambahkan',
+    //             'data' => $validator->errors()
+    //         ]);
+    //     }
 
-        $Karyawan = Karyawan::create($validator->validated());
-        return new PdResource(true,'Data berhasil diitambahkan',$Karyawan);
-    }
+    //     $Karyawan = Karyawan::create($validator->validated());
+    //     return new PdResource(true,'Data berhasil diitambahkan',$Karyawan);
+    // }
 
-    public function show(string $id)
-    {
-        $Karyawan = Karyawan::findOrFail($id);
-        return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
-    }
-    public function update(Request $request, string $id)
-    {
-        $Karyawan = Karyawan::findOrFail($id);
-        $validator =Validator::make($request->all(),[
-            'id_pegawai' => 'required', 'exists:pegawai,id', 'unique:karyawan,id_pegawai',
-            'id_golongan' => 'required', 'exists:golongan,id',
-            'keterangan' => 'required', 'string',
-            'updated_by' => 'nullable ', 'integer',
-            'status' => 'required', 'boolean',
-        ]);
-        if ($validator->fails())
-        {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
-            ]);
-        }
-        $Karyawan->update($validator->validated());
-        return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
+    // public function show(string $id)
+    // {
+    //     $Karyawan = Karyawan::findOrFail($id);
+    //     return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
+    // }
+    // public function update(Request $request, string $id)
+    // {
+    //     $Karyawan = Karyawan::findOrFail($id);
+    //     $validator =Validator::make($request->all(),[
+    //         'id_pegawai' => 'required', 'exists:pegawai,id', 'unique:karyawan,id_pegawai',
+    //         'id_golongan' => 'required', 'exists:golongan,id',
+    //         'keterangan' => 'required', 'string',
+    //         'updated_by' => 'nullable ', 'integer',
+    //         'status' => 'required', 'boolean',
+    //     ]);
+    //     if ($validator->fails())
+    //     {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Data gagal ditambahkan',
+    //             'data' => $validator->errors()
+    //         ]);
+    //     }
+    //     $Karyawan->update($validator->validated());
+    //     return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
 
-    }
-    public function destroy(string $id)
-    {
-        $Karyawan = Karyawan::findOrFail($id);
-        $Karyawan->delete();
-        return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
-    }
+    // }
+    // public function destroy(string $id)
+    // {
+    //     $Karyawan = Karyawan::findOrFail($id);
+    //     $Karyawan->delete();
+    //     return new PdResource(true,'Data berhasil ditampilkan',$Karyawan);
+    // }
     public function dataKaryawan(Request $request)
     {
     try
         {
+       // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
+        // 3) Subquery: warga pesantren terakhir per biodata
+        $wpLast = DB::table('warga_pesantren')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('biodata_id');
+        // 4) Query utama
         $query = Karyawan::Active()
-                        ->join('pegawai','pegawai.id','=','karyawan.id_pegawai')
-                        ->join('biodata as b','b.id','=','pegawai.id_biodata')
-                        ->leftJoin('peserta_didik as pd','b.id','pd.id_biodata')
-                        ->leftJoin('santri as s','pd.id','s.id_peserta_didik')
-                        ->leftJoin('domisili_santri as ds','s.id','ds.id_santri')
-                        ->leftJoin('wilayah as w','ds.id_wilayah','w.id')
-                        ->leftJoin('warga_pesantren as wp','b.id','wp.id_biodata')
-                        ->leftJoin('kabupaten as kb','kb.id','b.id_kabupaten')
-                        ->leftJoin('golongan as g','g.id','=','karyawan.id_golongan')
-                        ->leftJoin('kategori_golongan as kg','kg.id','=','g.id_kategori_golongan')
-                        ->leftJoin('berkas as br', function ($join) {
-                            $join->on('b.id', '=', 'br.id_biodata')
-                                 ->where('br.id_jenis_berkas', '=', function ($query) {
-                                     $query->select('id')
-                                           ->from('jenis_berkas')
-                                           ->where('nama_jenis_berkas', 'Pas foto')
-                                           ->limit(1);
-                                 })
-                                 ->whereRaw('br.id = (
-                                    select max(b2.id) 
-                                    from berkas as b2 
-                                    where b2.id_biodata = b.id 
-                                      and b2.id_jenis_berkas = br.id_jenis_berkas
-                                )');
+                        // join pegawai yang hanya berstatus true atau akif
+                        ->join('pegawai',function ($join){
+                            $join->on('pegawai.id','=','karyawan.pegawai_id')
+                                ->where('pegawai.status',1);
                         })
-                        ->leftJoin('pengajar as pr','pr.id_pegawai','=','pegawai.id')
-                        ->leftJoin('lembaga as l','l.id','=','pegawai.id_lembaga')
+                        ->join('biodata as b','b.id','=','pegawai.biodata_id')
+                        ->leftJoin('golongan as g','g.id','=','karyawan.golongan_id')
+                        ->leftJoin('kategori_golongan as kg','kg.id','=','g.kategori_golongan_id')
+                        // join ke warga pesantren terakhir true (NIUP)
+                        ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id')) 
+                        ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
+                        // join berkas pas foto terakhir
+                        ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))                            
+                        ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+                        ->leftJoin('lembaga as l','l.id','=','karyawan.lembaga_id')
+                        // Join riwayat Jabatan karyawan mengambil data yang terbaru
                         ->leftJoin('riwayat_jabatan_karyawan', function ($join) {
-                            $join->on('riwayat_jabatan_karyawan.id_karyawan', '=', 'karyawan.id')
+                            $join->on('riwayat_jabatan_karyawan.karyawan_id', '=', 'karyawan.id')
                                 ->whereRaw('riwayat_jabatan_karyawan.tanggal_mulai = (
                                     SELECT MAX(tanggal_mulai) 
                                     FROM riwayat_jabatan_karyawan 
-                                    WHERE riwayat_jabatan_karyawan.id_karyawan = karyawan.id
+                                    WHERE riwayat_jabatan_karyawan.karyawan_id = karyawan.id
                                 )');
                         })
+                        ->where('karyawan.status_aktif','aktif')
                         ->select(
                             'karyawan.id',
                             'b.nama',
@@ -160,61 +164,55 @@ class KaryawanController extends Controller
                                 'karyawan.updated_at',
                                 'karyawan.created_at',
                             );
-        $query = $this->filterController->applyCommonFilters($query, $request);
-        $query = $this->filter->applySearchFilter($query, $request);
-        $query = $this->filter->applylembagaKaryawanFilter($query, $request);
-        $query = $this->filter->applyjabatanKaryawanFilter($query, $request);
-        $query = $this->filter->applyGolonganJabatanFilter($query, $request);
-        $query = $this->filter->applyWargaPesantrenFilter($query, $request);
-        $query = $this->filter->applyPemberkasanFilter($query, $request);
-        $query = $this->filter->applyUmurFilter($query, $request);
-        $query = $this->filter->applyPhoneFilter($query, $request);
-        $onePage = $request->input('limit', 25);
+              // Terapkan filter dan pagination
+              $query = $this->filterController->applyAllFilters($query, $request);
 
-        $currentPage =  $request->input('page', 1);
-
-        $hasil = $query->paginate($onePage, ['*'], 'page', $currentPage);
-
-
+        $perPage     = (int) $request->input('limit', 25);
+        $currentPage = (int) $request->input('page', 1);
+        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        }
+        catch (\Exception $e) {
+            Log::error('Error fetching data Pengajar: ' . $e->getMessage());
+            return response()->json([
+                "status" => "error",
+                "message" => "Terjadi kesalahan saat mengambil data pengajar",
+                "code" => 500
+            ], 500);
+        }
         // Jika Data Kosong
-        if ($hasil->isEmpty()) {
+        if ($results->isEmpty()) {
             return response()->json([
                 "status" => "error",
                 "message" => "Data tidak ditemukan",
                 "code" => 404
             ], 404);
         }
+        // Format Data Response
+        $formatData = collect($results->items())->map(fn($item) => [
+            "id" => $item->id,
+            "nama" => $item->nama,
+            "niup" => $item->niup ?? "-",
+            "nik" => $item->nik,
+            "umur" => $item->umur,
+            "KeteranganJabatan" => $item->KeteranganJabatan,
+            "lembaga" => $item->nama_lembaga,
+            "jenisJabatan" => $item->jabatan,
+            "golongan" => $item->nama_golongan,
+            "pendidikanTerakhir" => $item->pendidikanTerakhir,
+            "tgl_update" => $item->tgl_update,
+            "tgl_input" => $item->tgl_input,
+            "foto_profil" => url($item->foto_profil)
+        ]) ;
+
+        // Data Response ke Json
         return response()->json([
-            "total_data" => $hasil->total(),
-            "current_page" => $hasil->currentPage(),
-            "per_page" => $hasil->perPage(),
-            "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
-                return [
-                    "id" => $item->id,
-                    "nama" => $item->nama,
-                    "niup" => $item->niup,
-                    "nik" => $item->nik,
-                    "umur" => $item->umur,
-                    "KeteranganJabatan" => $item->KeteranganJabatan,
-                    "lembaga" => $item->nama_lembaga,
-                    "jenis" => $item->jabatan,
-                    "golongan" => $item->nama_golongan,
-                    "pendidikanTerakhir" => $item->pendidikanTerakhir,
-                    "tgl_update" => $item->tgl_update,
-                    "tgl_input" => $item->tgl_input,
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+            "total_data" => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page" => $results->perPage(),
+            "total_pages" => $results->lastPage(),
+            "data" => $formatData
         ]);
-    }catch (\Exception $e) {
-        return response()->json([
-            "status" => "error",
-            "message" => "Terjadi kesalahan saat memuat data.",
-            "error_detail" => $e->getMessage(),
-            "code" => 500
-        ], 500);
-    }
+
     }
     // private function getFormTampilanList($perPage,$currentPage)
     // {
@@ -267,7 +265,21 @@ class KaryawanController extends Controller
                         ->join('pegawai as pg','pg.id','=','karyawan.id_pegawai')
                         ->join('biodata as b', 'pg.id_biodata', '=', 'b.id')
                         ->leftJoin('warga_pesantren as wp', 'b.id', '=', 'wp.id_biodata')
-                        ->leftJoin('berkas as br', 'b.id', '=', 'br.id_biodata')
+                        ->leftJoin('berkas as br', function ($j) {
+                            $j->on('b.id', 'br.biodata_id')
+                              ->where('br.jenis_berkas_id', function ($q) {
+                                  $q->select('id')
+                                    ->from('jenis_berkas')
+                                    ->where('nama_jenis_berkas', 'Pas foto')
+                                    ->limit(1);
+                              })
+                              ->whereRaw('br.id = (
+                                  select max(id)
+                                  from berkas
+                                  where biodata_id = b.id
+                                    and jenis_berkas_id = br.jenis_berkas_id
+                              )');
+                        })
                         ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
                         ->leftJoin('kecamatan as kc', 'b.id_kecamatan', '=', 'kc.id')
                         ->leftJoin('kabupaten as kb', 'b.id_kabupaten', '=', 'kb.id')

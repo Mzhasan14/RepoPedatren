@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\FilterController;
 use App\Models\JenisBerkas;
+use App\Services\FilterPengajarService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
@@ -19,14 +20,11 @@ use Illuminate\Support\Facades\URL;
 class PengajarController extends Controller
 {
 
-    protected $filterController;
-    protected $filter;
+    private FilterPengajarService $filterController;
 
-    public function __construct()
+    public function __construct(FilterPengajarService $filterController)
     {
-        // Inisialisasi controller filter
-        $this->filterController = new FilterController();
-        $this->filter = new FilterKepegawaianController();
+        $this->filterController = $filterController;
     }
 
     public function index()
@@ -93,38 +91,44 @@ class PengajarController extends Controller
     public function filterPengajar(Request $request)
     {
         try {
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
+                // 3) Subquery: warga pesantren terakhir per biodata
+        $wpLast = DB::table('warga_pesantren')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('status', true)
+                ->groupBy('biodata_id');
+        // 4) Query utama
         $query = Pengajar::Active()
-            ->join('pegawai', 'pengajar.id_pegawai', '=', 'pegawai.id')
-            ->join('biodata as b', 'pegawai.id_biodata', '=', 'b.id')
-            ->leftJoin('peserta_didik as pd','b.id','pd.id_biodata')
-            ->leftJoin('santri as s','pd.id','s.id_peserta_didik')
-            ->leftJoin('domisili_santri as ds','s.id','ds.id_santri')
-            ->leftJoin('wilayah as w','ds.id_wilayah','w.id')
-            ->leftJoin('warga_pesantren as wp','b.id','wp.id_biodata')
-            ->leftJoin('kabupaten as kb','kb.id','b.id_kabupaten')
-            ->leftJoin('lembaga as l', 'pegawai.id_lembaga', '=', 'l.id')
-            ->leftJoin('golongan as g', 'pengajar.id_golongan', '=', 'g.id')
-            ->leftJoin('kategori_golongan as kg', 'g.id_kategori_golongan', '=', 'kg.id')
-            ->leftJoin('entitas_pegawai','entitas_pegawai.id_pegawai','=','pegawai.id')
-            ->leftJoin('berkas as br', function ($join) {
-                $join->on('b.id', '=', 'br.id_biodata')
-                     ->where('br.id_jenis_berkas', '=', function ($query) {
-                         $query->select('id')
-                               ->from('jenis_berkas')
-                               ->where('nama_jenis_berkas', 'Pas foto')
-                               ->limit(1);
-                     })
-                     ->whereRaw('br.id = (
-                        select max(b2.id) 
-                        from berkas as b2 
-                        where b2.id_biodata = b.id 
-                          and b2.id_jenis_berkas = br.id_jenis_berkas
-                    )');
-            })
+            // relasi ke pegawai
+            ->join('pegawai', 'pengajar.pegawai_id', '=', 'pegawai.id')
+            // relasi ke biodata
+            ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
+            // relasi ke warga pesantren terakhir true (NIUP)
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id')) 
+            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
+            // relasi ke lembaga
+            ->leftJoin('lembaga as l', 'pengajar.lembaga_id', '=', 'l.id')
+            // relasi ke golongan
+            ->leftJoin('golongan as g', 'pengajar.golongan_id', '=', 'g.id')
+            // relasi ke kategori golongan
+            ->leftJoin('kategori_golongan as kg', 'g.kategori_golongan_id', '=', 'kg.id')
+             // relasi ke berkas pas foto terakhir
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('materi_ajar', function ($join) {
-                $join->on('materi_ajar.id_pengajar', '=', 'pengajar.id')
+                $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
                      ->where('materi_ajar.status', 1);
             })
+            ->where('pengajar.status_aktif', 'aktif' )
             ->select(
                 'pengajar.id',
                 'b.nama',
@@ -141,10 +145,20 @@ class PengajarController extends Controller
                 DB::raw("COUNT(DISTINCT materi_ajar.nama_materi) AS total_materi"),
                 DB::raw("
                 CASE 
-                    WHEN TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, CURDATE())) = 0 
-                    THEN CONCAT('Belum setahun sejak ', DATE_FORMAT(entitas_pegawai.tanggal_masuk, '%Y-%m-%d'))
-                    ELSE CONCAT(TIMESTAMPDIFF(YEAR, entitas_pegawai.tanggal_masuk, COALESCE(entitas_pegawai.tanggal_keluar, CURDATE())), ' Tahun sejak ', DATE_FORMAT(entitas_pegawai.tanggal_masuk, '%Y-%m-%d'))
-                END AS masa_kerja"),
+                    WHEN TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())) = 0 
+                    THEN CONCAT(
+                        'Belum setahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'),
+                        ' sampai ', 
+                        IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini')
+                    )
+                    ELSE CONCAT(
+                        TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())), 
+                        ' Tahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'),
+                        ' sampai ', 
+                        IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini')
+                    )
+                END AS masa_kerja
+            "),            
                 'g.nama_golongan',
                 'b.nama_pendidikan_terakhir',
                 DB::raw("DATE_FORMAT(pengajar.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
@@ -162,70 +176,60 @@ class PengajarController extends Controller
                     'pengajar.updated_at',
                     'pengajar.created_at',
                     'l.nama_lembaga',
-                    'entitas_pegawai.tanggal_masuk',
-                    'entitas_pegawai.tanggal_keluar'
-                )->distinct();   
-        // 🔹 Terapkan filter umum (lokasi & jenis kelamin)
-        $query = $this->filterController->applyCommonFilters($query, $request);
-        $query = $this->filter->applySearchFilter($query, $request);
-        $query = $this->filter->applylembagaKaryawanFilter($query, $request);
-        $query = $this->filter->applyGolonganJabatanFilter($query, $request);
-        $query = $this->filter->applyGolonganFilter($query, $request);
-        $query = $this->filter->applyMateriAjarFilter($query, $request);
-        $query = $this->filter->applyMasaKerjaFilter($query, $request);
-        $query = $this->filter->applyJabatanPengajarFilter($query, $request);
-        $query = $this->filter->applyWargaPesantrenFilter($query, $request);
-        $query = $this->filter->applyPemberkasanFilter($query, $request);
-        $query = $this->filter->applyUmurFilter($query, $request);
-        $query = $this->filter->applyPhoneFilter($query, $request);
+                    'pengajar.tahun_masuk',
+                    'pengajar.tahun_akhir'
+                );   
+           // Terapkan filter dan pagination
+           $query = $this->filterController->applyAllFilters($query, $request);
+
         
-        $onePage = $request->input('limit', 25);
 
-        $currentPage =  $request->input('page', 1);
-
-        $hasil = $query->paginate($onePage, ['*'], 'page', $currentPage);
-
-
-        // Jika Data Kosong
-        if ($hasil->isEmpty()) {
-            return response()->json([
-                "status" => "error",
-                "message" => "Data tidak ditemukan",
-                "code" => 404
-            ], 404);
-        }
+           $perPage     = (int) $request->input('limit', 25);
+           $currentPage = (int) $request->input('page', 1);
+           $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+           }
+           catch (\Exception $e) {
+               Log::error('Error fetching data Pengajar: ' . $e->getMessage());
+               return response()->json([
+                   "status" => "error",
+                   "message" => "Terjadi kesalahan saat mengambil data pengajar",
+                   "code" => 500
+               ], 500);
+           }
+           // Jika Data Kosong
+           if ($results->isEmpty()) {
+               return response()->json([
+                   "status" => "error",
+                   "message" => "Data tidak ditemukan",
+                   "code" => 404
+               ], 404);
+           }
+        // Format data untuk response
+        $formatData = collect($results->items())->map(fn($item) => [
+                "id" => $item->id,
+                "nama" => $item->nama,
+                "niup" => $item->niup ?? '-',
+                "umur" => $item->umur,
+                "daftar_materi" => $item->daftar_materi ?? '-',
+                "total_waktu_materi" => $item->total_waktu_materi ?? '-',
+                "total_materi" => $item->total_materi ?? '-',
+                "masa_kerja" => $item->masa_kerja,
+                "golongan" => $item->nama_golongan ?? '-',
+                "pendidikan_terakhir" => $item->nama_pendidikan_terakhir,
+                "tgl_update" => $item->tgl_update,
+                "tgl_input" => $item->tgl_input,
+                "lembaga" => $item->nama_lembaga ?? '-',
+                "foto_profil" => url($item->foto_profil)
+            ]);
+        // Format response Json
         return response()->json([
-            "total_data" => $hasil->total(),
-            "current_page" => $hasil->currentPage(),
-            "per_page" => $hasil->perPage(),
-            "total_pages" => $hasil->lastPage(),
-            "data" => $hasil->map(function ($item) {
-                return [
-                    "id" => $item->id,
-                    "nama" => $item->nama,
-                    "niup" => $item->niup,
-                    "umur" => $item->umur,
-                    "daftar_materi" => $item->daftar_materi,
-                    "total_waktu_materi" => $item->total_waktu_materi,
-                    "total_materi" => $item->total_materi,
-                    "masa_kerja" => $item->masa_kerja,
-                    "golongan" => $item->nama_golongan,
-                    "pendidikan_terakhir" => $item->nama_pendidikan_terakhir,
-                    "tgl_update" => $item->tgl_update,
-                    "tgl_input" => $item->tgl_input,
-                    "lembaga" => $item->nama_lembaga,
-                    "foto_profil" => url($item->foto_profil)
-                ];
-            })
+            "total_data" => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page" => $results->perPage(),
+            "total_pages" => $results->lastPage(),
+            "data" => $formatData,
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            "status" => "error",
-            "message" => "Terjadi kesalahan saat memproses data",
-            "code" => 500,
-            "error_detail" => $e->getMessage()
-        ], 500);
-        }
+
     }
     private function formDetail($idPengajar)
     {

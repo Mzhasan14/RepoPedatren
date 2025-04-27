@@ -19,7 +19,7 @@ class ProvinsiFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_negara' => (new NegaraFactory())->create()->id,
+            'negara_id' => (new NegaraFactory())->create()->id,
             'nama_provinsi' => $this->faker->state,
             'created_by' => 1,
             'updated_by' => null,

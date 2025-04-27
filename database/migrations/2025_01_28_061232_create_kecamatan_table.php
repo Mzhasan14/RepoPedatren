@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('kecamatan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_kecamatan');
-            $table->unsignedBigInteger('id_kabupaten');
+            $table->unsignedBigInteger('kabupaten_id');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->softDeletes();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_kabupaten')->references('id')->on('kabupaten')->onDelete('cascade');
-        });
+            $table->foreign('kabupaten_id')->references('id')->on('kabupaten')->onDelete('cascade');
+});
     }
 
     /**

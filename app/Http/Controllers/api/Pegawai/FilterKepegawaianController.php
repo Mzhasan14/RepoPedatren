@@ -37,21 +37,31 @@ class FilterKepegawaianController extends Controller
         return $query;
     }
     
-    public function applyLembagaFilter($query, Request $request) {
+    public function applyLembagaFilter($query, Request $request)
+    {
         if ($request->filled('lembaga')) {
-            $query->where('l.nama_lembaga', strtolower($request->lembaga));
+            $query->leftJoin('lembaga as l', 'l.id', '=', 'pegawai.lembaga_id')
+                  ->whereRaw('LOWER(l.nama_lembaga) = ?', [strtolower($request->lembaga)]);
+    
             if ($request->filled('jurusan')) {
-                $query->where('j.nama_jurusan', strtolower($request->jurusan));
+                $query->leftJoin('jurusan as j', 'j.id', '=', 'pegawai.jurusan_id')
+                      ->whereRaw('LOWER(j.nama_jurusan) = ?', [strtolower($request->jurusan)]);
+    
                 if ($request->filled('kelas')) {
-                    $query->where('k.nama_kelas', strtolower($request->kelas));
+                    $query->leftJoin('kelas as k', 'k.id', '=', 'pegawai.kelas_id')
+                          ->whereRaw('LOWER(k.nama_kelas) = ?', [strtolower($request->kelas)]);
+    
                     if ($request->filled('rombel')) {
-                        $query->where('r.nama_rombel', strtolower($request->rombel));
+                        $query->leftJoin('rombel as r', 'r.id', '=', 'pegawai.rombel_id')
+                              ->whereRaw('LOWER(r.nama_rombel) = ?', [strtolower($request->rombel)]);
                     }
                 }
             }
         }
+    
         return $query;
     }
+    
     
     public function applyWargaPesantrenFilter($query, Request $request) {
         if ($request->filled('warga_pesantren')) {
@@ -91,21 +101,36 @@ class FilterKepegawaianController extends Controller
         return $query;
     }
     
-    public function applyPhoneFilter($query, Request $request) {
+    public function applyPhoneFilter($query, Request $request)
+    {
         if ($request->filled('phone_number')) {
             $phone = strtolower($request->phone_number);
+    
             if ($phone === 'memiliki phone number') {
-                $query->whereNotNull('b.no_telepon')->where('b.no_telepon', '!=', '');
-            } elseif ($phone === 'tidak ada phone number') {
+                // Salah satu dari no_telepon atau no_telepon_2 harus terisi
                 $query->where(function ($q) {
-                    $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', '');
+                    $q->whereNotNull('b.no_telepon')->where('b.no_telepon', '!=', '')
+                      ->orWhere(function ($q2) {
+                          $q2->whereNotNull('b.no_telepon_2')->where('b.no_telepon_2', '!=', '');
+                      });
+                });
+            } elseif ($phone === 'tidak ada phone number') {
+                // Keduanya harus kosong atau null
+                $query->where(function ($q) {
+                    $q->where(function ($q1) {
+                        $q1->whereNull('b.no_telepon')->orWhere('b.no_telepon', '');
+                    })->where(function ($q2) {
+                        $q2->whereNull('b.no_telepon_2')->orWhere('b.no_telepon_2', '');
+                    });
                 });
             } else {
-                $query->whereRaw('0 = 1');
+                $query->whereRaw('0 = 1'); // default error fallback
             }
         }
+    
         return $query;
     }
+    
     
     public function applySortFilter($query, Request $request) {
         if ($request->filled('sort_by')) {
@@ -158,31 +183,31 @@ class FilterKepegawaianController extends Controller
     return $query;
 }
     public function applyPemberkasanFilter($query, Request $request) {
-        if ($request->filled('pemberkasan')) {
-            $filter = strtolower($request->pemberkasan);
-            switch ($filter) {
-                case 'tidak ada berkas':
-                    $query->whereNull('br.id_biodata');
-                    break;
-                case 'tidak ada foto diri':
-                    $query->where('br.id_jenis_berkas', 4)->whereNull('br.file_path');
-                    break;
-                case 'memiliki foto diri':
-                    $query->where('br.id_jenis_berkas', 4)->whereNotNull('br.file_path');
-                    break;
-                case 'tidak ada kk':
-                    $query->where('br.id_jenis_berkas', 1)->whereNull('br.file_path');
-                    break;
-                case 'tidak ada akta kelahiran':
-                    $query->where('br.id_jenis_berkas', 3)->whereNull('br.file_path');
-                    break;
-                case 'tidak ada ijazah':
-                    $query->where('br.id_jenis_berkas', 5)->whereNull('br.file_path');
-                    break;
-                default:
-                    $query->whereRaw('0 = 1');
-                    break;
-            }
+        if (! $request->filled('pemberkasan')) {
+            return $query;
+        }
+
+        switch (strtolower($request->pemberkasan)) {
+            case 'tidak ada berkas':
+                $query->whereNull('br.biodata_id');
+                break;
+            case 'tidak ada foto diri':
+                $query->where('br.jenis_berkas_id', 4)->whereNull('br.file_path');
+                break;
+            case 'memiliki foto diri':
+                $query->where('br.jenis_berkas_id', 4)->whereNotNull('br.file_path');
+                break;
+            case 'tidak ada kk':
+                $query->where('br.jenis_berkas_id', 1)->whereNull('br.file_path');
+                break;
+            case 'tidak ada akta kelahiran':
+                $query->where('br.jenis_berkas_id', 3)->whereNull('br.file_path');
+                break;
+            case 'tidak ada ijazah':
+                $query->where('br.jenis_berkas_id', 5)->whereNull('br.file_path');
+                break;
+            default:
+                $query->whereRaw('0 = 1');
         }
         return $query;
     }
@@ -218,17 +243,17 @@ class FilterKepegawaianController extends Controller
                 $query->whereNotNull('karyawan.id');
             } elseif ($entitas == 'pengajar pengurus') {
                 $query->whereNotNull('pengajar.id')
-                      ->orWhereNotNull('pengurus.id');
+                      ->WhereNotNull('pengurus.id');
             } elseif ($entitas == 'pengajar karyawan') {
                 $query->whereNotNull('pengajar.id')
-                      ->orWhereNotNull('karyawan.id');
+                      ->WhereNotNull('karyawan.id');
             } elseif ($entitas == 'pengurus karyawan') {
                 $query->whereNotNull('pengurus.id')
-                      ->orWhereNotNull('karyawan.id');
+                      ->WhereNotNull('karyawan.id');
             } elseif ($entitas == 'pengajar pengurus karyawan') {
                 $query->whereNotNull('pengajar.id')
-                      ->orWhereNotNull('pengurus.id')
-                      ->orWhereNotNull('karyawan.id');
+                      ->WhereNotNull('pengurus.id')
+                      ->WhereNotNull('karyawan.id');
             }
         }
         return $query;

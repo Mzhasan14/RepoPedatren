@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
             KategoriGolonganSeeder::class,
             GolonganSeeder::class,
             PegawaiSeeder::class,
-            EntitasPegawai::class,
+            // EntitasPegawai::class,
             PengajarSeeder::class,
             KaryawanSeeder::class,
             WaliKelasSeeder::class,

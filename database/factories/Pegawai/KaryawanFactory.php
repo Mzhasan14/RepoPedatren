@@ -4,6 +4,7 @@ namespace Database\Factories\Pegawai;
 
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Karyawan;
+use Database\Factories\Pendidikan\LembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,9 +22,11 @@ class KaryawanFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'id_pegawai' => (new PegawaiFactory())->create()->id,
-            'id_golongan' => (new GolonganFactory())->create()->id,
+            'pegawai_id' => (new PegawaiFactory())->create()->id,
+            'golongan_id' => (new GolonganFactory())->create()->id,
+            'lembaga_id' => (new LembagaFactory())->create()->id,
             'jabatan' => $this->faker->jobTitle,
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
             'status' => $this->faker->boolean,
         ];

@@ -18,12 +18,16 @@ class PengurusFactory extends Factory
      */
     public function definition(): array
     {
+        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
+            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
+            : null; // NULL jika masih menjabat
         return [
             'id' => (string) Str::uuid(),
-            'id_pegawai' =>(new PegawaiFactory())->create()->id,
-            'id_golongan' => (new GolonganFactory())->create()->id,
-            'satuan_kerja' => $this->faker->company,
+            'pegawai_id' =>(new PegawaiFactory())->create()->id,
+            'golongan_id' => (new GolonganFactory())->create()->id,
             'jabatan' => $this->faker->jobTitle,
+            'satuan_kerja' => $this->faker->company,
             'keterangan_jabatan' => $this->faker->randomElement([
                 'Pengasuh',
                 'Ketua Dewan Pengasuh',
@@ -33,12 +37,13 @@ class PengurusFactory extends Factory
                 'Guru Pembimbing',
                 'Dosen Tamu'
             ]),
-            'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
-            'tahun_keluar' => $this->faker->boolean(70) 
-    ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d') 
-    : null,
-            'created_by' => 1,
+            'tanggal_mulai' => $tanggalMulai,
+            'tanggal_akhir' => $tanggalSelesai,
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'status' => $this->faker->boolean,
+            'created_by' => 1, // ID pengguna yang membuat data
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

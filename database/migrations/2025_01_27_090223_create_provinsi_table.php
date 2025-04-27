@@ -14,14 +14,15 @@ return new class extends Migration
         Schema::create('provinsi', function (Blueprint $table) {
             $table->id();
             $table->string('nama_provinsi');
-            $table->unsignedBigInteger('id_negara');
+            $table->unsignedBigInteger('negara_id');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_negara')->references('id')->on('negara')->onDelete('cascade');
+
+            $table->foreign('negara_id')->references('id')->on('negara')->onDelete('cascade');
             
         });
     }

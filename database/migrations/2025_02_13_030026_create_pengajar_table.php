@@ -14,22 +14,31 @@ return new class extends Migration
     {
         Schema::create('pengajar', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('id_pegawai');
-            $table->unsignedBigInteger('id_golongan');
+            $table->uuid('pegawai_id');
+            $table->unsignedBigInteger('lembaga_id')->nullable();
+            $table->unsignedBigInteger('jurusan_id')->nullable();
+            $table->unsignedBigInteger('kelas_id')->nullable();
+            $table->unsignedBigInteger('rombel_id')->nullable();
+            $table->unsignedBigInteger('golongan_id')->nullable();  
             $table->string('jabatan');
-            $table->date('tahun_masuk');
-            $table->date('tahun_keluar')->nullable();
+            $table->date('tahun_masuk')->nullable();
+            $table->date('tahun_akhir')->nullable();
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
 
-            $table->foreign('id_pegawai')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('id_golongan')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
+            $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
+            $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
+            $table->foreign('rombel_id')->references('id')->on('rombel')->onDelete('cascade');
+            $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
+            $table->foreign('golongan_id')->references('id')->on('golongan')->onDelete('cascade');
         });
         Schema::create('materi_ajar', function (Blueprint $table) {
             $table->id();
-            $table->uuid('id_pengajar');
+            $table->uuid('pengajar_id');
             $table->string('nama_materi');
             $table->integer('jumlah_menit')->nullable()->default(0); // Simpan dalam satuan menit
             $table->unsignedBigInteger('created_by');
@@ -37,8 +46,9 @@ return new class extends Migration
             $table->boolean('status')->default(1);
             $table->timestamps();
 
-            $table->foreign('id_pengajar')->references('id')->on('pengajar')->onDelete('cascade');
+            $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');
         });
+
     }
 
     /**

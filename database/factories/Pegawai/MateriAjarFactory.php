@@ -17,11 +17,11 @@ class MateriAjarFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_pengajar' => (new PengajarFactory())->create()->id,
+            'pengajar_id' => (new PengajarFactory())->create()->id,
             'nama_materi' => $this->faker->sentence(3),
             'jumlah_menit' => $this->faker->numberBetween(30, 180), // Antara 30 - 180 menit
             'created_by' => 1,
-            'status' => $this->faker->boolean(80) 
+            'status' => $this->faker->boolean(80)
         ];
     }
 }
