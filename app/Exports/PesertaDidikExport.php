@@ -6,8 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use App\Services\FilterPesertaDidikService;
@@ -15,59 +14,54 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Contracts\Support\Responsable;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 
-class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, ShouldAutoSize, WithEvents, WithStyles, Responsable, WithCustomValueBinder
+class PesertaDidikExport implements
+    FromCollection,
+    WithMapping,
+    WithHeadings,
+    ShouldAutoSize,
+    WithEvents,
+    WithStyles,
+    Responsable,
+    WithCustomValueBinder
 {
-    use \Maatwebsite\Excel\Concerns\Exportable;
+    use Exportable;
 
     private string $fileName = 'peserta_didik.xlsx';
+    private Request $request;
+    private FilterPesertaDidikService $filterService;
+
+    private int $page;
+    private int $perPage;
+    private bool $exportAll;
+
     private array $availableColumns;
     private array $selected;
-
-    protected Request $request;
-    protected FilterPesertaDidikService $filterService;
     private int $counter = 0;
 
-
+    //?columns[]=all 
     public function __construct(Request $request, FilterPesertaDidikService $filterService)
     {
         $this->request       = $request;
         $this->filterService = $filterService;
 
-        $this->availableColumns = [
-            'no_kk'   => [
-                'label' => 'No KK',
-                'expr'  => DB::raw("k.no_kk as no_kk")
-            ],
-            'identitas'   => [
-                'label' => 'Identitas',
-                'expr'  => DB::raw("COALESCE(b.nik,b.no_passport) as identitas")
-            ],
-            'nama'        => [
-                'label' => 'Nama',
-                'expr'  => DB::raw("b.nama as nama")
-            ],
-            'niup'        => [
-                'label' => 'NIUP',
-                'expr'  => DB::raw("wp.niup as niup")
-            ],
-            'lembaga'     => [
-                'label' => 'Lembaga',
-                'expr'  => DB::raw("l.nama_lembaga as lembaga")
-            ],
-            'wilayah'     => [
-                'label' => 'Wilayah',
-                'expr'  => DB::raw("w.nama_wilayah as wilayah")
-            ],
-            'kota_asal'   => [
-                'label' => 'Kota Asal',
-                'expr'  => DB::raw("kb.nama_kabupaten as kota_asal")
-            ],
-        ];
+        $this->exportAll = $request->boolean('all_data', false);
+        $this->page      = (int) $request->input('page', 1);
+        $this->perPage   = (int) $request->input('per_page', 100);
 
+        $this->availableColumns = [
+            'no_kk'     => ['label' => 'No KK',     'expr' => DB::raw("k.no_kk as no_kk")],
+            'identitas' => ['label' => 'Identitas', 'expr' => DB::raw("COALESCE(b.nik,b.no_passport) as identitas")],
+            'nama'      => ['label' => 'Nama',      'expr' => DB::raw("b.nama as nama")],
+            'niup'      => ['label' => 'NIUP',      'expr' => DB::raw("wp.niup as niup")],
+            'lembaga'   => ['label' => 'Lembaga',   'expr' => DB::raw("l.nama_lembaga as lembaga")],
+            'wilayah'   => ['label' => 'Wilayah',   'expr' => DB::raw("w.nama_wilayah as wilayah")],
+            'kota_asal' => ['label' => 'Kota Asal', 'expr' => DB::raw("kb.nama_kabupaten as kota_asal")],
+        ];
 
         $cols = $request->input('columns', []);
         $this->selected = in_array('all', $cols)
@@ -76,11 +70,12 @@ class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, Should
     }
 
     /**
-     * Bangun query peserta didik dengan filter
+     * Ambil koleksi data yang dipakai untuk export.
+     * Karena kita pakai FromCollection, skip/take kita tidak di-*override* paket Excel.
      */
-    public function query()
+    public function collection()
     {
-        // join dan subquery sama seperti semula
+        // --- Bangun query dasar + join/subquery ---
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
@@ -95,18 +90,16 @@ class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, Should
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // bangun select dinamis
         $selects = [];
         foreach ($this->selected as $key) {
             $selects[] = $this->availableColumns[$key]['expr'];
         }
-
-        // selalu tambahkan primary key untuk ordering / mapping
+        // tambahkan primary key untuk ordering dan mapping internal
         $selects[] = 's.id as __order';
 
         $query = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', 'b.id')
-            ->leftjoin('keluarga as k', 'k.id_biodata', 'b.id')
+            ->leftJoin('keluarga as k', 'k.id_biodata', 'b.id')
             ->leftJoin('riwayat_pendidikan as rp', fn($j) => $j->on('s.id', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', 'l.id')
             ->leftJoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', 'rd.santri_id')->where('rd.status', 'aktif'))
@@ -116,31 +109,35 @@ class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, Should
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren as wp', 'wp.id', 'wl.last_id')
             ->leftJoin('kabupaten as kb', 'kb.id', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('s.status','aktif')->orWhere('rp.status','aktif'))
+            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', 'aktif'))
             ->select($selects)
             ->orderBy('s.id');
 
-        return $this->filterService->pesertaDidikFilters($query, $this->request);
+        // --- Terapkan filter bisnis Anda ---
+        $filtered = $this->filterService->pesertaDidikFilters($query, $this->request);
+
+        // --- Terapkan pagination manual jika tidak exportAll ---
+        if (! $this->exportAll) {
+            $offset = ($this->page - 1) * $this->perPage;
+            $filtered = $filtered
+                ->skip($offset)
+                ->take($this->perPage);
+        }
+
+        // Kembalikan koleksi
+        return $filtered->get();
     }
 
-    /**
-     * Mapping setiap baris ke format Excel
-     */
     public function map($row): array
     {
         $this->counter++;
         $out = [$this->counter];
-
         foreach ($this->selected as $key) {
             $out[] = $row->{$key} ?? '';
         }
-
         return $out;
     }
 
-    /**
-     * Heading kolom di Excel
-     */
     public function headings(): array
     {
         $heads = ['No'];
@@ -150,9 +147,6 @@ class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, Should
         return $heads;
     }
 
-    /**
-     * Override DefaultValueBinder supaya semua nilai di-set explicit sebagai STRING
-     */
     public function bindValue(Cell $cell, $value)
     {
         $value = $value === null ? '' : $value;
@@ -160,44 +154,228 @@ class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, Should
         return true;
     }
 
-    /**
-     * Override default value binder supaya semua nilai di-set explicit sebagai STRING
-     */
-    public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+    public function styles(Worksheet $sheet)
     {
-        // styling header
-        $lastCol = chr( ord('A') + count($this->selected) );
+        $lastCol = chr(ord('A') + count($this->selected));
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font'      => ['bold' => true],
-            'fill'      => ['fillType'=>Fill::FILL_SOLID,'startColor'=>['rgb'=>'F2F2F2']],
-            'alignment' => ['horizontal'=>Alignment::HORIZONTAL_CENTER]
+            'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ]);
     }
 
-    /**
-     * Event AfterSheet untuk freeze header dan vertical align
-     */
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function($e) {
+            AfterSheet::class => function ($e) {
                 $e->sheet->freezePane('A2');
                 $lastRow = $this->counter + 1;
-                $lastCol = chr( ord('A') + count($this->selected) );
+                $lastCol = chr(ord('A') + count($this->selected));
                 $e->sheet->getDelegate()
                     ->getStyle("A1:{$lastCol}{$lastRow}")
-                    ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                    ->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
             },
         ];
     }
 
-    // untuk Responsable: method toResponse
-    // public function toResponse($request)
-    // {
-    //     return $this->download($this->fileName, Excel::XLSX);
-    // }
+    public function toResponse($request)
+    {
+        return $this->download($this->fileName, \Maatwebsite\Excel\Excel::XLSX);
+    }
 }
 
 
+// namespace App\Exports;
 
+// use Illuminate\Http\Request;
+// use Maatwebsite\Excel\Excel;
+// use Illuminate\Support\Facades\DB;
+// use PhpOffice\PhpSpreadsheet\Cell\Cell;
+// use Maatwebsite\Excel\Events\AfterSheet;
+// use PhpOffice\PhpSpreadsheet\Style\Fill;
+// use Maatwebsite\Excel\Concerns\FromQuery;
+// use Maatwebsite\Excel\Concerns\WithEvents;
+// use Maatwebsite\Excel\Concerns\WithStyles;
+// use App\Services\FilterPesertaDidikService;
+// use Maatwebsite\Excel\Concerns\WithMapping;
+// use PhpOffice\PhpSpreadsheet\Cell\DataType;
+// use Maatwebsite\Excel\Concerns\WithHeadings;
+// use Illuminate\Contracts\Support\Responsable;
+// use PhpOffice\PhpSpreadsheet\Style\Alignment;
+// use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+// use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 
+// class PesertaDidikExport implements FromQuery, WithMapping, WithHeadings, ShouldAutoSize, WithEvents, WithStyles, Responsable, WithCustomValueBinder
+// {
+//     use \Maatwebsite\Excel\Concerns\Exportable;
+//     private string $fileName = 'peserta_didik.xlsx';
+//     private array $availableColumns;
+//     private array $selected;
+
+//     protected Request $request;
+//     protected FilterPesertaDidikService $filterService;
+
+//     // Pagination properties
+//     private int $page;
+//     private int $perPage;
+//     private bool $exportAll;
+
+//     private int $counter = 0;
+
+//     public function __construct(Request $request, FilterPesertaDidikService $filterService)
+//     {
+//         $this->request       = $request;
+//         $this->filterService = $filterService;
+
+//         // Determine pagination or export all
+//         $this->exportAll = $request->boolean('all_data', false);
+//         $this->page      = (int) $request->input('page', 1);
+//         $this->perPage   = (int) $request->input('per_page', 100);
+
+//         $this->availableColumns = [
+//             'no_kk'     => ['label' => 'No KK',      'expr' => DB::raw("k.no_kk as no_kk")],
+//             'identitas' => ['label' => 'Identitas',  'expr' => DB::raw("COALESCE(b.nik,b.no_passport) as identitas")],
+//             'nama'      => ['label' => 'Nama',       'expr' => DB::raw("b.nama as nama")],
+//             'niup'      => ['label' => 'NIUP',       'expr' => DB::raw("wp.niup as niup")],
+//             'lembaga'   => ['label' => 'Lembaga',    'expr' => DB::raw("l.nama_lembaga as lembaga")],
+//             'wilayah'   => ['label' => 'Wilayah',    'expr' => DB::raw("w.nama_wilayah as wilayah")],
+//             'kota_asal' => ['label' => 'Kota Asal',  'expr' => DB::raw("kb.nama_kabupaten as kota_asal")],
+//         ];
+
+//         // Columns selection: allow 'all' or specific
+//         $cols = $request->input('columns', []);
+//         $this->selected = in_array('all', $cols)
+//             ? array_keys($this->availableColumns)
+//             : array_intersect(array_keys($this->availableColumns), $cols);
+//     }
+
+//     /**
+//      * Bangun query peserta didik dengan filter
+//      */
+//     public function query()
+//     {
+//         // join dan subquery sama seperti semula
+//         $pasFotoId = DB::table('jenis_berkas')
+//             ->where('nama_jenis_berkas', 'Pas foto')
+//             ->value('id');
+
+//         $fotoLast = DB::table('berkas')
+//             ->select('biodata_id', DB::raw('MAX(id) as last_id'))
+//             ->where('jenis_berkas_id', $pasFotoId)
+//             ->groupBy('biodata_id');
+
+//         $wpLast = DB::table('warga_pesantren')
+//             ->select('biodata_id', DB::raw('MAX(id) as last_id'))
+//             ->where('status', true)
+//             ->groupBy('biodata_id');
+
+//         // bangun select dinamis
+//         $selects = [];
+//         foreach ($this->selected as $key) {
+//             $selects[] = $this->availableColumns[$key]['expr'];
+//         }
+
+//         // selalu tambahkan primary key untuk ordering / mapping
+//         $selects[] = 's.id as __order';
+
+//         $query = DB::table('santri as s')
+//             ->join('biodata as b', 's.biodata_id', 'b.id')
+//             ->leftjoin('keluarga as k', 'k.id_biodata', 'b.id')
+//             ->leftJoin('riwayat_pendidikan as rp', fn($j) => $j->on('s.id', 'rp.santri_id')->where('rp.status', 'aktif'))
+//             ->leftJoin('lembaga as l', 'rp.lembaga_id', 'l.id')
+//             ->leftJoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', 'rd.santri_id')->where('rd.status', 'aktif'))
+//             ->leftJoin('wilayah as w', 'rd.wilayah_id', 'w.id')
+//             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', 'fl.biodata_id'))
+//             ->leftJoin('berkas as br', 'br.id', 'fl.last_id')
+//             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', 'wl.biodata_id'))
+//             ->leftJoin('warga_pesantren as wp', 'wp.id', 'wl.last_id')
+//             ->leftJoin('kabupaten as kb', 'kb.id', 'b.kabupaten_id')
+//             ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', 'aktif'))
+//             ->select($selects)
+//             ->orderBy('s.id');
+
+//          // apply filters
+//          $filtered = $this->filterService->pesertaDidikFilters($query, $this->request);
+
+//          // apply pagination if not export all
+//          if (! $this->exportAll) {
+//              $filtered = $filtered->forPage($this->page, $this->perPage);
+//          }
+ 
+//          return $filtered;
+//     }
+
+//     /**
+//      * Mapping setiap baris ke format Excel
+//      */
+//     public function map($row): array
+//     {
+//         $this->counter++;
+//         $out = [$this->counter];
+
+//         foreach ($this->selected as $key) {
+//             $out[] = $row->{$key} ?? '';
+//         }
+
+//         return $out;
+//     }
+
+//     /**
+//      * Heading kolom di Excel
+//      */
+//     public function headings(): array
+//     {
+//         $heads = ['No'];
+//         foreach ($this->selected as $key) {
+//             $heads[] = $this->availableColumns[$key]['label'];
+//         }
+//         return $heads;
+//     }
+
+//     /**
+//      * Override DefaultValueBinder supaya semua nilai di-set explicit sebagai STRING
+//      */
+//     public function bindValue(Cell $cell, $value)
+//     {
+//         $value = $value === null ? '' : $value;
+//         $cell->setValueExplicit($value, DataType::TYPE_STRING);
+//         return true;
+//     }
+
+//     /**
+//      * Override default value binder supaya semua nilai di-set explicit sebagai STRING
+//      */
+//     public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+//     {
+//         // styling header
+//         $lastCol = chr(ord('A') + count($this->selected));
+//         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+//             'font'      => ['bold' => true],
+//             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
+//             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+//         ]);
+//     }
+
+//     /**
+//      * Event AfterSheet untuk freeze header dan vertical align
+//      */
+//     public function registerEvents(): array
+//     {
+//         return [
+//             AfterSheet::class => function ($e) {
+//                 $e->sheet->freezePane('A2');
+//                 $lastRow = $this->counter + 1;
+//                 $lastCol = chr(ord('A') + count($this->selected));
+//                 $e->sheet->getDelegate()
+//                     ->getStyle("A1:{$lastCol}{$lastRow}")
+//                     ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+//             },
+//         ];
+//     }
+
+//     // untuk Responsable: method toResponse
+//     public function toResponse($request)
+//     {
+//         return $this->download($this->fileName, Excel::XLSX);
+//     }
+// }

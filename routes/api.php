@@ -180,8 +180,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/anakpegawais', [AnakPegawaiController::class, 'getAllAnakpegawai']);
 
     // 🚨 Administrasi
-    Route::apiResource('/perizinan', PerizinanController::class);
-    Route::apiResource('/pelanggaran', PelanggaranController::class);
+    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
 
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
