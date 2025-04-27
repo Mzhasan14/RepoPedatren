@@ -121,6 +121,7 @@ class SantriController extends Controller
             "lembaga" => $item->nama_lembaga ?? '-',
             "wilayah" => $item->nama_wilayah ?? '-',
             "angkatan" =>$item->angkatan,
+            "kota_asal" =>$item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)
@@ -187,6 +188,7 @@ class SantriController extends Controller
                     'b.nama',
                     'wp.niup',
                     'l.nama_lembaga',
+                    DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                     'kb.nama_kabupaten AS kota_asal',
                     's.created_at',
                     // ambil updated_at terbaru antar s, rp, rd
@@ -230,6 +232,8 @@ class SantriController extends Controller
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
+            "angkatan" =>$item->angkatan,
+            "kota_asal" =>$item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)
