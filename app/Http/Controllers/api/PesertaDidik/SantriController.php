@@ -73,6 +73,7 @@ class SantriController extends Controller
                     'bl.nama_blok',
                     'l.nama_lembaga',
                     'w.nama_wilayah',
+                    DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                     'kb.nama_kabupaten AS kota_asal',
                     's.created_at',
                     // ambil updated_at terbaru antar s, rp, rd
@@ -119,6 +120,7 @@ class SantriController extends Controller
             "blok" => $item->nama_blok ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
             "wilayah" => $item->nama_wilayah ?? '-',
+            "angkatan" =>$item->angkatan,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)

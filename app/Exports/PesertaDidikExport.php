@@ -54,9 +54,17 @@ class PesertaDidikExport implements
         $this->perPage   = (int) $request->input('per_page', 100);
 
         $this->availableColumns = [
-            'no_kk'     => ['label' => 'No KK',     'expr' => DB::raw("k.no_kk as no_kk")],
-            'identitas' => ['label' => 'Identitas', 'expr' => DB::raw("COALESCE(b.nik,b.no_passport) as identitas")],
             'nama'      => ['label' => 'Nama',      'expr' => DB::raw("b.nama as nama")],
+            'no_kk'     => ['label' => 'No KK',     'expr' => DB::raw("k.no_kk as no_kk")],
+            'saudara'     => [
+                'label' => 'Jumlah Saudara',
+                'expr' => DB::raw("(SELECT COALESCE(COUNT(*) - 1, 0)
+            FROM keluarga
+            WHERE no_kk = k.no_kk
+              AND status = 1
+          ) AS jumlah_saudara")
+            ],
+            'identitas' => ['label' => 'Identitas', 'expr' => DB::raw("COALESCE(b.nik,b.no_passport) as identitas")],
             'niup'      => ['label' => 'NIUP',      'expr' => DB::raw("wp.niup as niup")],
             'lembaga'   => ['label' => 'Lembaga',   'expr' => DB::raw("l.nama_lembaga as lembaga")],
             'wilayah'   => ['label' => 'Wilayah',   'expr' => DB::raw("w.nama_wilayah as wilayah")],
@@ -90,6 +98,9 @@ class PesertaDidikExport implements
             ->where('status', true)
             ->groupBy('biodata_id');
 
+
+        $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+
         $selects = [];
         foreach ($this->selected as $key) {
             $selects[] = $this->availableColumns[$key]['expr'];
@@ -112,6 +123,7 @@ class PesertaDidikExport implements
             ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', 'aktif'))
             ->select($selects)
             ->orderBy('s.id');
+
 
         // --- Terapkan filter bisnis Anda ---
         $filtered = $this->filterService->pesertaDidikFilters($query, $this->request);
