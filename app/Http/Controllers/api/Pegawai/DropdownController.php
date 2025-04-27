@@ -48,7 +48,7 @@ class DropdownController extends Controller
             if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
                     'id' => $row->blok_id,
-                    'wilayah_id' => $row->id_wilayah,
+                    'wilayah_id' => $row->wilayah_id,
                     'nama_blok' => $row->nama_blok,
                     'kamar' => [],
                 ];
@@ -57,7 +57,7 @@ class DropdownController extends Controller
             if (!is_null($row->kamar_id)) {
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
                     'id' => $row->kamar_id,
-                    'id_blok' => $row->id_blok,
+                    'id_blok' => $row->blok_id,
                     'nama_kamar' => $row->nama_kamar,
                 ];
             }
