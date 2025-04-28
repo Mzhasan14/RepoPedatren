@@ -27,7 +27,8 @@ use App\Http\Controllers\Api\PesertaDidik\{
 use App\Http\Controllers\Api\keluarga\{
     KeluargaController,
     StatusKeluargaController,
-    OrangTuaWaliController
+    OrangTuaWaliController,
+    WaliController
 };
 
 use App\Http\Controllers\Api\Alamat\{
@@ -132,7 +133,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
-    Route::get('/wali', [OrangTuaWaliController::class, 'wali']);
+    Route::get('/wali', [WaliController::class, 'getAllWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);

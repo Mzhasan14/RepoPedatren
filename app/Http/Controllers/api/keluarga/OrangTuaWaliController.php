@@ -22,7 +22,7 @@ class OrangTuaWaliController extends Controller
     }
 
     /**
-     * Get all Peserta Didik with filters and pagination
+     * Get all Orang Tua with filters and pagination
      *
      * @param Request $request
      * @return JsonResponse
@@ -40,14 +40,16 @@ class OrangTuaWaliController extends Controller
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Query utama: data peserta_didik all
+        // 3) Query utama: data orang_tua all
         $query = DB::table('orang_tua_wali AS o')
             ->join('biodata AS b', 'o.id_biodata', '=', 'b.id')
             // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->join('hubungan_keluarga AS hk', 'hk.id', '=', 'o.id_hubungan_keluarga')
-            ->join('keluarga AS kel', 'b.id', '=', 'kel.id_biodata')
+            ->join('keluarga AS kel', 'b.id', '=', 'kel.id_biodata') //dari orangtua ke tabel keluarga
+            ->join('keluarga as ka', 'kel.no_kk', '=', 'ka.no_kk') //dari keluarga ke keluarga lainnya
+            ->join('biodata as ba', 'ka.id_biodata', '=', 'ba.id') //dari keluarga ke anak
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             // hanya yang berstatus aktif
             ->where(fn($q) => $q->where('o.status', true))
