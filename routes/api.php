@@ -61,7 +61,6 @@ use App\Http\Controllers\Api\Pegawai\{
     WalikelasController,
     KategoriGolonganController,
     GolonganController,
-    EntitasController,
     PengurusController,
     KaryawanController,
     MateriAjarController,
@@ -166,7 +165,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/walikelas', WalikelasController::class);
     Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
     Route::apiResource('/golongan', GolonganController::class);
-    Route::apiResource('/entitas', EntitasController::class);
     Route::apiResource('/pengurus', PengurusController::class);
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
