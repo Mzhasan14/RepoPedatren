@@ -4,10 +4,12 @@ namespace App\Http\Controllers\api\PesertaDidik;
 
 use Exception;
 use Illuminate\Http\Request;
+use App\Exports\PelajarExport;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\FilterPelajarService;
 
 class PelajarController extends Controller
@@ -134,6 +136,11 @@ class PelajarController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+
+    public function pelajarExport(Request $request, FilterPelajarService $filterService)
+    {
+        return Excel::download(new PelajarExport($request, $filterService), 'pelajar.xlsx');
     }
     
 }

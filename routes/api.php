@@ -1,5 +1,6 @@
         <?php
 
+use App\Exports\PelajarExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\Auth\AuthController;
@@ -80,15 +81,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Untuk Data Pokok Nanti
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
-   // Route CRUD
-   Route::middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
-    // CRUD Pelajar
-    Route::post('/pelajar', [PelajarController::class, 'store']);
-    Route::put('/pelajar/{id}', [PelajarController::class, 'update']);
-    Route::delete('/pelajar/{id}', [PelajarController::class, 'destroy']);
-   });
-});
+// Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
+//    // Route CRUD
+//    Route::middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
+//     // CRUD Pelajar
+//     Route::post('/pelajar', [PelajarController::class, 'store']);
+//     Route::put('/pelajar/{id}', [PelajarController::class, 'update']);
+//     Route::delete('/pelajar/{id}', [PelajarController::class, 'destroy']);
+//    });
+// });
 
 Route::prefix('formulir')->group(function () {
     Route::get('/{id}/biodata', [PesertaDidikFormulir::class, 'getBiodata']);
@@ -98,6 +99,13 @@ Route::prefix('formulir')->group(function () {
     Route::get('/{id}/pendidikan', [PesertaDidikFormulir::class, 'getPendidikan']);
     Route::get('/{id}/berkas', [PesertaDidikFormulir::class, 'getBerkas']);
     Route::get('/{id}/wargapesantren', [PesertaDidikFormulir::class, 'getWargaPesantren']);
+});
+
+Route::prefix('export')->group(function () {
+    Route::get('/pesertadidik' , [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
+    Route::get('/santri' , [SantriController::class, 'santriExport'])->name('santri.export');
+    Route::get('/pelajar' , [PelajarController::class, 'pelajarExport'])->name('pelajar.export');
+    Route::get('/pesertadidik-bersaudara' , [PelajarController::class, 'bersaudaraExport'])->name('bersaudara.export');
 });
 
 // Grouping API
@@ -112,7 +120,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
-    Route::get('/pesertadidik/export' , [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.exportExcel');
     Route::get('/pesertadidik-bersaudara/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/pesertadidik/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
@@ -165,7 +172,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/walikelas', WalikelasController::class);
     Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
     Route::apiResource('/golongan', GolonganController::class);
-    Route::apiResource('/entitas', EntitasController::class);
     Route::apiResource('/pengurus', PengurusController::class);
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);

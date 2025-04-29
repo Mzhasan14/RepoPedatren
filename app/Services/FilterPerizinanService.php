@@ -21,7 +21,7 @@ class FilterPerizinanService
         $query = $this->applyJenisIzinFilter($query, $request);
         $query = $this->applyBermalamFilter($query, $request);
         $query = $this->applyMasaTelatFilter($query, $request);
-        
+
         return $query;
     }
 
@@ -37,17 +37,17 @@ class FilterPerizinanService
                 ->where('negara.nama_negara', $request->negara);
 
             if ($request->filled('provinsi')) {
-                $query->leftJoin('provinsi', 'b.provinsi_id', '=', 'provinsi.id')
-                    ->where('provinsi.nama_provinsi', $request->provinsi);
+                $query
+                    ->where('pv.nama_provinsi', $request->provinsi);
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->join('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
+                    $query
                         ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
-                        $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
-                            ->where('kecamatan.nama_kecamatan', $request->kecamatan);
+                        $query
+                            ->where('kc.nama_kecamatan', $request->kecamatan);
                     }
                 } else {
                     // Jika nilai kabupaten tidak valid, hasilkan query kosong
@@ -167,7 +167,7 @@ class FilterPerizinanService
         return $query;
     }
 
-   public function applyBermalamFilter(Builder $query, Request $request): Builder
+    public function applyBermalamFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('bermalam')) {
             return $query;
@@ -198,6 +198,4 @@ class FilterPerizinanService
 
         return $query;
     }
-
-   
 }

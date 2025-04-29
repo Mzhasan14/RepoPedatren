@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
+use App\Exports\SantriExport;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\FilterSantriService;
 
 class SantriController extends Controller
@@ -137,7 +139,6 @@ class SantriController extends Controller
         ]);
     }
 
-    
     /**
      * Get Santri Non Domisili with filters and pagination
      *
@@ -248,4 +249,14 @@ class SantriController extends Controller
             "data"         => $formatted
         ]);
     }
+
+    public function santriExport(Request $request, FilterSantriService $filterService)
+    {
+        return Excel::download(new SantriExport($request, $filterService), 'santri.xlsx');
+    }
+
+    // public function nonDomisiliExport(Request $request, FilterSantriService $filterService)
+    // {
+    //     return Excel::download(new Export($request, $filterService), 'santri_non_domisili.xlsx');
+    // }
 }

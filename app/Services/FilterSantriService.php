@@ -46,7 +46,7 @@ class FilterSantriService
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->join('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
+                    $query
                         ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {

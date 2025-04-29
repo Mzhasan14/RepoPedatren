@@ -137,17 +137,20 @@ class DetailPesertaDidikController extends Controller
             }
     
             // --- 4. Informasi Santri ---
-            $santriInfo = DB::table('santri')
-                ->where('id', $santriId)
+            $santriInfo = DB::table('santri as s')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->where('s.biodata_id', $bioId)
                 ->select('nis', 'tanggal_masuk', 'tanggal_keluar')
-                ->first();
+                ->get();
     
             if ($santriInfo) {
-                $data['Status_Santri']['Santri'] = [[
-                    'NIS'           => $santriInfo->nis,
-                    'Tanggal_Mulai' => $santriInfo->tanggal_masuk,
-                    'Tanggal_Akhir' => $santriInfo->tanggal_keluar ?? '-',
-                ]];
+                if ($keluarga->isNotEmpty()) {
+                    $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
+                        'NIS'           => $s->nis,
+                        'Tanggal_Mulai' => $s->tanggal_masuk,
+                        'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
+                    ]);
+                }
             }
     
             // --- 5. Kewaliasuhan ---

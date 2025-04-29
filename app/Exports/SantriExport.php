@@ -18,9 +18,9 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Contracts\Support\Responsable;
-use App\Services\FilterPelajarService;
+use App\Services\FilterSantriService;
 
-class PelajarExport implements
+class SantriExport implements
     FromQuery,
     WithMapping,
     WithHeadings,
@@ -33,30 +33,30 @@ class PelajarExport implements
 {
     use Exportable;
 
-    private string $fileName = 'pelajar.xlsx';
+    private string $fileName = 'peserta_didik.xlsx';
     private Request $request;
-    private FilterPelajarService $filterService;
+    private FilterSantriService $filterService;
     private array $availableColumns;
     private array $selected;
     private int $counter = 0;
 
-    public function __construct(Request $request, FilterPelajarService $filterService)
+    public function __construct(Request $request, FilterSantriService $filterService)
     {
         $this->request       = $request;
         $this->filterService = $filterService;
 
         // Definisikan kolom dan ekspresi SQL-nya sebagai string
         $this->availableColumns = [
-            'id'               => ['label' => 'Id',               'expr' => 's.id'],
+            // 'id'               => ['label' => 'Id',               'expr' => 's.id'],
             // 'nama'             => ['label' => 'Nama',             'expr' => 'b.nama'],
             'no_kk'            => ['label' => 'No KK',            'expr' => 'k.no_kk'],
             'identitas'        => ['label' => 'Identitas',        'expr' => 'COALESCE(b.nik, b.no_passport)'],
+            'ttl'              => ['label' => 'Tempat Tanggal Lahir',              'expr' => "CONCAT(kb.nama_kabupaten, ', ', DATE_FORMAT(b.tanggal_lahir, '%d %M %Y'))"],
             'niup'             => ['label' => 'NIUP',             'expr' => 'wp.niup'],
             'anak_ke'          => ['label' => 'Anak Ke',          'expr' => 'b.anak_keberapa'],
             'jumlah_saudara'   => ['label' => 'Jumlah Saudara',   'expr' => 'COALESCE(siblings.jumlah_saudara, 0)'],
-            'pendidikan'   => ['label' => 'Pendidikan Terakhir',   'expr' => 'l.nama_lembaga'],
             'alamat'           => ['label' => 'Alamat',           'expr' => "CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi)"],
-            'domisili'         => ['label' => 'Domisili',         'expr' => "CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah)"],
+            'domisili'         => ['label' => 'Domisili Santri',         'expr' => "CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah)"],
             'status'           => ['label' => 'Status',           'expr' => "
                 CASE
                     WHEN s.status = 'aktif' AND rp.status = 'aktif' THEN 'Santri Sekaligus Pelajar'
@@ -67,6 +67,7 @@ class PelajarExport implements
             "],
             'ibu'              => ['label' => 'Ibu Kandung',      'expr' => 'parents.nama_ibu'],
             'ayah'              => ['label' => 'Ayah Kandung',      'expr' => 'parents.nama_ayah'],
+
         ];
 
         // Pilih kolom sesuai permintaan
@@ -130,7 +131,7 @@ class PelajarExport implements
             ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpSub,     'wl',       fn($join) => $join->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
-            ->join('riwayat_pendidikan as rp', fn($join) =>
+            ->leftjoin('riwayat_pendidikan as rp', fn($join) =>
                 $join->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif')
             )
             ->leftjoin('lembaga as l', 'l.id', 'rp.lembaga_id')
@@ -140,10 +141,7 @@ class PelajarExport implements
             ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok as bl',     'rd.blok_id',     '=', 'bl.id')
             ->leftJoin('kamar as km',    'rd.kamar_id',    '=', 'km.id')
-            ->where(function ($q) {
-                $q->where('s.status', 'aktif')
-                  ->orWhere('rp.status', 'aktif');
-            })
+            ->where('s.status', 'aktif')
             ->orderBy('s.id');
 
         // Tambahkan SELECT sesuai kolom terpilih
@@ -153,7 +151,7 @@ class PelajarExport implements
         }
 
         // Terapkan filter bisnis dan kembalikan query
-        return $this->filterService->pelajarFilters($query, $this->request);
+        return $this->filterService->santriFilters($query, $this->request);
     }
 
     public function chunkSize(): int

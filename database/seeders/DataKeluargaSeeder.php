@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Faker\Factory as Faker;
+use Faker\Factory;
 use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -10,202 +10,228 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DataKeluargaSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
+        $faker        = Factory::create('id_ID');
 
+        // === 1. Pluck untuk biodata & lokasi orang tua/anak ===
         $negaraIds    = DB::table('negara')->pluck('id')->toArray();
         $provinsiIds  = DB::table('provinsi')->pluck('id')->toArray();
         $kabupatenIds = DB::table('kabupaten')->pluck('id')->toArray();
         $kecamatanIds = DB::table('kecamatan')->pluck('id')->toArray();
-        
-        $hubunganKeluarga = DB::table('hubungan_keluarga')->get();
-        $ayahStatus = $hubunganKeluarga->where('nama_status', 'ayah')->first()->id;
-        $ibuStatus  = $hubunganKeluarga->where('nama_status', 'ibu')->first()->id;
-        $waliStatus = $hubunganKeluarga->where('nama_status', 'wali')->first()->id;
-        
-        // Variabel untuk sibling group
-        $siblingGroup    = false;
-        $currentNoKK     = null;
-        $currentAyahId   = null;
-        $currentIbuId    = null;
-        
+
+        // Ambil status hubungan keluarga
+        $hk           = DB::table('hubungan_keluarga')->get();
+        $ayahStatus   = $hk->firstWhere('nama_status', 'ayah')->id;
+        $ibuStatus    = $hk->firstWhere('nama_status', 'ibu')->id;
+
+        // === 2. Pluck untuk skenario santri/pelajar ===
+        $lembagaIds  = DB::table('lembaga')->pluck('id')->toArray();
+        $jurusanIds  = DB::table('jurusan')->pluck('id')->toArray();
+        $kelasIds    = DB::table('kelas')->pluck('id')->toArray();
+        $rombelIds   = DB::table('rombel')->pluck('id')->toArray();
+        $wilayahIds  = DB::table('wilayah')->pluck('id')->toArray();
+        $blokIds     = DB::table('blok')->pluck('id')->toArray();
+        $kamarIds    = DB::table('kamar')->pluck('id')->toArray();
+
+        // === 3. Definisikan skenario & bobot ===
+        $scenarios = [
+            'active_both'                     => [true,  'aktif',  true,  'aktif', 40],
+            'santri_only_active'              => [true,  'aktif',  false, null,   10],
+            'santri_only_alumni'              => [true,  'alumni', false, null,    5],
+            'pelajar_only_active'             => [false, null,     true,  'aktif', 10],
+            'pelajar_only_alumni'             => [false, null,     true,  'alumni', 5],
+            'santri_active_pendidikan_alumni' => [true,  'aktif',  true,  'alumni',10],
+            'santri_alumni_pendidikan_active' => [true,  'alumni', true,  'aktif', 10],
+            'alumni_both'                     => [true,  'alumni', true,  'alumni',10],
+        ];
+        // bangun array weighted untuk pemilihan
+        $weighted = [];
+        foreach ($scenarios as $key => $cfg) {
+            $weight = $cfg[4];
+            for ($i = 0; $i < $weight; $i++) {
+                $weighted[] = $key;
+            }
+        }
+
+        // === 4. Seeder loop: buat 200 keluarga + anak + skenario santri/pelajar ===
+        $siblingGroup  = false;
+        $currentNoKK   = null;
+        $currentAyahId = null;
+        $currentIbuId  = null;
+
         for ($i = 1; $i <= 200; $i++) {
-            // Jika tidak sedang dalam sibling group, buat data orang tua baru
-            if (!$siblingGroup) {
-                // Tentukan apakah akan memulai sibling group (misal: 30% kemungkinan)
+            // -- Orang tua & KK --
+            if (! $siblingGroup) {
+                // 30% mulai sibling group
                 if ($faker->boolean(30)) {
                     $siblingGroup = true;
                 }
-                // Buat no_kk baru untuk peserta didik (dan orang tua) ini
                 $currentNoKK = $faker->numerify('###############');
-        
-                // Tentukan status ayah (apakah wafat) 
+
+                // status wafat
                 $ayahWafat = $faker->boolean(10);
-                // Meskipun ada kemungkinan ibu wafat, namun karena ketentuannya setiap peserta didik wajib punya ayah dan ibu,
-                // kita buat kedua data. Untuk kolom _wali_:
-                // - Jika ayah hidup (tidak wafat), maka ayah yang jadi wali (wali = true)
-                // - Jika ayah wafat, maka ibu yang jadi wali (wali = true)
-                $ibuWafat = $faker->boolean(10);
-        
-                // Insert data biodata untuk ayah
+                $ibuWafat  = $faker->boolean(10);
+
+                // biodata ayah
                 $currentAyahId = DB::table('biodata')->insertGetId([
-                    'negara_id'               => $faker->randomElement($negaraIds),
-                    'provinsi_id'             => $faker->randomElement($provinsiIds),
-                    'kabupaten_id'            => $faker->randomElement($kabupatenIds),
-                    'kecamatan_id'            => $faker->randomElement($kecamatanIds),
-                    'jalan'                   => $faker->streetAddress,
-                    'kode_pos'                => $faker->postcode,
-                    'nama'                    => $faker->name('male'),
-                    'no_passport'             => $faker->numerify('############'),
-                    'jenis_kelamin'           => 'l',
-                    'tanggal_lahir'           => $faker->date(),
-                    'tempat_lahir'            => $faker->city,
-                    'nik'                     => $faker->numerify('###############'),
-                    'no_telepon'              => $faker->phoneNumber,
-                    'no_telepon_2'            => $faker->phoneNumber,
-                    'email'                   => $faker->unique()->email,
-                    'jenjang_pendidikan_terakhir'=> $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
-                    'nama_pendidikan_terakhir'=> $faker->company,
-                    'anak_keberapa'           => $faker->numberBetween(1, 5),
-                    'dari_saudara'            => $faker->numberBetween(1, 5),
-                    'tinggal_bersama'         => $faker->randomElement(['orang tua', 'wali', 'asrama']),
-                    'smartcard'               => $faker->numerify('############'),
-                    'status'                  => true,
-                    'wafat'                   => $ayahWafat,
-                    'created_by'              => 1,
-                    'updated_by'              => null,
-                    'deleted_by'              => null,
-                    'created_at'              => now(),
-                    'updated_at'              => now(),
+                    'negara_id'       => $faker->randomElement($negaraIds),
+                    'provinsi_id'     => $faker->randomElement($provinsiIds),
+                    'kabupaten_id'    => $faker->randomElement($kabupatenIds),
+                    'kecamatan_id'    => $faker->randomElement($kecamatanIds),
+                    'jalan'           => $faker->streetAddress,
+                    'kode_pos'        => $faker->postcode,
+                    'nama'            => $faker->name('male'),
+                    'no_passport'     => $faker->numerify('############'),
+                    'jenis_kelamin'   => 'l',
+                    'tanggal_lahir'   => $faker->date(),
+                    'tempat_lahir'    => $faker->city,
+                    'nik'             => $faker->numerify('###############'),
+                    'no_telepon'      => $faker->phoneNumber,
+                    'email'           => $faker->unique()->email,
+                    'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi','smp/mts','sma/smk/ma','d3','d4','s1','s2']),
+                    'smartcard'       => $faker->numerify('############'),
+                    'status'          => true,
+                    'wafat'           => $ayahWafat,
+                    'created_by'      => 1,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
-                // Insert data biodata untuk ibu
+                // biodata ibu
                 $currentIbuId = DB::table('biodata')->insertGetId([
-                    'negara_id'               => $faker->randomElement($negaraIds),
-                    'provinsi_id'             => $faker->randomElement($provinsiIds),
-                    'kabupaten_id'            => $faker->randomElement($kabupatenIds),
-                    'kecamatan_id'            => $faker->randomElement($kecamatanIds),
-                    'jalan'                   => $faker->streetAddress,
-                    'kode_pos'                => $faker->postcode,
-                    'nama'                    => $faker->name('male'),
-                    'no_passport'             => $faker->numerify('############'),
-                    'jenis_kelamin'           => 'p',
-                    'tanggal_lahir'           => $faker->date(),
-                    'tempat_lahir'            => $faker->city,
-                    'nik'                     => $faker->numerify('###############'),
-                    'no_telepon'              => $faker->phoneNumber,
-                    'no_telepon_2'            => $faker->phoneNumber,
-                    'email'                   => $faker->unique()->email,
-                    'jenjang_pendidikan_terakhir'=> $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
-                    'nama_pendidikan_terakhir'=> $faker->company,
-                    'anak_keberapa'           => $faker->numberBetween(1, 5),
-                    'dari_saudara'            => $faker->numberBetween(1, 5),
-                    'tinggal_bersama'         => $faker->randomElement(['orang tua', 'wali', 'asrama']),
-                    'smartcard'               => $faker->numerify('############'),
-                    'status'                  => true,
-                    'wafat'                   => $ibuWafat,
-                    'created_by'              => 1,
-                    'updated_by'              => null,
-                    'deleted_by'              => null,
-                    'created_at'              => now(),
-                    'updated_at'              => now(),
+                    'negara_id'       => $faker->randomElement($negaraIds),
+                    'provinsi_id'     => $faker->randomElement($provinsiIds),
+                    'kabupaten_id'    => $faker->randomElement($kabupatenIds),
+                    'kecamatan_id'    => $faker->randomElement($kecamatanIds),
+                    'jalan'           => $faker->streetAddress,
+                    'kode_pos'        => $faker->postcode,
+                    'nama'            => $faker->name('female'),
+                    'no_passport'     => $faker->numerify('############'),
+                    'jenis_kelamin'   => 'p',
+                    'tanggal_lahir'   => $faker->date(),
+                    'tempat_lahir'    => $faker->city,
+                    'nik'             => $faker->numerify('###############'),
+                    'no_telepon'      => $faker->phoneNumber,
+                    'email'           => $faker->unique()->email,
+                    'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi','smp/mts','sma/smk/ma','d3','d4','s1','s2']),
+                    'smartcard'       => $faker->numerify('############'),
+                    'status'          => true,
+                    'wafat'           => $ibuWafat,
+                    'created_by'      => 1,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
-                
-                // Insert record orang_tua_wali untuk ayah dan ibu
+
+                // orang_tua_wali & keluarga
                 DB::table('orang_tua_wali')->insert([
                     [
-                        'id_biodata'            => $currentAyahId,
-                        'id_hubungan_keluarga'  => $ayahStatus,
-                        'pekerjaan'             => $faker->jobTitle(),
-                        'penghasilan'           => $faker->randomElement(['500000', '1000000', '2000000']),
-                        'wali'                  => !$ayahWafat,  // jika ayah hidup, wali true untuk ayah
-                        'status'                => true,
-                        'created_by'            => 1
+                        'id_biodata'           => $currentAyahId,
+                        'id_hubungan_keluarga' => $ayahStatus,
+                        'pekerjaan'            => $faker->jobTitle(),
+                        'penghasilan'          => $faker->randomElement(['500000','1000000','2000000']),
+                        'wali'                 => ! $ayahWafat,
+                        'status'               => true,
+                        'created_by'           => 1,
                     ],
                     [
-                        'id_biodata'            => $currentIbuId,
-                        'id_hubungan_keluarga'  => $ibuStatus,
-                        'pekerjaan'             => $faker->jobTitle(),
-                        'penghasilan'           => $faker->randomElement(['500000', '1000000', '2000000']),
-                        'wali'                  => $ayahWafat,  // jika ayah wafat, maka ibu jadi wali
-                        'status'                => true,
-                        'created_by'            => 1
-                    ]
+                        'id_biodata'           => $currentIbuId,
+                        'id_hubungan_keluarga' => $ibuStatus,
+                        'pekerjaan'            => $faker->jobTitle(),
+                        'penghasilan'          => $faker->randomElement(['500000','1000000','2000000']),
+                        'wali'                 => $ayahWafat,
+                        'status'               => true,
+                        'created_by'           => 1,
+                    ],
                 ]);
-                
-                // Masukkan data keluarga untuk orang tua (gunakan no_kk yang sama)
                 DB::table('keluarga')->insert([
-                    ['no_kk' => $currentNoKK, 'id_biodata' => $currentAyahId, 'status' => true, 'created_by' => 1],
-                    ['no_kk' => $currentNoKK, 'id_biodata' => $currentIbuId, 'status' => true, 'created_by' => 1],
+                    ['no_kk' => $currentNoKK, 'id_biodata' => $currentAyahId, 'status'=>true,'created_by'=>1],
+                    ['no_kk' => $currentNoKK, 'id_biodata' => $currentIbuId, 'status'=>true,'created_by'=>1],
                 ]);
-            } 
-            // Jika sedang dalam sibling group, maka gunakan data orang tua dan no_kk yang sudah ada
-            else {
-                // Dengan probabilitas 70% sibling group masih berlanjut; jika tidak, akhiri group.
-                if (!$faker->boolean(70)) {
+            } else {
+                if (! $faker->boolean(70)) {
                     $siblingGroup = false;
                 }
-                // $currentNoKK, $currentAyahId, dan $currentIbuId sudah tersedia dari awal group
             }
-            
-            // ---------------------------
-            // Insert biodata peserta didik (anak)
-            $childBiodataId = DB::table('biodata')->insertGetId([
-                'negara_id'               => $faker->randomElement($negaraIds),
-                'provinsi_id'             => $faker->randomElement($provinsiIds),
-                'kabupaten_id'            => $faker->randomElement($kabupatenIds),
-                'kecamatan_id'            => $faker->randomElement($kecamatanIds),
-                'jalan'                   => $faker->streetAddress,
-                'kode_pos'                => $faker->postcode,
-                'nama'                    => $faker->name('male'),
-                'no_passport'             => $faker->numerify('############'),
-                'jenis_kelamin'           => 'p',
-                'tanggal_lahir'           => $faker->date(),
-                'tempat_lahir'            => $faker->city,
-                'nik'                     => $faker->numerify('###############'),
-                'no_telepon'             => $faker->phoneNumber,
-                'no_telepon_2'           => $faker->phoneNumber,
-                'email'                   => $faker->unique()->email,
-                'jenjang_pendidikan_terakhir'=> $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
-                'nama_pendidikan_terakhir'=> $faker->company,
-                'anak_keberapa'           => $faker->numberBetween(1, 5),
-                'dari_saudara'            => $faker->numberBetween(1, 5),
-                'tinggal_bersama'         => $faker->randomElement(['orang tua', 'wali', 'asrama']),
-                'smartcard'               => $faker->numerify('############'),
-                'status'                  => true,
-                'created_by'              => 1,
-                'updated_by'              => null,
-                'deleted_by'              => null,
-                'created_at'              => now(),
-                'updated_at'              => now(),
-            ]);
-            
-            // Insert peserta didik (anak)
-            DB::table('santri')->insertGetId([
-                'id'          => (string) Str::uuid(),
-                'biodata_id' => $childBiodataId,
-                'nis' => $faker->unique()->numerify('###########'),
-                'tanggal_masuk' => $faker->date(),
-                // Set tanggal_keluar hanya jika status alumni
-                'tanggal_keluar' => null,
-                'status' =>  'aktif',
-                'created_by' => 1,
-                'updated_by' => null,
-                'deleted_by' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            
-            // Masukkan data keluarga untuk anak (gunakan no_kk yang sama dengan orang tua)
-            DB::table('keluarga')->insert([
-                ['no_kk' => $currentNoKK, 'id_biodata' => $childBiodataId, 'status' => true, 'created_by' => 1],
-            ]);
-        }
-        
-    }        
 
- 
+            // -- Biodata anak --
+            $childId = DB::table('biodata')->insertGetId([
+                'negara_id'       => $faker->randomElement($negaraIds),
+                'provinsi_id'     => $faker->randomElement($provinsiIds),
+                'kabupaten_id'    => $faker->randomElement($kabupatenIds),
+                'kecamatan_id'    => $faker->randomElement($kecamatanIds),
+                'jalan'           => $faker->streetAddress,
+                'kode_pos'        => $faker->postcode,
+                'nama'            => $faker->name($faker->randomElement(['male','female'])),
+                'no_passport'     => $faker->numerify('############'),
+                'jenis_kelamin'   => $faker->randomElement(['l','p']),
+                'tanggal_lahir'   => $faker->date(),
+                'tempat_lahir'    => $faker->city,
+                'nik'             => $faker->numerify('###############'),
+                'no_telepon'      => $faker->phoneNumber,
+                'email'           => $faker->unique()->email,
+                'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi','smp/mts','sma/smk/ma','d3','d4','s1','s2']),
+                'smartcard'       => $faker->numerify('############'),
+                'status'          => true,
+                'created_by'      => 1,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+            DB::table('keluarga')->insert([
+                ['no_kk' => $currentNoKK, 'id_biodata' => $childId, 'status'=>true,'created_by'=>1],
+            ]);
+
+            // -- 5. Tentukan skenario anak => santri + domisili + pendidikan --
+            $pick   = $faker->randomElement($weighted);
+            [$doSantri, $stSantri, $doPendidikan, $stPendidikan] = $scenarios[$pick];
+
+            if ($doSantri) {
+                $uuid = (string) Str::uuid();
+
+                // insert santri
+                DB::table('santri')->insert([
+                    'id'            => $uuid,
+                    'biodata_id'    => $childId,
+                    'nis'           => $faker->unique()->numerify('###########'),
+                    'tanggal_masuk' => $faker->date(),
+                    'tanggal_keluar'=> $stSantri==='alumni' ? $faker->date() : null,
+                    'status'        => $stSantri,
+                    'created_by'    => 1,
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ]);
+
+                // riwayat domisili
+                DB::table('riwayat_domisili')->insert([
+                    'santri_id'     => $uuid,
+                    'wilayah_id'    => $faker->randomElement($wilayahIds),
+                    'blok_id'       => $faker->randomElement($blokIds),
+                    'kamar_id'      => $faker->randomElement($kamarIds),
+                    'tanggal_masuk' => $faker->dateTime(),
+                    'tanggal_keluar'=> $stSantri==='alumni' ? $faker->dateTime() : null,
+                    'status'        => $stSantri,
+                    'created_by'    => 1,
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ]);
+
+                // riwayat pendidikan (hanya jika kedua‐duanya true)
+                if ($doPendidikan) {
+                    DB::table('riwayat_pendidikan')->insert([
+                        'santri_id'     => $uuid,
+                        'no_induk'      => $faker->unique()->numerify('###########'),
+                        'lembaga_id'    => $faker->randomElement($lembagaIds),
+                        'jurusan_id'    => $faker->randomElement($jurusanIds),
+                        'kelas_id'      => $faker->randomElement($kelasIds),
+                        'rombel_id'     => $faker->randomElement($rombelIds),
+                        'tanggal_masuk' => $faker->date(),
+                        'tanggal_keluar'=> $stPendidikan==='alumni' ? $faker->date() : null,
+                        'status'        => $stPendidikan,
+                        'created_by'    => 1,
+                        'created_at'    => now(),
+                        'updated_at'    => now(),
+                    ]);
+                }
+            }
+        }
+    }
 }

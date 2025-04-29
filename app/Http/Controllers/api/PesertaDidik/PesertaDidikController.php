@@ -174,13 +174,13 @@ class PesertaDidikController extends Controller
 
             // 5) Derived table: keluarga dengan >1 anak aktif
             $siblings = DB::table('keluarga AS k2')
-                ->join('santri AS s2', function ($j) {
-                    $j->on('s2.biodata_id', '=', 'k2.id_biodata')
-                        ->where('s2.status', 'aktif');
-                })
+                ->leftjoin('santri AS s2', 's2.biodata_id', '=', 'k2.id_biodata')
+                ->leftjoin('riwayat_pendidikan AS rp2', 's2.id', '=', 'rp2.santri_id')
                 ->whereNotIn('k2.id_biodata', function ($q) {
                     $q->select('id_biodata')->from('orang_tua_wali');
                 })
+                ->where(fn($q) => $q->where('s2.status', 'aktif')
+                    ->orWhere('rp2.status', '=', 'aktif'))
                 ->select('k2.no_kk', DB::raw('COUNT(*) AS cnt'))
                 ->groupBy('k2.no_kk')
                 ->having('cnt', '>', 1);
@@ -207,7 +207,8 @@ class PesertaDidikController extends Controller
                 ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
                 ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
                 // hanya yang berstatus aktif
-                ->where('s.status', 'aktif')
+                ->where(fn($q) => $q->where('s.status', 'aktif')
+                    ->orWhere('rp.status', '=', 'aktif'))
                 ->select([
                     's.id',
                     DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
@@ -281,8 +282,13 @@ class PesertaDidikController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request, FilterPesertaDidikService $filterService)
+    public function pesertaDidikExport(Request $request, FilterPesertaDidikService $filterService)
     {
         return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik.xlsx');
+    }
+
+    public function bersaudaraExport(Request $request, FilterPesertaDidikService $filterService)
+    {
+        return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik_bersaudara.xlsx');
     }
 }

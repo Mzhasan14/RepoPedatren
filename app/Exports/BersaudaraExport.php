@@ -18,9 +18,9 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Contracts\Support\Responsable;
-use App\Services\FilterPelajarService;
+use App\Services\FilterPesertaDidikService;
 
-class PelajarExport implements
+class BersaudaraExport implements
     FromQuery,
     WithMapping,
     WithHeadings,
@@ -33,30 +33,31 @@ class PelajarExport implements
 {
     use Exportable;
 
-    private string $fileName = 'pelajar.xlsx';
+    private string $fileName = 'peserta_didik.xlsx';
     private Request $request;
-    private FilterPelajarService $filterService;
+    private FilterPesertaDidikService $filterService;
     private array $availableColumns;
     private array $selected;
     private int $counter = 0;
 
-    public function __construct(Request $request, FilterPelajarService $filterService)
+    public function __construct(Request $request, FilterPesertaDidikService $filterService)
     {
         $this->request       = $request;
         $this->filterService = $filterService;
 
         // Definisikan kolom dan ekspresi SQL-nya sebagai string
         $this->availableColumns = [
-            'id'               => ['label' => 'Id',               'expr' => 's.id'],
+            // 'id'               => ['label' => 'Id',               'expr' => 's.id'],
             // 'nama'             => ['label' => 'Nama',             'expr' => 'b.nama'],
-            'no_kk'            => ['label' => 'No KK',            'expr' => 'k.no_kk'],
-            'identitas'        => ['label' => 'Identitas',        'expr' => 'COALESCE(b.nik, b.no_passport)'],
+            // 'no_kk'            => ['label' => 'No KK',            'expr' => 'k.no_kk'],
+            // 'identitas'        => ['label' => 'Identitas',        'expr' => 'COALESCE(b.nik, b.no_passport)'],
             'niup'             => ['label' => 'NIUP',             'expr' => 'wp.niup'],
             'anak_ke'          => ['label' => 'Anak Ke',          'expr' => 'b.anak_keberapa'],
             'jumlah_saudara'   => ['label' => 'Jumlah Saudara',   'expr' => 'COALESCE(siblings.jumlah_saudara, 0)'],
-            'pendidikan'   => ['label' => 'Pendidikan Terakhir',   'expr' => 'l.nama_lembaga'],
             'alamat'           => ['label' => 'Alamat',           'expr' => "CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi)"],
             'domisili'         => ['label' => 'Domisili',         'expr' => "CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah)"],
+            'angkatan_santri'  => ['label' => 'Angkatan Santri',  'expr' => 'YEAR(s.tanggal_masuk)'],
+            'angkatan_pelajar' => ['label' => 'Angkatan Pelajar', 'expr' => 'YEAR(rp.tanggal_masuk)'],
             'status'           => ['label' => 'Status',           'expr' => "
                 CASE
                     WHEN s.status = 'aktif' AND rp.status = 'aktif' THEN 'Santri Sekaligus Pelajar'
@@ -65,8 +66,6 @@ class PelajarExport implements
                     ELSE 'Non-Aktif'
                 END
             "],
-            'ibu'              => ['label' => 'Ibu Kandung',      'expr' => 'parents.nama_ibu'],
-            'ayah'              => ['label' => 'Ayah Kandung',      'expr' => 'parents.nama_ayah'],
         ];
 
         // Pilih kolom sesuai permintaan
@@ -94,18 +93,6 @@ class PelajarExport implements
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // Subquery untuk nama ibu dan ayah per No KK
-        $parents = DB::table('orang_tua_wali as otw')
-            ->join('keluarga as k2', 'k2.id_biodata', '=', 'otw.id_biodata')
-            ->join('biodata as b2', 'b2.id', '=', 'otw.id_biodata')
-            ->join('hubungan_keluarga as hk', 'hk.id', '=', 'otw.id_hubungan_keluarga')
-            ->select(
-                'k2.no_kk',
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ibu'  THEN b2.nama END) as nama_ibu"),
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ayah' THEN b2.nama END) as nama_ayah")
-            )
-            ->groupBy('k2.no_kk');
-
         // Subquery untuk jumlah saudara (anak dalam keluarga) per No KK
         $siblings = DB::table('keluarga as k2')
             ->select(
@@ -124,16 +111,14 @@ class PelajarExport implements
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
-            ->leftJoinSub($parents,   'parents',  fn($join) => $join->on('k.no_kk', '=', 'parents.no_kk'))
             ->leftJoinSub($siblings,  'siblings', fn($join) => $join->on('k.no_kk', '=', 'siblings.no_kk'))
             ->leftJoinSub($fotoSub,   'fl',       fn($join) => $join->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpSub,     'wl',       fn($join) => $join->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
-            ->join('riwayat_pendidikan as rp', fn($join) =>
+            ->leftJoin('riwayat_pendidikan as rp', fn($join) =>
                 $join->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif')
             )
-            ->leftjoin('lembaga as l', 'l.id', 'rp.lembaga_id')
             ->leftJoin('riwayat_domisili as rd', fn($join) =>
                 $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif')
             )
@@ -153,7 +138,7 @@ class PelajarExport implements
         }
 
         // Terapkan filter bisnis dan kembalikan query
-        return $this->filterService->pelajarFilters($query, $this->request);
+        return $this->filterService->pesertaDidikFilters($query, $this->request);
     }
 
     public function chunkSize(): int
