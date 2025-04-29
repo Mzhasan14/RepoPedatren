@@ -95,6 +95,16 @@ class CatatanAfektifController extends Controller
     public function dataCatatanAfektif(Request $request)
     {
         try{
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
             $query = Catatan_afektif::Active()
                     ->join('santri as CatatanSantri', 'CatatanSantri.id', '=', 'catatan_afektif.id_santri')
                     ->join('biodata as CatatanBiodata', 'CatatanBiodata.id', '=', 'CatatanSantri.biodata_id')
@@ -110,6 +120,18 @@ class CatatanAfektifController extends Controller
                     ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_afektif.id_wali_asuh')
                     ->leftJoin('santri as PencatatSantri', 'PencatatSantri.id', '=', 'wali_asuh.id_santri')
                     ->leftJoin('biodata as PencatatBiodata', 'PencatatBiodata.id', '=', 'PencatatSantri.biodata_id')
+                    // join foto CatatanSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastCatatan', function($join) {
+                        $join->on('CatatanBiodata.id', '=', 'fotoLastCatatan.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
+
+                    // join foto PencatatSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastPencatat', function($join) {
+                        $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+
                     ->select(
                         'catatan_afektif.id',
                         'CatatanBiodata.nama',
@@ -125,7 +147,9 @@ class CatatanAfektifController extends Controller
                         'catatan_afektif.akhlak_tindak_lanjut',
                         'PencatatBiodata.nama as pencatat',
                         DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
-                        'catatan_afektif.created_at'
+                        'catatan_afektif.created_at',
+                        DB::raw("COALESCE(MAX(FotoCatatan.file_path), 'default.jpg') as foto_catatan"),
+                        DB::raw("COALESCE(MAX(FotoPencatat.file_path), 'default.jpg') as foto_pencatat"),
                     )
                     ->groupBy(
                         'catatan_afektif.id',
@@ -277,16 +301,47 @@ class CatatanAfektifController extends Controller
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
+                        'kategori' => 'Kepedulian',
                         'nilai_kepedulian' => $item->kepedulian_nilai,
                         'tindak_lanjut_kepedulian' => $item->kepedulian_tindak_lanjut,
-                        'nilai_kebersihan' => $item->kebersihan_nilai,
-                        'tindak_lanjut_kebersihan' => $item->kebersihan_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'Akhlak',
                         'nilai_akhlak' => $item->akhlak_nilai,
                         'tindak_lanjut_akhlak' => $item->akhlak_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                    ]
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'Kebersihan',
+                        'nilai_kebersihan' => $item->kebersihan_nilai,
+                        'tindak_lanjut_kebersihan' => $item->kebersihan_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
                 ];
             })
         ]);

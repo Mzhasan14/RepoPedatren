@@ -100,6 +100,16 @@ class CatatanKognitifController extends Controller
     }
     public function dataCatatanKognitif(Request $request)
     {
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
         $query = Catatan_kognitif::Active()
                     ->join('santri as CatatanSantri', 'CatatanSantri.id', '=', 'catatan_kognitif.id_santri')
                     ->join('biodata as CatatanBiodata', 'CatatanBiodata.id', '=', 'CatatanSantri.biodata_id')
@@ -115,6 +125,16 @@ class CatatanKognitifController extends Controller
                     ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_kognitif.id_wali_asuh')
                     ->leftJoin('santri as PencatatSantri', 'PencatatSantri.id', '=', 'wali_asuh.id_santri')
                     ->leftJoin('biodata as PencatatBiodata', 'PencatatBiodata.id', '=', 'PencatatSantri.biodata_id')
+                    // join foto CatatanSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastCatatan', function($join) {
+                        $join->on('CatatanBiodata.id', '=', 'fotoLastCatatan.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
+                    // join foto PencatatSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastPencatat', function($join) {
+                        $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
                     ->select(
                         'catatan_kognitif.id',
                         'CatatanBiodata.nama',
@@ -136,7 +156,9 @@ class CatatanKognitifController extends Controller
                         'catatan_kognitif.baca_alquran_tindak_lanjut',
                         'PencatatBiodata.nama as pencatat',
                         DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
-                        'catatan_kognitif.created_at'
+                        'catatan_kognitif.created_at',
+                        DB::raw("COALESCE(MAX(FotoCatatan.file_path), 'default.jpg') as foto_catatan"),
+                        DB::raw("COALESCE(MAX(FotoPencatat.file_path), 'default.jpg') as foto_pencatat"),
                     )
                     ->groupBy(
                         'catatan_kognitif.id',
@@ -155,7 +177,7 @@ class CatatanKognitifController extends Controller
                         'catatan_kognitif.baca_alquran_tindak_lanjut',
                         'PencatatBiodata.nama',
                         'wali_asuh.id',
-                        'catatan_kognitif.created_at'
+                        'catatan_kognitif.created_at',
                         )
                     ->distinct();
     
@@ -317,25 +339,97 @@ class CatatanKognitifController extends Controller
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kebahasaan_nilai' => $item->kebahasaan_nilai,
-                        'kebahasaan_tindak_lanjut' => $item->kebahasaan_tindak_lanjut,
-                        'baca_kitab_kuning_nilai' => $item->baca_kitab_kuning_nilai,
-                        'baca_kitab_kuning_tindak_lanjut' => $item->baca_kitab_kuning_tindak_lanjut,
-                        'hafalan_tahfidz_nilai' => $item->hafalan_tahfidz_nilai,
-                        'hafalan_tahfidz_tindak_lanjut' => $item->hafalan_tahfidz_tindak_lanjut,
-                        'furudul_ainiyah_nilai' => $item->furudul_ainiyah_nilai,
-                        'furudul_ainiyah_tindak_lanjut' => $item->furudul_ainiyah_tindak_lanjut,
-                        'tulis_alquran_nilai' => $item->tulis_alquran_nilai,
-                        'tulis_alquran_tindak_lanjut' => $item->tulis_alquran_tindak_lanjut,
-                        'baca_alquran_nilai' => $item->baca_alquran_nilai,
-                        'baca_alquran_tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
+                        'kategori' => 'kebahasaan',
+                        'nilai' => $item->kebahasaan_nilai,
+                        'tindak_lanjut' => $item->kebahasaan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                    ]
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'baca kitab kuning',
+                        'nilai' => $item->baca_kitab_kuning_nilai,
+                        'tindak_lanjut' => $item->baca_kitab_kuning_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'hafalan tahfidz',
+                        'nilai' => $item->hafalan_tahfidz_nilai,
+                        'tindak_lanjut' => $item->hafalan_tahfidz_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'furudul ainiyah',
+                        'nilai' => $item->furudul_ainiyah_nilai,
+                        'tindak_lanjut' => $item->furudul_ainiyah_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'tulis al-quran',
+                        'nilai' => $item->tulis_alquran_nilai,
+                        'tindak_lanjut' => $item->tulis_alquran_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
+                    [
+                        'id_santri' => $item->id,
+                        'nama_santri' => $item->nama,
+                        'blok' => $item->blok,
+                        'wilayah' => $item->wilayah,
+                        'pendidikan' => $item->jurusan,
+                        'lembaga' => $item->lembaga,
+                        'kategori' => 'baca al-quran',
+                        'nilai' => $item->baca_alquran_nilai,
+                        'tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
+                        'pencatat' => $item->pencatat,
+                        'jabatanPencatat' => $item->wali_asuh,
+                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
                 ];
-            })
+            })->values()
         ]);
-        
     }
 }

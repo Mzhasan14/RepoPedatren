@@ -13,7 +13,7 @@ class GolonganSeeder extends Seeder
      */
     public function run(): void
     {
-        (new GolonganFactory())->count(5)->create();
+        (new GolonganFactory())->count(300)->create();
 
     }
 }

@@ -13,7 +13,7 @@ class RiwayatJabatanKaryawanSeeder extends Seeder
      */
     public function run(): void
     {
-        (new RiwayatJabatanKaryawanFactory())->count(10)->create();
+        (new RiwayatJabatanKaryawanFactory())->count(300)->create();
         
     }
 }
