@@ -100,185 +100,211 @@ class CatatanKognitifController extends Controller
     }
     public function dataCatatanKognitif(Request $request)
     {
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
+
+        // 2) Subquery: foto terakhir per biodata
+        $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
         $query = Catatan_kognitif::Active()
-                            ->join('santri as CatatanSantri','CatatanSantri.id','=','catatan_kognitif.id_santri')
-                            ->leftJoin('peserta_didik as PesertaSantri','PesertaSantri.id','=','CatatanSantri.id_peserta_didik')
-                            ->leftJoin('domisili_santri','domisili_santri.id_santri','=','CatatanSantri.id')
-                            ->leftJoin('wilayah','wilayah.id','=','domisili_santri.id_wilayah')
-                            ->leftJoin('blok','blok.id','=','domisili_santri.id_blok')
-                            ->leftJoin('kamar','kamar.id','=','domisili_santri.id_kamar')
-                            ->leftJoin('wali_asuh','wali_asuh.id','=','catatan_kognitif.id_wali_asuh')
-                            ->leftJoin('peserta_didik as CatatanPeserta','CatatanPeserta.id','=','CatatanSantri.id_peserta_didik')
-                            ->leftJoin('pelajar','CatatanPeserta.id','=','pelajar.id_peserta_didik')
-                            ->leftJoin('pendidikan_pelajar','pendidikan_pelajar.id_pelajar','=','pelajar.id')
-                            ->leftJoin('lembaga','lembaga.id','pendidikan_pelajar.id_lembaga')
-                            ->leftJoin('jurusan','jurusan.id','pendidikan_pelajar.id_jurusan')
-                            ->leftJoin('kelas','kelas.id','pendidikan_pelajar.id_kelas')
-                            ->leftJoin('rombel','rombel.id','pendidikan_pelajar.id_rombel')
-                            ->join('biodata as CatatanBiodata','CatatanBiodata.id','=','CatatanPeserta.id_biodata')
-                            ->leftJoin('santri as PencatatSantri','PencatatSantri.id','=','wali_asuh.id_santri')
-                            ->leftJoin('peserta_didik as PencatatPeserta','PencatatPeserta.id','=','PencatatSantri.id_peserta_didik')
-                            ->join('biodata as PencatatBiodata','PencatatBiodata.id','PencatatPeserta.id_biodata')
-                            ->select(
-                                'catatan_kognitif.id',
-                                'CatatanBiodata.nama',
-                                DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
-                                DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
-                                DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
-                                DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
-                                'catatan_kognitif.kebahasaan_nilai',
-                                'catatan_kognitif.kebahasaan_tindak_lanjut',
-                                'catatan_kognitif.baca_kitab_kuning_nilai',
-                                'catatan_kognitif.baca_kitab_kuning_tindak_lanjut',
-                                'catatan_kognitif.hafalan_tahfidz_nilai',
-                                'catatan_kognitif.hafalan_tahfidz_tindak_lanjut',
-                                'catatan_kognitif.furudul_ainiyah_nilai',
-                                'catatan_kognitif.furudul_ainiyah_tindak_lanjut',
-                                'catatan_kognitif.tulis_alquran_nilai',
-                                'catatan_kognitif.tulis_alquran_tindak_lanjut',
-                                'catatan_kognitif.baca_alquran_nilai',
-                                'catatan_kognitif.baca_alquran_tindak_lanjut',
-                                'PencatatBiodata.nama as pencatat',
-                                DB::raw("COALESCE((SELECT 'wali asuh' WHERE wali_asuh.id IS NOT NULL), NULL) as wali_asuh"),
-                                'catatan_kognitif.created_at'
-                            )
-                            ->groupBy(
-                                'catatan_kognitif.id',
-                                'CatatanBiodata.nama',
-                                'catatan_kognitif.kebahasaan_nilai',
-                                'catatan_kognitif.kebahasaan_tindak_lanjut',
-                                'catatan_kognitif.baca_kitab_kuning_nilai',
-                                'catatan_kognitif.baca_kitab_kuning_tindak_lanjut',
-                                'catatan_kognitif.hafalan_tahfidz_nilai',
-                                'catatan_kognitif.hafalan_tahfidz_tindak_lanjut',
-                                'catatan_kognitif.furudul_ainiyah_nilai',
-                                'catatan_kognitif.furudul_ainiyah_tindak_lanjut',
-                                'catatan_kognitif.tulis_alquran_nilai',
-                                'catatan_kognitif.tulis_alquran_tindak_lanjut',
-                                'catatan_kognitif.baca_alquran_nilai',
-                                'catatan_kognitif.baca_alquran_tindak_lanjut',
-                                'PencatatBiodata.nama',
-                                'wali_asuh.id',
-                                'catatan_kognitif.created_at'
-                            )->distinct();
+                    ->join('santri as CatatanSantri', 'CatatanSantri.id', '=', 'catatan_kognitif.id_santri')
+                    ->join('biodata as CatatanBiodata', 'CatatanBiodata.id', '=', 'CatatanSantri.biodata_id')
+                    ->leftJoin('riwayat_domisili as domisili_santri', 'domisili_santri.santri_id', '=', 'CatatanSantri.id')
+                    ->leftJoin('wilayah', 'wilayah.id', '=', 'domisili_santri.wilayah_id')
+                    ->leftJoin('blok', 'blok.id', '=', 'domisili_santri.blok_id')
+                    ->leftJoin('kamar', 'kamar.id', '=', 'domisili_santri.kamar_id')
+                    ->leftJoin('riwayat_pendidikan', 'riwayat_pendidikan.santri_id', '=', 'CatatanSantri.id')
+                    ->leftJoin('lembaga', 'lembaga.id', '=', 'riwayat_pendidikan.lembaga_id')
+                    ->leftJoin('jurusan', 'jurusan.id', '=', 'riwayat_pendidikan.jurusan_id')
+                    ->leftJoin('kelas', 'kelas.id', '=', 'riwayat_pendidikan.kelas_id')
+                    ->leftJoin('rombel', 'rombel.id', '=', 'riwayat_pendidikan.rombel_id')
+                    ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_kognitif.id_wali_asuh')
+                    ->leftJoin('santri as PencatatSantri', 'PencatatSantri.id', '=', 'wali_asuh.id_santri')
+                    ->leftJoin('biodata as PencatatBiodata', 'PencatatBiodata.id', '=', 'PencatatSantri.biodata_id')
+                    // join foto CatatanSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastCatatan', function($join) {
+                        $join->on('CatatanBiodata.id', '=', 'fotoLastCatatan.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
+                    // join foto PencatatSantri
+                    ->leftJoinSub($fotoLast, 'fotoLastPencatat', function($join) {
+                        $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
+                    })
+                    ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+                    ->select(
+                        'catatan_kognitif.id',
+                        'CatatanBiodata.nama',
+                        DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
+                        DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
+                        DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
+                        DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
+                        'catatan_kognitif.kebahasaan_nilai',
+                        'catatan_kognitif.kebahasaan_tindak_lanjut',
+                        'catatan_kognitif.baca_kitab_kuning_nilai',
+                        'catatan_kognitif.baca_kitab_kuning_tindak_lanjut',
+                        'catatan_kognitif.hafalan_tahfidz_nilai',
+                        'catatan_kognitif.hafalan_tahfidz_tindak_lanjut',
+                        'catatan_kognitif.furudul_ainiyah_nilai',
+                        'catatan_kognitif.furudul_ainiyah_tindak_lanjut',
+                        'catatan_kognitif.tulis_alquran_nilai',
+                        'catatan_kognitif.tulis_alquran_tindak_lanjut',
+                        'catatan_kognitif.baca_alquran_nilai',
+                        'catatan_kognitif.baca_alquran_tindak_lanjut',
+                        'PencatatBiodata.nama as pencatat',
+                        DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
+                        'catatan_kognitif.created_at',
+                        DB::raw("COALESCE(MAX(FotoCatatan.file_path), 'default.jpg') as foto_catatan"),
+                        DB::raw("COALESCE(MAX(FotoPencatat.file_path), 'default.jpg') as foto_pencatat"),
+                    )
+                    ->groupBy(
+                        'catatan_kognitif.id',
+                        'CatatanBiodata.nama',
+                        'catatan_kognitif.kebahasaan_nilai',
+                        'catatan_kognitif.kebahasaan_tindak_lanjut',
+                        'catatan_kognitif.baca_kitab_kuning_nilai',
+                        'catatan_kognitif.baca_kitab_kuning_tindak_lanjut',
+                        'catatan_kognitif.hafalan_tahfidz_nilai',
+                        'catatan_kognitif.hafalan_tahfidz_tindak_lanjut',
+                        'catatan_kognitif.furudul_ainiyah_nilai',
+                        'catatan_kognitif.furudul_ainiyah_tindak_lanjut',
+                        'catatan_kognitif.tulis_alquran_nilai',
+                        'catatan_kognitif.tulis_alquran_tindak_lanjut',
+                        'catatan_kognitif.baca_alquran_nilai',
+                        'catatan_kognitif.baca_alquran_tindak_lanjut',
+                        'PencatatBiodata.nama',
+                        'wali_asuh.id',
+                        'catatan_kognitif.created_at',
+                        )
+                    ->distinct();
+    
           // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
           if ($request->filled('negara')) {
-            $query->join('negara', 'CatatanBiodata.id_negara', '=', 'negara.id')
+            $query->leftJoin('negara', 'CatatanBiodata.negara_id', '=', 'negara.id')
                 ->where('negara.nama_negara', $request->negara);
+    
             if ($request->filled('provinsi')) {
-                $query->leftjoin('provinsi', 'CatatanBiodata.id_provinsi', '=', 'provinsi.id');
-                $query->where('provinsi.nama_provinsi', $request->provinsi);
+                $query->leftJoin('provinsi', 'CatatanBiodata.provinsi_id', '=', 'provinsi.id')
+                    ->where('provinsi.nama_provinsi', $request->provinsi);
+    
                 if ($request->filled('kabupaten')) {
-                    $query->leftjoin('kabupaten', 'CatatanBiodata.id_kabupaten', '=', 'kabupaten.id');
-                    $query->where('kabupaten.nama_kabupaten', $request->kabupaten);
+                    $query->leftJoin('kabupaten', 'CatatanBiodata.kabupaten_id', '=', 'kabupaten.id')
+                        ->where('kabupaten.nama_kabupaten', $request->kabupaten);
+    
                     if ($request->filled('kecamatan')) {
-                        $query->leftjoin('kecamatan', 'CatatanBiodata.id_kecamatan', '=', 'kecamatan.id');
-                        $query->where('kecamatan.nama_kecamatan', $request->kecamatan);
+                        $query->leftJoin('kecamatan', 'CatatanBiodata.kecamatan_id', '=', 'kecamatan.id')
+                            ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
                 }
             }
         }
-        // Filter Search
-        if ($request->filled('search')) {
-            $search = strtolower($request->search);
     
-            $query->where(function ($q) use ($search) {
-                $q->where('CatatanBiodata.nik', 'LIKE', "%$search%")
-                    ->orWhere('CatatanBiodata.no_passport', 'LIKE', "%$search%")
-                    ->orWhere('CatatanBiodata.nama', 'LIKE', "%$search%")
-                    ->orWhere('CatatanBiodata.niup', 'LIKE', "%$search%")
-                    ->orwhere('PencatatBiodata.nik', 'LIKE', "%$search%")
-                    ->orWhere('PencatatBiodata.no_passport', 'LIKE', "%$search%")
-                    ->orWhere('PencatatBiodata.nama', 'LIKE', "%$search%")
-                    ->orWhere('PencatatBiodata.niup', 'LIKE', "%$search%");
-                    });
+        // Filter Search Nama
+        if ($request->filled('nama')) {
+            $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$request->nama]);
         }
+    
         // Filter Lembaga
         if ($request->filled('lembaga')) {
             $query->where('lembaga.nama_lembaga', strtolower($request->lembaga));
+    
             if ($request->filled('jurusan')) {
                 $query->where('jurusan.nama_jurusan', strtolower($request->jurusan));
+    
                 if ($request->filled('kelas')) {
                     $query->where('kelas.nama_kelas', strtolower($request->kelas));
+    
                     if ($request->filled('rombel')) {
                         $query->where('rombel.nama_rombel', strtolower($request->rombel));
                     }
                 }
             }
         }
+    
         // Filter Wilayah
         if ($request->filled('wilayah')) {
             $wilayah = strtolower($request->wilayah);
             $query->where('wilayah.nama_wilayah', $wilayah);
+    
             if ($request->filled('blok')) {
                 $blok = strtolower($request->blok);
                 $query->where('blok.nama_blok', $blok);
+    
                 if ($request->filled('kamar')) {
                     $kamar = strtolower($request->kamar);
                     $query->where('kamar.nama_kamar', $kamar);
                 }
             }
         }
-        // Filter jenis kelamin
+    
+        // Filter Jenis Kelamin
         if ($request->filled('jenis_kelamin')) {
             $jenis_kelamin = strtolower($request->jenis_kelamin);
             if ($jenis_kelamin == 'laki-laki') {
                 $query->where('CatatanBiodata.jenis_kelamin', 'l');
             } else if ($jenis_kelamin == 'perempuan') {
-               $query->where('CatatanBiodata.jenis_kelamin', 'p');
-            }
-        } 
-        // Filter No Telepon
-        if ($request->filled('phone_number')) {
-            if (strtolower($request->phone_number) === 'mempunyai') {
-                // Hanya tampilkan data yang memiliki nomor telepon
-                $query->whereNotNull('CatatanBiodata.no_telepon')->where('CatatanBiodata.no_telepon', '!=', '');
-            } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
-                // Hanya tampilkan data yang tidak memiliki nomor telepon
-                $query->whereNull('CatatanBiodata.no_telepon')->orWhere('CatatanBiodata.no_telepon', '');
+                $query->where('CatatanBiodata.jenis_kelamin', 'p');
             }
         }
+    
+        // Filter Nomor Telepon
+        if ($request->filled('phone_number')) {
+            $query->where(function ($q) use ($request) {
+                if (strtolower($request->phone_number) === 'mempunyai') {
+                    $q->whereNotNull('CatatanBiodata.no_telepon')
+                      ->where('CatatanBiodata.no_telepon', '!=', '');
+                } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
+                    $q->where(function($q2) {
+                        $q2->whereNull('CatatanBiodata.no_telepon')
+                           ->orWhere('CatatanBiodata.no_telepon', '');
+                    });
+                }
+            });
+        }
+    
+        // Filter Periode
         if ($request->filled('periode')) {
             [$year, $month] = explode('-', $request->periode);
             $query->whereYear('catatan_kognitif.created_at', $year)
                   ->whereMonth('catatan_kognitif.created_at', $month);
-      
-                }
-
-// Filter berdasarkan kategori catatan kognitif
-if ($request->filled('materi')) {
-    $materiMap = [
-        'Kebahasaan' => 'kebahasaan_nilai',
-        'Baca Kitab Kuning' => 'baca_kitab_kuning_nilai',
-        'Pengetahuan Keislaman' => 'pengetahuan_keislaman_nilai',
-        'Keterampilan Hidup' => 'keterampilan_hidup_nilai',
-        'Pengetahuan Umum' => 'pengetahuan_umum_nilai',
-        'Sains' => 'sains_nilai',
-    ];
-
-    $kategori = $request->materi;
-
-    if (array_key_exists($kategori, $materiMap)) {
-        $query->whereNotNull($materiMap[$kategori]);
-    }
-}
-// Filter berdasarkan skor nilai dari semua kategori penilaian kognitif
-if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 'E'])) {
-    $materiFields = [
-        'catatan_kognitif.kebahasaan_nilai',
-        'catatan_kognitif.baca_kitab_kuning_nilai',
-        'catatan_kognitif.hafalan_tahfidz_nilai',
-        'catatan_kognitif.furudul_ainiyah_nilai',
-        'catatan_kognitif.tulis_alquran_nilai',
-        'catatan_kognitif.baca_alquran_nilai',
-    ];
-
-    $query->where(function ($q) use ($materiFields, $request) {
-        foreach ($materiFields as $field) {
-            $q->orWhere($field, $request->score);
         }
-    });
-}
+        // Filter berdasarkan kategori catatan kognitif
+        if ($request->filled('materi')) {
+            $materiMap = [
+                'Kebahasaan' => 'kebahasaan_nilai',
+                'Baca Kitab Kuning' => 'baca_kitab_kuning_nilai',
+                'Hafalan Tahfidz' => 'hafalan_tahfidz_nilai',
+                'Furudul Ainiyah' => 'furudul_ainiyah_nilai',
+                'Tulis Al-Quran' => 'tulis_alquran_nilai',
+                'Baca Al-Quran' => 'baca_alquran_nilai',
+            ];
+
+            $kategori = $request->materi;
+
+            if (array_key_exists($kategori, $materiMap)) {
+                $query->whereNotNull($materiMap[$kategori]);
+            }
+        }
+        // Filter berdasarkan skor nilai dari semua kategori penilaian kognitif
+        if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 'E'])) {
+            $materiFields = [
+                'catatan_kognitif.kebahasaan_nilai',
+                'catatan_kognitif.baca_kitab_kuning_nilai',
+                'catatan_kognitif.hafalan_tahfidz_nilai',
+                'catatan_kognitif.furudul_ainiyah_nilai',
+                'catatan_kognitif.tulis_alquran_nilai',
+                'catatan_kognitif.baca_alquran_nilai',
+            ];
+
+            $query->where(function ($q) use ($materiFields, $request) {
+                foreach ($materiFields as $field) {
+                    $q->orWhere($field, $request->score);
+                }
+            });
+        }
 
 
         // Ambil jumlah data per halaman (default 10 jika tidak diisi)
@@ -313,12 +339,14 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Kebahasaan',
+                        'kategori' => 'kebahasaan',
                         'nilai' => $item->kebahasaan_nilai,
                         'tindak_lanjut' => $item->kebahasaan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
                     ],
                     [
                         'id_santri' => $item->id,
@@ -327,12 +355,14 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Baca Kitab Kuning',
+                        'kategori' => 'baca kitab kuning',
                         'nilai' => $item->baca_kitab_kuning_nilai,
                         'tindak_lanjut' => $item->baca_kitab_kuning_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
                     ],
                     [
                         'id_santri' => $item->id,
@@ -341,12 +371,14 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Hafalan Tahfidz',
+                        'kategori' => 'hafalan tahfidz',
                         'nilai' => $item->hafalan_tahfidz_nilai,
                         'tindak_lanjut' => $item->hafalan_tahfidz_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
                     ],
                     [
                         'id_santri' => $item->id,
@@ -355,12 +387,14 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Furudul Ainiyah',
+                        'kategori' => 'furudul ainiyah',
                         'nilai' => $item->furudul_ainiyah_nilai,
                         'tindak_lanjut' => $item->furudul_ainiyah_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
                     ],
                     [
                         'id_santri' => $item->id,
@@ -369,12 +403,14 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Tulis Al-Quran',
+                        'kategori' => 'tulis al-quran',
                         'nilai' => $item->tulis_alquran_nilai,
                         'tindak_lanjut' => $item->tulis_alquran_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
                     ],
                     [
                         'id_santri' => $item->id,
@@ -383,16 +419,17 @@ if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 
                         'wilayah' => $item->wilayah,
                         'pendidikan' => $item->jurusan,
                         'lembaga' => $item->lembaga,
-                        'kategori' => 'Baca Al-Quran',
+                        'kategori' => 'baca al-quran',
                         'nilai' => $item->baca_alquran_nilai,
                         'tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
                         'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                    ]
+                        'foto_catatan' => url($item->foto_catatan),
+                        'foto_pencatat' => url($item->foto_pencatat),
+                    ],
                 ];
-            })
+            })->values()
         ]);
-        
     }
 }

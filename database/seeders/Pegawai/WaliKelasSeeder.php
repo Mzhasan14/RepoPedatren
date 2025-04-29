@@ -13,7 +13,7 @@ class WaliKelasSeeder extends Seeder
      */
     public function run(): void
     {
-        (new WaliKelasFactory())->count(10)->create();
+        (new WaliKelasFactory())->count(300)->create();
         
     }
 }

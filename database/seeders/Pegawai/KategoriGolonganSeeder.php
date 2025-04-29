@@ -13,7 +13,7 @@ class KategoriGolonganSeeder extends Seeder
      */
     public function run(): void
     {
-        (new KategoriGolonganFactory())->count(10)->create();
+        (new KategoriGolonganFactory())->count(300)->create();
         
     }
 }

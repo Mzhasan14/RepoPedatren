@@ -13,6 +13,6 @@ class MateriAjarSeeder extends Seeder
      */
     public function run(): void
     {
-        (new MateriAjarFactory())->count(10)->create();
+        (new MateriAjarFactory())->count(300)->create();
     }
 }
