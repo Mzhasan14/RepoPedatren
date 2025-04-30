@@ -350,11 +350,11 @@ class FilterPesertaDidikService
                 break;
             case 'kk sama dgn ibu kandung':
                 // Pastikan sudah join subquery ibu_info di atas
-                $query->whereColumn('keluarga.no_kk', 'ibu_info.kk_ibu');
+                $query->whereColumn('k.no_kk', 'parents.no_kk');
                 break;
             case 'kk berbeda dgn ibu kandung':
                 // Pastikan sudah join subquery ibu_info di atas
-                $query->whereColumn('keluarga.no_kk', '!=', 'ibu_info.kk_ibu');
+                $query->whereColumn('k.no_kk', '!=', 'parents.no_kk');
                 break;
             default:
                 $query->whereRaw('0 = 1');

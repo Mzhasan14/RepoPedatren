@@ -68,7 +68,7 @@ class AnakPegawaiController extends Controller
                 })
                 // 4) Pastikan parent itu pegawai aktif
                 ->join('pegawai AS p', function ($join) {
-                    $join->on('p.id_biodata', '=', 'otw.id_biodata')
+                    $join->on('p.biodata_id', '=', 'otw.id_biodata')
                         ->where('p.status', true);
                 })
                 // join riwayat pendidikan aktif

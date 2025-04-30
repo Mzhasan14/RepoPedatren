@@ -28,6 +28,7 @@ class FilterSantriService
 
         return $query;
     }
+    
 
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
@@ -153,12 +154,10 @@ class FilterSantriService
         $query->where('w.nama_wilayah', $request->wilayah);
 
         if ($request->filled('blok')) {
-            $query->join('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-                ->where('bl.nama_blok', $request->blok);
+            $query->where('bl.nama_blok', $request->blok);
 
             if ($request->filled('kamar')) {
-                $query->join('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-                    ->where('km.nama_kamar', $request->kamar);
+                $query->where('km.nama_kamar', $request->kamar);
             }
         }
 

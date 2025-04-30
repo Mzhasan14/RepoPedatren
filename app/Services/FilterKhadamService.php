@@ -42,7 +42,8 @@ class FilterKhadamService
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->where('kabupaten.nama_kabupaten', $request->kabupaten);
+                    $query->join('kabupaten', 'b.kabupaten_id', '=', 'kabupaten.id')
+                        ->where('kabupaten.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
@@ -97,10 +98,10 @@ class FilterKhadamService
         if (! $request->filled('nama')) {
             return $query;
         }
-    
+
         // tambahkan tanda kutip ganda di awal‑akhir
         $phrase = '"' . trim($request->nama) . '"';
-    
+
         return $query->whereRaw(
             "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
@@ -113,12 +114,12 @@ class FilterKhadamService
             return $query;
         }
 
-           // Filter non domisili pesantren
-           if ($request->wilayah === 'non domisili') {
+        // Filter non domisili pesantren
+        if ($request->wilayah === 'non domisili') {
 
             return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
-        
+
         if ($request->filled('wilayah')) {
             $query->join('peserta_didik AS pd', 'pd.biodata_id', '=', 'b.id')
                 ->join('riwayat_domisili AS rd', 'rd.peserta_didik_id', '=', 'pd.id')

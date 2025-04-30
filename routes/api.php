@@ -16,13 +16,12 @@ use App\Http\Controllers\Api\{
 };
 
 use App\Http\Controllers\Api\PesertaDidik\{
+    AnakPegawaiController,
     PesertaDidikController,
     PelajarController,
     SantriController,
     AlumniController,
-    BersaudaraController,
     DetailPesertaDidikController,
-    NonDomisiliSantriController,
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -56,7 +55,6 @@ use App\Http\Controllers\Api\Pendidikan\{
     RombelController
 };
 use App\Http\Controllers\Api\Pegawai\{
-    AnakPegawaiController,
     PegawaiController,
     PengajarController,
     WalikelasController,
@@ -106,6 +104,7 @@ Route::prefix('export')->group(function () {
     Route::get('/santri' , [SantriController::class, 'santriExport'])->name('santri.export');
     Route::get('/pelajar' , [PelajarController::class, 'pelajarExport'])->name('pelajar.export');
     Route::get('/pesertadidik-bersaudara' , [PelajarController::class, 'bersaudaraExport'])->name('bersaudara.export');
+    Route::get('/khadam' , [KhadamController::class, 'khadamExport'])->name('khadam.export');
 });
 
 // Grouping API
@@ -130,6 +129,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pelajar/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/alumni', [AlumniController::class, 'alumni']);
     Route::get('/alumni/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
+
     Route::apiResource('/catatan-afektif', CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif', CatatanKognitifController::class);
 
@@ -175,7 +176,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/pengurus', PengurusController::class);
     Route::apiResource('/karyawan', KaryawanController::class);
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
-    Route::apiResource('/anakpegawai', AnakPegawaiController::class);
     Route::apiResource('/materiAjar', MateriAjarController::class);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/pengajars', [PengajarController::class, 'filterPengajar']);
@@ -183,7 +183,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
-    Route::get('/anakpegawais', [AnakPegawaiController::class, 'getAllAnakpegawai']);
 
     // 🚨 Administrasi
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);

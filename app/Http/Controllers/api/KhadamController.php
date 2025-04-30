@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Models\Khadam;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Exports\KhadamExport;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\FilterKhadamService;
 
 class KhadamController extends Controller
@@ -86,6 +88,7 @@ class KhadamController extends Controller
         $formatted = collect($results->items())->map(fn($item) => [
             "id_khadam" => $item->id,
             "niup" => $item->niup ?? '-',
+            "nik" => $item->identitas ?? '-',
             "nama" => $item->nama,
             "keterangan" => $item->keterangan,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
@@ -436,5 +439,10 @@ class KhadamController extends Controller
             Log::error("Error formDetailSantri: " . $e->getMessage());
             return ['error' => 'Terjadi kesalahan pada server'];
         }
+    }
+
+    public function khadamExport(Request $request, FilterKhadamService $filterService)
+    {
+        return Excel::download(new KhadamExport($request, $filterService), 'khadam.xlsx');
     }
 }

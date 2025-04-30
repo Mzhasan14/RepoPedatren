@@ -118,10 +118,10 @@ class SantriController extends Controller
             "nis" => $item->nis,
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
-            "kamar" => $item->nama_kamar ?? '-',
-            "blok" => $item->nama_blok ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
             "wilayah" => $item->nama_wilayah ?? '-',
+            "blok" => $item->nama_blok ?? '-',
+            "kamar" => $item->nama_kamar ?? '-',
             "angkatan" =>$item->angkatan,
             "kota_asal" =>$item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
@@ -170,6 +170,9 @@ class SantriController extends Controller
                 ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
                 // wajib punya relasi riwayat domisili aktif
                 ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+                ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+                ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
+                ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
                 // join riwayat pendidikan aktif
                 ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
                 ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
@@ -189,6 +192,9 @@ class SantriController extends Controller
                     'b.nama',
                     'wp.niup',
                     'l.nama_lembaga',
+                    'w.nama_wilayah',
+                    'km.nama_kamar',
+                    'bl.nama_blok',
                     DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                     'kb.nama_kabupaten AS kota_asal',
                     's.created_at',
@@ -233,6 +239,9 @@ class SantriController extends Controller
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
+            "wilayah" => $item->nama_wilayah ?? '-',
+            "blok" => $item->nama_blok ?? '-',
+            "kamar" => $item->nama_kamar ?? '-',
             "angkatan" =>$item->angkatan,
             "kota_asal" =>$item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',

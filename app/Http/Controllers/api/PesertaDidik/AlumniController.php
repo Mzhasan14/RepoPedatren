@@ -122,6 +122,7 @@ class AlumniController extends Controller
         $formatted = collect($results->items())->map(fn($item) => [
             "id" => $item->id,
             "nama" => $item->nama,
+            "niup" => $item->niup ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
             "tahun_keluar_pendidikan" => $item->tahun_keluar_pelajar ?? '-',
             "tahun_masuk_santri" => $item->tahun_masuk_santri ?? '-',
