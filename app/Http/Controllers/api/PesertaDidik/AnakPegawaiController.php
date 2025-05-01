@@ -7,14 +7,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\AnakPegawaiService;
-use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
+use App\Services\PesertaDidik\Filters\FilterAnakPegawaiService;
 
 class AnakPegawaiController extends Controller
 {
     private AnakPegawaiService $anakPegawaiService;
-    private FilterPesertaDidikService $filterController;
+    private FilterAnakPegawaiService $filterController;
 
-    public function __construct(AnakPegawaiService $anakPegawaiService, FilterPesertaDidikService $filterController)
+    public function __construct(AnakPegawaiService $anakPegawaiService, FilterAnakPegawaiService $filterController)
     {
         $this->anakPegawaiService = $anakPegawaiService;
         $this->filterController = $filterController;
@@ -24,7 +24,7 @@ class AnakPegawaiController extends Controller
     {
         try {
             $query = $this->anakPegawaiService->getAllAnakPegawai($request);
-            $query = $this->filterController->pesertaDidikFilters($query, $request);
+            $query = $this->filterController->anakPegawaiFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
