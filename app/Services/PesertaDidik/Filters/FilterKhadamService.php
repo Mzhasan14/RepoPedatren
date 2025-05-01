@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\PesertaDidik\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -121,8 +121,7 @@ class FilterKhadamService
         }
 
         if ($request->filled('wilayah')) {
-            $query->join('peserta_didik AS pd', 'pd.biodata_id', '=', 'b.id')
-                ->join('riwayat_domisili AS rd', 'rd.peserta_didik_id', '=', 'pd.id')
+            $query->join('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
                 ->join('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
                 ->where('w.nama_wilayah', $request->wilayah);
 
@@ -149,8 +148,7 @@ class FilterKhadamService
         }
 
         if ($request->filled('lembaga')) {
-            $query->join('peserta_didik AS pd', 'pd.biodata_id', '=', 'b.id')
-                ->join('riwayat_pendidikan AS rp', 'rp.peserta_didik_id', '=', 'pd.id')
+            $query->join('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
                 ->join('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
                 ->where('l.nama_lembaga', $request->lembaga);
 

@@ -1,36 +1,35 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik;
+namespace App\Http\Controllers\Api\Administrasi;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\AnakPegawaiService;
-use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
+use App\Services\Administrasi\PelanggaranService;
+use App\Services\Administrasi\Filters\FilterPelanggaranService;
 
-class AnakPegawaiController extends Controller
+class PelanggaranController extends Controller
 {
-    private AnakPegawaiService $anakPegawaiService;
-    private FilterPesertaDidikService $filterController;
+    private PelanggaranService $pelanggaranService;
+    private FilterPelanggaranService $filterController;
 
-    public function __construct(AnakPegawaiService $anakPegawaiService, FilterPesertaDidikService $filterController)
+    public function __construct(FilterPelanggaranService $filterController, PelanggaranService $pelanggaranService)
     {
-        $this->anakPegawaiService = $anakPegawaiService;
+        $this->pelanggaranService = $pelanggaranService;
         $this->filterController = $filterController;
     }
 
-    public function getAllAnakPegawai(Request $request): JsonResponse
+    public function getAllPelanggaran(Request $request)
     {
         try {
-            $query = $this->anakPegawaiService->getAllAnakPegawai($request);
-            $query = $this->filterController->pesertaDidikFilters($query, $request);
+            $query = $this->pelanggaranService->getAllPelanggaran($request);
+            $query = $this->filterController->pelanggaranFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[AnakPegawaiController] Error: {$e->getMessage()}");
+            Log::error("[PelanggaranController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
@@ -45,7 +44,7 @@ class AnakPegawaiController extends Controller
             ], 200);
         }
 
-        $formatted = $this->anakPegawaiService->formatData($results);
+        $formatted = $this->pelanggaranService->formatData($results);
 
         return response()->json([
             'total_data'   => $results->total(),

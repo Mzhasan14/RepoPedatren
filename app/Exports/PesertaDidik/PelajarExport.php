@@ -17,8 +17,8 @@ use Illuminate\Contracts\Support\Responsable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use App\Services\PesertaDidik\FilterPelajarService;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
+use App\Services\PesertaDidik\Filters\FilterPelajarService;
 
 class PelajarExport implements
     FromQuery,

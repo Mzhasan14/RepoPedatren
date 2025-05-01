@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\PesertaDidik;
+namespace App\Services\PesertaDidik\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;

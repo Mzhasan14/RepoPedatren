@@ -1,36 +1,38 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik;
+namespace App\Http\Controllers\Api\Administrasi;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\AnakPegawaiService;
-use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
+use App\Services\Administrasi\Filters\FilterPerizinanService;
+use App\Services\Administrasi\PerizinanService;
 
-class AnakPegawaiController extends Controller
+class PerizinanController extends Controller
 {
-    private AnakPegawaiService $anakPegawaiService;
-    private FilterPesertaDidikService $filterController;
+    private PerizinanService $perizinanService;
+    private FilterPerizinanService $filterController;
 
-    public function __construct(AnakPegawaiService $anakPegawaiService, FilterPesertaDidikService $filterController)
+    public function __construct(FilterPerizinanService $filterController, PerizinanService $perizinanService)
     {
-        $this->anakPegawaiService = $anakPegawaiService;
         $this->filterController = $filterController;
+        $this->perizinanService = $perizinanService;
     }
 
-    public function getAllAnakPegawai(Request $request): JsonResponse
+    public function getAllPerizinan(Request $request)
     {
         try {
-            $query = $this->anakPegawaiService->getAllAnakPegawai($request);
-            $query = $this->filterController->pesertaDidikFilters($query, $request);
+          
+            $query = $this->perizinanService->getAllPerizinan($request);
+            $query = $this->filterController->perizinanFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[AnakPegawaiController] Error: {$e->getMessage()}");
+            Log::error("[PerizinanController] Error: {$e->getMessage()}");
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
@@ -45,8 +47,7 @@ class AnakPegawaiController extends Controller
             ], 200);
         }
 
-        $formatted = $this->anakPegawaiService->formatData($results);
-
+        $formatted = $this->perizinanService->formatData($results);
         return response()->json([
             'total_data'   => $results->total(),
             'current_page' => $results->currentPage(),

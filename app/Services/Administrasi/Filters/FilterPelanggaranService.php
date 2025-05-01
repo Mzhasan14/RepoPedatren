@@ -1,61 +1,25 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Administrasi\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterPerizinanService
+class FilterPelanggaranService
 {
     /**
      * Panggil semua filter berurutan
      */
-    public function perizinanFilters(Builder $query, Request $request): Builder
+    public function pelanggaranFilters(Builder $query, Request $request): Builder
     {
-        $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
-        $query = $this->applyStatusIzin($query, $request);
-        $query = $this->applyJenisIzinFilter($query, $request);
-        $query = $this->applyBermalamFilter($query, $request);
-        $query = $this->applyMasaTelatFilter($query, $request);
-
-        return $query;
-    }
-
-    public function applyAlamatFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('negara')) {
-            return $query;
-        }
-
-        // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
-        if ($request->filled('negara')) {
-            $query->join('negara', 'b.negara_id', '=', 'negara.id')
-                ->where('negara.nama_negara', $request->negara);
-
-            if ($request->filled('provinsi')) {
-                $query
-                    ->where('pv.nama_provinsi', $request->provinsi);
-
-                if ($request->filled('kabupaten')) {
-                    // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query
-                        ->where('kb.nama_kabupaten', $request->kabupaten);
-
-                    if ($request->filled('kecamatan')) {
-                        $query
-                            ->where('kc.nama_kecamatan', $request->kecamatan);
-                    }
-                } else {
-                    // Jika nilai kabupaten tidak valid, hasilkan query kosong
-                    $query->whereRaw('0 = 1');
-                }
-            }
-        }
-
+        $query = $this->applyJenisPutusanFilter($query, $request);
+        $query = $this->applyJenisPelanggaranFilter($query, $request);
+        $query = $this->applyStatusPelanggaranFilter($query, $request);
+        
         return $query;
     }
 
@@ -71,7 +35,7 @@ class FilterPerizinanService
         } elseif ($jenis_kelamin === 'perempuan' || $jenis_kelamin === 'ibu') {
             $query->where('b.jenis_kelamin', 'p');
         } else {
-            // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
+            // Jika nilai tidak valid, hasilkan query kosong
             $query->whereRaw('0 = 1');
         }
 
@@ -145,57 +109,40 @@ class FilterPerizinanService
         return $query;
     }
 
-    public function applyStatusIzin(Builder $query, Request $request): Builder
+    public function applyJenisPutusanFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('status_izin')) {
+        if (! $request->filled('jenis_putusan')) {
             return $query;
         }
 
-        $query->where('pr.status_izin', $request->status_izin);
+        $query->where('pl.jenis_putusan', $request->jenis_putusan);
 
         return $query;
     }
 
-    public function applyJenisIzinFilter(Builder $query, Request $request): Builder
+    public function applyJenisPelanggaranFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('jenis_izin')) {
+        if (! $request->filled('jenis_pelanggaran')) {
             return $query;
         }
 
-        $query->where('pr.jenis_izin', $request->jenis_izin);
+        $query->where('pl.jenis_pelanggaran', $request->jenis_pelanggaran);
 
         return $query;
     }
 
-    public function applyBermalamFilter(Builder $query, Request $request): Builder
+    public function applyStatusPelanggaranFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('bermalam')) {
+        if (! $request->filled('status_pelanggaran')) {
             return $query;
         }
 
-        if ($request->bermalam === 'bermalam') {
-            return $query->whereRaw("TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) > 24");
-        } elseif ($request->bermalam === 'tidak bermalam') {
-            return $query->whereRaw("TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) <= 24");
-        }
+        $query->where('pl.status_pelanggaran', $request->status_pelanggaran);
 
         return $query;
     }
 
-    public function applyMasaTelatFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('masa_telat')) {
-            return $query;
-        }
 
-        if ($request->masa_telat === 'lebih  dari seminggu') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 7");
-        } elseif ($request->masa_telat === 'lebih dari 2 minggu') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 14");
-        } elseif ($request->masa_telat === 'lebih dari satu bulan') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 30");
-        }
 
-        return $query;
-    }
+   
 }

@@ -17,8 +17,8 @@ use Illuminate\Contracts\Support\Responsable;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use App\Services\PesertaDidik\FilterSantriService;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
+use App\Services\PesertaDidik\Filters\FilterSantriService;
 
 class SantriExport implements
     FromQuery,

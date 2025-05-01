@@ -1,18 +1,19 @@
-        <?php
+<?php
 
-use App\Exports\PelajarExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\Api\{
     BiodataController,
-    PerizinanController,
-    PelanggaranController,
     JenisBerkasController,
     BerkasController,
     CatatanAfektifController,
     CatatanKognitifController,
-    KhadamController,
+};
+
+use App\Http\Controllers\Api\Administrasi\{
+    PerizinanController,
+    PelanggaranController
 };
 
 use App\Http\Controllers\Api\PesertaDidik\{
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\PesertaDidik\{
     SantriController,
     AlumniController,
     DetailPesertaDidikController,
+    KhadamController,
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -131,6 +133,14 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/alumni/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
 
+    // Khadam
+    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
+    Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
+
+     // 🚨 Administrasi
+     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
+
     Route::apiResource('/catatan-afektif', CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif', CatatanKognitifController::class);
 
@@ -183,14 +193,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
-
-    // 🚨 Administrasi
-    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
-    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
-
-    // Khadam
-    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
-    Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
+    
 });
 Route::prefix('detail')->group(function () {
     Route::get('/pengurus/{id}', [PengurusController::class, 'getPengurus']);
