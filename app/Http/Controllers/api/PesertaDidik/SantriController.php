@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
-use App\Exports\SantriExport;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\FilterSantriService;
+use App\Exports\PesertaDidik\SantriExport;
+use App\Services\PesertaDidik\FilterSantriService;
 
 class SantriController extends Controller
 {
@@ -20,12 +20,6 @@ class SantriController extends Controller
         $this->filterController = $filterController;
     }
 
-    /**
-     * Get all Santri with filters and pagination
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function getAllSantri(Request $request)
     {
         try {

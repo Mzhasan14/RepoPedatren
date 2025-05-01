@@ -4,13 +4,13 @@ namespace App\Http\Controllers\api\PesertaDidik;
 
 use Exception;
 use Illuminate\Http\Request;
-use App\Exports\PelajarExport;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\FilterPelajarService;
+use App\Exports\PesertaDidik\PelajarExport;
+use App\Services\PesertaDidik\FilterPelajarService;
 
 class PelajarController extends Controller
 {
@@ -22,12 +22,6 @@ class PelajarController extends Controller
         $this->filterController = $filterController;
     }
 
-    /**
-     * Get all Pelajar with filters and pagination
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function getAllPelajar(Request $request)
     {
         try {

@@ -6,12 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Exports\PesertaDidikExport;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\FilterPesertaDidikService;
+use App\Exports\PesertaDidik\PesertaDidikExport;
+use App\Services\PesertaDidik\FilterPesertaDidikService;
 
 class PesertaDidikController extends Controller
 {
@@ -22,12 +21,6 @@ class PesertaDidikController extends Controller
         $this->filterController = $filterController;
     }
 
-    /**
-     * Get all Peserta Didik with filters and pagination
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function getAllPesertaDidik(Request $request): JsonResponse
     {
         try {
@@ -134,12 +127,6 @@ class PesertaDidikController extends Controller
         ]);
     }
 
-    /**
-     * Get all Peserta Didik Bersaudara Kandung with filters and pagination
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function getAllBersaudara(Request $request)
     {
         try {

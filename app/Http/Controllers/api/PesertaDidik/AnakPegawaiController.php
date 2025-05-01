@@ -8,7 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\FilterPesertaDidikService;
+use App\Services\PesertaDidik\FilterPesertaDidikService;
 
 class AnakPegawaiController extends Controller
 {
