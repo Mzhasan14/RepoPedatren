@@ -100,6 +100,8 @@ class CatatanKognitifController extends Controller
     }
     public function dataCatatanKognitif(Request $request)
     {
+        try
+        {
         // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
                 ->where('nama_jenis_berkas', 'Pas foto')
@@ -306,7 +308,15 @@ class CatatanKognitifController extends Controller
             });
         }
 
-
+    }
+        catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+                'code' => 500,
+                'error' => $e->getMessage()
+            ], 500);
+        }
         // Ambil jumlah data per halaman (default 10 jika tidak diisi)
         $perPage = $request->input('limit', 25);
 
