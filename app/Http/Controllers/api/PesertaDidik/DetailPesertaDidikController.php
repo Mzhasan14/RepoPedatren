@@ -32,11 +32,11 @@ class DetailPesertaDidikController extends Controller
             $data = $this->detailPesertaDidikService->getDetailPesertaDidik($idSantri);
             
             return response()->json([
-                'status' => 'success',
+                'status' => true,
                 'data'    => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error DetailPesertaDidikSantri: " . $e->getMessage());
+            Log::error("Error DetailPesertaDidik: " . $e->getMessage());
             return ['error' => 'Terjadi kesalahan pada server'];
         }
     }

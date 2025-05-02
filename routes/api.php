@@ -4,7 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\Api\{
-    BiodataController,
     JenisBerkasController,
     BerkasController,
     CatatanAfektifController,
@@ -13,9 +12,9 @@ use App\Http\Controllers\Api\{
 
 use App\Http\Controllers\Api\Administrasi\{
     PerizinanController,
-    PelanggaranController
+    PelanggaranController,
+    DetailPerizinanController
 };
-
 use App\Http\Controllers\Api\PesertaDidik\{
     AnakPegawaiController,
     PesertaDidikController,
@@ -68,17 +67,20 @@ use App\Http\Controllers\Api\Pegawai\{
     DropdownController
 };
 
-// Endpoint untuk registrasi dan login
-Route::post('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('register', [AuthController::class, 'register'])->name('register');
+Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
+Route::post('forgot',   [AuthController::class, 'forgotPassword'])->name('forgot');
+Route::post('reset',    [AuthController::class, 'resetPassword'])->name('reset');
 
-// Endpoint logout hanya bisa diakses oleh pengguna yang sudah terautentikasi
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-
-// Route untuk autentikasi
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('logout',  [AuthController::class, 'logout'])->name('logout');
+    Route::patch('profile', [AuthController::class, 'updateProfile']);
+    Route::post('password', [AuthController::class, 'changePassword']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });
+
 
 // Untuk Data Pokok Nanti
 // Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
@@ -102,23 +104,17 @@ Route::prefix('formulir')->group(function () {
 });
 
 Route::prefix('export')->group(function () {
-    Route::get('/pesertadidik' , [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
-    Route::get('/santri' , [SantriController::class, 'santriExport'])->name('santri.export');
-    Route::get('/pelajar' , [PelajarController::class, 'pelajarExport'])->name('pelajar.export');
-    Route::get('/pesertadidik-bersaudara' , [PelajarController::class, 'bersaudaraExport'])->name('bersaudara.export');
-    Route::get('/khadam' , [KhadamController::class, 'khadamExport'])->name('khadam.export');
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
+    Route::get('/santri', [SantriController::class, 'santriExport'])->name('santri.export');
+    Route::get('/pelajar', [PelajarController::class, 'pelajarExport'])->name('pelajar.export');
+    Route::get('/pesertadidik-bersaudara', [PelajarController::class, 'bersaudaraExport'])->name('bersaudara.export');
+    Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 });
 
 // Grouping API
 Route::prefix('data-pokok')->group(function () {
 
-    //Biodata
-    Route::apiResource('/biodata', BiodataController::class);
-
     // 🏫 Santri & Peserta Didik
-    Route::apiResource('/crud/peserta_didik', PesertaDidikController::class);
-    // Route::post('/pelajar', [PelajarController::class, 'store']);
-    Route::apiResource('/crud/santri', SantriController::class);
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [PesertaDidikController::class, 'getAllBersaudara']);
     Route::get('/pesertadidik-bersaudara/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
@@ -137,9 +133,10 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
     Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
 
-     // 🚨 Administrasi
-     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
-     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
+    // 🚨 Administrasi
+    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
+    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
 
     Route::apiResource('/catatan-afektif', CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif', CatatanKognitifController::class);
@@ -193,7 +190,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
-    
 });
 Route::prefix('detail')->group(function () {
     Route::get('/pengurus/{id}', [PengurusController::class, 'getPengurus']);

@@ -3,110 +3,207 @@
 namespace App\Http\Controllers\api\Auth;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\LoginRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
+use Illuminate\Support\Facades\Password;
+use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ForgotPasswordRequest;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Registrasi pengguna baru dengan role "pesertadidik".
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function register(Request $request)
+    public function __construct(private AuthService $authService) {}
+
+    public function register(RegisterRequest $req): JsonResponse
     {
-        // Validasi input
-        $validatedData = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        // Gunakan transaksi untuk memastikan atomicity
-        DB::beginTransaction();
-        try {
-            // Buat pengguna baru
-            $user = User::create([
-                'name'     => $validatedData['name'],
-                'email'    => $validatedData['email'],
-                'password' => Hash::make($validatedData['password']),
-            ]);
-
-            // Tetapkan role "santri" menggunakan Spatie
-            $user->assignRole('santri');
-
-            // Buat token autentikasi
-            $token = $user->createToken('auth-token')->plainTextToken;
-
-            DB::commit();
-
-            return response()->json([
-                'message' => 'Registrasi berhasil',
-                'user'    => $user,
-                'token'   => $token,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Terjadi kesalahan pada saat registrasi',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Login pengguna dan buat token autentikasi.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function login(Request $request)
-    {
-        // Validasi input
-        $validatedData = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        // Temukan pengguna berdasarkan email
-        $user = User::where('email', $validatedData['email'])->first();
-
-        // Cek kecocokan password
-        if (!$user || !Hash::check($validatedData['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Email atau password salah.'],
-            ]);
-        }
-
-        // Buat token autentikasi
+        $user = $this->authService->register($req->validated());
         $token = $user->createToken('auth-token')->plainTextToken;
-
         return response()->json([
-            'message' => 'Login berhasil',
-            'user'    => $user,
-            'token'   => $token,
+            'user'  => new UserResource($user),
+            'token' => $token,
+        ], 201);
+    }
+
+    public function login(LoginRequest $req): JsonResponse
+    {
+        $user = $this->authService->login($req->email, $req->password);
+        $token = $user->createToken('auth-token')->plainTextToken;
+        return response()->json([
+            'user'  => new UserResource($user),
+            'token' => $token,
         ]);
     }
 
-    /**
-     * Logout pengguna dengan menghapus token yang digunakan.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function logout(Request $request)
+    public function logout(): JsonResponse
     {
-        // Hapus token yang sedang digunakan
-        $request->user()->currentAccessToken()->delete();
+        $this->authService->logout(request()->user()->currentAccessToken());
+        return response()->json(null, 204);
+    }
 
-        return response()->json([
-            'message' => 'Logout berhasil',
-        ]);
+    public function forgotPassword(ForgotPasswordRequest $req): JsonResponse
+    {
+        $status = $this->authService->sendResetLink($req->email);
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Reset link terkirim.'])
+            : response()->json(['message' => __($status)], 500);
+    }
+
+    public function resetPassword(ResetPasswordRequest $req): JsonResponse
+    {
+        $status = $this->authService->resetPassword($req->validated());
+        return $status === Password::PASSWORD_RESET
+            ? response()->json(['message' => 'Password berhasil direset.'])
+            : response()->json(['message' => __($status)], 500);
+    }
+
+    public function updateProfile(UpdateProfileRequest $req): JsonResponse
+    {
+        $user = $this->authService->updateProfile($req->user(), $req->validated());
+        return response()->json(['user' => new UserResource($user)]);
+    }
+
+    public function changePassword(ChangePasswordRequest $req): JsonResponse
+    {
+        $this->authService->changePassword(
+            $req->user(),
+            $req->current_password,
+            $req->new_password
+        );
+        return response()->json(['message' => 'Password telah diubah. Silakan login ulang.']);
     }
 }
+// {
+//     // Registrasi
+//     public function register(Request $req)
+//     {
+//         $data = $req->validate([
+//             'name'                  => 'required|string|max:255',
+//             'email'                 => 'required|email|unique:users,email',
+//             'password'              => 'required|string|min:8|confirmed',
+//         ]);
+
+//         $user = User::create([
+//             'name'     => $data['name'],
+//             'email'    => $data['email'],
+//             'password' => Hash::make($data['password']),
+//         ]);
+
+//         $user->assignRole('santri'); // Spatie
+
+//         return response()->json([
+//             'user'  => $user,
+//             'token' => $user->createToken('auth-token')->plainTextToken,
+//         ], 201);
+//     }
+
+//     // Login
+//     public function login(Request $req)
+//     {
+//         $data = $req->validate([
+//             'email'    => 'required|email',
+//             'password' => 'required|string',
+//         ]);
+
+//         $user = User::where('email', $data['email'])->first();
+//         if (! $user || ! Hash::check($data['password'], $user->password)) {
+//             throw ValidationException::withMessages([
+//                 'email' => ['Email atau password salah.'],
+//             ]);
+//         }
+
+//         return response()->json([
+//             'user'  => $user,
+//             'token' => $user->createToken('auth-token')->plainTextToken,
+//         ]);
+//     }
+
+//     // Logout
+//     public function logout(Request $req)
+//     {
+//         $req->user()->currentAccessToken()->delete();
+//         return response()->json(['message' => 'Logout berhasil.']);
+//     }
+
+//     // Kirim link reset password
+//     public function forgotPassword(Request $req)
+//     {
+//         $req->validate(['email' => 'required|email|exists:users,email']);
+
+//         $status = Password::sendResetLink($req->only('email'));
+
+//         return $status === Password::RESET_LINK_SENT
+//             ? response()->json(['message' => 'Reset link terkirim.'])
+//             : response()->json(['message' => __($status)], 500);
+//     }
+
+//     // Reset password via token
+//     public function resetPassword(Request $req)
+//     {
+//         $data = $req->validate([
+//             'email'                 => 'required|email|exists:users,email',
+//             'token'                 => 'required',
+//             'password'              => 'required|string|min:8|confirmed',
+//         ]);
+
+//         $status = Password::reset(
+//             $data,
+//             function (User $user, string $pass) {
+//                 $user->password = Hash::make($pass);
+//                 $user->setRememberToken(Str::random(60));
+//                 $user->tokens()->delete(); // logout semua
+//                 $user->save();
+//             }
+//         );
+
+//         return $status === Password::PASSWORD_RESET
+//             ? response()->json(['message' => 'Password berhasil direset.'])
+//             : response()->json(['message' => __($status)], 500);
+//     }
+
+//     // Update profil (name/email)
+//     public function updateProfile(Request $req)
+//     {
+//         $user = $req->user();
+//         $data = $req->validate([
+//             'name'  => 'sometimes|required|string|max:255',
+//             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+//         ]);
+
+//         $user->update($data);
+
+//         return response()->json(['user' => $user]);
+//     }
+
+//     // Ganti password user login
+//     public function changePassword(Request $req)
+//     {
+//         $data = $req->validate([
+//             'current_password' => 'required|string',
+//             'new_password'     => 'required|string|min:8|confirmed',
+//         ]);
+
+//         $user = $req->user();
+//         if (! Hash::check($data['current_password'], $user->password)) {
+//             throw ValidationException::withMessages([
+//                 'current_password' => ['Password lama tidak sesuai.'],
+//             ]);
+//         }
+
+//         $user->password = Hash::make($data['new_password']);
+//         $user->setRememberToken(Str::random(60));
+//         $user->tokens()->delete(); // logout semua
+//         $user->save();
+
+//         return response()->json(['message' => 'Password telah diubah. Silakan login ulang.']);
+//     }
+// }

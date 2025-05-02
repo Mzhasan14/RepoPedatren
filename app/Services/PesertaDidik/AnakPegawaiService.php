@@ -10,47 +10,36 @@ class AnakPegawaiService
 {
     public function getAllAnakPegawai(Request $request)
     {
-        // ID untuk jenis berkas "Pas foto"
+        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // Foto terakhir per biodata
+        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // Warga pesantren terakhir per biodata (status = true)
+        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // Hitung pegawai per no_kk (status=true)
-        $familyPegawai = DB::table('keluarga AS k2')
-            ->join('pegawai AS p', function ($j) {
-                $j->on('p.id_biodata', '=', 'k2.id_biodata')
-                    ->where('p.status', true);
-            })
-            ->select('k2.no_kk', DB::raw('COUNT(*) AS peg_count'))
-            ->groupBy('k2.no_kk');
-
-        // Query utama
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
-            ->join('keluarga AS parent_k', 'parent_k.no_kk', '=', 'k.no_kk')
-            ->join('orang_tua_wali AS otw', 'otw.id_biodata', '=', 'parent_k.id_biodata')
-            ->join('hubungan_keluarga AS hk', function ($j) {
-                $j->on('hk.id', '=', 'otw.id_hubungan_keluarga')
-                    ->whereIn('hk.nama_status', ['ayah', 'ibu']);
+            ->join('keluarga AS parent_k', function ($j) {
+                $j->on('parent_k.no_kk', '=', 'k.no_kk')
+                    ->whereColumn('parent_k.id_biodata', '!=', 'k.id_biodata');
             })
+            ->join('orang_tua_wali AS otw', 'otw.id_biodata', '=', 'parent_k.id_biodata')
             ->join('pegawai AS p', function ($j) {
                 $j->on('p.biodata_id', '=', 'otw.id_biodata')
                     ->where('p.status', true);
             })
-            ->leftJoin('biodata AS bp', 'bp.id', '=', 'otw.id_biodata')
+            ->join('biodata AS bp', 'bp.id', '=', 'p.biodata_id')
             ->leftJoin('riwayat_pendidikan AS rp', function ($j) {
                 $j->on('s.id', '=', 'rp.santri_id')
                     ->where('rp.status', 'aktif');
@@ -65,20 +54,15 @@ class AnakPegawaiService
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftJoinSub($fotoLast, 'fl', function ($j) {
-                $j->on('b.id', '=', 'fl.biodata_id');
-            })
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', function ($j) {
-                $j->on('b.id', '=', 'wl.biodata_id');
-            })
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(function ($q) {
                 $q->where('s.status', 'aktif')
-                    ->orWhere('rp.status', '=', 'aktif');
+                    ->orWhere('rp.status', 'aktif');
             })
-            ->distinct('s.id')
             ->select([
                 's.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
@@ -91,24 +75,14 @@ class AnakPegawaiService
                 'w.nama_wilayah',
                 'km.nama_kamar',
                 'bl.nama_blok',
-                DB::raw("
-                    GROUP_CONCAT(
-                        DISTINCT CASE
-                            WHEN hk.nama_status = 'ayah' THEN bp.nama
-                            WHEN hk.nama_status = 'ibu'  THEN bp.nama
-                        END
-                        SEPARATOR '/ '
-                    ) AS nama_ortu
-                "),
+                DB::raw("GROUP_CONCAT(DISTINCT bp.nama SEPARATOR '/ ') AS nama_ortu"),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                DB::raw("
-                    GREATEST(
-                        s.updated_at,
-                        COALESCE(rp.updated_at, s.updated_at),
-                        COALESCE(rd.updated_at, s.updated_at)
-                    ) AS updated_at
-                "),
+                DB::raw("GREATEST(
+                    s.updated_at,
+                    COALESCE(rp.updated_at, s.updated_at),
+                    COALESCE(rd.updated_at, s.updated_at)
+                ) AS updated_at"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->groupBy([
@@ -126,7 +100,7 @@ class AnakPegawaiService
                 'kb.nama_kabupaten',
                 's.created_at',
                 DB::raw("GREATEST(s.updated_at, COALESCE(rp.updated_at, s.updated_at), COALESCE(rd.updated_at, s.updated_at))"),
-                DB::raw("COALESCE(br.file_path, 'default.jpg')")
+                DB::raw("COALESCE(br.file_path, 'default.jpg')"),
             ])
             ->orderBy('s.id');
     }

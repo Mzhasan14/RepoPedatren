@@ -37,6 +37,7 @@ class JenisBerkasSeeder extends Seeder
             ['nama_jenis_berkas' => 'Surat Domisili (jika dari luar kota)', 'wajib' => 0],
             ['nama_jenis_berkas' => 'Surat Keterangan Anak Yatim/Piatu', 'wajib' => 0],
             ['nama_jenis_berkas' => 'Fotokopi Kartu Santri', 'wajib' => 0],
+            ['nama_jenis_berkas' => 'Bukti Izin', 'wajib' => 0],
         ];
 
         foreach ($jenisBerkas as $berkas) {

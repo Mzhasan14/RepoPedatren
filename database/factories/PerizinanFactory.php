@@ -7,6 +7,7 @@ use App\Models\Santri;
 use App\Models\Perizinan;
 use Illuminate\Support\Carbon;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\OrangTuaWali;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 
@@ -74,9 +75,10 @@ class PerizinanFactory extends Factory
 
         return [
             'santri_id'       => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'biktren'         => optional(User::role('biktren')->inRandomOrder()->first())->id,
-            'pengasuh'        => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
-            'kamtib'          => optional(User::role('kamtib')->inRandomOrder()->first())->id,
+            'biktren_id'         => optional(User::role('biktren')->inRandomOrder()->first())->id,
+            'pengasuh_id'        => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
+            'kamtib_id'          => optional(User::role('kamtib')->inRandomOrder()->first())->id,
+            'pengantar_id'       => optional(OrangTuaWali::inRandomOrder()->first())->id,
             'alasan_izin'     => $this->faker->sentence,
             'alamat_tujuan'   => $this->faker->address,
             'tanggal_mulai'   => $mulai,

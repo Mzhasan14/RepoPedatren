@@ -67,7 +67,7 @@ class PesertaDidikService
             ])
             // Order By Yang Status lengkap
             // ->orderByRaw('(CASE WHEN s.status = "aktif" AND rp.status = "aktif" THEN 1 ELSE 0 END) DESC')
-            ->orderBy('s.id');;
+            ->orderBy('s.id');
     }
 
     public function formatData($results)

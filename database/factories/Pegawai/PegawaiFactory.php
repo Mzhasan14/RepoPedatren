@@ -5,6 +5,7 @@ namespace Database\Factories\Pegawai;
 use App\Models\Biodata;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Pegawai;
+use Database\Factories\BiodataFactory;
 use Database\Factories\Pendidikan\KelasFactory;
 use Database\Factories\Pendidikan\RombelFactory;
 use Database\Factories\Pendidikan\JurusanFactory;
@@ -27,7 +28,7 @@ class PegawaiFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'biodata_id' => Biodata::inRandomOrder()->first()?->id,
+            'biodata_id' => (new BiodataFactory())->create()->id,
             'lembaga_id' =>  (new LembagaFactory())->create()->id,
             'jurusan_id' =>  (new JurusanFactory())->create()->id,
             'kelas_id' =>  (new KelasFactory())->create()->id,

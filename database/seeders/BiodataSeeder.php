@@ -21,6 +21,6 @@ class BiodataSeeder extends Seeder
      */
     public function run(): void
     {
-        (new BiodataFactory())->count(100)->create();
+        (new BiodataFactory())->count(10)->create();
     }
 }

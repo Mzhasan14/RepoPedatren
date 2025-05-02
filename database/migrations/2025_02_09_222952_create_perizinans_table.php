@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('perizinan', function (Blueprint $table) {
             $table->id();
             $table->uuid('santri_id');
-            $table->unsignedBigInteger('pengasuh')->nullable();
-            $table->unsignedBigInteger('biktren')->nullable();
-            $table->unsignedBigInteger('kamtib')->nullable();
+            $table->unsignedBigInteger('pengasuh_id')->nullable();
+            $table->unsignedBigInteger('biktren_id')->nullable();
+            $table->unsignedBigInteger('kamtib_id')->nullable();
+            $table->unsignedBigInteger('pengantar_id')->nullable();
             $table->text('alasan_izin');
             $table->text('alamat_tujuan');
             $table->datetime('tanggal_mulai');
@@ -31,10 +32,11 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
+            $table->foreign('pengantar_id')->references('id')->on('orang_tua_wali')->onDelete('cascade');
             $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
-            $table->foreign('pengasuh')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('biktren')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('kamtib')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('pengasuh_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('biktren_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('kamtib_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });

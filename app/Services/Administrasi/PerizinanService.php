@@ -24,21 +24,24 @@ class PerizinanService
         return DB::table('perizinan as pr')
             // Join ke tabel santri dan wali asuh
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
             ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftjoin('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
+            ->leftjoin('kelas as kls', 'rp.kelas_id', '=', 'kls.id')
+            ->leftjoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
 
             // Join ke tabel users untuk biktren, pengasuh, kamtib
-            ->leftjoin('users as biktren', 'pr.biktren', '=', 'biktren.id')
-            ->leftjoin('users as pengasuh',  'pr.pengasuh',  '=', 'pengasuh.id')
-            ->leftjoin('users as kamtib',  'pr.kamtib',  '=', 'kamtib.id')
+            ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
+            ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
+            ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
 
             // Join ke tabel users untuk created_by 
             ->join('users as creator', 'pr.created_by', '=', 'creator.id')
@@ -55,6 +58,9 @@ class PerizinanService
                 'bl.nama_blok',
                 'km.nama_kamar',
                 'l.nama_lembaga',
+                'j.nama_jurusan',
+                'kls.nama_kelas',
+                'r.nama_rombel',
                 'pv.nama_provinsi',
                 'kb.nama_kabupaten',
                 'kc.nama_kecamatan',
@@ -113,6 +119,9 @@ class PerizinanService
             'blok'         => $item->nama_blok ?? '-',
             'kamar'        => $item->nama_kamar ?? '-',
             'lembaga'      => $item->nama_lembaga ?? '-',
+            'jurusan'      => $item->nama_jurusan ?? '-',
+            'kelas'        => $item->nama_kelas ?? '-',
+            'rombel'       => $item->nama_rombel ?? '-',
             'provinsi'     => $item->nama_provinsi ?? '-',
             'kabupaten'    => $item->nama_kabupaten ?? '-',
             'kecamatan'    => $item->nama_kecamatan ?? '-',
