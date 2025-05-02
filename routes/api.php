@@ -11,9 +11,11 @@ use App\Http\Controllers\Api\{
 };
 
 use App\Http\Controllers\Api\Administrasi\{
+    DetailPelanggaranController,
     PerizinanController,
     PelanggaranController,
-    DetailPerizinanController
+    DetailPerizinanController,
+    DetailPelanggaranService
 };
 use App\Http\Controllers\Api\PesertaDidik\{
     AnakPegawaiController,
@@ -137,6 +139,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
     Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
+    Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
     Route::apiResource('/catatan-afektif', CatatanAfektifController::class);
     Route::apiResource('/catatan-kognitif', CatatanKognitifController::class);

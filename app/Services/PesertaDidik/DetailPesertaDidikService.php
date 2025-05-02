@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\URL;
 
 class DetailPesertaDidikService
 {
-    public function getDetailPesertaDidik(string $idSantri): array
+    public function getDetailPesertaDidik(string $santriId): array
     {
         // --- 1. Ambil basic santri + biodata_id + no_kk sekaligus ---
         $base = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('s.id', $idSantri)
+            ->where('s.id', $santriId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',

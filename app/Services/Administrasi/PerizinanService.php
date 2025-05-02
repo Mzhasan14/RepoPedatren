@@ -21,8 +21,16 @@ class PerizinanService
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
+        // 3) Subquery: perizinan terakhir per santri
+        $perizinanLast = DB::table('perizinan')
+            ->select('santri_id', DB::raw('MAX(id) AS last_pr_id'))
+            ->groupBy('santri_id');
+
         return DB::table('perizinan as pr')
-            // Join ke tabel santri dan wali asuh
+            ->joinSub($perizinanLast, 'pl', function ($join) {
+                $join->on('pr.santri_id', '=', 'pl.santri_id')
+                    ->on('pr.id', '=', 'pl.last_pr_id');
+            })
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
@@ -37,19 +45,12 @@ class PerizinanService
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
-
-            // Join ke tabel users untuk biktren, pengasuh, kamtib
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
             ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
             ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
-
-            // Join ke tabel users untuk created_by 
             ->join('users as creator', 'pr.created_by', '=', 'creator.id')
-
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // Pilih kolom yang diinginkan
             ->select([
                 'pr.id',
                 'b.nama as nama_santri',
@@ -105,7 +106,7 @@ class PerizinanService
                 'pr.updated_at',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            // (Opsional) urutkan berdasarkan tanggal mulai terbaru
+            // urutkan berdasarkan tanggal mulai terbaru
             ->orderBy('pr.id', 'desc');
     }
 

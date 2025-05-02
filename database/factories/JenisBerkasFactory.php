@@ -22,7 +22,6 @@ class JenisBerkasFactory extends Factory
     {
         return [
             'nama_jenis_berkas' => $this->faker->word,
-            'wajib' => $this->faker->boolean(80), // 80% kemungkinan wajib
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,

@@ -2,13 +2,13 @@
 
 namespace App\Services\Administrasi;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 
-class PelanggaranService
+class DetailPelanggaranService
 {
-    public function getAllPelanggaran(Request $request)
+    public function getDetailPelanggaran(string $pelanggaranId)
     {
         // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
@@ -21,17 +21,7 @@ class PelanggaranService
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: perizinan terakhir per santri
-        $pelanggaranLast = DB::table('pelanggaran')
-            ->select('santri_id', DB::raw('MAX(id) AS last_pl_id'))
-            ->groupBy('santri_id');
-
-        return DB::table('pelanggaran as pl')
-            // hanya ambil pelanggaran terakhir per santri
-            ->joinSub($pelanggaranLast, 'plt', function ($join) {
-                $join->on('pl.santri_id', '=', 'plt.santri_id')
-                    ->on('pl.id', '=', 'plt.last_pl_id');
-            })
+        $pelanggaran = DB::table('pelanggaran as pl')
             ->join('santri as s', 'pl.santri_id', '=', 's.id')
             ->leftjoin('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
@@ -44,8 +34,10 @@ class PelanggaranService
             ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('users as pencatat', 'pl.created_by', '=', 'pencatat.id')
+            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+            ->where('pl.id', $pelanggaranId)
             ->select([
                 'pl.id',
                 'b.nama',
@@ -64,33 +56,46 @@ class PelanggaranService
                 'pl.created_at',
                 DB::raw("COALESCE(pencatat.name, '(AutoSystem)') as pencatat"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->orderBy('pl.id', 'desc');
-    }
+            ])->first();
 
-    public function formatData($results)
-    {
-        return collect($results->items())->map(function ($item) {
-            return [
-                'id'                   => $item->id,
-                'nama_santri'          => $item->nama,                      // dari b.nama
-                'provinsi'             => $item->nama_provinsi ?? '-',
-                'kabupaten'            => $item->nama_kabupaten ?? '-',
-                'kecamatan'            => $item->nama_kecamatan ?? '-',
-                'wilayah'              => $item->nama_wilayah ?? '-',
-                'blok'                 => $item->nama_blok     ?? '-',
-                'kamar'                => $item->nama_kamar    ?? '-',
-                'lembaga'              => $item->nama_lembaga  ?? '-',
-                'status_pelanggaran'   => $item->status_pelanggaran,
-                'jenis_pelanggaran'    => $item->jenis_pelanggaran,
-                'jenis_putusan'        => $item->jenis_putusan,
-                'diproses_mahkamah'    => (bool) $item->diproses_mahkamah,
-                'keterangan'           => $item->keterangan    ?? '-',
-                'pencatat'             => $item->pencatat,
-                'foto_profil'          => url($item->foto_profil),
-                'tgl_input'            => Carbon::parse($item->created_at)
+        if ($pelanggaran) {
+            $data['pelanggaran'] = [
+                'id'                   => $pelanggaran->id,
+                'nama_santri'          => $pelanggaran->nama,                      // dari b.nama
+                'provinsi'             => $pelanggaran->nama_provinsi ?? '-',
+                'kabupaten'            => $pelanggaran->nama_kabupaten ?? '-',
+                'kecamatan'            => $pelanggaran->nama_kecamatan ?? '-',
+                'wilayah'              => $pelanggaran->nama_wilayah ?? '-',
+                'blok'                 => $pelanggaran->nama_blok     ?? '-',
+                'kamar'                => $pelanggaran->nama_kamar    ?? '-',
+                'lembaga'              => $pelanggaran->nama_lembaga  ?? '-',
+                'status_pelanggaran'   => $pelanggaran->status_pelanggaran,
+                'jenis_pelanggaran'    => $pelanggaran->jenis_pelanggaran,
+                'jenis_putusan'        => $pelanggaran->jenis_putusan,
+                'diproses_mahkamah'    => (bool) $pelanggaran->diproses_mahkamah,
+                'keterangan'           => $pelanggaran->keterangan    ?? '-',
+                'pencatat'             => $pelanggaran->pencatat,
+                'foto_profil'          => url($pelanggaran->foto_profil),
+                'tgl_input'            => Carbon::parse($pelanggaran->created_at)
                     ->translatedFormat('d F Y H:i:s'),
             ];
-        });
+        }
+
+        $berkas = DB::table('pelanggaran as pl')
+        ->join('santri as s', 's.id', 'pl.santri_id')
+        ->join('biodata as b', 's.biodata_id', 'b.id')
+        ->join('berkas_pelanggaran as bp', 'pl.id', 'bp.pelanggaran_id')
+        ->where('pl.id', $pelanggaranId)
+        ->whereColumn('bp.created_at', '>=', 'pl.created_at')
+        ->orderBy('bp.created_at', 'desc')
+        ->limit(4)
+        ->selectRaw("COALESCE(bp.file_path, 'default.jpg') as file_path")
+        ->get();
+
+        $data['Berkas'] = $berkas->map(function ($r) {
+            return URL::to($r->file_path);
+        })->toArray();
+
+        return $data;
     }
 }

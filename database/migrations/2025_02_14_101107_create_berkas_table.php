@@ -15,7 +15,6 @@ return new class extends Migration
         Schema::create('jenis_berkas', function (Blueprint $table) {
             $table->id();
             $table->string('nama_jenis_berkas');
-            $table->boolean('wajib')->default(false);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
