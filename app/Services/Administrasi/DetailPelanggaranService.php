@@ -10,12 +10,10 @@ class DetailPelanggaranService
 {
     public function getDetailPelanggaran(string $pelanggaranId)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
@@ -34,7 +32,6 @@ class DetailPelanggaranService
             ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('users as pencatat', 'pl.created_by', '=', 'pencatat.id')
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->where('pl.id', $pelanggaranId)
@@ -61,7 +58,7 @@ class DetailPelanggaranService
         if ($pelanggaran) {
             $data['pelanggaran'] = [
                 'id'                   => $pelanggaran->id,
-                'nama_santri'          => $pelanggaran->nama,                      // dari b.nama
+                'nama_santri'          => $pelanggaran->nama,                     
                 'provinsi'             => $pelanggaran->nama_provinsi ?? '-',
                 'kabupaten'            => $pelanggaran->nama_kabupaten ?? '-',
                 'kecamatan'            => $pelanggaran->nama_kecamatan ?? '-',
@@ -81,6 +78,7 @@ class DetailPelanggaranService
             ];
         }
 
+        // Berkas Pelanggaran
         $berkas = DB::table('pelanggaran as pl')
         ->join('santri as s', 's.id', 'pl.santri_id')
         ->join('biodata as b', 's.biodata_id', 'b.id')

@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class SantriService
+class NonDomisiliService
 {
-    public function getAllSantri(Request $request)
+    public function getAllNonDomisili(Request $request)
     {
         // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
@@ -27,6 +27,7 @@ class SantriService
             ->where('status', true)
             ->groupBy('biodata_id');
 
+        // Query utama: data peserta_didik all
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
@@ -41,26 +42,27 @@ class SantriService
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('s.status', 'aktif')
+            ->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'))
             ->select([
                 's.id',
                 's.nis',
                 'b.nama',
                 'wp.niup',
-                'km.nama_kamar',
-                'bl.nama_blok',
                 'l.nama_lembaga',
                 'w.nama_wilayah',
+                'km.nama_kamar',
+                'bl.nama_blok',
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
                 // ambil updated_at terbaru antar s, rp, rd
                 DB::raw("
-                   GREATEST(
-                       s.updated_at,
-                       COALESCE(rp.updated_at, s.updated_at),
-                       COALESCE(rd.updated_at, s.updated_at)
-                   ) AS updated_at
-               "),
+                  GREATEST(
+                      s.updated_at,
+                      COALESCE(rp.updated_at, s.updated_at),
+                      COALESCE(rd.updated_at, s.updated_at)
+                  ) AS updated_at
+              "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->orderBy('s.id');
@@ -77,8 +79,8 @@ class SantriService
             "wilayah" => $item->nama_wilayah ?? '-',
             "blok" => $item->nama_blok ?? '-',
             "kamar" => $item->nama_kamar ?? '-',
-            "angkatan" =>$item->angkatan,
-            "kota_asal" =>$item->kota_asal,
+            "angkatan" => $item->angkatan,
+            "kota_asal" => $item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)

@@ -24,7 +24,6 @@ class PerizinanController extends Controller
     public function getAllPerizinan(Request $request)
     {
         try {
-          
             $query = $this->perizinanService->getAllPerizinan($request);
             $query = $this->filterController->perizinanFilters($query, $request);
 
@@ -48,6 +47,7 @@ class PerizinanController extends Controller
         }
 
         $formatted = $this->perizinanService->formatData($results);
+        
         return response()->json([
             'total_data'   => $results->total(),
             'current_page' => $results->currentPage(),

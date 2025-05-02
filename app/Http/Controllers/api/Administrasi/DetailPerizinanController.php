@@ -37,7 +37,10 @@ class DetailPerizinanController extends Controller
             ], 200);
         } catch (\Exception $e) {
             Log::error("Error DetailPerizinan: " . $e->getMessage());
-            return ['error' => 'Terjadi kesalahan pada server'];
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
         }
     }
 }

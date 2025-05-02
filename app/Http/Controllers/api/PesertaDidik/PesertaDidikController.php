@@ -23,7 +23,6 @@ class PesertaDidikController extends Controller
         $this->pesertaDidikService = $pesertaDidikService;
         $this->filterController = $filterController;
         $this->bersaudaraService = $bersaudaraService;
-
     }
 
     public function getAllPesertaDidik(Request $request): JsonResponse
@@ -69,7 +68,7 @@ class PesertaDidikController extends Controller
         try {
             $query = $this->bersaudaraService->getAllBersaudara($request);
             $query = $this->filterController->bersaudaraFilters($query, $request);
-           
+
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
@@ -89,7 +88,6 @@ class PesertaDidikController extends Controller
             ], 200);
         }
 
-        // Format data untuk response
         $formatted = $this->bersaudaraService->formatData($results);
 
         return response()->json([
@@ -101,11 +99,13 @@ class PesertaDidikController extends Controller
         ]);
     }
 
+    // Export Peserta Didik
     public function pesertaDidikExport(Request $request, FilterPesertaDidikService $filterService)
     {
         return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik.xlsx');
     }
 
+    // Export Peserta Didik Bersaudara Kandung
     public function bersaudaraExport(Request $request, FilterPesertaDidikService $filterService)
     {
         return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik_bersaudara.xlsx');

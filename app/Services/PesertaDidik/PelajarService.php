@@ -30,19 +30,15 @@ class PelajarService
         // Query utama: data peserta_didik all
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            // wajib punya relasi riwayat pendidikan aktif
             ->join('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
             ->leftJoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
-            // join riwayat domisili aktif
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // join warga pesantren terakhir true (NIUP)
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')

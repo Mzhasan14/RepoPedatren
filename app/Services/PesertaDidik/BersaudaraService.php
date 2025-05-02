@@ -56,24 +56,17 @@ class BersaudaraService
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
-            // orang tua
             ->joinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
-            // hanya keluarga dengan >1 anak aktif
             ->joinSub($siblings, 'sib', fn($join) => $join->on('k.no_kk', '=', 'sib.no_kk'))
-            // join riwayat pendidikan aktif
             ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            // join riwayat domisili aktif
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // join warga pesantren terakhir true (NIUP)
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            // hanya yang berstatus aktif
             ->where(fn($q) => $q->where('s.status', 'aktif')
                 ->orWhere('rp.status', '=', 'aktif'))
             ->select([
@@ -87,7 +80,6 @@ class BersaudaraService
                 'br.file_path AS foto_profil',
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                // ambil updated_at terbaru antar s, rp, rd
                 DB::raw("
                  GREATEST(
                      s.updated_at,

@@ -9,7 +9,6 @@ class DetailPerizinanService
 {
   public function getDetailPerizinan(string $perizinanId): array
   {
-    // Pemohon Izin
     $biodata = DB::table('santri as s')
       ->join('perizinan as pr', 's.id', '=', 'pr.santri_id')
       ->join('biodata as b', 's.biodata_id', '=', 'b.id')
@@ -61,24 +60,24 @@ class DetailPerizinanService
         'pr.tanggal_mulai',
         'pr.tanggal_akhir',
         DB::raw("
-                  CASE
-                    WHEN DATE(pr.tanggal_mulai) = DATE(pr.tanggal_akhir)
-                      THEN 'sehari'
-                    ELSE 'bermalam'
-                  END AS bermalam
-                "),
+          CASE
+            WHEN DATE(pr.tanggal_mulai) = DATE(pr.tanggal_akhir)
+              THEN 'sehari'
+            ELSE 'bermalam'
+          END AS bermalam
+        "),
         DB::raw("
-                  CASE
-                    WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
-                      CONCAT(TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir), ' jam')
-                    WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 7 THEN
-                      CONCAT(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir), ' hari')
-                    WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 30 THEN
-                      CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 7), ' minggu')
-                    ELSE
-                      CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 30), ' bulan')
-                  END AS lama_izin
-                "),
+          CASE
+            WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
+              CONCAT(TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir), ' jam')
+            WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 7 THEN
+              CONCAT(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir), ' hari')
+            WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 30 THEN
+              CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 7), ' minggu')
+            ELSE
+              CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 30), ' bulan')
+          END AS lama_izin
+        "),
         'pr.tanggal_kembali',
         'pr.jenis_izin',
         'pr.status_izin',
@@ -119,7 +118,6 @@ class DetailPerizinanService
     ];
 
     // Data Pengantar / Penjemput
-
     $pengantar = DB::table('perizinan as pr')
       ->join('santri as s', 'pr.santri_id', '=', 's.id')
       ->join('biodata as b', 's.biodata_id', '=', 'b.id')
@@ -154,6 +152,7 @@ class DetailPerizinanService
       ];
     }
 
+    // Berkas Perizinan
     $berkas = DB::table('perizinan as pr')
       ->join('santri as s', 's.id', 'pr.santri_id')
       ->join('biodata as b', 's.biodata_id', 'b.id')
@@ -165,7 +164,6 @@ class DetailPerizinanService
       ->selectRaw("COALESCE(bp.file_path, 'default.jpg') as file_path")
       ->get();
 
-    // Bangun array URL
     $data['Berkas'] = $berkas->map(function ($r) {
       return URL::to($r->file_path);
     })->toArray();

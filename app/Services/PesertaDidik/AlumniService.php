@@ -39,28 +39,18 @@ class AlumniService
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // 5) Query utama
         return DB::table('santri as s')
-            // Biodata dasar
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-
-            // Riwayat_pendidikan alumni terakhir → lembaga
             ->leftJoinSub($riwayatLast, 'lr', fn($j) => $j->on('lr.santri_id', '=', 's.id'))
             ->leftJoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
-
-            // Domisili alumni terakhir → wilayah/blok/kamar
             ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // join warga pesantren terakhir true (NIUP)
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            // Filter: hanya santri alumni
             ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
-
             ->select([
                 's.id',
                 'wp.niup',
@@ -71,7 +61,6 @@ class AlumniService
                 'l.nama_lembaga',
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                // ambil updated_at terbaru antar s, rp, rd
                 DB::raw("
                 GREATEST(
                     s.updated_at,

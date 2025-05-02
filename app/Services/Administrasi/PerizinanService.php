@@ -10,18 +10,15 @@ class PerizinanService
 {
     public function getAllPerizinan(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: perizinan terakhir per santri
         $perizinanLast = DB::table('perizinan')
             ->select('santri_id', DB::raw('MAX(id) AS last_pr_id'))
             ->groupBy('santri_id');
@@ -69,7 +66,6 @@ class PerizinanService
                 'pr.alamat_tujuan',
                 'pr.tanggal_mulai',
                 'pr.tanggal_akhir',
-
                 // kolom bermalam: kalau tanggal mulai dan tanggal akhir berbeda → bermalam,
                 // kalau sama tanggalnya → sehari
                 DB::raw("
@@ -78,8 +74,6 @@ class PerizinanService
                   ELSE 'bermalam'
                   END AS bermalam
               "),
-
-                // tambahan: kolom lama_izin
                 DB::raw("
                   CASE
                       WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
@@ -106,7 +100,6 @@ class PerizinanService
                 'pr.updated_at',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            // urutkan berdasarkan tanggal mulai terbaru
             ->orderBy('pr.id', 'desc');
     }
 
@@ -116,7 +109,7 @@ class PerizinanService
             'id'                => $item->id,
             'nama_santri'       => $item->nama_santri,
             'jenis_kelamin'     => $item->jenis_kelamin,
-            'wilayah'      => $item->nama_wilayah,
+            'wilayah'           => $item->nama_wilayah,
             'blok'         => $item->nama_blok ?? '-',
             'kamar'        => $item->nama_kamar ?? '-',
             'lembaga'      => $item->nama_lembaga ?? '-',

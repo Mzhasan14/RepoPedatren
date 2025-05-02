@@ -30,10 +30,8 @@ class KhadamService
         return DB::table('khadam as kh')
             ->join('biodata as b', 'kh.biodata_id', '=', 'b.id')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
-            // join berkas pas foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // join warga pesantren terakhir (NIUP)
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->where('kh.status', true)

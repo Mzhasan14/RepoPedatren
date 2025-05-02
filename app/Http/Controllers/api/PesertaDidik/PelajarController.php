@@ -46,10 +46,8 @@ class PelajarController extends Controller
             ], 200);
         }
 
-        // Format data untuk respon JSON
         $formatted = $this->pelajarService->formatData($results);
 
-        // Kembalikan respon JSON dengan data yang sudah diformat
         return response()->json([
             "total_data"   => $results->total(),
             "current_page" => $results->currentPage(),

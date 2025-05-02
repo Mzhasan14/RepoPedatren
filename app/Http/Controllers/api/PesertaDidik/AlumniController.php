@@ -23,7 +23,6 @@ class AlumniController extends Controller
     {
         try {
             $query = $this->alumniService->getAllAlumni($request);
-            // Terapkan filter dan pagination
             $query = $this->filterController->alumniFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
@@ -45,10 +44,8 @@ class AlumniController extends Controller
             ], 200);
         }
 
-        // Format data output agar mudah dipahami
         $formatted = $this->alumniService->formatData($results);
 
-        // Kembalikan respon JSON dengan data yang sudah diformat
         return response()->json([
             "total_data"   => $results->total(),
             "current_page" => $results->currentPage(),

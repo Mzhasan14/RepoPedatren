@@ -10,24 +10,20 @@ class PelanggaranService
 {
     public function getAllPelanggaran(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: perizinan terakhir per santri
         $pelanggaranLast = DB::table('pelanggaran')
             ->select('santri_id', DB::raw('MAX(id) AS last_pl_id'))
             ->groupBy('santri_id');
 
         return DB::table('pelanggaran as pl')
-            // hanya ambil pelanggaran terakhir per santri
             ->joinSub($pelanggaranLast, 'plt', function ($join) {
                 $join->on('pl.santri_id', '=', 'plt.santri_id')
                     ->on('pl.id', '=', 'plt.last_pl_id');
@@ -73,7 +69,7 @@ class PelanggaranService
         return collect($results->items())->map(function ($item) {
             return [
                 'id'                   => $item->id,
-                'nama_santri'          => $item->nama,                      // dari b.nama
+                'nama_santri'          => $item->nama,                     
                 'provinsi'             => $item->nama_provinsi ?? '-',
                 'kabupaten'            => $item->nama_kabupaten ?? '-',
                 'kecamatan'            => $item->nama_kecamatan ?? '-',
