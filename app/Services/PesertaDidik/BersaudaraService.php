@@ -69,6 +69,8 @@ class BersaudaraService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(fn($q) => $q->where('s.status', 'aktif')
                 ->orWhere('rp.status', '=', 'aktif'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at'))
             ->select([
                 's.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),

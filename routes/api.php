@@ -69,13 +69,13 @@ use App\Http\Controllers\Api\Pegawai\{
     DropdownController
 };
 
-Route::post('register', [AuthController::class, 'register'])->name('register');
+Route::post('register', [AuthController::class, 'register']);
 Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
-Route::post('forgot',   [AuthController::class, 'forgotPassword'])->name('forgot');
-Route::post('reset',    [AuthController::class, 'resetPassword'])->name('reset');
+Route::post('forgot',   [AuthController::class, 'forgotPassword']);
+Route::post('reset',    [AuthController::class, 'resetPassword']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('logout',  [AuthController::class, 'logout'])->name('logout');
+    Route::post('logout',  [AuthController::class, 'logout']);
     Route::patch('profile', [AuthController::class, 'updateProfile']);
     Route::post('password', [AuthController::class, 'changePassword']);
     Route::get('/user', function (Request $request) {
@@ -113,7 +113,12 @@ Route::prefix('export')->group(function () {
     Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 });
 
-// Grouping API
+Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
+    Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
+    Route::put('/pesertadidik/{id}', [PesertaDidikController::class, 'update']);
+    Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+});
+
 Route::prefix('data-pokok')->group(function () {
 
     // 🏫 Santri & Peserta Didik

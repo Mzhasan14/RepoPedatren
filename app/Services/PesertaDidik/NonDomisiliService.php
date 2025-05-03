@@ -43,6 +43,8 @@ class NonDomisiliService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('s.status', 'aktif')
             ->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at'))
             ->select([
                 's.id',
                 's.nis',

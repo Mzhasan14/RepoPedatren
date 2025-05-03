@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\PesertaDidikRequest;
 use App\Exports\PesertaDidik\PesertaDidikExport;
 use App\Services\PesertaDidik\BersaudaraService;
 use App\Services\PesertaDidik\PesertaDidikService;
@@ -28,7 +30,6 @@ class PesertaDidikController extends Controller
     public function getAllPesertaDidik(Request $request): JsonResponse
     {
         try {
-
             $query = $this->pesertaDidikService->getAllPesertaDidik($request);
             $query = $this->filterController->pesertaDidikFilters($query, $request);
 
@@ -98,6 +99,62 @@ class PesertaDidikController extends Controller
             "data"         => $formatted
         ]);
     }
+
+    public function store(PesertaDidikRequest $request)
+    {
+        try {
+            // Simpan peserta didik dengan menggunakan service
+            $pesertaDidik = $this->pesertaDidikService->store($request->validated());
+
+            // Response sukses dengan status 201
+            return response()->json([
+                'message' => 'Peserta Didik berhasil disimpan.',
+                'data' => $pesertaDidik
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Tangani error umum (misalnya database, validasi, dll)
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menyimpan data.',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function update(PesertaDidikRequest $request, $id)
+    {
+        try {
+            // Update peserta didik dengan menggunakan service
+            $pesertaDidik = $this->pesertaDidikService->update($request->validated(), $id);
+
+            // Response sukses dengan status 200
+            return response()->json([
+                'message' => 'Peserta Didik berhasil diperbarui.',
+                'data' => $pesertaDidik
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            // Tangani error umum (misalnya database, validasi, dll)
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memperbarui data.',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $this->pesertaDidikService->destroy($id);
+            return response()->json([
+                'message' => 'Peserta Didik berhasil dihapus.',
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menghapus data.',
+                'error'   => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     // Export Peserta Didik
     public function pesertaDidikExport(Request $request, FilterPesertaDidikService $filterService)

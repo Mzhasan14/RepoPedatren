@@ -27,6 +27,10 @@ class Biodata extends Model
     protected $table = 'biodata';
     protected $guarded = ['id'];
 
+    public function santri()
+    {
+        return $this->hasOne(Santri::class, 'biodata_id', 'id');
+    }
     // // Master lookups
     // public function kecamatan()
     // {

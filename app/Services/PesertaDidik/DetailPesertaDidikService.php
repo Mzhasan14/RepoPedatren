@@ -9,7 +9,6 @@ class DetailPesertaDidikService
 {
     public function getDetailPesertaDidik(string $santriId): array
     {
-        // --- 1. Ambil basic santri + biodata_id + no_kk sekaligus ---
         $base = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
@@ -20,40 +19,28 @@ class DetailPesertaDidikService
                 'k.no_kk',
             ])
             ->first();
-
+    
         if (! $base) {
             return ['error' => 'Santri tidak ditemukan'];
         }
-
-        $santriId  = $base->santri_id;
-        $bioId     = $base->biodata_id;
-        $noKk      = $base->no_kk;
-
-        // --- 2. Biodata detail ---
+    
+        $santriId = $base->santri_id;
+        $bioId    = $base->biodata_id;
+        $noKk     = $base->no_kk;
+    
+        // --- Biodata ---
         $biodata = DB::table('biodata as b')
             ->leftJoin('warga_pesantren as wp', function ($j) {
                 $j->on('b.id', 'wp.biodata_id')
-                    ->where('wp.status', true)
-                    ->whereRaw('wp.id = (
-                    select max(id)
-                    from warga_pesantren
-                    where biodata_id = b.id and status = true
-                )');
+                  ->where('wp.status', true)
+                  ->whereRaw('wp.id = (select max(id) from warga_pesantren where biodata_id = b.id and status = true)');
             })
             ->leftJoin('berkas as br', function ($j) {
                 $j->on('b.id', 'br.biodata_id')
-                    ->where('br.jenis_berkas_id', function ($q) {
-                        $q->select('id')
-                            ->from('jenis_berkas')
-                            ->where('nama_jenis_berkas', 'Pas foto')
-                            ->limit(1);
-                    })
-                    ->whereRaw('br.id = (
-                    select max(id)
-                    from berkas
-                    where biodata_id = b.id
-                      and jenis_berkas_id = br.jenis_berkas_id
-                )');
+                  ->where('br.jenis_berkas_id', function ($q) {
+                      $q->select('id')->from('jenis_berkas')->where('nama_jenis_berkas', 'Pas foto')->limit(1);
+                  })
+                  ->whereRaw('br.id = (select max(id) from berkas where biodata_id = b.id and jenis_berkas_id = br.jenis_berkas_id)');
             })
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
@@ -75,40 +62,34 @@ class DetailPesertaDidikService
                 "COALESCE(br.file_path,'default.jpg') as foto"
             ]))
             ->first();
-
+    
         $data['Biodata'] = [
-            'nokk'               => $noKk ?? '-',
-            'nik_nopassport'     => $biodata->identitas,
-            'niup'               => $biodata->niup ?? '-',
-            'nama'               => $biodata->nama,
-            'jenis_kelamin'      => $biodata->jenis_kelamin,
+            'nokk'                 => $noKk ?? '-',
+            'nik_nopassport'       => $biodata->identitas,
+            'niup'                 => $biodata->niup ?? '-',
+            'nama'                 => $biodata->nama,
+            'jenis_kelamin'        => $biodata->jenis_kelamin,
             'tempat_tanggal_lahir' => $biodata->ttl,
-            'anak_ke'            => $biodata->anak_ke,
-            'umur'               => $biodata->umur,
-            'kecamatan'          => $biodata->nama_kecamatan ?? '-',
-            'kabupaten'          => $biodata->nama_kabupaten ?? '-',
-            'provinsi'           => $biodata->nama_provinsi ?? '-',
-            'warganegara'        => $biodata->nama_negara ?? '-',
-            'foto_profil'        => URL::to($biodata->foto),
+            'anak_ke'              => $biodata->anak_ke,
+            'umur'                 => $biodata->umur,
+            'kecamatan'            => $biodata->nama_kecamatan ?? '-',
+            'kabupaten'            => $biodata->nama_kabupaten ?? '-',
+            'provinsi'             => $biodata->nama_provinsi ?? '-',
+            'warganegara'          => $biodata->nama_negara ?? '-',
+            'foto_profil'          => URL::to($biodata->foto),
         ];
-
-        // --- 3. Data Keluarga (Orang tua/wali & saudara) ---
-        // Orang tua / wali
+    
+        // --- Keluarga ---
         $ortu = DB::table('keluarga as k')
             ->where('k.no_kk', $noKk)
             ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
             ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-            ->select([
-                'bo.nama',
-                'bo.nik',
-                DB::raw("hk.nama_status as status"),
-                'ow.wali'
-            ])
+            ->select(['bo.nama', 'bo.nik', DB::raw("hk.nama_status as status"), 'ow.wali'])
             ->get();
-
-        // Saudara kandung
+    
         $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+    
         $saudara = DB::table('keluarga as k')
             ->where('k.no_kk', $noKk)
             ->whereNotIn('k.id_biodata', $excluded)
@@ -121,42 +102,41 @@ class DetailPesertaDidikService
                 DB::raw("NULL as wali")
             ])
             ->get();
-
+    
         $keluarga = $ortu->merge($saudara);
-        if ($keluarga->isNotEmpty()) {
-            $data['Keluarga'] = $keluarga->map(fn($i) => [
+    
+        $data['Keluarga'] = $keluarga->isNotEmpty()
+            ? $keluarga->map(fn($i) => [
                 'nama'   => $i->nama,
                 'nik'    => $i->nik,
                 'status' => $i->status,
                 'wali'   => $i->wali,
-            ]);
-        }
-
-        // --- 4. Informasi Santri ---
+            ])
+            : [];
+    
+        // --- Status Santri: Santri ---
         $santriInfo = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->where('s.biodata_id', $bioId)
             ->select('nis', 'tanggal_masuk', 'tanggal_keluar')
             ->get();
-
-        if ($santriInfo) {
-            if ($keluarga->isNotEmpty()) {
-                $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
-                    'NIS'           => $s->nis,
-                    'Tanggal_Mulai' => $s->tanggal_masuk,
-                    'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
-                ]);
-            }
-        }
-
-        // --- 5. Kewaliasuhan ---
+    
+        $data['Status_Santri']['Santri'] = $santriInfo->isNotEmpty()
+            ? $santriInfo->map(fn($s) => [
+                'NIS'           => $s->nis,
+                'Tanggal_Mulai' => $s->tanggal_masuk,
+                'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
+            ])
+            : [];
+    
+        // --- Status Santri: Kewaliasuhan ---
         $kew = DB::table('santri as s')
             ->where('s.id', $santriId)
             ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
             ->leftJoin('anak_asuh as aa', 's.id', '=', 'aa.id_santri')
             ->leftJoin('kewaliasuhan as kw', function ($j) {
                 $j->on('kw.id_wali_asuh', 'wa.id')
-                    ->orOn('kw.id_anak_asuh', 'aa.id');
+                  ->orOn('kw.id_anak_asuh', 'aa.id');
             })
             ->leftJoin('grup_wali_asuh as g', 'g.id', '=', 'wa.id_grup_wali_asuh')
             ->selectRaw(implode(', ', [
@@ -178,23 +158,20 @@ class DetailPesertaDidikService
                     )
                   END
                   SEPARATOR ', '
-              ) as relasi"
+                ) as relasi"
             ]))
             ->groupBy('g.nama_grup', 'wa.id', 'aa.id')
             ->get();
-
-        if ($kew->isNotEmpty()) {
-            $data['Status_Santri']['Kewaliasuhan'] = $kew->map(fn($k) => [
-                'group'        => $k->nama_grup,
-                'sebagai'      => $k->role,
-                $k->role === 'Anak Asuh'
-                    ? 'Nama Wali Asuh'
-                    : 'Nama Anak Asuh'
-                => $k->relasi ?? '-',
-            ]);
-        }
-
-        // --- 6. Perizinan ---
+    
+        $data['Status_Santri']['Kewaliasuhan'] = $kew->isNotEmpty()
+            ? $kew->map(fn($k) => [
+                'group'   => $k->nama_grup,
+                'sebagai' => $k->role,
+                $k->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' => $k->relasi ?? '-',
+            ])
+            : [];
+    
+        // --- Perizinan ---
         $izin = DB::table('perizinan')
             ->where('santri_id', $santriId)
             ->select([
@@ -204,45 +181,39 @@ class DetailPesertaDidikService
                             THEN CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/86400),' Hari | Bermalam')
                             ELSE CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/3600),' Jam')
                      END as lama_waktu"),
-                'status_kembali'
+                'status'
             ])
             ->get();
-
-        if ($izin->isNotEmpty()) {
-            $data['Status_Santri']['Info_Perizinan'] = $izin->map(fn($z) => [
+    
+        $data['Status_Santri']['Info_Perizinan'] = $izin->isNotEmpty()
+            ? $izin->map(fn($z) => [
                 'tanggal'        => $z->tanggal,
                 'keterangan'     => $z->keterangan,
                 'lama_waktu'     => $z->lama_waktu,
-                'status_kembali' => $z->status_kembali,
-            ]);
-        }
-
-        // --- 7. Domisili ---
+                'status' => $z->status,
+            ])
+            : [];
+    
+        // --- Domisili ---
         $dom = DB::table('riwayat_domisili as rd')
             ->where('rd.santri_id', $santriId)
             ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
-            ->select([
-                'km.nama_kamar',
-                'bl.nama_blok',
-                'w.nama_wilayah',
-                'rd.tanggal_masuk',
-                'rd.tanggal_keluar'
-            ])
+            ->select(['km.nama_kamar', 'bl.nama_blok', 'w.nama_wilayah', 'rd.tanggal_masuk', 'rd.tanggal_keluar'])
             ->get();
-
-        if ($dom->isNotEmpty()) {
-            $data['Domisili'] = $dom->map(fn($d) => [
-                'kamar'            => $d->nama_kamar,
-                'blok'             => $d->nama_blok,
-                'wilayah'          => $d->nama_wilayah,
+    
+        $data['Domisili'] = $dom->isNotEmpty()
+            ? $dom->map(fn($d) => [
+                'kamar'             => $d->nama_kamar,
+                'blok'              => $d->nama_blok,
+                'wilayah'           => $d->nama_wilayah,
                 'tanggal_ditempati' => $d->tanggal_masuk,
-                'tanggal_pindah'   => $d->tanggal_keluar ?? '-',
-            ]);
-        }
-
-        // --- 8. Pendidikan ---
+                'tanggal_pindah'    => $d->tanggal_keluar ?? '-',
+            ])
+            : [];
+    
+        // --- Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
             ->where('rp.santri_id', $santriId)
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
@@ -259,9 +230,9 @@ class DetailPesertaDidikService
                 'rp.tanggal_keluar'
             ])
             ->get();
-
-        if ($pend->isNotEmpty()) {
-            $data['Pendidikan'] = $pend->map(fn($p) => [
+    
+        $data['Pendidikan'] = $pend->isNotEmpty()
+            ? $pend->map(fn($p) => [
                 'no_induk'     => $p->no_induk,
                 'nama_lembaga' => $p->nama_lembaga,
                 'nama_jurusan' => $p->nama_jurusan,
@@ -269,33 +240,34 @@ class DetailPesertaDidikService
                 'nama_rombel'  => $p->nama_rombel ?? '-',
                 'tahun_masuk'  => $p->tanggal_masuk,
                 'tahun_lulus'  => $p->tanggal_keluar ?? '-',
-            ]);
-        }
-
-        // --- 9. Catatan Afektif & Kognitif ---
+            ])
+            : [];
+    
+        // --- Catatan Afektif ---
         $af = DB::table('catatan_afektif as ca')
             ->where('ca.id_santri', $santriId)
             ->latest('ca.created_at')
             ->first();
-
-        if ($af) {
-            $data['Catatan_Progress']['Afektif'] = [
+    
+        $data['Catatan_Progress']['Afektif'] = $af
+            ? [
                 'kebersihan'               => $af->kebersihan_nilai ?? '-',
                 'tindak_lanjut_kebersihan' => $af->kebersihan_tindak_lanjut ?? '-',
                 'kepedulian'               => $af->kepedulian_nilai ?? '-',
                 'tindak_lanjut_kepedulian' => $af->kepedulian_tindak_lanjut ?? '-',
                 'akhlak'                   => $af->akhlak_nilai ?? '-',
                 'tindak_lanjut_akhlak'     => $af->akhlak_tindak_lanjut ?? '-',
-            ];
-        }
-
+            ]
+            : [];
+    
+        // --- Catatan Kognitif ---
         $kg = DB::table('catatan_kognitif as ck')
             ->where('ck.id_santri', $santriId)
             ->latest('ck.created_at')
             ->first();
-
-        if ($kg) {
-            $data['Catatan_Progress']['Kognitif'] = [
+    
+        $data['Catatan_Progress']['Kognitif'] = $kg
+            ? [
                 'kebahasaan'                      => $kg->kebahasaan_nilai ?? '-',
                 'tindak_lanjut_kebahasaan'        => $kg->kebahasaan_tindak_lanjut ?? '-',
                 'baca_kitab_kuning'               => $kg->baca_kitab_kuning_nilai ?? '-',
@@ -308,36 +280,37 @@ class DetailPesertaDidikService
                 'tindak_lanjut_tulis_alquran'     => $kg->tindak_lanjut_tulis_alquran ?? '-',
                 'baca_alquran'                    => $kg->baca_alquran_nilai ?? '-',
                 'tindak_lanjut_baca_alquran'      => $kg->baca_alquran_tindak_lanjut ?? '-',
-            ];
-        }
-
-        // --- 10. Kunjungan Mahrom ---
+            ]
+            : [];
+    
+        // --- Kunjungan Mahrom ---
         $kun = DB::table('pengunjung_mahrom as pm')
             ->where('pm.santri_id', $santriId)
             ->select(['pm.nama_pengunjung', 'pm.tanggal'])
             ->get();
-
-        if ($kun->isNotEmpty()) {
-            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
+    
+        $data['Kunjungan_Mahrom'] = $kun->isNotEmpty()
+            ? $kun->map(fn($k) => [
                 'nama'    => $k->nama_pengunjung,
                 'tanggal' => $k->tanggal,
-            ]);
-        }
-
-        // --- 11. Khadam ---
+            ])
+            : [];
+    
+        // --- Khadam ---
         $kh = DB::table('khadam as kh')
             ->where('kh.biodata_id', $bioId)
             ->select(['kh.keterangan', 'kh.tanggal_mulai', 'kh.tanggal_akhir'])
             ->first();
-
-        if ($kh) {
-            $data['Khadam'] = [
+    
+        $data['Khadam'] = $kh
+            ? [
                 'keterangan'    => $kh->keterangan,
                 'tanggal_mulai' => $kh->tanggal_mulai,
                 'tanggal_akhir' => $kh->tanggal_akhir,
-            ];
-        }
-
+            ]
+            : [];
+    
         return $data;
     }
+    
 }

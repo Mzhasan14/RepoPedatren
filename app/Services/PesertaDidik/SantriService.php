@@ -41,6 +41,8 @@ class SantriService
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('s.status', 'aktif')
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at'))
             ->select([
                 's.id',
                 's.nis',
@@ -77,8 +79,8 @@ class SantriService
             "wilayah" => $item->nama_wilayah ?? '-',
             "blok" => $item->nama_blok ?? '-',
             "kamar" => $item->nama_kamar ?? '-',
-            "angkatan" =>$item->angkatan,
-            "kota_asal" =>$item->kota_asal,
+            "angkatan" => $item->angkatan,
+            "kota_asal" => $item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)

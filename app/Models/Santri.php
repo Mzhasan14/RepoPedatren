@@ -33,6 +33,11 @@ class Santri extends Model
         });
     }
 
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'biodata_id', 'id');
+    }
+
     // public function catatanAfektifLatest()
     // {
     //     return $this->hasOne(Catatan_afektif::class, 'id_santri')
