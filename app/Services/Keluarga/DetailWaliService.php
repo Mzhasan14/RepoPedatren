@@ -4,17 +4,16 @@ namespace App\Services\Keluarga;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
-
-class DetailOrangtuaService
+class DetailWaliService
 {
 
-    public function getDetailOrangtua(string $OrangtuaId): array
+    public function getDetailWali(string $WaliId): array
     {
         // --- 1. Ambil basic ortu + biodata_id + no_kk sekaligus ---
         $base = DB::table('orang_tua_wali as ot')
             ->join('biodata as b', 'ot.id_biodata', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('ot.id', $OrangtuaId)
+            ->where('ot.id', $WaliId)
             ->select([
                 'ot.id as ortu_id',
                 'b.id as biodata_id',
@@ -26,7 +25,7 @@ class DetailOrangtuaService
             return ['error' => 'Orang tua tidak ditemukan'];
         }
 
-        $OrangtuaId  = $base->ortu_id;
+        $WaliId  = $base->ortu_id;
         $bioId     = $base->biodata_id;
         $noKk      = $base->no_kk;
 
@@ -47,7 +46,7 @@ class DetailOrangtuaService
                       and jenis_berkas_id = br.jenis_berkas_id
                 )');
             })
-            ->join('orang_tua_wali as ot','ot.id_biodata','=', 'b.id')
+            ->join('orang_tua_wali as ot', 'ot.id_biodata', '=', 'b.id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')

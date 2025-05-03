@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
+use App\Models\OrangTuaWali;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Services\Keluarga\FilterWaliService;
 use App\Http\Controllers\Controller;
+use App\Services\Keluarga\DetailWaliService;
+use App\Services\Keluarga\FilterWaliService;
 
 class WaliController extends Controller
 {
 
+    private DetailWaliService $detailWaliService;
     private FilterWaliService $filterController;
 
-    public function __construct(FilterWaliService $filterController) {
+    public function __construct(FilterWaliService $filterController, DetailWaliService $detailWaliService) {
         $this->filterController = $filterController;
+        $this->detailWaliService = $detailWaliService;
     }
 
     /**
@@ -49,7 +53,10 @@ class WaliController extends Controller
             ->join('biodata as ba', 'ka.id_biodata','=','ba.id') //dari keluarga ke anak
             ->leftJoin('kabupaten AS  kb', 'kb.id', '=', 'b.kabupaten_id')
             // hanya yang berstatus aktif
-            ->where(fn($q) => $q->where('o.status', true))
+            ->where(fn($q) => $q->where([
+                ['o.status', true],
+                ['o.wali', true]
+            ]))
             ->select([
                 'o.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
@@ -67,6 +74,20 @@ class WaliController extends Controller
                         ) AS updated_at
                     "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
+            ])
+            ->groupBy([
+                'o.id',
+                'b.nik',
+                'b.no_passport',
+                'b.nama',
+                'b.no_telepon',
+                'b.no_telepon_2',
+                'kb.nama_kabupaten',
+                'o.created_at',
+                'o.updated_at',
+                'hk.updated_at',
+                'kel.updated_at',
+                'br.file_path'
             ])
             ->orderBy('o.id');
 
@@ -106,6 +127,25 @@ class WaliController extends Controller
             'data'         => $formatted,
         ]);
      }
+
+    public function getDetailWali(string $WaliId)
+    {
+        $wali = OrangTuaWali::find($WaliId);
+        if (!$wali) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ID Wali tidak ditemukan',
+                'data' => []
+            ], 404);
+        }
+
+        $data = $this->detailWaliService->getDetailWali($WaliId);
+
+        return response()->json([
+            'status' => true,
+            'data'    => $data,
+        ], 200);
+    }
     /**
      * Display a listing of the resource.
      */

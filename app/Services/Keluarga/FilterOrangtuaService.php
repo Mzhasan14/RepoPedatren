@@ -5,10 +5,12 @@ namespace App\Services\Keluarga;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterOrangtuaService {
+class FilterOrangtuaService
+{
 
-    public function applyAllFilters(Builder $query, Request $request): Builder {
-        $query = $this->applyAlamatFilter($query,$request);
+    public function applyAllFilters(Builder $query, Request $request): Builder
+    {
+        $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
         $query = $this->applySmartcardFilter($query, $request);
@@ -119,7 +121,7 @@ class FilterOrangtuaService {
         $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
-            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
         );
     }
@@ -161,4 +163,3 @@ class FilterOrangtuaService {
         return $query;
     }
 }
-

@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\PesertaDidik\{
 };
 
 use App\Http\Controllers\Api\keluarga\{
+    DetailOrangtuaController,
+    DetailWaliController,
     KeluargaController,
     StatusKeluargaController,
     OrangTuaWaliController,
@@ -151,8 +153,9 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
-    Route::get('/orangtua{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
+    Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
+    Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);
