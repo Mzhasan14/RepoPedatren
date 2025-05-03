@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Services\FilterWaliService;
+use App\Services\Keluarga\FilterWaliService;
 use App\Http\Controllers\Controller;
 
 class WaliController extends Controller

@@ -9,12 +9,15 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Services\FilterOrangtuaService;
+use App\Services\Keluarga\DetailOrangtuaService;
+use App\Services\Keluarga\FilterOrangtuaService;
 use Illuminate\Support\Facades\Validator;
 
 class OrangTuaWaliController extends Controller
 {
     private FilterOrangtuaService $filterController;
+
+    private DetailOrangtuaService $detailOrangtuaService;
 
     public function __construct(FilterOrangtuaService $filterController)
     {
@@ -108,6 +111,24 @@ class OrangTuaWaliController extends Controller
                 'total_pages'  => $results->lastPage(),
                 'data'         => $formatted,
             ]);
+    }
+
+    public function getDetailOrangtua(string $OrangtuaId) {
+        $ortu = OrangTuaWali::find($OrangtuaId);
+        if (!$ortu) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ID Orangtua tidak ditemukan',
+                'data' => []
+            ], 404);
+        }
+
+        $data = $this->detailOrangtuaService->getDetailOrangtua($OrangtuaId);
+
+        return response()->json([
+            'status' => true,
+            'data'    => $data,
+        ], 200);
     }
 
 

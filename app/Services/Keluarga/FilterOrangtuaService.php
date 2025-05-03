@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Keluarga;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterWaliService {
+class FilterOrangtuaService {
+
     public function applyAllFilters(Builder $query, Request $request): Builder {
-        $query = $this->applyAlamatFilter($query, $request);
+        $query = $this->applyAlamatFilter($query,$request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
         $query = $this->applySmartcardFilter($query, $request);
@@ -159,5 +160,5 @@ class FilterWaliService {
 
         return $query;
     }
-
 }
+

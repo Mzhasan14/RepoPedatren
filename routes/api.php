@@ -150,6 +150,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
+    Route::get('/orangtua{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
 
     // 📍 Alamat
