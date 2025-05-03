@@ -192,7 +192,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/pengajars', [PengajarController::class, 'filterPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
-    Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
+    Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
 });
