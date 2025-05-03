@@ -25,8 +25,16 @@ return new class extends Migration
             $table->integer('lama_izin');
             $table->datetime('tanggal_kembali')->nullable();
             $table->enum('jenis_izin', ['Personal', 'Rombongan']);
-            $table->enum('status_izin', ['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok', 'perizinan ditolak', 'dibatalkan']);
-            $table->enum('status_kembali', ['telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu'])->nullable();
+            $table->enum('status', [
+                'sedang proses izin',
+                'perizinan diterima',
+                'sudah berada diluar pondok',
+                'perizinan ditolak',
+                'dibatalkan',
+                'telat(sudah kembali)',
+                'telat(belum kembali)',
+                'kembali tepat waktu'
+            ]);
             $table->text('keterangan');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
