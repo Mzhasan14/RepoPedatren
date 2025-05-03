@@ -141,8 +141,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-    Route::apiResource('/catatan-afektif', CatatanAfektifController::class);
-    Route::apiResource('/catatan-kognitif', CatatanKognitifController::class);
+    Route::get('/catatan-afektif', [CatatanAfektifController::class, 'dataCatatanAfektif']);
+    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'dataCatatanKognitif']);
 
     // 🏫 Keluarga
     Route::apiResource('/crud/keluarga', KeluargaController::class);
@@ -203,8 +203,6 @@ Route::prefix('detail')->group(function () {
     Route::get('/walikelas/{id}', [WalikelasController::class, 'getWalikelas']);
 });
 Route::prefix('dropdown')->group(function () {
-    Route::get('/catatan-afektif', [CatatanAfektifController::class, 'dataCatatanAfektif']);
-    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'dataCatatanKognitif']);
     Route::get('/wilayah', [DropdownController::class, 'menuWilayahBlokKamar']);
     Route::get('/negara', [DropdownController::class, 'menuNegaraProvinsiKabupatenKecamatan']);
     Route::get('/lembaga', [DropdownController::class, 'menuLembagaJurusanKelasRombel']);
