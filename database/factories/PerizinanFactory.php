@@ -17,6 +17,7 @@ use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 class PerizinanFactory extends Factory
 {
     protected $model = Perizinan::class;
+
     /**
      * Define the model's default state.
      *
@@ -45,40 +46,45 @@ class PerizinanFactory extends Factory
             $kembali = $akhir->copy()->addDays(rand(1, 7));
         }
 
-        // 5. Tentukan status_izin sesuai enum: 
-        //    ['sedang proses izin','perizinan diterima','sudah berada diluar pondok','perizinan ditolak','dibatalkan']
+        // 5. Tentukan status gabungan sesuai enum di table 'status':
+        //    ['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok',
+        //     'perizinan ditolak', 'dibatalkan',
+        //     'telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu']
         $now = Carbon::now();
+
+        // Pilih status izin dasar (termasuk kemungkinan ditolak atau dibatalkan)
         if ($now->lt($mulai)) {
-            $statusIzin = 'sedang proses izin';
-        } elseif ($now->lte($kembali)) {
-            $statusIzin = 'sudah berada diluar pondok';
+            $status = 'sedang proses izin';
+        } elseif ($this->faker->boolean(5)) {
+            // 5% kemungkinan izin ditolak
+            $status = 'perizinan ditolak';
+        } elseif ($this->faker->boolean(5)) {
+            // 5% kemungkinan izin dibatalkan
+            $status = 'dibatalkan';
+        } elseif ($now->lte($akhir)) {
+            $status = 'sudah berada diluar pondok';
         } else {
-            $statusIzin = 'perizinan diterima';
+            $status = 'perizinan diterima';
         }
 
-        // 6. Tentukan status_kembali sesuai enum:
-        //    ['telat','telat(sudah kembali)','telat(belum kembali)','kembali tepat waktu']
-        //    Kita pakai null kalau masih dalam masa izin dan belum kembali.
-        if ($now->lt($kembali)) {
-            if ($now->lt($akhir)) {
-                $statusKembali = null;
-            } else {
-                $statusKembali = 'telat(belum kembali)';
-            }
-        } else {
+        // Jika sudah melewati tanggal kembali, override dengan status kembali
+        if ($now->gte($kembali)) {
             if ($kembali->lte($akhir)) {
-                $statusKembali = 'kembali tepat waktu';
+                $status = 'kembali tepat waktu';
             } else {
-                $statusKembali = 'telat(sudah kembali)';
+                $status = 'telat(sudah kembali)';
             }
+        } elseif ($now->gt($akhir)) {
+            // Sudah lewat akhir tapi belum kembali
+            $status = 'telat(belum kembali)';
         }
 
         return [
             'santri_id'       => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'biktren_id'         => optional(User::role('biktren')->inRandomOrder()->first())->id,
-            'pengasuh_id'        => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
-            'kamtib_id'          => optional(User::role('kamtib')->inRandomOrder()->first())->id,
-            'pengantar_id'       => optional(OrangTuaWali::inRandomOrder()->first())->id,
+            'biktren_id'      => optional(User::role('biktren')->inRandomOrder()->first())->id,
+            'pengasuh_id'     => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
+            'kamtib_id'       => optional(User::role('kamtib')->inRandomOrder()->first())->id,
+            'pengantar_id'    => optional(OrangTuaWali::inRandomOrder()->first())->id,
             'alasan_izin'     => $this->faker->sentence,
             'alamat_tujuan'   => $this->faker->address,
             'tanggal_mulai'   => $mulai,
@@ -86,11 +92,11 @@ class PerizinanFactory extends Factory
             'lama_izin'       => $lamaIzin,
             'tanggal_kembali' => $kembali,
             'jenis_izin'      => $this->faker->randomElement(['Personal', 'Rombongan']),
-            'status_izin'     => $statusIzin,
-            'status_kembali'  => $statusKembali,
+            'status'          => $status,
             'keterangan'      => $this->faker->sentence,
             'created_by'      => optional(User::role('admin')->inRandomOrder()->first())->id,
             'updated_by'      => null,
         ];
     }
 }
+
