@@ -33,13 +33,13 @@ class Wali_asuh extends Model
         'status'
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            $model->id = (string) Str::uuid();
-        });
-    }
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         $model->id = (string) Str::uuid();
+    //     });
+    // }
 
     public function scopeActive($query)
     {

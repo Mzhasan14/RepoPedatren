@@ -164,9 +164,10 @@ Route::prefix('data-pokok')->group(function () {
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
     Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
-    Route::apiResource('/waliasuh', WaliasuhController::class);
+    Route::apiResource('/crud/waliasuh', WaliasuhController::class);
     Route::apiResource('/anakasuh', AnakasuhController::class);
-    Route::get('/list/waliasuh', [WaliasuhController::class, 'waliAsuh']);
+    Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
+    Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
     Route::get('/list/anakasuh', [AnakasuhController::class, 'anakAsuh']);
     Route::get('/list/kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 

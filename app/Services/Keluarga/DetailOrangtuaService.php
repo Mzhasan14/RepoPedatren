@@ -108,6 +108,15 @@ class DetailOrangtuaService
             ])
             ->get();
 
+        $keluarga = $ortu;
+        if ($keluarga->isNotEmpty()) {
+            $data['Keluarga'] = $keluarga->map(fn($i) => [
+                'nama'   => $i->nama,
+                'nik'    => $i->nik,
+                'status' => $i->status,
+                'wali'   => $i->wali,
+            ]);
+        }
         return $data;
     }
 }
