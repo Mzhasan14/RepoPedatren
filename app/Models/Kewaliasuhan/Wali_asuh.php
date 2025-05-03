@@ -4,6 +4,7 @@ namespace App\Models\Kewaliasuhan;
 
 use App\Models\Santri;
 use App\Models\Perizinan;
+use Illuminate\Support\Str;
 use App\Models\PesertaDidik;
 use App\Models\Peserta_didik;
 use App\Models\Catatan_afektif;
@@ -32,15 +33,19 @@ class Wali_asuh extends Model
         'status'
     ];
 
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         $model->id = (string) Str::uuid();
+    //     });
+    // }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
     }
 
-    public function pesertaDidik()
-    {
-        return $this->belongsTo(PesertaDidik::class, 'id_peserta_didik', 'id');
-    }
     public function santri()
     {
         return $this->belongsTo(Santri::class, 'id_santri', 'id');

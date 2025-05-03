@@ -2,6 +2,8 @@
 
 namespace App\Models\Kewaliasuhan;
 
+use App\Models\User;
+use Illuminate\Support\Str;
 use App\Models\Kewilayahan\Wilayah;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
@@ -28,19 +30,27 @@ class Grup_WaliAsuh extends Model
         'status'
     ];
 
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         $model->id = (string) Str::uuid();
+    //     });
+    // }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
     }
 
-            // public function createdBy()
-    // {
-    //     return $this->belongsTo(user::class, 'created_by');
-    // }
-    // public function updatedBy()
-    // {
-    //     return $this->belongsTo(user::class, 'updated_by');
-    // }
+            public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 
     public function waliAsuh() {
         return $this->hasMany(Wali_asuh::class,'id_grup_wali_asuh','id');

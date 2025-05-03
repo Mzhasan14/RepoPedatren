@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,14 @@ class OrangTuaWali extends Model
         'status'
     ];
 
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         $model->id = (string) Str::uuid();
+    //     });
+    // }
+
     public function biodata()
     {
         return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
@@ -36,7 +45,7 @@ class OrangTuaWali extends Model
 
     public function keluarga()
     {
-        return $this->hasMany(Keluarga::class, 'id_biodata', 'id_biodata', 'id');
+        return $this->hasMany(Keluarga::class, 'id_biodata', 'id_biodata');
     }
 
     public function scopeActive($query)

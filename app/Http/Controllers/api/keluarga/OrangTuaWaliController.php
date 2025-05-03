@@ -9,16 +9,20 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Services\FilterOrangtuaService;
+use App\Services\Keluarga\DetailOrangtuaService;
+use App\Services\Keluarga\FilterOrangtuaService;
 use Illuminate\Support\Facades\Validator;
 
 class OrangTuaWaliController extends Controller
 {
+    private DetailOrangtuaService $detailOrangtuaService;
     private FilterOrangtuaService $filterController;
 
-    public function __construct(FilterOrangtuaService $filterController)
+
+    public function __construct(FilterOrangtuaService $filterController, DetailOrangtuaService $detailOrangtuaService)
     {
         $this->filterController = $filterController;
+        $this->detailOrangtuaService = $detailOrangtuaService;
     }
 
     /**
@@ -28,11 +32,12 @@ class OrangTuaWaliController extends Controller
      * @return JsonResponse
      */
 
-    public function getAllOrangtua(Request $request) :JsonResponse {
+    public function getAllOrangtua(Request $request): JsonResponse
+    {
         // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
-        ->where('nama_jenis_berkas', 'Pas foto')
-        ->value('id');
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
 
         // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
@@ -70,44 +75,77 @@ class OrangTuaWaliController extends Controller
                         ) AS updated_at
                     "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-             ])
+            ])
+            ->groupBy([
+                'o.id',
+                'b.nik',
+                'b.no_passport',
+                'b.nama',
+                'b.no_telepon',
+                'b.no_telepon_2',
+                'kb.nama_kabupaten',
+                'o.created_at',
+                'o.updated_at',
+                'hk.updated_at',
+                'kel.updated_at',
+                'br.file_path'
+            ])
             ->orderBy('o.id');
 
-            // Terapkan filter dan pagination
-            $query = $this->filterController->applyAllFilters($query, $request);
+        // Terapkan filter dan pagination
+        $query = $this->filterController->applyAllFilters($query, $request);
 
 
-            $perPage     = (int) $request->input('limit', 25);
-            $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $perPage     = (int) $request->input('limit', 25);
+        $currentPage = (int) $request->input('page', 1);
+        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
 
-            if ($results->isEmpty()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Data kosong',
-                    'data'    => [],
-                ], 200);
-            }
-
-            $formatted = collect($results->items())->map(fn($item) => [
-                'id'               => $item->id,
-                'nik_or_passport'  => $item->identitas,
-                'nama'             => $item->nama,
-                'telepon_1'             => $item->telepon_1,
-                'telepon_2'          => $item->telepon_2,
-                'kota_asal'        => $item->kota_asal,
-                'tgl_update'       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-                'tgl_input'        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-                'foto_profil'      => url($item->foto_profil),
-            ]);
-
+        if ($results->isEmpty()) {
             return response()->json([
-                'total_data'   => $results->total(),
-                'current_page' => $results->currentPage(),
-                'per_page'     => $results->perPage(),
-                'total_pages'  => $results->lastPage(),
-                'data'         => $formatted,
-            ]);
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
+        }
+
+        $formatted = collect($results->items())->map(fn($item) => [
+            'id'               => $item->id,
+            'nik_or_passport'  => $item->identitas,
+            'nama'             => $item->nama,
+            'telepon_1'             => $item->telepon_1,
+            'telepon_2'          => $item->telepon_2,
+            'kota_asal'        => $item->kota_asal,
+            'tgl_update'       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input'        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil'      => url($item->foto_profil),
+        ]);
+
+        return response()->json([
+            'total_data'   => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page'     => $results->perPage(),
+            'total_pages'  => $results->lastPage(),
+            'data'         => $formatted,
+        ]);
+    }
+
+    public function getDetailOrangtua(string $OrangtuaId)
+    {
+        $ortu = OrangTuaWali::find($OrangtuaId);
+        if (!$ortu) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ID Orangtua tidak ditemukan',
+                'data' => []
+            ], 404);
+        }
+
+        $data = $this->detailOrangtuaService->getDetailOrangtua($OrangtuaId);
+
+        return response()->json([
+            'status' => true,
+            'data'    => $data,
+        ], 200);
     }
 
 

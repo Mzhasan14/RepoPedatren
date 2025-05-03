@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Keluarga;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterWaliService {
-    public function applyAllFilters(Builder $query, Request $request): Builder {
+class FilterOrangtuaService
+{
+
+    public function applyAllFilters(Builder $query, Request $request): Builder
+    {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
@@ -118,7 +121,7 @@ class FilterWaliService {
         $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
-            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
         );
     }
@@ -159,5 +162,4 @@ class FilterWaliService {
 
         return $query;
     }
-
 }

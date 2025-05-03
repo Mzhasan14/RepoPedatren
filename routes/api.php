@@ -6,11 +6,12 @@ use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\Api\{
     JenisBerkasController,
     BerkasController,
-    CatatanAfektifController,
-    CatatanKognitifController,
+
 };
 
 use App\Http\Controllers\Api\Administrasi\{
+    CatatanAfektifController as AdministrasiCatatanAfektifController,
+    CatatanKognitifController,
     DetailPelanggaranController,
     PerizinanController,
     PelanggaranController,
@@ -28,6 +29,8 @@ use App\Http\Controllers\Api\PesertaDidik\{
 };
 
 use App\Http\Controllers\Api\keluarga\{
+    DetailOrangtuaController,
+    DetailWaliController,
     KeluargaController,
     StatusKeluargaController,
     OrangTuaWaliController,
@@ -146,8 +149,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-    Route::get('/catatan-afektif', [CatatanAfektifController::class, 'dataCatatanAfektif']);
-    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'dataCatatanKognitif']);
+    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
+    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
     Route::apiResource('/crud/keluarga', KeluargaController::class);
@@ -155,7 +158,9 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
     Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
+    Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
+    Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
 
     // 📍 Alamat
     Route::apiResource('/provinsi', ProvinsiController::class);
@@ -164,9 +169,10 @@ Route::prefix('data-pokok')->group(function () {
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
     Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
-    Route::apiResource('/waliasuh', WaliasuhController::class);
+    Route::apiResource('/crud/waliasuh', WaliasuhController::class);
     Route::apiResource('/anakasuh', AnakasuhController::class);
-    Route::get('/list/waliasuh', [WaliasuhController::class, 'waliAsuh']);
+    Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
+    Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
     Route::get('/list/anakasuh', [AnakasuhController::class, 'anakAsuh']);
     Route::get('/list/kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
 
@@ -195,7 +201,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
     Route::get('/pengajars', [PengajarController::class, 'filterPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
-    Route::get('/walikelas', [WalikelasController::class, 'dataWalikelas']);
+    Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
 });
