@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
 use App\Models\Pegawai\WaliKelas;
 use App\Services\FilterWaliKelasService;
+use App\Services\Pegawai\Filters\FilterWaliKelasService as FiltersFilterWaliKelasService;
+use App\Services\Pegawai\WaliKelasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,10 +18,12 @@ use Illuminate\Support\Facades\Validator;
 
 class WalikelasController extends Controller
 {
-    private FilterWaliKelasService $filterController;
+    private WaliKelasService $walikelasService;
+    private FiltersFilterWaliKelasService $filterController;
 
-    public function __construct(FilterWaliKelasService $filterController)
+    public function __construct(WaliKelasService $walikelasService, FiltersFilterWaliKelasService $filterController)
     {
+        $this->walikelasService = $walikelasService;
         $this->filterController = $filterController;
     }
 
@@ -91,125 +95,165 @@ class WalikelasController extends Controller
         $walikelas->delete();
         return new PdResource(true,'Data berhasil dihapus',$walikelas);
     }
-    public function dataWalikelas(Request $request)
-    {
-    try
-    {
-         // 1) Ambil ID untuk jenis berkas "Pas foto"
-        $pasFotoId = DB::table('jenis_berkas')
-                   ->where('nama_jenis_berkas', 'Pas foto')
-                    ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
-        $fotoLast = DB::table('berkas')
-                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                ->where('jenis_berkas_id', $pasFotoId)
-                ->groupBy('biodata_id');
-       // 3) Subquery: warga pesantren terakhir per biodata
-        $wpLast = DB::table('warga_pesantren')
-                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                ->where('status', true)
-                ->groupBy('biodata_id');
-        // 4) Query utama
-        $query = WaliKelas::Active()
-                            // Join Pengajar Yang berstatus aktif
-                            ->join('pengajar',function($join){
-                                $join->on('wali_kelas.pengajar_id', '=', 'pengajar.id')
-                                        ->where('pengajar.status_aktif','aktif');
-                            })
-                            // Join Pegawai yang Berstatus Aktif
-                            ->join('pegawai', function ($join) {
-                                    $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
-                                         ->where('pegawai.status', 1);
-                            })
-                            ->join('biodata as b','b.id','=','pegawai.biodata_id')  
-                            //  Join Warga Pesantren Terakhir Berstatus Aktif
-                            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-                            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')   
-                            // join berkas pas foto terakhir
-                            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-                            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-                            ->leftJoin('rombel as r','r.id','=','pengajar.rombel_id')
-                            ->leftJoin('kelas as k','k.id','=','pengajar.kelas_id')
-                            ->leftJoin('jurusan as j','j.id','=','pengajar.jurusan_id')
-                            ->leftJoin('lembaga as l','l.id','=','pengajar.lembaga_id')
-                            ->select(
-                                'wali_kelas.id as id',
-                                'b.nama',
-                                'wp.niup',
-                                DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
-                                'b.jenis_kelamin',
-                                'l.nama_lembaga',
-                                'k.nama_kelas',
-                                'r.gender_rombel',
-                                DB::raw("CONCAT(wali_kelas.jumlah_murid, ' pelajar') as jumlah_murid"),
-                                'r.nama_rombel',
-                                DB::raw("DATE_FORMAT(wali_kelas.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
-                                DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
-                                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
-                            )->groupBy(
-                                'wali_kelas.id', 
-                                'b.nama', 
-                                'wp.niup', 
-                                'l.nama_lembaga', 
-                                'k.nama_kelas', 
-                                'r.nama_rombel',
-                                'b.nik',
-                                'b.no_passport',
-                                'r.gender_rombel',
-                                'b.jenis_kelamin',
-                                'wali_kelas.jumlah_murid',
-                                'wali_kelas.updated_at',
-                                'wali_kelas.created_at',
-                            );
-                                
-           // Terapkan filter dan pagination
-           $query = $this->filterController->applyAllFilters($query, $request);
-           $perPage     = (int) $request->input('limit', 25);
-           $currentPage = (int) $request->input('page', 1);
-           $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-           }
-           catch (\Exception $e) {
-               Log::error('Error fetching data Wali Kelas: ' . $e->getMessage());
-               return response()->json([
-                   "status" => "error",
-                   "message" => "Terjadi kesalahan saat mengambil data Wali Kelas",
-                   "code" => 500
-               ], 500);
-           }
-           // Jika Data Kosong
-           if ($results->isEmpty()) {
-               return response()->json([
-                   "status" => "error",
-                   "message" => "Data tidak ditemukan",
-                   "code" => 404
-               ], 404);
-           }
-        // Format Data Response
-        $formatData = collect($results->items())->map(fn($item)=>[
-            "id" => $item->id,
-            "nama" => $item->nama,
-            "niup" => $item->niup ?? "-",
-            "NIK/No.Passport" => $item->identitas,
-            "JenisKelamin" => $item->jenis_kelamin === 'l' ? 'Laki-laki' : ($item->jenis_kelamin === 'p' ? 'Perempuan' : 'Tidak Diketahui'),
-            "lembaga" => $item->nama_lembaga,
-            "kelas" => $item->nama_kelas,
-            "GenderRombel" => $item->gender_rombel,
-            "JumlahMurid" => $item->jumlah_murid,
-            "rombel" => $item->nama_rombel,
-            "tgl_update" => $item->tgl_update ?? "-",
-            "tgl_input" => $item->tgl_input,
-            "foto_profil" => url($item->foto_profil)
-        ]);
-        // Format Data Response ke Json
+    public function getDataWalikelas(Request $request)
+    {
+        try {
+            $query = $this->walikelasService->getAllWalikelas($request);
+            $query = $this->filterController->applyAllFilters($query, $request);
+
+            $perPage     = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[WaliKelasController] Error: {$e->getMessage()}");
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
+        }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
+        }
+
+        $formatted = $this->walikelasService->formatData($results);
+
         return response()->json([
-            "total_data" => $results->total(),
+            "total_data"   => $results->total(),
             "current_page" => $results->currentPage(),
-            "per_page" => $results->perPage(),
-            "total_pages" => $results->lastPage(),
-            "data" => $formatData
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
         ]);
     }
+
+    // public function dataWalikelas(Request $request)
+    // {
+    // try
+    // {
+    //      // 1) Ambil ID untuk jenis berkas "Pas foto"
+    //     $pasFotoId = DB::table('jenis_berkas')
+    //                ->where('nama_jenis_berkas', 'Pas foto')
+    //                 ->value('id');
+
+    //     // 2) Subquery: foto terakhir per biodata
+    //     $fotoLast = DB::table('berkas')
+    //             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+    //             ->where('jenis_berkas_id', $pasFotoId)
+    //             ->groupBy('biodata_id');
+    //    // 3) Subquery: warga pesantren terakhir per biodata
+    //     $wpLast = DB::table('warga_pesantren')
+    //             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+    //             ->where('status', true)
+    //             ->groupBy('biodata_id');
+    //     // 4) Query utama
+    //     $query = WaliKelas::Active()
+    //                         // Join Pengajar Yang berstatus aktif
+    //                         ->join('pengajar',function($join){
+    //                             $join->on('wali_kelas.pengajar_id', '=', 'pengajar.id')
+    //                                     ->where('pengajar.status_aktif','aktif');
+    //                         })
+    //                         // Join Pegawai yang Berstatus Aktif
+    //                         ->join('pegawai', function ($join) {
+    //                                 $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
+    //                                      ->where('pegawai.status', 1);
+    //                         })
+    //                         ->join('biodata as b','b.id','=','pegawai.biodata_id')  
+    //                         //  Join Warga Pesantren Terakhir Berstatus Aktif
+    //                         ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+    //                         ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')   
+    //                         // join berkas pas foto terakhir
+    //                         ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+    //                         ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+    //                         ->leftJoin('rombel as r','r.id','=','pengajar.rombel_id')
+    //                         ->leftJoin('kelas as k','k.id','=','pengajar.kelas_id')
+    //                         ->leftJoin('jurusan as j','j.id','=','pengajar.jurusan_id')
+    //                         ->leftJoin('lembaga as l','l.id','=','pengajar.lembaga_id')
+    //                         ->select(
+    //                             'wali_kelas.id as id',
+    //                             'b.nama',
+    //                             'wp.niup',
+    //                             DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
+    //                             'b.jenis_kelamin',
+    //                             'l.nama_lembaga',
+    //                             'j.nama_jurusan',
+    //                             'k.nama_kelas',
+    //                             'r.gender_rombel',
+    //                             DB::raw("CONCAT(wali_kelas.jumlah_murid, ' pelajar') as jumlah_murid"),
+    //                             'r.nama_rombel',
+    //                             DB::raw("DATE_FORMAT(wali_kelas.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+    //                             DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
+    //                             DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
+    //                         )->groupBy(
+    //                             'wali_kelas.id', 
+    //                             'b.nama', 
+    //                             'wp.niup', 
+    //                             'l.nama_lembaga',
+    //                             'j.nama_jurusan', 
+    //                             'k.nama_kelas', 
+    //                             'r.nama_rombel',
+    //                             'b.nik',
+    //                             'b.no_passport',
+    //                             'r.gender_rombel',
+    //                             'b.jenis_kelamin',
+    //                             'wali_kelas.jumlah_murid',
+    //                             'wali_kelas.updated_at',
+    //                             'wali_kelas.created_at',
+    //                         );
+                                
+    //        // Terapkan filter dan pagination
+    //        $query = $this->filterController->applyAllFilters($query, $request);
+    //        $perPage     = (int) $request->input('limit', 25);
+    //        $currentPage = (int) $request->input('page', 1);
+    //        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+    //        }
+    //        catch (\Exception $e) {
+    //            Log::error('Error fetching data Wali Kelas: ' . $e->getMessage());
+    //            return response()->json([
+    //                "status" => "error",
+    //                "message" => "Terjadi kesalahan saat mengambil data Wali Kelas",
+    //                "code" => 500
+    //            ], 500);
+    //        }
+    //        // Jika Data Kosong
+    //        if ($results->isEmpty()) {
+    //            return response()->json([
+    //                "status" => "error",
+    //                "message" => "Data tidak ditemukan",
+    //                "code" => 404
+    //            ], 404);
+    //        }
+    //     // Format Data Response
+    //     $formatData = collect($results->items())->map(fn($item)=>[
+    //         "id" => $item->id,
+    //         "nama" => $item->nama,
+    //         "niup" => $item->niup ?? "-",
+    //         "NIK/No.Passport" => $item->identitas,
+    //         "JenisKelamin" => $item->jenis_kelamin === 'l' ? 'Laki-laki' : ($item->jenis_kelamin === 'p' ? 'Perempuan' : 'Tidak Diketahui'),
+    //         "lembaga" => $item->nama_lembaga,
+    //         "jurusan" => $item->nama_jurusan,
+    //         "kelas" => $item->nama_kelas,
+    //         "GenderRombel" => $item->gender_rombel,
+    //         "JumlahMurid" => $item->jumlah_murid,
+    //         "rombel" => $item->nama_rombel,
+    //         "tgl_update" => $item->tgl_update ?? "-",
+    //         "tgl_input" => $item->tgl_input,
+    //         "foto_profil" => url($item->foto_profil)
+    //     ]);
+    //     // Format Data Response ke Json
+    //     return response()->json([
+    //         "total_data" => $results->total(),
+    //         "current_page" => $results->currentPage(),
+    //         "per_page" => $results->perPage(),
+    //         "total_pages" => $results->lastPage(),
+    //         "data" => $formatData
+    //     ]);
+    // }
     private function formDetail($idWalikelas)
     {
         try{

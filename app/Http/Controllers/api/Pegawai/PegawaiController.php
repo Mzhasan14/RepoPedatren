@@ -8,6 +8,8 @@ use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Pegawai;
 use App\Services\FilterPegawaiService;
+use App\Services\Pegawai\Filters\FilterPegawaiService as FiltersFilterPegawaiService;
+use App\Services\Pegawai\PegawaiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,10 +20,12 @@ use Illuminate\Support\Facades\Validator;
 
 class PegawaiController extends Controller
 {
-    private FilterPegawaiService $filterController;
+    private PegawaiService $pegawaiService;
+    private FiltersFilterPegawaiService $filterController;
 
-    public function __construct(FilterPegawaiService $filterController)
+    public function __construct(PegawaiService $pegawaiService, FiltersFilterPegawaiService $filterController)
     {
+        $this->pegawaiService = $pegawaiService;
         $this->filterController = $filterController;
     }
 
@@ -87,125 +91,159 @@ class PegawaiController extends Controller
     //     $pegawai->delete();
     //     return new PdResource(true,'Data berhasil dihapus',$pegawai);
     // }
-
     public function dataPegawai(Request $request)
     {
-    try
-    {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
-        $pasFotoId = DB::table('jenis_berkas')
-                    ->where('nama_jenis_berkas', 'Pas foto')
-                    ->value('id');
-    
-        // 2) Subquery: foto terakhir per biodata
-        $fotoLast = DB::table('berkas')
-                    ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                    ->where('jenis_berkas_id', $pasFotoId)
-                    ->groupBy('biodata_id');
-        // 3) Subquery: warga pesantren terakhir per biodata
-        $wpLast = DB::table('warga_pesantren')
-                    ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                    ->where('status', true)
-                    ->groupBy('biodata_id');
-    
-        // 4) Query utama
-        $query = Pegawai::Active()
-                        ->join('biodata as b','b.id','pegawai.biodata_id')
-                        // join warga pesantren terakhir true (NIUP)
-                        ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-                        ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
-                        // join pengajar yang hanya berstatus aktif                    
-                        ->leftJoin('pengajar', function($join) {
-                            $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
-                                 ->where('pengajar.status_aktif', 'aktif');
-                        })
-                        // join pengurus yang hanya berstatus aktif
-                        ->leftJoin('pengurus', function($join) {
-                            $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
-                                 ->where('pengurus.status_aktif', 'aktif');
-                        })
-                        // join karyawan yang hanya berstatus aktif
-                        ->leftJoin('karyawan', function($join) {
-                            $join->on('karyawan.pegawai_id', '=', 'pegawai.id')
-                                 ->where('karyawan.status_aktif', 'aktif');
-                        })
-                        
-                        // join berkas pas foto terakhir
-                        ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-                        ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-                        ->select(
-                            'pegawai.id as id',
-                            'b.nama as nama',
-                            'wp.niup',
-                            'pengurus.id as pengurus',
-                            'karyawan.id as karyawan',
-                            'pengajar.id as pengajar',
-                            DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
-                            DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
-                            GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
-                            GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
-                            GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
-                        )) as status"),
-                            'b.nama_pendidikan_terakhir as pendidikanTerkahir',
-                            DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
-                            )->groupBy(
-                                'pegawai.id', 
-                                'b.nama',
-                                'wp.niup',
-                                'pengurus.id',
-                                'karyawan.id',
-                                'pengajar.id',
-                                'b.tanggal_lahir',
-                                'b.nama_pendidikan_terakhir'
-                            );
+        try {
+            $query = $this->pegawaiService->getAllPegawai($request);
+            $query = $this->filterController->applyAllFilters($query, $request);
 
-
-
-            // Terapkan filter dan pagination
-        $query = $this->filterController->applyAllFilters($query, $request);
-
-
-        $perPage     = (int) $request->input('limit', 25);
-        $currentPage = (int) $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-        }
-        catch (\Exception $e) {
-            Log::error('Error fetching data pegawai: ' . $e->getMessage());
+            $perPage     = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[PegawaiController] Error: {$e->getMessage()}");
             return response()->json([
-                "status" => "error",
-                "message" => "Terjadi kesalahan saat mengambil data pegawai",
-                "code" => 500
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
-        // Jika Data Kosong
+
         if ($results->isEmpty()) {
             return response()->json([
-                "status" => "error",
-                "message" => "Data tidak ditemukan",
-                "code" => 404
-            ], 404);
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
         }
-        // Format data untuk response
-        $formatData = collect($results->items())->map(fn($item) => [
-            "id" => $item->id,
-            "nama" => $item->nama,
-            "niup" => $item->niup ?? '-',
-            "umur" => $item->umur,
-            "status" => $item->status,
-            "pendidikanTerkahir" => $item->pendidikanTerkahir,
-            "pengurus" => $item->pengurus ? true : false,
-            "karyawan" => $item->karyawan ? true : false,
-            "pengajar" => $item->pengajar ? true : false,
-            "foto_profil" => url($item->foto_profil)
-        ]);
+
+        $formatted = $this->pegawaiService->formatData($results);
+
         return response()->json([
-            "total_data" => $results->total(),
+            "total_data"   => $results->total(),
             "current_page" => $results->currentPage(),
-            "per_page" => $results->perPage(),
-            "total_pages" => $results->lastPage(),
-            "data" => $formatData,
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
         ]);
     }
+    // public function dataPegawai(Request $request)
+    // {
+    // try
+    // {
+    //     // 1) Ambil ID untuk jenis berkas "Pas foto"
+    //     $pasFotoId = DB::table('jenis_berkas')
+    //                 ->where('nama_jenis_berkas', 'Pas foto')
+    //                 ->value('id');
+    
+    //     // 2) Subquery: foto terakhir per biodata
+    //     $fotoLast = DB::table('berkas')
+    //                 ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+    //                 ->where('jenis_berkas_id', $pasFotoId)
+    //                 ->groupBy('biodata_id');
+    //     // 3) Subquery: warga pesantren terakhir per biodata
+    //     $wpLast = DB::table('warga_pesantren')
+    //                 ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+    //                 ->where('status', true)
+    //                 ->groupBy('biodata_id');
+    
+    //     // 4) Query utama
+    //     $query = Pegawai::Active()
+    //                     ->join('biodata as b','b.id','pegawai.biodata_id')
+    //                     // join warga pesantren terakhir true (NIUP)
+    //                     ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+    //                     ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
+    //                     // join pengajar yang hanya berstatus aktif                    
+    //                     ->leftJoin('pengajar', function($join) {
+    //                         $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
+    //                              ->where('pengajar.status_aktif', 'aktif');
+    //                     })
+    //                     // join pengurus yang hanya berstatus aktif
+    //                     ->leftJoin('pengurus', function($join) {
+    //                         $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
+    //                              ->where('pengurus.status_aktif', 'aktif');
+    //                     })
+    //                     // join karyawan yang hanya berstatus aktif
+    //                     ->leftJoin('karyawan', function($join) {
+    //                         $join->on('karyawan.pegawai_id', '=', 'pegawai.id')
+    //                              ->where('karyawan.status_aktif', 'aktif');
+    //                     })
+                        
+    //                     // join berkas pas foto terakhir
+    //                     ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+    //                     ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+    //                     ->select(
+    //                         'pegawai.id as id',
+    //                         'b.nama as nama',
+    //                         'wp.niup',
+    //                         'pengurus.id as pengurus',
+    //                         'karyawan.id as karyawan',
+    //                         'pengajar.id as pengajar',
+    //                         DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
+    //                         DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
+    //                         GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
+    //                         GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
+    //                         GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
+    //                     )) as status"),
+    //                         'b.nama_pendidikan_terakhir as pendidikanTerkahir',
+    //                         DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
+    //                         )->groupBy(
+    //                             'pegawai.id', 
+    //                             'b.nama',
+    //                             'wp.niup',
+    //                             'pengurus.id',
+    //                             'karyawan.id',
+    //                             'pengajar.id',
+    //                             'b.tanggal_lahir',
+    //                             'b.nama_pendidikan_terakhir'
+    //                         );
+
+
+
+    //         // Terapkan filter dan pagination
+    //     $query = $this->filterController->applyAllFilters($query, $request);
+
+
+    //     $perPage     = (int) $request->input('limit', 25);
+    //     $currentPage = (int) $request->input('page', 1);
+    //     $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+    //     }
+    //     catch (\Exception $e) {
+    //         Log::error('Error fetching data pegawai: ' . $e->getMessage());
+    //         return response()->json([
+    //             "status" => "error",
+    //             "message" => "Terjadi kesalahan saat mengambil data pegawai",
+    //             "code" => 500
+    //         ], 500);
+    //     }
+    //     // Jika Data Kosong
+    //     if ($results->isEmpty()) {
+    //         return response()->json([
+    //             "status" => "error",
+    //             "message" => "Data tidak ditemukan",
+    //             "code" => 404
+    //         ], 404);
+    //     }
+    //     // Format data untuk response
+    //     $formatData = collect($results->items())->map(fn($item) => [
+    //         "id" => $item->id,
+    //         "nama" => $item->nama,
+    //         "niup" => $item->niup ?? '-',
+    //         "umur" => $item->umur,
+    //         "status" => $item->status,
+    //         "pendidikanTerkahir" => $item->pendidikanTerkahir,
+    //         "pengurus" => $item->pengurus ? true : false,
+    //         "karyawan" => $item->karyawan ? true : false,
+    //         "pengajar" => $item->pengajar ? true : false,
+    //         "foto_profil" => url($item->foto_profil)
+    //     ]);
+    //     return response()->json([
+    //         "total_data" => $results->total(),
+    //         "current_page" => $results->currentPage(),
+    //         "per_page" => $results->perPage(),
+    //         "total_pages" => $results->lastPage(),
+    //         "data" => $formatData,
+    //     ]);
+    // }
 
     private function getFormDetail($idPegawai)
     {

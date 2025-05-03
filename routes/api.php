@@ -6,11 +6,12 @@ use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\Api\{
     JenisBerkasController,
     BerkasController,
-    CatatanAfektifController,
-    CatatanKognitifController,
+
 };
 
 use App\Http\Controllers\Api\Administrasi\{
+    CatatanAfektifController as AdministrasiCatatanAfektifController,
+    CatatanKognitifController,
     DetailPelanggaranController,
     PerizinanController,
     PelanggaranController,
@@ -141,8 +142,8 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-    Route::get('/catatan-afektif', [CatatanAfektifController::class, 'dataCatatanAfektif']);
-    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'dataCatatanKognitif']);
+    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
+    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
     Route::apiResource('/crud/keluarga', KeluargaController::class);
