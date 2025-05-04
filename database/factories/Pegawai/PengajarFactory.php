@@ -28,9 +28,6 @@ class PengajarFactory extends Factory
             'pegawai_id' => (new PegawaiFactory())->create()->id,
             'golongan_id' => (new GolonganFactory())->create()->id,
             'lembaga_id' =>  (new LembagaFactory())->create()->id,
-            'jurusan_id' =>  (new JurusanFactory())->create()->id,
-            'kelas_id' =>  (new KelasFactory())->create()->id,
-            'rombel_id' =>  (new RombelFactory())->create()->id,
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
             'tahun_akhir' => $this->faker->boolean(70) 

@@ -98,20 +98,20 @@ class WalikelasController extends Controller
 
     public function getDataWalikelas(Request $request)
     {
-        try {
+        // try {
             $query = $this->walikelasService->getAllWalikelas($request);
             $query = $this->filterController->applyAllFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-        } catch (\Throwable $e) {
-            Log::error("[WaliKelasController] Error: {$e->getMessage()}");
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server',
-            ], 500);
-        }
+        // } catch (\Throwable $e) {
+        //     Log::error("[WaliKelasController] Error: {$e->getMessage()}");
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Terjadi kesalahan pada server',
+        //     ], 500);
+        // }
 
         if ($results->isEmpty()) {
             return response()->json([

@@ -117,21 +117,6 @@ class FilterPengajarService
     {
         if ($request->filled('lembaga')) {
             $query->whereRaw('LOWER(l.nama_lembaga) = ?', [strtolower($request->lembaga)]);
-    
-            if ($request->filled('jurusan')) {
-                $query->leftJoin('jurusan as j', 'j.id', '=', 'pengajar.jurusan_id')
-                      ->whereRaw('LOWER(j.nama_jurusan) = ?', [strtolower($request->jurusan)]);
-    
-                if ($request->filled('kelas')) {
-                    $query->leftJoin('kelas as k', 'k.id', '=', 'pengajar.kelas_id')
-                          ->whereRaw('LOWER(k.nama_kelas) = ?', [strtolower($request->kelas)]);
-    
-                    if ($request->filled('rombel')) {
-                        $query->leftJoin('rombel as r', 'r.id', '=', 'pengajar.rombel_id')
-                              ->whereRaw('LOWER(r.nama_rombel) = ?', [strtolower($request->rombel)]);
-                    }
-                }
-            }
         }
     
         return $query;
