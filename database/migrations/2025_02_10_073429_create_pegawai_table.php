@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('status');
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->timestamps();
 
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');

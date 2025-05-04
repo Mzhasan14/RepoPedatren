@@ -41,7 +41,7 @@ class WaliKelasService
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
                                     $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
-                                         ->where('pegawai.status', 1);
+                                         ->where('pegawai.status_aktif', 'aktif');
                             })
                             ->join('biodata as b','b.id','=','pegawai.biodata_id')  
                             //  Join Warga Pesantren Terakhir Berstatus Aktif

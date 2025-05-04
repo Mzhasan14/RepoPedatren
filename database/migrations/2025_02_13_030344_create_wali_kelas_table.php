@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('jumlah_murid');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('status');
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->timestamps();
 
             $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');

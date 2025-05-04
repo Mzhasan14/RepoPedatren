@@ -29,8 +29,11 @@ class PengajarService
                     ->groupBy('biodata_id');
             // 4) Query utama
             return Pengajar::Active()
-                // relasi ke pegawai
-                ->join('pegawai', 'pengajar.pegawai_id', '=', 'pegawai.id')
+                // join pegawai yang hanya berstatus true atau akif
+                ->join('pegawai',function ($join){
+                    $join->on('pegawai.id','=','pengajar.pegawai_id')
+                                ->where('pegawai.status_aktif','aktif');
+                })
                 // relasi ke biodata
                 ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
                 // relasi ke warga pesantren terakhir true (NIUP)
@@ -49,7 +52,6 @@ class PengajarService
                     $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
                          ->where('materi_ajar.status', 1);
                 })
-                ->where('pengajar.status_aktif', 'aktif' )
                 ->select(
                     'pengajar.id',
                     'b.nama',
@@ -123,7 +125,7 @@ class PengajarService
             "total_waktu_materi" => $item->total_waktu_materi ?? "-",
             "masa_kerja" => $item->masa_kerja ?? "-",
             "golongan" => $item->nama_golongan,
-            "pendidikanTerakhir" => $item->pendidikan_terakhir,
+            "pendidikan_terakhir" => $item->pendidikan_terakhir,
             "tgl_update" => Carbon::parse($item->tgl_update)->translatedFormat('d F Y H:i:s'),
             "tgl_input" => Carbon::parse($item->tgl_input)->translatedFormat('d F Y H:i:s'),
             "lembaga" => $item->nama_lembaga,

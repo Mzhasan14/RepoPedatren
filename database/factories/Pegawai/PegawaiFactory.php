@@ -35,7 +35,7 @@ class PegawaiFactory extends Factory
             'rombel_id' =>  (new RombelFactory())->create()->id,
             'created_by' => 1,
             'updated_by' => null,
-            'status' => $this->faker->boolean(),
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
         ];
     }
 }

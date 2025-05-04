@@ -30,6 +30,7 @@ use Database\Seeders\Pendidikan\LembagaSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Database\Seeders\Kewilayahan\WilayahSeeder;
 use Database\Seeders\Pegawai\AnakPegawaiSeeder;
+use Database\Seeders\Pegawai\GolonganJabatanSeeder;
 use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Pegawai\RiwayatJabatanKaryawanSeeder;
 
@@ -122,6 +123,7 @@ class DatabaseSeeder extends Seeder
             WargaPesantrenSeeder::class,
             PengunjungMahrom::class,
             RiwayatJabatanKaryawanSeeder::class,
+            GolonganJabatanSeeder::class,
             
         ]);
     }

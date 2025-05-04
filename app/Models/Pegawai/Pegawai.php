@@ -39,6 +39,6 @@ class Pegawai extends Model
     }
     public function ScopeActive($query)
     {
-        return $query->where('pegawai.status',true);
+        return $query->where('pegawai.status_aktif','aktif');
     }
 }

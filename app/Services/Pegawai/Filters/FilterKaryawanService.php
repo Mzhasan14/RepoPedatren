@@ -142,7 +142,7 @@ class FilterKaryawanService
     {
 
            if ($request->filled('golongan')){
-               $query->where('g.nama_golongan',strtolower($request->golongan));
+               $query->where('g.nama_golongan_jabatan',strtolower($request->golongan));
            }
    return $query;
    }
@@ -201,10 +201,23 @@ class FilterKaryawanService
     }
     private function applyjabatanKaryawanFilter(Builder $query, Request $request): Builder
     {
-        if ($request->filled('jabatan')){
-            $query->where('karyawan.jabatan',strtolower($request->jabatan));
+        if ($request->filled('jabatan')) {
+            $jabatan = strtolower($request->jabatan);
+    
+            // Mapping dari input user ke nilai yang sesuai di database
+            $opsi = [
+                'kultural' => 'kultural',
+                'kontrak' => 'kontrak',
+                'pengkaderan' => 'pengkaderan',
+                'tetap' => 'tetap',
+            ];
+    
+            if (array_key_exists($jabatan, $opsi)) {
+                $query->where('karyawan.jabatan', $opsi[$jabatan]);
+            }
         }
-    return $query;
+    
+        return $query;
     }
     private function applyLembagaFilter(Builder $query, Request $request): Builder
     {

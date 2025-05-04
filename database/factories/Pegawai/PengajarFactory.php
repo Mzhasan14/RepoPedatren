@@ -31,7 +31,7 @@ class PengajarFactory extends Factory
             'jurusan_id' =>  (new JurusanFactory())->create()->id,
             'kelas_id' =>  (new KelasFactory())->create()->id,
             'rombel_id' =>  (new RombelFactory())->create()->id,
-            'jabatan' => $this->faker->jobTitle,
+            'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
             'tahun_akhir' => $this->faker->boolean(70) 
                 ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d') 
@@ -39,7 +39,6 @@ class PengajarFactory extends Factory
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
             'updated_by' => null,
-            'status' => $this->faker->boolean(),
         ];
     }
 }

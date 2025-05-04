@@ -2,17 +2,18 @@
 
 namespace Database\Seeders\Pegawai;
 
-use Database\Factories\Pegawai\EntitasPegawaiFactory;
+use Database\Factories\Pegawai\GolonganJabatanFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class EntitasPegawai extends Seeder
+class GolonganJabatanSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new EntitasPegawaiFactory())->count(10)->create();
+        (new GolonganJabatanFactory())->count(300)->create();
+
     }
 }

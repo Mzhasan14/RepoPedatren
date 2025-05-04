@@ -42,16 +42,28 @@ class FilterPengurusService
     {
 
            if ($request->filled('golongan')){
-               $query->where('g.nama_golongan',strtolower($request->golongan));
+               $query->where('g.nama_golongan_jabatan',strtolower($request->golongan));
            }
    return $query;
    }
     private function applyJabatanPengurusFilter(Builder $query, Request $request): Builder
     {
         if ($request->filled('jabatan')) {
-            $query->where('pengurus.jabatan', strtolower($request->jabatan));
-        }  
-         return $query;
+            $jabatan = strtolower($request->jabatan);
+    
+            $opsi = [
+                'kultural' => 'kultural',
+                'kontrak' => 'kontrak',
+                'pengkaderan' => 'pengkaderan',
+                'tetap' => 'tetap',
+            ];
+    
+            if (array_key_exists($jabatan, $opsi)) {
+                $query->where('pengurus.jabatan', $opsi[$jabatan]);
+            }
+        }
+    
+        return $query;
     }
     private function applySatuanKerjaPengurusFilter(Builder $query, Request $request): Builder
     {

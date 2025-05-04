@@ -45,7 +45,7 @@ class Pengajar extends Model
     }
     public function ScopeActive($query)
     {
-        return $query->where('pengajar.status',true);
+        return $query->where('pengajar.status_aktif','aktif');
     }
     public function MateriAjarPengajar()
     {

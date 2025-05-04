@@ -19,6 +19,6 @@ class Karyawan extends Model
     ];
     public function ScopeActive($query)
     {
-        return $query->where('karyawan.status',true);
+        return $query->where('karyawan.status_aktif','aktif');
     }
 }

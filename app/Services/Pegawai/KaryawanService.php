@@ -33,11 +33,10 @@ class KaryawanService
                         // join pegawai yang hanya berstatus true atau akif
                         ->join('pegawai',function ($join){
                             $join->on('pegawai.id','=','karyawan.pegawai_id')
-                                ->where('pegawai.status',1);
+                                ->where('pegawai.status_aktif','aktif');
                         })
                         ->join('biodata as b','b.id','=','pegawai.biodata_id')
-                        ->leftJoin('golongan as g','g.id','=','karyawan.golongan_id')
-                        ->leftJoin('kategori_golongan as kg','kg.id','=','g.kategori_golongan_id')
+                        ->leftJoin('golongan_jabatan as g','g.id','=','karyawan.golongan_jabatan_id')
                         // join ke warga pesantren terakhir true (NIUP)
                         ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id')) 
                         ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
@@ -54,7 +53,6 @@ class KaryawanService
                                     WHERE riwayat_jabatan_karyawan.karyawan_id = karyawan.id
                                 )');
                         })
-                        ->where('karyawan.status_aktif','aktif')
                         ->select(
                             'karyawan.id',
                             'b.nama',
@@ -64,7 +62,7 @@ class KaryawanService
                             'riwayat_jabatan_karyawan.keterangan_jabatan as KeteranganJabatan',
                             'l.nama_lembaga',
                             'karyawan.jabatan',
-                            'g.nama_golongan',
+                            'g.nama_golongan_jabatan as nama_golongan',
                             'b.nama_pendidikan_terakhir as pendidikanTerakhir',
                             DB::raw("DATE_FORMAT(karyawan.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
                             DB::raw("DATE_FORMAT(karyawan.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
@@ -78,7 +76,7 @@ class KaryawanService
                                 'riwayat_jabatan_karyawan.keterangan_jabatan',
                                 'l.nama_lembaga',
                                 'karyawan.jabatan',
-                                'g.nama_golongan',
+                                'g.nama_golongan_jabatan',
                                 'b.nama_pendidikan_terakhir',
                                 'karyawan.updated_at',
                                 'karyawan.created_at',
@@ -101,9 +99,9 @@ class KaryawanService
             "niup" => $item->niup ?? "-",
             "nik" => $item->nik,
             "umur" => $item->umur,
-            "KeteranganJabatan" => $item->KeteranganJabatan,
+            "Keterangan_jabatan" => $item->KeteranganJabatan,
             "lembaga" => $item->nama_lembaga,
-            "jenisJabatan" => $item->jabatan,
+            "jenis_jabatan" => $item->jabatan,
             "golongan" => $item->nama_golongan,
             "pendidikanTerakhir" => $item->pendidikanTerakhir,
             "tgl_update" => $item->tgl_update,

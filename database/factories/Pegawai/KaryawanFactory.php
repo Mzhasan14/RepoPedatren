@@ -23,12 +23,11 @@ class KaryawanFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'pegawai_id' => (new PegawaiFactory())->create()->id,
-            'golongan_id' => (new GolonganFactory())->create()->id,
+            'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
             'lembaga_id' => (new LembagaFactory())->create()->id,
-            'jabatan' => $this->faker->jobTitle,
+            'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
-            'status' => $this->faker->boolean,
         ];
     }
 }

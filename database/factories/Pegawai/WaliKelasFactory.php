@@ -25,7 +25,8 @@ class WaliKelasFactory extends Factory
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
             'created_by' => 1,
             'updated_by' => null,
-            'status' => $this->faker->boolean,
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
+            
         ];
     }
 }
