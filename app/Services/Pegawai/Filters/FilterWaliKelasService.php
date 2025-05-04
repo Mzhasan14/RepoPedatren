@@ -15,8 +15,33 @@ class FilterWaliKelasService
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyGenderRomble($query, $request);
         $query = $this->applyLembagaFilter($query, $request);
+        $query = $this->applyJenisKelaminFilter($query, $request);
 
         
+        return $query;
+    }
+    private function applyJenisKelaminFilter(Builder $query, Request $request): Builder
+    {
+
+        // 🔹 Filter jenis kelamin (dari biodata)
+        if ($request->filled('jenis_kelamin')) {
+            // normalisasi input: lowercase, buang spasi dan strip
+            $raw = $request->input('jenis_kelamin');
+            $input = strtolower(str_replace([' ', '-'], '', $raw));
+
+            // definisi map untuk male ('l') & female ('p')
+            $mapping = [
+                'l' => ['l', 'laki', 'lakilaki', 'pria', 'ayah'],
+                'p' => ['p', 'perempuan', 'wanita', 'ibu'],
+            ];
+
+            if (in_array($input, $mapping['l'], true)) {
+                $query->where('b.jenis_kelamin', 'l');
+            } elseif (in_array($input, $mapping['p'], true)) {
+                $query->where('b.jenis_kelamin', 'p');
+            }
+            // jika input tidak cocok, kita skip filter—hasil tidak akan di‐empty
+        }
         return $query;
     }
     private function applyAlamatFilter(Builder $query, Request $request): Builder
