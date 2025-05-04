@@ -175,7 +175,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
     Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
     Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
-    Route::get('/list/kewaliasuhan', [GrupWaliAsuhController::class, 'kewaliasuhan']);
+    Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);
