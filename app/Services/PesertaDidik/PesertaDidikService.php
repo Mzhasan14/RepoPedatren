@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
 
 class PesertaDidikService
 {
@@ -128,7 +127,7 @@ class PesertaDidikService
             // Generate UUID untuk santri_id
             do {
                 $santriId = Str::uuid()->toString();
-            } while (DB::table('santri')->where('id', $santriId)->exists()); // Pastikan UUID unik
+            } while (DB::table('santri')->where('id', $santriId)->exists());
 
             DB::table('santri')->insert([
                 'id' => $santriId,
@@ -141,35 +140,39 @@ class PesertaDidikService
                 'updated_at' => now(),
             ]);
 
-            // Generate unique no_induk (string)
-            do {
-                $noInduk = now()->format('His') . Str::random(3);
-            } while (DB::table('riwayat_pendidikan')->where('no_induk', $noInduk)->exists());
+            // Insert ke riwayat_pendidikan jika tersedia
+            if (!empty($data['lembaga_id'])) {
+                do {
+                    $noInduk = now()->format('His') . Str::random(3);
+                } while (DB::table('riwayat_pendidikan')->where('no_induk', $noInduk)->exists());
 
-            DB::table('riwayat_pendidikan')->insert([
-                'santri_id' => $santriId,
-                'no_induk' => $noInduk,
-                'lembaga_id' => $data['lembaga_id'],
-                'jurusan_id' => $data['jurusan_id'] ?? null,
-                'kelas_id' => $data['kelas_id'] ?? null,
-                'rombel_id' => $data['rombel_id'] ?? null,
-                'tanggal_masuk' => now()->toDateString(),
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                DB::table('riwayat_pendidikan')->insert([
+                    'santri_id' => $santriId,
+                    'no_induk' => $noInduk,
+                    'lembaga_id' => $data['lembaga_id'],
+                    'jurusan_id' => $data['jurusan_id'] ?? null,
+                    'kelas_id' => $data['kelas_id'] ?? null,
+                    'rombel_id' => $data['rombel_id'] ?? null,
+                    'tanggal_masuk' => now()->toDateString(),
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
-            // Insert ke tabel riwayat_domisili
-            DB::table('riwayat_domisili')->insert([
-                'santri_id' => $santriId,
-                'wilayah_id' => $data['wilayah_id'] ?? null,
-                'blok_id' => $data['blok_id'] ?? null,
-                'kamar_id' => $data['kamar_id'] ?? null,
-                'tanggal_masuk' => now(),
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // Insert ke riwayat_domisili jika tersedia salah satu
+            if (!empty($data['wilayah_id']) || !empty($data['blok_id']) || !empty($data['kamar_id'])) {
+                DB::table('riwayat_domisili')->insert([
+                    'santri_id' => $santriId,
+                    'wilayah_id' => $data['wilayah_id'] ?? null,
+                    'blok_id' => $data['blok_id'] ?? null,
+                    'kamar_id' => $data['kamar_id'] ?? null,
+                    'tanggal_masuk' => now(),
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             return [
                 'santri_id' => $santriId,
@@ -178,15 +181,17 @@ class PesertaDidikService
                 'tanggal_masuk' => now()->toDateString(),
             ];
         });
+
         return $pesertaDidik;
     }
 
+    // Update data peserta didik
     public function update(array $data, string $santriId)
     {
         return DB::transaction(function () use ($data, $santriId) {
             $userId = Auth::id();
 
-            // 1) ambil biodata_id dari tabel santri
+            // 1. Ambil biodata_id dari santri
             $biodataId = DB::table('santri')
                 ->where('id', $santriId)
                 ->value('biodata_id');
@@ -195,93 +200,156 @@ class PesertaDidikService
                 throw new \Exception("Santri #{$santriId} tidak memiliki biodata_id.");
             }
 
-            // 2) update biodata by id = $biodataId
-            DB::table('biodata')
-                ->where('id', $biodataId)
-                ->update([
-                    'negara_id'                   => $data['negara_id'],
-                    'provinsi_id'                 => $data['provinsi_id'] ?? null,
-                    'kabupaten_id'                => $data['kabupaten_id'] ?? null,
-                    'kecamatan_id'                => $data['kecamatan_id'] ?? null,
-                    'jalan'                       => $data['jalan'] ?? null,
-                    'kode_pos'                    => $data['kode_pos'] ?? null,
-                    'nama'                        => $data['nama'],
-                    'no_passport'                 => $data['no_passport'] ?? null,
-                    'jenis_kelamin'               => $data['jenis_kelamin'],
-                    'tanggal_lahir'               => $data['tanggal_lahir'],
-                    'tempat_lahir'                => $data['tempat_lahir'],
-                    'nik'                         => $data['nik'] ?? null,
-                    'no_telepon'                  => $data['no_telepon'],
-                    'no_telepon_2'                => $data['no_telepon_2'] ?? null,
-                    'email'                       => $data['email'],
-                    'jenjang_pendidikan_terakhir' => $data['jenjang_pendidikan_terakhir'] ?? null,
-                    'nama_pendidikan_terakhir'    => $data['nama_pendidikan_terakhir'] ?? null,
-                    'anak_keberapa'               => $data['anak_keberapa'] ?? null,
-                    'dari_saudara'                => $data['dari_saudara'] ?? null,
-                    'tinggal_bersama'             => $data['tinggal_bersama'] ?? null,
-                    'status'                      => $data['status_biodata'] ?? true,
-                    'updated_by'                  => $userId,
-                    'updated_at'                  => now(),
-                ]);
+            // 2. Ambil biodata lama untuk cek perubahan
+            $oldBiodata = DB::table('biodata')->where('id', $biodataId)->first();
 
-            // 3) update status & updated_by di santri
-            DB::table('santri')
-                ->where('id', $santriId)
-                ->update([
-                    'status'     => $data['status_santri'] ?? 'aktif',
-                    'updated_by' => $userId,
-                    'updated_at' => now(),
-                ]);
+            $biodataUpdate = [
+                'negara_id'                   => $data['negara_id'],
+                'provinsi_id'                 => $data['provinsi_id'] ?? null,
+                'kabupaten_id'                => $data['kabupaten_id'] ?? null,
+                'kecamatan_id'                => $data['kecamatan_id'] ?? null,
+                'jalan'                       => $data['jalan'] ?? null,
+                'kode_pos'                    => $data['kode_pos'] ?? null,
+                'nama'                        => $data['nama'],
+                'no_passport'                 => $data['no_passport'] ?? null,
+                'jenis_kelamin'               => $data['jenis_kelamin'],
+                'tanggal_lahir'               => $data['tanggal_lahir'],
+                'tempat_lahir'                => $data['tempat_lahir'],
+                'nik'                         => $data['nik'] ?? null,
+                'no_telepon'                  => $data['no_telepon'],
+                'no_telepon_2'                => $data['no_telepon_2'] ?? null,
+                'email'                       => $data['email'],
+                'jenjang_pendidikan_terakhir' => $data['jenjang_pendidikan_terakhir'] ?? null,
+                'nama_pendidikan_terakhir'    => $data['nama_pendidikan_terakhir'] ?? null,
+                'anak_keberapa'               => $data['anak_keberapa'] ?? null,
+                'dari_saudara'                => $data['dari_saudara'] ?? null,
+                'tinggal_bersama'             => $data['tinggal_bersama'] ?? null,
+                'status'                      => $data['status_biodata'] ?? true,
+            ];
 
-            // 1) tutup record domisili lama (jika ada yang masih "berjalan")
-            DB::table('riwayat_domisili')
+            // Hanya update jika berbeda
+            $hasChanged = false;
+            foreach ($biodataUpdate as $key => $val) {
+                if ($oldBiodata->$key != $val) {
+                    $hasChanged = true;
+                    break;
+                }
+            }
+
+            if ($hasChanged) {
+                $biodataUpdate['updated_by'] = $userId;
+                $biodataUpdate['updated_at'] = now();
+                DB::table('biodata')
+                    ->where('id', $biodataId)
+                    ->update($biodataUpdate);
+            }
+
+            // 3. Update data santri jika status berubah
+            if (!empty($data['status_santri'])) {
+                DB::table('santri')
+                    ->where('id', $santriId)
+                    ->update([
+                        'status'     => $data['status_santri'],
+                        'updated_by' => $userId,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            // === RIWAYAT DOMISILI ===
+            $lastDom = DB::table('riwayat_domisili')
                 ->where('santri_id', $santriId)
                 ->whereNull('tanggal_keluar')
-                ->update([
-                    'status' => $data['status_riwayat_domisili'] ?? 'aktif',
-                    'tanggal_keluar' => now(),
-                    'updated_by'      => $userId,
-                    'updated_at'      => now(),
-                ]);
+                ->orderByDesc('tanggal_masuk')
+                ->first();
 
-            // 2) insert record domisili baru
-            DB::table('riwayat_domisili')->insert([
-                'santri_id'       => $santriId,
-                'wilayah_id'      => $data['wilayah_id'] ?? null,
-                'blok_id'         => $data['blok_id'] ?? null,
-                'kamar_id'        => $data['kamar_id'] ?? null,
-                'tanggal_masuk'   => now(),
-                'tanggal_keluar' => null,
-                'created_by'      => $userId,
-                'created_at'      => now(),
-            ]);
+            if (!empty($data['status_keluar_domisili'])) {
+                if ($lastDom) {
+                    DB::table('riwayat_domisili')->where('id', $lastDom->id)->update([
+                        'status'         => 'keluar',
+                        'tanggal_keluar' => now(),
+                        'updated_by'     => $userId,
+                        'updated_at'     => now(),
+                    ]);
+                }
+            } else {
+                $wilayahChanged = isset($data['wilayah_id']) && $lastDom && $data['wilayah_id'] !== $lastDom->wilayah_id;
+                $blokChanged    = isset($data['blok_id']) && $lastDom && $data['blok_id'] !== $lastDom->blok_id;
+                $kamarChanged   = isset($data['kamar_id']) && $lastDom && $data['kamar_id'] !== $lastDom->kamar_id;
+
+                if ($wilayahChanged || $blokChanged || $kamarChanged) {
+                    if ($lastDom) {
+                        DB::table('riwayat_domisili')->where('id', $lastDom->id)->update([
+                            'status'         => 'pindah',
+                            'tanggal_keluar' => now(),
+                            'updated_by'     => $userId,
+                            'updated_at'     => now(),
+                        ]);
+                    }
+
+                    DB::table('riwayat_domisili')->insert([
+                        'santri_id'     => $santriId,
+                        'wilayah_id'    => $data['wilayah_id'] ?? optional($lastDom)->wilayah_id,
+                        'blok_id'       => $data['blok_id'] ?? optional($lastDom)->blok_id,
+                        'kamar_id'      => $data['kamar_id'] ?? optional($lastDom)->kamar_id,
+                        'tanggal_masuk' => now(),
+                        'status'        => 'aktif',
+                        'created_by'    => $userId,
+                        'created_at'    => now(),
+                        'updated_at'    => now(),
+                    ]);
+                }
+            }
 
             // === RIWAYAT PENDIDIKAN ===
-            // 1) tutup record pendidikan lama
-            DB::table('riwayat_pendidikan')
+            $lastPend = DB::table('riwayat_pendidikan')
                 ->where('santri_id', $santriId)
                 ->whereNull('tanggal_keluar')
-                ->update([
-                    'status'          => $data['status_riwayat_pendidikan'] ?? 'aktif',
-                    'tanggal_keluar' => now()->toDateString(),
-                    'updated_by'      => $userId,
-                    'updated_at'      => now(),
-                ]);
+                ->orderByDesc('tanggal_masuk')
+                ->first();
 
-            // 2) insert record pendidikan baru
-            DB::table('riwayat_pendidikan')->insert([
-                'santri_id'       => $santriId,
-                'lembaga_id'      => $data['lembaga_id'],
-                'jurusan_id'      => $data['jurusan_id'] ?? null,
-                'kelas_id'        => $data['kelas_id'] ?? null,
-                'rombel_id'       => $data['rombel_id'] ?? null,
-                'tanggal_masuk'   => now()->toDateString(),
-                'tanggal_keluar' => null,
-                'created_by'      => $userId,
-                'created_at'      => now(),
-            ]);
+            if (!empty($data['status_berhenti_pendidikan'])) {
+                if ($lastPend) {
+                    DB::table('riwayat_pendidikan')->where('id', $lastPend->id)->update([
+                        'status'         => 'berhenti',
+                        'tanggal_keluar' => now(),
+                        'updated_by'     => $userId,
+                        'updated_at'     => now(),
+                    ]);
+                }
+            } else {
+                $lembagaChanged = isset($data['lembaga_id']) && $lastPend && $data['lembaga_id'] !== $lastPend->lembaga_id;
+                $jurusanChanged = isset($data['jurusan_id']) && $lastPend && $data['jurusan_id'] !== $lastPend->jurusan_id;
+                $kelasChanged   = isset($data['kelas_id']) && $lastPend && $data['kelas_id'] !== $lastPend->kelas_id;
+                $rombelChanged  = isset($data['rombel_id']) && $lastPend && $data['rombel_id'] !== $lastPend->rombel_id;
+
+                if ($lembagaChanged || $jurusanChanged || $kelasChanged || $rombelChanged) {
+                    if ($lastPend) {
+                        DB::table('riwayat_pendidikan')->where('id', $lastPend->id)->update([
+                            'status'         => 'pindah',
+                            'tanggal_keluar' => now(),
+                            'updated_by'     => $userId,
+                            'updated_at'     => now(),
+                        ]);
+                    }
+
+                    DB::table('riwayat_pendidikan')->insert([
+                        'santri_id'      => $santriId,
+                        'no_induk'       => $lastPend?->no_induk,
+                        'lembaga_id'     => $data['lembaga_id'] ?? optional($lastPend)->lembaga_id,
+                        'jurusan_id'     => $data['jurusan_id'] ?? optional($lastPend)->jurusan_id,
+                        'kelas_id'       => $data['kelas_id'] ?? optional($lastPend)->kelas_id,
+                        'rombel_id'      => $data['rombel_id'] ?? optional($lastPend)->rombel_id,
+                        'tanggal_masuk'  => now(),
+                        'status'         => 'aktif',
+                        'created_by'     => $userId,
+                        'created_at'     => now(),
+                        'updated_at'     => now(),
+                    ]);
+                }
+            }
         });
     }
+
 
     public function destroy(string $santriId)
     {

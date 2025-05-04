@@ -72,10 +72,11 @@ use App\Http\Controllers\Api\Pegawai\{
     DropdownController
 };
 
+
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
 Route::post('forgot',   [AuthController::class, 'forgotPassword']);
-Route::post('reset',    [AuthController::class, 'resetPassword']);
+Route::post('reset',    [AuthController::class, 'resetPassword'])->name('password.reset');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout',  [AuthController::class, 'logout']);
@@ -85,7 +86,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 });
-
 
 // Untuk Data Pokok Nanti
 // Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
@@ -120,6 +120,8 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
     Route::put('/pesertadidik/{id}', [PesertaDidikController::class, 'update']);
     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+    Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
+    Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
 });
 
 Route::prefix('data-pokok')->group(function () {

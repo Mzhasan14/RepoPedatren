@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -23,6 +25,8 @@ class PesertaDidikRequest extends FormRequest
      */
     public function rules(): array
     {
+        $santriId = $this->route('id');
+        $biodataId = DB::table('santri')->where('id', $santriId)->value('biodata_id');
         return [
             'negara_id' => 'required|exists:negara,id',
             'provinsi_id' => 'nullable|exists:provinsi,id',
@@ -31,33 +35,51 @@ class PesertaDidikRequest extends FormRequest
             'jalan' => 'nullable|string',
             'kode_pos' => 'nullable|string',
             'nama' => 'required|string|max:100',
-            'no_passport' => 'nullable|string',
+
+            'no_passport' => [
+                'nullable',
+                'string',
+                Rule::unique('biodata', 'no_passport')->ignore($biodataId),
+            ],
             'jenis_kelamin' => 'required|in:l,p',
             'tanggal_lahir' => 'required|date',
             'tempat_lahir' => 'required|string|max:50',
-            'nik' => 'nullable|digits:16',
+            'nik' => [
+                'nullable',
+                'digits:16',
+                Rule::unique('biodata', 'nik')->ignore($biodataId),
+            ],
             'no_telepon' => 'required|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
-            'email' => 'required|email|max:100|unique:biodata,email',
+            'email' => [
+                'required',
+                'email',
+                'max:100',
+                Rule::unique('biodata', 'email')->ignore($biodataId),
+            ],
+
             'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'nama_pendidikan_terakhir' => 'nullable|string',
             'anak_keberapa' => 'nullable|integer|min:1',
             'dari_saudara' => 'nullable|integer|min:1',
             'tinggal_bersama' => 'nullable|string|max:40',
+
             // pendidikan
-            'lembaga_id' => 'required|exists:lembaga,id',
+            'lembaga_id' => 'nullable|exists:lembaga,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
+
             // domisili
             'wilayah_id' => 'nullable|exists:wilayah,id',
             'blok_id'    => 'nullable|exists:blok,id',
             'kamar_id'   => 'nullable|exists:kamar,id',
+
             // status
             'status_biodata' => 'nullable|boolean',
-            'status_santri' => 'nullable|in:aktif,do,berhenti,alumni',
-            'status_riwayat_domisili' => 'nullable|in:aktif,do,berhenti,alumni,pindah',
-            'status_riwayat_pendidikan' => 'nullable|in:aktif,do,berhenti,alumni,pindah',
+            'status_santri' => 'nullable|in:aktif,do,berhenti',
+            'status_keluar_domisili' => 'nullable|boolean',
+            'status_berhenti_pendidikan' => 'nullable|boolean',
         ];
     }
 
@@ -110,7 +132,6 @@ class PesertaDidikRequest extends FormRequest
             'kamar_id.exists' => 'Kamar yang dipilih tidak valid.',
         ];
     }
-
 
     protected function failedValidation(Validator $validator)
     {

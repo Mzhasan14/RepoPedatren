@@ -22,7 +22,6 @@ return new class extends Migration
             $table->text('alamat_tujuan');
             $table->datetime('tanggal_mulai');
             $table->datetime('tanggal_akhir');
-            $table->integer('lama_izin');
             $table->datetime('tanggal_kembali')->nullable();
             $table->enum('jenis_izin', ['Personal', 'Rombongan']);
             $table->enum('status', [

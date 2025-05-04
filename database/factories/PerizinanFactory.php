@@ -33,9 +33,6 @@ class PerizinanFactory extends Factory
         // 2. tanggal_akhir antara 1–14 hari setelah tanggal_mulai
         $akhir = $mulai->copy()->addDays(rand(1, 14));
 
-        // 3. Hitung lama izin (jumlah hari, inklusif)
-        $lamaIzin = $akhir->diffInDays($mulai) + 1;
-
         // 4. Tentukan tanggal_kembali:
         //    – 70% on time: kembali antara tanggal_mulai dan tanggal_akhir
         //    – 30% late: kembali 1–7 hari setelah tanggal_akhir
@@ -89,7 +86,6 @@ class PerizinanFactory extends Factory
             'alamat_tujuan'   => $this->faker->address,
             'tanggal_mulai'   => $mulai,
             'tanggal_akhir'   => $akhir,
-            'lama_izin'       => $lamaIzin,
             'tanggal_kembali' => $kembali,
             'jenis_izin'      => $this->faker->randomElement(['Personal', 'Rombongan']),
             'status'          => $status,

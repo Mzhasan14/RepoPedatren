@@ -2,9 +2,12 @@
 
 namespace App\Services\Administrasi;
 
+use App\Models\Perizinan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Administrasi\PerizinanRequest;
 
 class PerizinanService
 {
@@ -141,5 +144,29 @@ class PerizinanService
                 ->translatedFormat('d F Y H:i:s') ?? '-',
             'foto_profil'       => url($item->foto_profil),
         ]);
+    }
+
+    public function store(PerizinanRequest $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->validated();
+            // $data['lama_izin'] = $this->hitungLamaIzin($data['tanggal_mulai'], $data['tanggal_akhir']);
+            $data['created_by'] = Auth::id();
+
+            Perizinan::create($data);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Data perizinan berhasil disimpan',
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Data perizinan gagal disimpan',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

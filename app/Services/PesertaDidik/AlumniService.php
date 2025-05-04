@@ -5,6 +5,7 @@ namespace App\Services\PesertaDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class AlumniService
 {
@@ -87,5 +88,55 @@ class AlumniService
             "tgl_input"        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             "foto_profil" => url($item->foto_profil)
         ]);
+    }
+
+    // Set alumni santri
+    public function setAlumniSantri($ids)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Update status di tabel santri
+            DB::table('santri')
+                ->whereIn('id', $ids)
+                ->where('status', 'aktif')
+                ->update([
+                    'status'         => 'alumni',
+                    'tanggal_keluar' => now()->toDateString(),
+                    'updated_by'     => Auth::id(),
+                ]);
+    
+            // Update status di tabel riwayat_domisili
+            DB::table('riwayat_domisili')
+                ->whereIn('santri_id', $ids)
+                ->whereNull('tanggal_keluar')  // hanya update jika tanggal_keluar masih null
+                ->update([
+                    'status'         => 'alumni',
+                    'tanggal_keluar' => now()->toDateString(),
+                    'updated_by'     => Auth::id(),
+                ]);
+    
+            // Commit transaksi jika kedua update berhasil
+            DB::commit();
+    
+        } catch (\Exception $e) {
+            // Rollback transaksi jika terjadi error
+            DB::rollBack();
+            // Log error atau lakukan penanganan error sesuai kebutuhan
+            throw $e;
+        }
+    }
+
+    // Set alumni pelajar
+    public function setAlumniPelajar(array $santriIds): int
+    {
+        return DB::table('riwayat_pendidikan')
+            ->whereIn('santri_id', $santriIds) 
+            ->where('status', 'aktif')
+            ->update([
+                'status'         => 'alumni',
+                'tanggal_keluar' => now()->toDateString(),
+                'updated_by'     => Auth::id(),
+            ]);
     }
 }
