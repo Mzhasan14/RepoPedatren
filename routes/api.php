@@ -200,7 +200,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/jenisberkas', JenisBerkasController::class);
     Route::apiResource('/materiAjar', MateriAjarController::class);
     Route::get('/berkas', [BerkasController::class, 'Berkas']);
-    Route::get('/pengajars', [PengajarController::class, 'filterPengajar']);
+    Route::get('/pengajars', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);

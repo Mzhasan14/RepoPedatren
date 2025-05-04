@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class FilterPengajarService
 {
-    public function applyAllFilters($query, Request $request)
+    public function applyPengajarFilters($query, Request $request)
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyNamaFilter($query, $request);
