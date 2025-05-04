@@ -12,8 +12,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\FilterController;
 use App\Models\JenisBerkas;
-use App\Services\FilterPengajarService;
-use App\Services\Pegawai\Filters\FilterPengajarService as FiltersFilterPengajarService;
+use App\Services\Pegawai\Filters\FilterPengajarService;
 use App\Services\Pegawai\PengajarService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -22,12 +21,12 @@ use Illuminate\Support\Facades\URL;
 class PengajarController extends Controller
 {
 
-    private PengajarService $pngajarService;
-    private FiltersFilterPengajarService $filterController;
+    private PengajarService $pengajarService;
+    private FilterPengajarService $filterController;
 
-    public function __construct(PengajarService $pngajarService, FiltersFilterPengajarService $filterController)
+    public function __construct(PengajarService $pengajarService, FilterPengajarService $filterController)
     {
-        $this->pngajarService = $pngajarService;
+        $this->pengajarService = $pengajarService;
         $this->filterController = $filterController;
     }
 
@@ -95,8 +94,8 @@ class PengajarController extends Controller
     public function getallPengajar(Request $request)
     {
         try {
-            $query = $this->pngajarService->getAllPengajar($request);
-            $query = $this->filterController->applyAllFilters($query, $request);
+            $query = $this->pengajarService->getAllPengajar($request);
+            $query = $this->filterController->applyPengajarFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -117,7 +116,7 @@ class PengajarController extends Controller
             ], 200);
         }
 
-        $formatted = $this->pngajarService->formatData($results);
+        $formatted = $this->pengajarService->formatData($results);
 
         return response()->json([
             "total_data"   => $results->total(),

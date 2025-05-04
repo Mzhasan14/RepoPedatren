@@ -108,7 +108,22 @@ class DetailOrangtuaService
             ])
             ->get();
 
-        $keluarga = $ortu;
+        // Anak kandung
+        $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+        $saudara = DB::table('keluarga as k')
+            ->where('k.no_kk', $noKk)
+            ->whereNotIn('k.id_biodata', $excluded)
+            ->where('k.id_biodata', '!=', $bioId)
+            ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
+            ->select([
+                'bs.nama',
+                'bs.nik',
+                DB::raw("'Anak Kandung' as status"),
+                DB::raw("NULL as wali")
+            ])
+            ->get();
+
+        $keluarga = $ortu->merge($saudara);
         if ($keluarga->isNotEmpty()) {
             $data['Keluarga'] = $keluarga->map(fn($i) => [
                 'nama'   => $i->nama,
