@@ -1,19 +1,20 @@
-<?php 
+<?php
 
 namespace App\Services\Kewaliasuhan;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
-class DetailWaliasuhService {
-    public function getDetailWaliasuh(string $WaliasuhId): array
+class DetailAnakasuhService
+{
+    public function getDetailAnakasuh(string $AnakasuhId): array
     {
         // --- 1. Ambil basic wali asuh santri + biodata_id + no_kk sekaligus ---
-        $base = DB::table('wali_asuh as ws')
-            ->join('santri as s','ws.id_santri' ,'=', 's.id')
+        $base = DB::table('anak_asuh as as')
+            ->join('santri as s', 'as.id_santri', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('ws.id', $WaliasuhId)
+            ->where('as.id', $AnakasuhId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',
@@ -22,7 +23,7 @@ class DetailWaliasuhService {
             ->first();
 
         if (! $base) {
-            return ['error' => 'Wali asuh tidak ditemukan'];
+            return ['error' => 'Anak asuh tidak ditemukan'];
         }
 
         $santriId  = $base->santri_id;
@@ -149,7 +150,7 @@ class DetailWaliasuhService {
             }
         }
 
-    // --- 5. Kewaliasuhan ---
+        // --- 5. Kewaliasuhan ---
         $kew = DB::table('santri as s')
             ->where('s.id', $santriId)
             ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
@@ -242,19 +243,6 @@ class DetailWaliasuhService {
             ]);
         }
 
-        $ks = DB::table('kewaliasuhan as ks')
-            ->join('wali_asuh as ws', 'ks.id_wali_asuh', '=', 'ws.id')
-            ->where('ws.id_santri', $santriId)
-            ->select(['ks.tanggal_mulai', 'ks.tanggal_berakhir'])
-            ->first();
-
-        if ($ks) {
-            $data['Wali_Asuh'] = [
-                'tanggal_mulai' => $ks->tanggal_mulai,
-                'tanggal_akhir' => $ks->tanggal_berakhir,
-            ];
-        }
-
 
         // --- 8. Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
@@ -323,19 +311,6 @@ class DetailWaliasuhService {
                 'baca_alquran'                    => $kg->baca_alquran_nilai ?? '-',
                 'tindak_lanjut_baca_alquran'      => $kg->baca_alquran_tindak_lanjut ?? '-',
             ];
-        }
-
-        // --- 10. Kunjungan Mahrom ---
-        $kun = DB::table('pengunjung_mahrom as pm')
-            ->where('pm.santri_id', $santriId)
-            ->select(['pm.nama_pengunjung', 'pm.tanggal'])
-            ->get();
-
-        if ($kun->isNotEmpty()) {
-            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
-                'nama'    => $k->nama_pengunjung,
-                'tanggal' => $k->tanggal,
-            ]);
         }
 
         return $data;

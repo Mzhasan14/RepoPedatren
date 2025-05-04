@@ -2,17 +2,74 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Anak_asuh;
-use App\Models\Santri;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Kewaliasuhan\AnakasuhService;
+use App\Services\Kewaliasuhan\DetailAnakasuhService;
+use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
 
 class AnakasuhController extends Controller
 {
+    private AnakasuhService $anakasuhService;
+    private FilterAnakasuhService $filterAnakasuhService;
+    private DetailAnakasuhService $detailAnakasuhService;
+
+    public function __construct(AnakasuhService $anakasuhService, FilterAnakasuhService $filterAnakasuhService, DetailAnakasuhService $detailAnakasuhService){
+        $this->anakasuhService = $anakasuhService;
+        $this->filterAnakasuhService = $filterAnakasuhService;
+        $this->detailAnakasuhService = $detailAnakasuhService;
+    }
+
+    public function getAllAnakasuh(Request $request) {
+        $query = $this->anakasuhService->getAllAnakasuh($request);
+        $query = $this->filterAnakasuhService->AnakasuhFilters($query, $request);
+
+        $perPage     = (int) $request->input('limit', 25);
+        $currentPage = (int) $request->input('page', 1);
+        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
+        }
+
+        $formatted = $this->anakasuhService->formatData($results);
+
+        return response()->json([
+            "total_data"   => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
+        ]);
+    }
+
+    public function getDetailAnakasuh(string $AnakasuhId) {
+        $Anakasuh = Anak_asuh::find($AnakasuhId);
+        if (!$Anakasuh) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ID Orangtua tidak ditemukan',
+                'data' => []
+            ], 404);
+        }
+
+        $data = $this->detailAnakasuhService->getDetailAnakasuh($AnakasuhId);
+
+        return response()->json([
+            'status' => true,
+            'data'    => $data,
+        ], 200);
+    }
     /**
      * Display a listing of the resource.
      */
