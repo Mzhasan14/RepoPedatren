@@ -404,14 +404,16 @@ public function getGolonganJabatan()
         ->orderBy('nama_golongan_jabatan')
         ->get();
 
-    $result = $golonganJabatan->map(function ($item) {
-        return [
-            'id' => $item->id,
-            'nama_golongan_jabatan' => $item->nama_golongan_jabatan,
-        ];
-    });
+    $result = $golonganJabatan
+        ->unique('nama_golongan_jabatan') // ambil satu data per nama
+        ->values() // reset indeks
+        ->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_golongan_jabatan' => $item->nama_golongan_jabatan,
+            ];
+        });
 
     return response()->json($result);
 }
-
 }
