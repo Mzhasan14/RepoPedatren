@@ -50,7 +50,7 @@ class WaliKelasService
                             ->leftJoin('jurusan as j','j.id','=','wali_kelas.jurusan_id')
                             ->leftJoin('lembaga as l','l.id','=','wali_kelas.lembaga_id')
                             ->select(
-                                'wali_kelas.id as id',
+                                'wali_kelas.pegawai_id as id',
                                 'b.nama',
                                 'wp.niup',
                                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -65,7 +65,7 @@ class WaliKelasService
                                 DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
-                                'wali_kelas.id', 
+                                'wali_kelas.pegawai_id', 
                                 'b.nama', 
                                 'wp.niup', 
                                 'l.nama_lembaga',

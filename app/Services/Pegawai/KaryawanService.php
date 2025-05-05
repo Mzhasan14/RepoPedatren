@@ -36,7 +36,11 @@ class KaryawanService
                                 ->where('pegawai.status_aktif','aktif');
                         })
                         ->join('biodata as b','b.id','=','pegawai.biodata_id')
-                        ->leftJoin('golongan_jabatan as g','g.id','=','karyawan.golongan_jabatan_id')
+                        // relasi ke golongan jabatan yang hanya berstatus true
+                        ->leftJoin('golongan_jabatan as g',function ($join) {
+                            $join->on('karyawan.golongan_jabatan_id', '=', 'g.id')
+                                ->where('g.status', true);
+                        })
                         // join ke warga pesantren terakhir true (NIUP)
                         ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id')) 
                         ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
@@ -54,7 +58,7 @@ class KaryawanService
                                 )');
                         })
                         ->select(
-                            'karyawan.id',
+                            'karyawan.pegawai_id as id', 
                             'b.nama',
                             'wp.niup',
                             'b.nik',
@@ -68,7 +72,7 @@ class KaryawanService
                             DB::raw("DATE_FORMAT(karyawan.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                             DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
-                                'karyawan.id', 
+                                'karyawan.pegawai_id', 
                                 'b.nama',
                                 'b.nik',
                                 'wp.niup',

@@ -61,6 +61,7 @@ use App\Http\Controllers\Api\Pendidikan\{
     RombelController
 };
 use App\Http\Controllers\Api\Pegawai\{
+    DetailKepegawaianController,
     PegawaiController,
     PengajarController,
     WalikelasController,
@@ -207,15 +208,13 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
     Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
+    Route::get('/pengurus/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
+    Route::get('/pengajar/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
+    Route::get('/karyawan/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
+    Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
+    Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
 });
-Route::prefix('detail')->group(function () {
-    Route::get('/pengurus/{id}', [PengurusController::class, 'getPengurus']);
-    Route::get('/pengajar/{id}', [PengajarController::class, 'getPengajar']);
-    Route::get('/karyawan/{id}', [KaryawanController::class, 'getKaryawan']);
-    Route::get('pegawai/{id}', [PegawaiController::class, 'getPegawai']);
-    Route::get('/anakpegawai/{id}', [AnakPegawaiController::class, 'getAnakPegawai']);
-    Route::get('/walikelas/{id}', [WalikelasController::class, 'getWalikelas']);
-});
+
 Route::prefix('dropdown')->group(function () {
     Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
     Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);

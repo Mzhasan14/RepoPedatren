@@ -32,7 +32,11 @@ class PengurusService
                 ->groupBy('biodata_id');
         // 4) Query utama
        return Pengurus::Active()
-                            ->leftJoin('golongan_jabatan as g','pengurus.golongan_jabatan_id','=','g.id')
+                            // relasi ke golongan jabatan yang hanya berstatus true
+                            ->leftJoin('golongan_jabatan as g',function ($join) {
+                                $join->on('pengurus.golongan_jabatan_id', '=', 'g.id')
+                                    ->where('g.status', true);
+                            })
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
                                 $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
@@ -47,7 +51,7 @@ class PengurusService
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                             ->leftJoin('lembaga as l', 'pegawai.lembaga_id', '=', 'l.id')
                             ->select(
-                                'pengurus.id',
+                                'pengurus.pegawai_id as id',
                                 'b.nama',
                                 'b.nik',
                                 'wp.niup',
@@ -63,7 +67,7 @@ class PengurusService
                                 )    
                                 ->groupBy(
                                     'wp.niup',
-                                    'pengurus.id',
+                                    'pengurus.pegawai_id',
                                     'b.nama',
                                     'b.nik',
                                     'pengurus.keterangan_jabatan',

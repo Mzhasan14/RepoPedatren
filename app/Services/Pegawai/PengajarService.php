@@ -53,7 +53,7 @@ class PengajarService
                          ->where('materi_ajar.status', 1);
                 })
                 ->select(
-                    'pengajar.id',
+                    'pengajar.pegawai_id as id',
                     'b.nama',
                     'wp.niup',
                     DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
@@ -90,7 +90,7 @@ class PengajarService
                     DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                     )   
                      ->groupBy(
-                        'pengajar.id',
+                        'pengajar.pegawai_id',
                         'b.nama',
                         'wp.niup',
                         'b.tanggal_lahir',
