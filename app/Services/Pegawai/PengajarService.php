@@ -52,6 +52,7 @@ class PengajarService
                     $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
                          ->where('materi_ajar.status', 1);
                 })
+                ->whereNull('pengajar.deleted_at')
                 ->select(
                     'pengajar.pegawai_id as id',
                     'b.nama',

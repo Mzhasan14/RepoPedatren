@@ -52,6 +52,7 @@ class CatatanKognitifService
                     $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
                 })
                 ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+                ->whereNull('catatan_kognitif.deleted_at')
                 ->select(
                     'catatan_kognitif.id',
                     'CatatanBiodata.nama',

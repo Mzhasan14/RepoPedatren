@@ -49,6 +49,7 @@ class WaliKelasService
                             ->leftJoin('kelas as k','k.id','=','wali_kelas.kelas_id')
                             ->leftJoin('jurusan as j','j.id','=','wali_kelas.jurusan_id')
                             ->leftJoin('lembaga as l','l.id','=','wali_kelas.lembaga_id')
+                            ->whereNull('wali_kelas.deleted_at')
                             ->select(
                                 'wali_kelas.pegawai_id as id',
                                 'b.nama',

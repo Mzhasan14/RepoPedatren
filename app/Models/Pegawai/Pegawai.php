@@ -16,7 +16,6 @@ class Pegawai extends Model
 
 
     protected $guarded = [
-        'created_at'
     ];
 
     public function biodata()

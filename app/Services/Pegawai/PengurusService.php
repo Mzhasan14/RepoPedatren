@@ -50,6 +50,7 @@ class PengurusService
                             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                             ->leftJoin('lembaga as l', 'pegawai.lembaga_id', '=', 'l.id')
+                            ->whereNull('pengurus.deleted_at')
                             ->select(
                                 'pengurus.pegawai_id as id',
                                 'b.nama',

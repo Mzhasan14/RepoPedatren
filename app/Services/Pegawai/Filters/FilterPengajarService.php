@@ -170,16 +170,27 @@ class FilterPengajarService
     private function applyMateriAjarFilter(Builder $query, Request $request): Builder
     {
         if ($request->has('materi_ajar')) {
-            if (strtolower($request->materi_ajar) === 'materi ajar 1') {
-                // Hanya pengajar yang memiliki 1 materi ajar
+            $value = $request->materi_ajar;
+    
+            if ($value === '0') {
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 0');
+            } elseif ($value === '1') {
                 $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 1');
-            } elseif (strtolower($request->materi_ajar) === 'materi ajar lebih dari 1') {
-                // Hanya pengajar yang memiliki lebih dari 1 materi ajar
+            } elseif ($value === '>1') {
                 $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 1');
+            } elseif ($value === '2') {
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 2');
+            } elseif ($value === '>2') {
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 2');
+            } elseif ($value === '3') {
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 3');
+            } elseif ($value === '>3') {
+                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 3');
             }
         }
-             return $query;
-    }
+    
+        return $query;
+    }    
     private function applyMasaKerjaFilter(Builder $query, Request $request): Builder
     {
         $masaKerja = $request->input('masa_kerja');

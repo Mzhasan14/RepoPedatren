@@ -193,7 +193,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/rombel', RombelController::class);
 
     // 👨‍🏫 Pegawai & Guru
-    Route::apiResource('/pegawai', PegawaiController::class);
+    // Route::apiResource('/pegawai', PegawaiController::class);
     Route::apiResource('/pengajar', PengajarController::class);
     Route::apiResource('/walikelas', WalikelasController::class);
     Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
@@ -213,6 +213,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/karyawan/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
+    Route::post('pegawai',[PegawaiController::class,'store']);
 });
 
 Route::prefix('dropdown')->group(function () {

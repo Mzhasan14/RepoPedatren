@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('golongan_jabatan_id')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('golongan_jabatan_id')->references('id')->on('golongan_jabatan')->onDelete('cascade');
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
         });
         Schema::create('pengurus', function (Blueprint $table) {
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
-            $table->foreign('golongan_jabatan_id')->references('id')->on('golongan')->onDelete('cascade');
+            $table->foreign('golongan_jabatan_id')->references('id')->on('golongan_jabatan')->onDelete('cascade');
         });
         Schema::create('riwayat_jabatan_karyawan', function (Blueprint $table) {
             $table->id();

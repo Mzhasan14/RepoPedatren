@@ -57,6 +57,7 @@ class KaryawanService
                                     WHERE riwayat_jabatan_karyawan.karyawan_id = karyawan.id
                                 )');
                         })
+                        ->whereNull('karyawan.deleted_at')
                         ->select(
                             'karyawan.pegawai_id as id', 
                             'b.nama',

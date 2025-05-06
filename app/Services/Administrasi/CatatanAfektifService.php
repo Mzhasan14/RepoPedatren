@@ -51,7 +51,7 @@ class CatatanAfektifService
                             $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
                         })
                         ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
-    
+                        ->whereNull('catatan_afektif.deleted_at')
                         ->select(
                             'catatan_afektif.id',
                             'CatatanBiodata.nama',
