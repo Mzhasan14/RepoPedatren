@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
             $table->string('nama_grup');
+            $table->fullText('nama_grup');
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -32,7 +33,7 @@ return new class extends Migration
         Schema::create('wali_asuh', function (Blueprint $table) {
             $table->id();
             $table->uuid('id_santri');
-            $table->unsignedBigInteger('id_grup_wali_asuh')->nullable();
+            $table->unsignedBigInteger('id_grup_wali_asuh')->nullable()->unique();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable()->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable()->nullable();

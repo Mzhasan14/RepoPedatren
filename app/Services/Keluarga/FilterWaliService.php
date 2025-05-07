@@ -35,8 +35,7 @@ class FilterWaliService {
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->join('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
-                        ->where('kb.nama_kabupaten', $request->kabupaten);
+                    $query->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
@@ -144,16 +143,18 @@ class FilterWaliService {
 
     public function applyWafatFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('wafat')) {
+        if (!$request->filled('wafat')) {
             return $query;
         }
 
         $wafat = strtolower($request->wafat);
+
         if ($wafat === 'sudah wafat') {
-            $query->whereNotNull('orang_tua_wali.wafat');
+            $query->where('o.wafat', true);
         } elseif ($wafat === 'masih hidup') {
-            $query->whereNull('orang_tua_wali.wafat');
+            $query->where('o.wafat', false);
         } else {
+            // Jika nilai tidak valid, tidak menampilkan data apapun
             $query->whereRaw('0 = 1');
         }
 

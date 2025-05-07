@@ -23,13 +23,17 @@ class WaliAnakAsuhSeeder extends Seeder
         // Ambil semua wilayah yang sudah ada
         $wilayahList = DB::table('wilayah')->pluck('id')->toArray();
 
-        // Buat grup wali asuh (10% dari jumlah santri menjadi grup wali asuh)
+        // Tentukan santri yang menjadi wali asuh dan anak asuh
+        $totalWaliAsuh = max(1, round(count($santriList) * 0.3)); // 30% santri menjadi wali asuh (minimal 1)
+        $waliAsuhList = array_slice($santriList, 0, $totalWaliAsuh);
+        $anakAsuhList = array_slice($santriList, $totalWaliAsuh);
+
+        // Buat grup wali asuh (1 grup per wali asuh)
         $grupWaliAsuhData = [];
-        $totalGrup = max(5, round(count($santriList) * 0.1));
-        for ($i = 0; $i < $totalGrup; $i++) {
+        foreach ($waliAsuhList as $index => $santriId) {
             $grupWaliAsuhData[] = [
                 'id_wilayah' => $wilayahList[array_rand($wilayahList)],
-                'nama_grup' => 'Grup Wali ' . Str::random(5),
+                'nama_grup' => 'Grup Wali ' . ($index + 1),
                 'jenis_kelamin' => ['l', 'p'][array_rand(['l', 'p'])],
                 'created_by' => 1,
                 'status' => true,
@@ -40,17 +44,12 @@ class WaliAnakAsuhSeeder extends Seeder
         DB::table('grup_wali_asuh')->insert($grupWaliAsuhData);
         $grupWaliAsuhList = DB::table('grup_wali_asuh')->pluck('id')->toArray();
 
-        // Tentukan santri yang menjadi wali asuh dan anak asuh
-        $totalWaliAsuh = round(count($santriList) * 0.3); // 30% santri menjadi wali asuh
-        $waliAsuhList = array_slice($santriList, 0, $totalWaliAsuh);
-        $anakAsuhList = array_slice($santriList, $totalWaliAsuh);
-
-        // Buat data wali asuh
+        // Buat data wali asuh (1 wali asuh per grup)
         $waliAsuhData = [];
-        foreach ($waliAsuhList as $santriId) {
+        foreach ($waliAsuhList as $index => $santriId) {
             $waliAsuhData[] = [
                 'id_santri' => $santriId,
-                'id_grup_wali_asuh' => $grupWaliAsuhList[array_rand($grupWaliAsuhList)],
+                'id_grup_wali_asuh' => $grupWaliAsuhList[$index], // Setiap wali asuh mendapatkan grup unik
                 'created_by' => 1,
                 'status' => true,
                 'created_at' => Carbon::now(),
@@ -74,12 +73,14 @@ class WaliAnakAsuhSeeder extends Seeder
         DB::table('anak_asuh')->insert($anakAsuhData);
         $anakAsuhIdList = DB::table('anak_asuh')->pluck('id', 'id_santri')->toArray();
 
-        // Buat relasi kewaliasuhan (1 wali asuh punya banyak anak asuh, 1 anak asuh hanya 1 wali asuh)
+        // Buat relasi kewaliasuhan
         $kewaliasuhanData = [];
         foreach ($anakAsuhIdList as $santriId => $anakAsuhId) {
-            $waliAsuhId = array_rand($waliAsuhIdList); // Pilih wali asuh secara acak
+            // Pilih wali asuh secara acak
+            $waliAsuhId = $waliAsuhIdList[array_rand($waliAsuhIdList)];
+
             $kewaliasuhanData[] = [
-                'id_wali_asuh' => $waliAsuhIdList[$waliAsuhId],
+                'id_wali_asuh' => $waliAsuhId,
                 'id_anak_asuh' => $anakAsuhId,
                 'tanggal_mulai' => Carbon::now()->subYears(rand(1, 5)),
                 'tanggal_berakhir' => (rand(1, 100) > 80) ? Carbon::now()->subMonths(rand(1, 12)) : null, // 20% sudah selesai

@@ -38,7 +38,7 @@ class FilterOrangtuaService
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->join('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
+                    $query
                         ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
@@ -147,16 +147,18 @@ class FilterOrangtuaService
 
     public function applyWafatFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('wafat')) {
+        if (!$request->filled('wafat')) {
             return $query;
         }
 
         $wafat = strtolower($request->wafat);
+
         if ($wafat === 'sudah wafat') {
-            $query->whereNotNull('orang_tua_wali.wafat');
+            $query->where('o.wafat', true);
         } elseif ($wafat === 'masih hidup') {
-            $query->whereNull('orang_tua_wali.wafat');
+            $query->where('o.wafat', false);
         } else {
+            // Jika nilai tidak valid, tidak menampilkan data apapun
             $query->whereRaw('0 = 1');
         }
 
