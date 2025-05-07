@@ -97,6 +97,7 @@ Route::prefix('formulir')->middleware('auth:sanctum')->group(function() {
    Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
    // Berkas
+   Route::get('/{id}/berkas', [BerkasController::class, 'index']);
    Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
    Route::post('/{id}/berkas', [BerkasController::class, 'store']);
    Route::put('/{id}/berkas', [BerkasController::class, 'update']);

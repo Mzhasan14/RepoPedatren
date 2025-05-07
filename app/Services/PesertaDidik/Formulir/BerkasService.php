@@ -9,68 +9,89 @@ use Illuminate\Support\Facades\Storage;
 
 class BerkasService
 {
-    public function update(array $berkasData, string $santriId)
+    public function index($bioId)
     {
-        // Ambil biodata_id berdasarkan santriId
-        $biodataId = DB::table('santri')
-            ->where('id', $santriId)
-            ->value('biodata_id');
+        $berkas = DB::table('berkas as br')
+            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
+            ->where('br.biodata_id', $bioId)
+            ->select(
+                'br.id',
+                'br.file_path',
+                'jk.nama_jenis_berkas'
+            )
+            ->get();
 
-        // Jika tidak ada biodata_id, lempar exception
-        if (! $biodataId) {
-            throw new \Exception("Santri #{$santriId} tidak memiliki biodata_id.");
+        if (!$berkas) {
+            return ['status' => false, 'message' => 'tidak memiliki berkas'];
         }
 
-        // Pastikan 'berkas' adalah array
-        if (empty($berkasData['berkas']) || !is_array($berkasData['berkas'])) {
-            throw new \Exception("Data berkas tidak valid.");
+        return ['status' => true, 'data' => $berkas];
+    }
+
+    public function edit($id)
+    {
+        $berkas = DB::table('berkas as br')
+            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
+            ->where('br.id', $id)
+            ->select(
+                'br.id',
+                'br.file_path',
+                'br.jenis_berkas_id',
+                'jk.nama_jenis_berkas'
+            )
+            ->first();
+
+        if (!$berkas) {
+            return ['status' => false, 'message' => 'tidak memiliki berkas'];
         }
 
-        foreach ($berkasData['berkas'] as $berkas) {  // Loop melalui array berkas
-            // Pastikan setiap berkas memiliki jenis_berkas_id
-            if (empty($berkas['jenis_berkas_id'])) {
-                throw new \Exception("Key jenis_berkas_id tidak ditemukan dalam data berkas.");
-            }
+        return ['status' => true, 'data' => $berkas];
+    }
 
-            $jenisBerkasId = (int) $berkas['jenis_berkas_id'];  // Pastikan casting ke integer
-
-            // Pastikan file_path ada dan valid
-            if (empty($berkas['file_path']) || !($berkas['file_path'] instanceof UploadedFile)) {
-                throw new \Exception("Data berkas tidak valid.");
-            }
-
-            $uploadedFile = $berkas['file_path'];
-
-            // Cek apakah berkas dengan jenis_berkas_id sudah ada
-            $existing = DB::table('berkas')
-                ->where('biodata_id', $biodataId)
-                ->where('jenis_berkas_id', $jenisBerkasId)
-                ->first();
-
-            // Jika berkas sudah ada, hapus file lama
-            if ($existing && !empty($existing->file_path) && Storage::disk('public')->exists($existing->file_path)) {
-                Storage::disk('public')->delete($existing->file_path);
-            }
-
-            // Simpan file baru di disk public (storage/app/public)
-            $filePath = $uploadedFile->store('PesertaDidik', 'public');
-
-            // Membuat URL yang sesuai
-            $fileUrl = Storage::url($filePath);  // Ini akan menghasilkan /storage/PesertaDidik/... sesuai dengan symbolic link
-
-            // Update atau insert data berkas
-            DB::table('berkas')->updateOrInsert(
-                [
-                    'biodata_id' => $biodataId,
-                    'jenis_berkas_id' => $jenisBerkasId,
-                ],
-                [
-                    'file_path' => $fileUrl,  // Simpan URL yang benar
-                    'status' => true,
-                    'created_by' => Auth::id(),
-                    'updated_at' => now(),
-                ]
-            );
+    public function update(array $berkasData, string $berkasId)
+    {
+        // Ambil record berkas berdasarkan id_berkas
+        $existing = DB::table('berkas')->where('id', $berkasId)->first();
+        if (! $existing) {
+            return ['status' => false, 'message' => "Berkas dengan ID #{$berkasId} tidak ditemukan"];
         }
+
+        // Validasi file yang diunggah
+        if (empty($berkasData['file_path']) || ! $berkasData['file_path'] instanceof UploadedFile) {
+            return ['status' => false, 'message' => 'Data berkas tidak valid.'];
+        }
+
+        // Hapus file lama jika ada
+        if (! empty($existing->file_path) && Storage::disk('public')->exists($existing->file_path)) {
+            Storage::disk('public')->delete($existing->file_path);
+        }
+
+        // Simpan file baru di disk public
+        $uploadedFile = $berkasData['file_path'];
+        $filePath     = $uploadedFile->store('PesertaDidik', 'public');
+        $fileUrl      = Storage::url($filePath);
+
+        // Update record berkas
+        DB::table('berkas')
+            ->where('id', $berkasId)
+            ->update([
+                'file_path'  => $fileUrl,
+                'status'     => true,
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
+            ]);
+
+        // Ambil kembali data yang telah diupdate untuk response
+        $updated = DB::table('berkas as br')
+            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
+            ->where('br.id', $berkasId)
+            ->select(
+                'br.id',
+                'br.file_path',
+                'jk.nama_jenis_berkas'
+            )
+            ->first();
+
+        return ['status' => true, 'data' => $updated];
     }
 }

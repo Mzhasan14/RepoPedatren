@@ -21,13 +21,24 @@ class BerkasRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
-        return [
-            'berkas' => 'nullable|array',
-            'berkas.*.jenis_berkas_id' => 'required|exists:jenis_berkas,id',
-            'berkas.*.file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ];
+        if ($this->isMethod('post')) {
+            // Untuk store: menerima array of berkas
+            return [
+                'berkas' => 'required|array',
+                'berkas.*.jenis_berkas_id' => 'required|exists:jenis_berkas,id',
+                'berkas.*.file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            ];
+        }
+
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            // Untuk update: hanya satu berkas
+            return [
+                'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
+                'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            ];
+        }
     }
 
     protected function failedValidation(Validator $validator)

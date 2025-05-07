@@ -25,8 +25,8 @@ class BiodataRequest extends FormRequest
      */
     public function rules(): array
     {
-        $santriId = $this->route('id');
-        $biodataId = DB::table('santri')->where('id', $santriId)->value('biodata_id');
+        $id = $this->route('id');
+        $biodataId = DB::table('biodata')->where('id', $id)->value('id');
         return [
             'no_passport' => [
                 'nullable',
