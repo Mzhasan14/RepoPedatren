@@ -30,14 +30,6 @@ class Grup_WaliAsuh extends Model
         'status'
     ];
 
-    // protected static function boot()
-    // {
-    //     parent::boot();
-    //     static::creating(function ($model) {
-    //         $model->id = (string) Str::uuid();
-    //     });
-    // }
-
     public function scopeActive($query)
     {
         return $query->where('status', true);
@@ -53,7 +45,7 @@ class Grup_WaliAsuh extends Model
     }
 
     public function waliAsuh() {
-        return $this->hasMany(Wali_asuh::class,'id_grup_wali_asuh','id');
+        return $this->hasOne(Wali_asuh::class,'id_grup_wali_asuh','id');
     }
 
     public function anakAsuh() {

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
             $table->string('nama_grup');
+            $table->fullText('nama_grup');
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

@@ -33,15 +33,10 @@ class WaliKelasService
                 ->groupBy('biodata_id');
         // 4) Query utama
         return WaliKelas::Active()
-                            // Join Pengajar Yang berstatus aktif
-                            ->join('pengajar',function($join){
-                                $join->on('wali_kelas.pengajar_id', '=', 'pengajar.id')
-                                        ->where('pengajar.status_aktif','aktif');
-                            })
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
-                                    $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
-                                         ->where('pegawai.status', 1);
+                                    $join->on('wali_kelas.pegawai_id', '=', 'pegawai.id')
+                                         ->where('pegawai.status_aktif', 'aktif');
                             })
                             ->join('biodata as b','b.id','=','pegawai.biodata_id')  
                             //  Join Warga Pesantren Terakhir Berstatus Aktif
@@ -50,12 +45,13 @@ class WaliKelasService
                             // join berkas pas foto terakhir
                             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-                            ->leftJoin('rombel as r','r.id','=','pengajar.rombel_id')
-                            ->leftJoin('kelas as k','k.id','=','pengajar.kelas_id')
-                            ->leftJoin('jurusan as j','j.id','=','pengajar.jurusan_id')
-                            ->leftJoin('lembaga as l','l.id','=','pengajar.lembaga_id')
+                            ->leftJoin('rombel as r','r.id','=','wali_kelas.rombel_id')
+                            ->leftJoin('kelas as k','k.id','=','wali_kelas.kelas_id')
+                            ->leftJoin('jurusan as j','j.id','=','wali_kelas.jurusan_id')
+                            ->leftJoin('lembaga as l','l.id','=','wali_kelas.lembaga_id')
+                            ->whereNull('wali_kelas.deleted_at')
                             ->select(
-                                'wali_kelas.id as id',
+                                'wali_kelas.pegawai_id as id',
                                 'b.nama',
                                 'wp.niup',
                                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -70,7 +66,7 @@ class WaliKelasService
                                 DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
-                                'wali_kelas.id', 
+                                'wali_kelas.pegawai_id', 
                                 'b.nama', 
                                 'wp.niup', 
                                 'l.nama_lembaga',

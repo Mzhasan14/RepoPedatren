@@ -16,9 +16,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('pegawai_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
-            $table->unsignedBigInteger('jurusan_id')->nullable();
-            $table->unsignedBigInteger('kelas_id')->nullable();
-            $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('golongan_id')->nullable();  
             $table->string('jabatan');
             $table->date('tahun_masuk')->nullable();
@@ -26,13 +23,10 @@ return new class extends Migration
             $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('status');
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
-            $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
-            $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
-            $table->foreign('rombel_id')->references('id')->on('rombel')->onDelete('cascade');
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
             $table->foreign('golongan_id')->references('id')->on('golongan')->onDelete('cascade');
         });

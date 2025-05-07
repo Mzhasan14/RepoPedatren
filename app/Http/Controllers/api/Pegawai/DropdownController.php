@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Alamat\Kecamatan;
 use App\Models\Catatan_afektif;
 use App\Models\Kewilayahan\Kamar;
+use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
 use App\Models\Pegawai\Pengajar;
+use App\Models\Pegawai\Pengurus;
 use App\Models\Pelajar;
 use App\Models\Pendidikan\Rombel;
 use App\Models\RiwayatPendidikan;
@@ -376,56 +378,42 @@ public function menuLembagaJurusanKelasRombel()
 
     return response()->json($result);
 }
-    // public function menuJenisKelamin($tipe)
-    // {
-    //     // Cek tipe entitas yang diminta
-    //     $relasiTabel = match ($tipe) {
-    //         'pengajar' => 'pengajar',
-    //         'pengurus' => 'pengurus',
-    //         'anak_pegawai' => 'anak_pegawai',
-    //         'karyawan' => 'karyawan',
-    //         'pegawai' => null, // Pegawai tidak perlu join dengan tabel lain
-    //         default => null
-    //     };
-    
-    //     if ($tipe === 'pegawai') {
-    //         // Query untuk pegawai langsung
-    //         $query = DB::table('pegawai')
-    //             ->join('biodata', 'pegawai.id_biodata', '=', 'biodata.id')
-    //             ->select(
-    //                 'biodata.jenis_kelamin',
-    //                 DB::raw('COUNT(DISTINCT pegawai.id) as jumlah_pegawai')
-    //             )
-    //             ->groupBy('biodata.jenis_kelamin')
-    //             ->get();
-    //     } elseif ($relasiTabel) {
-    //         // Query untuk pengajar, pengurus, anak pegawai, dan karyawan
-    //         $query = DB::table($relasiTabel)
-    //             ->join('pegawai', "$relasiTabel.id_pegawai", '=', 'pegawai.id')
-    //             ->join('biodata', 'pegawai.id_biodata', '=', 'biodata.id')
-    //             ->select(
-    //                 'biodata.jenis_kelamin',
-    //                 DB::raw('COUNT(DISTINCT pegawai.id) as jumlah_pegawai')
-    //             )
-    //             ->groupBy('biodata.jenis_kelamin')
-    //             ->get();
-    //     } else {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'message' => 'Tipe relasi tidak valid'
-    //         ], 400);
-    //     }
-    //     // Format hasil
-    //     $result = $query->map(function ($item) {
-    //         return [
-    //             'jenis kelamin' => $item->jenis_kelamin === 'l' ? 'laki-laki' : 
-    //                               ($item->jenis_kelamin === 'p' ? 'perempuan' : 'Tidak Diketahui'),
-    //             'jumlah' => $item->jumlah_pegawai
-    //         ];
-    //     });
-    
-    //     return response()->json([
-    //         'data' => $result
-    //     ]);
-    // }
+public function getSatuanKerja()
+{
+    $satuanKerja = Pengurus::active()
+        ->select('satuan_kerja')
+        ->groupBy('satuan_kerja')
+        ->orderBy('satuan_kerja')
+        ->pluck('satuan_kerja')
+        ->values(); // reset index ke 0,1,2...
+
+    // Bangun array dengan id + nama_satuan_kerja
+    $result = $satuanKerja->map(function ($item, $index) {
+        return [
+            'id' => $index + 1,
+            'nama_satuan_kerja' => $item,
+        ];
+    });
+
+    return response()->json($result);
+}
+public function getGolonganJabatan()
+{
+    $golonganJabatan = GolonganJabatan::select('id', 'nama_golongan_jabatan')
+        ->where('status', true)
+        ->orderBy('nama_golongan_jabatan')
+        ->get();
+
+    $result = $golonganJabatan
+        ->unique('nama_golongan_jabatan') // ambil satu data per nama
+        ->values() // reset indeks
+        ->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_golongan_jabatan' => $item->nama_golongan_jabatan,
+            ];
+        });
+
+    return response()->json($result);
+}
 }

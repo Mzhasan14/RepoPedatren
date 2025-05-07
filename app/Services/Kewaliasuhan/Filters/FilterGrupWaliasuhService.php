@@ -10,6 +10,7 @@ class FilterGrupWaliasuhService {
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyJenisGrupWaliAsuhFilter($query, $request);
+        $query = $this->applyNamaFilter($query, $request);
 
         return $query;
     }
@@ -76,6 +77,22 @@ class FilterGrupWaliasuhService {
             $query->whereNotNull('anak_asuh.id')->whereNull('wali_asuh.id');
         }
 
+
         return $query;
+    }
+
+    public function applyNamaFilter(Builder $query, Request $request): Builder
+    {
+        if (! $request->filled('nama')) {
+            return $query;
+        }
+
+        // tambahkan tanda kutip ganda di awal‑akhir
+        $phrase = '"' . trim($request->nama) . '"';
+
+        return $query->whereRaw(
+            "MATCH(gs.nama_grup) AGAINST(? IN BOOLEAN MODE)",
+            [$phrase]
+        );
     }
 }

@@ -25,6 +25,6 @@ class WaliKelas extends Model
 
     public function ScopeActive($query)
     {
-        return $query->where('wali_kelas.status',true);
+        return $query->where('wali_kelas.status_aktif','aktif');
     }
 }

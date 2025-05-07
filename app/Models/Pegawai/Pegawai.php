@@ -16,7 +16,6 @@ class Pegawai extends Model
 
 
     protected $guarded = [
-        'created_at'
     ];
 
     public function biodata()
@@ -39,6 +38,6 @@ class Pegawai extends Model
     }
     public function ScopeActive($query)
     {
-        return $query->where('pegawai.status',true);
+        return $query->where('pegawai.status_aktif','aktif');
     }
 }

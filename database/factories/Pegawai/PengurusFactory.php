@@ -25,8 +25,8 @@ class PengurusFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'pegawai_id' =>(new PegawaiFactory())->create()->id,
-            'golongan_id' => (new GolonganFactory())->create()->id,
-            'jabatan' => $this->faker->jobTitle,
+            'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
+            'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'satuan_kerja' => $this->faker->company,
             'keterangan_jabatan' => $this->faker->randomElement([
                 'Pengasuh',
@@ -40,7 +40,6 @@ class PengurusFactory extends Factory
             'tanggal_mulai' => $tanggalMulai,
             'tanggal_akhir' => $tanggalSelesai,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
-            'status' => $this->faker->boolean,
             'created_by' => 1, // ID pengguna yang membuat data
             'created_at' => now(),
             'updated_at' => now(),

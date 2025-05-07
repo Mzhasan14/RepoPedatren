@@ -20,7 +20,7 @@ class Pengurus extends Model
     
     public function scopeActive($query)
     {
-        return $query->where('pengurus.status',true);
+        return $query->where('pengurus.status_aktif','aktif');
     }
     public function PengurusGolongan()
     {

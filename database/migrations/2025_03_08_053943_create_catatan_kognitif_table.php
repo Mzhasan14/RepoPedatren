@@ -30,6 +30,7 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
