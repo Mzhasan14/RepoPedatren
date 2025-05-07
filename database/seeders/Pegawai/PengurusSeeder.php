@@ -13,11 +13,7 @@ class PengurusSeeder extends Seeder
      */
     public function run(): void
     {
-<<<<<<< HEAD
-        (new PengurusFactory())->count(100)->create();
-=======
         (new PengurusFactory())->count(25)->create();
->>>>>>> bb4b1d91a94e4f1acbc0ac142e17d66598353cc5
         
     }
 }
