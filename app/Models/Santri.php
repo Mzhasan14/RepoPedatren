@@ -21,17 +21,15 @@ class Santri extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'santri';
-    public $incrementing = false;
-    protected $keyType = 'string';
     protected $guarded = ['id'];
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            $model->id = (string) Str::uuid();
-        });
-    }
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         $model->id = (string) Str::uuid();
+    //     });
+    // }
 
     public function biodata()
     {

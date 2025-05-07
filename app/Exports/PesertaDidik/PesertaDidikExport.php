@@ -152,7 +152,7 @@ class PesertaDidikExport implements
         }
 
         // Terapkan filter bisnis dan kembalikan query
-        return $this->filterService->bersaudaraFilters($query, $this->request);
+        return $this->filterService->pesertaDidikFilters($query, $this->request);
     }
 
     public function chunkSize(): int

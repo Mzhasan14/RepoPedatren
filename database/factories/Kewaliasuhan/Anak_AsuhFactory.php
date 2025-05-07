@@ -20,9 +20,7 @@ class Anak_AsuhFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_santri' => Santri::factory()->create([
-                'id' => (string) Str::uuid()
-            ])->id,
+            'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
             'id_grup_wali_asuh' => (new Grup_WaliAsuhhFactory())->create()->id,
             'created_by' => 1,
             'updated_by' => null,

@@ -5,29 +5,31 @@ namespace App\Services\PesertaDidik\Filters;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterPesertaDidikService
+class FilterNonDomisiliService
 {
     /**
      * Panggil semua filter berurutan
      */
-    public function pesertaDidikFilters(Builder $query, Request $request): Builder
+    public function nonDomisiliFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applySmartcardFilter($query, $request);
         $query = $this->applyNamaFilter($query, $request);
+        $query = $this->applyKewaliasuhanFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
         $query = $this->applyStatusPesertaFilter($query, $request);
         $query = $this->applyStatusWargaPesantrenFilter($query, $request);
         $query = $this->applyAngkatanSantri($query, $request);
-        $query = $this->applyAngkatanPelajar($query, $request);
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyPemberkasan($query, $request);
         $query = $this->applySorting($query, $request);
 
         return $query;
     }
+
+
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('negara')) {
@@ -45,7 +47,8 @@ class FilterPesertaDidikService
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->where('kb.nama_kabupaten', $request->kabupaten);
+                    $query
+                        ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
@@ -113,6 +116,30 @@ class FilterPesertaDidikService
         );
     }
 
+    public function applyKewaliasuhanFilter(Builder $query, Request $request): Builder
+    {
+        if (! $request->filled('kewaliasuhan')) {
+            return $query;
+        }
+
+        $kewaliasuhan = strtolower($request->kewaliasuhan);
+        if ($kewaliasuhan === 'waliasuh or anakasuh') {
+            $query->leftJoin('wali_asuh as wa', 'wa.santri_id', '=', 's.id')
+                ->leftJoin('anak_asuh as aa',  'aa.santri_id',  '=', 's.id')
+                ->whereNotNull('wa.id')
+                ->orWhereNotNull('aa.id');
+        } elseif ($kewaliasuhan === 'non kewaliasuhan') {
+            $query->leftJoin('wali_asuh as wa', 'wa.santri_id', '=', 's.id')
+                ->leftJoin('anak_asuh as aa',  'aa.santri_id',  '=', 's.id')
+                ->whereNull('wa.id')
+                ->whereNull('aa.id');
+        } else {
+            $query->whereRaw('0 = 1');
+        }
+
+        return $query;
+    }
+
     public function applyWilayahFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('wilayah')) {
@@ -121,19 +148,16 @@ class FilterPesertaDidikService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-
             return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
 
         if ($request->filled('blok')) {
-            $query->join('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-                ->where('bl.nama_blok', $request->blok);
+            $query->where('bl.nama_blok', $request->blok);
 
             if ($request->filled('kamar')) {
-                $query->join('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-                    ->where('km.nama_kamar', $request->kamar);
+                $query->where('km.nama_kamar', $request->kamar);
             }
         }
 
@@ -149,20 +173,31 @@ class FilterPesertaDidikService
         $query->where('l.nama_lembaga', $request->lembaga);
 
         if ($request->filled('jurusan')) {
-            $query->join('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
+            $query->join('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
                 ->where('j.nama_jurusan', $request->jurusan);
 
             if ($request->filled('kelas')) {
-                $query->join('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
+                $query->join('kelas as kls', 'rp.kelas_id', '=', 'kls.id')
                     ->where('kls.nama_kelas', $request->kelas);
 
                 if ($request->filled('rombel')) {
-                    $query->join('rombel AS r', 'rp.rombel_id', '=', 'r.id')
+                    $query->join('rombel as r', 'rp.rombel_id', '=', 'r.id')
                         ->where('r.nama_rombel', $request->rombel);
                 }
             }
         }
 
+        return $query;
+    }
+
+    public function applyAngkatanSantri(Builder $query, Request $request): Builder
+    {
+        if (! $request->filled('angkatan_santri')) {
+            return $query;
+        }
+
+
+        $query->whereYear('s.tanggal_masuk', $request->angkatan_santri);
         return $query;
     }
 
@@ -217,27 +252,6 @@ class FilterPesertaDidikService
         return $query;
     }
 
-    public function applyAngkatanSantri(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('angkatan_santri')) {
-            return $query;
-        }
-
-
-        $query->whereYear('s.tanggal_masuk', $request->angkatan_santri);
-        return $query;
-    }
-
-    public function applyAngkatanPelajar(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('angkatan_pelajar')) {
-            return $query;
-        }
-
-        $query->whereYear('rp.tanggal_masuk', $request->angkatan_pelajar);
-        return $query;
-    }
-
     public function applyPhoneNumber(Builder $query, Request $request): Builder
     {
         if (! $request->filled('phone_number')) {
@@ -268,24 +282,19 @@ class FilterPesertaDidikService
                 $query->whereNull('br.biodata_id');
                 break;
             case 'tidak ada foto diri':
-                $query->where('br.jenis_berkas_id', 4)
-                    ->whereNull('br.file_path');
+                $query->where('br.jenis_berkas_id', 4)->whereNull('br.file_path');
                 break;
             case 'memiliki foto diri':
-                $query->where('br.jenis_berkas_id', 4)
-                    ->whereNotNull('br.file_path');
+                $query->where('br.jenis_berkas_id', 4)->whereNotNull('br.file_path');
                 break;
             case 'tidak ada kk':
-                $query->where('br.jenis_berkas_id', 1)
-                    ->whereNull('br.file_path');
+                $query->where('br.jenis_berkas_id', 1)->whereNull('br.file_path');
                 break;
             case 'tidak ada akta kelahiran':
-                $query->where('br.jenis_berkas_id', 3)
-                    ->whereNull('br.file_path');
+                $query->where('br.jenis_berkas_id', 3)->whereNull('br.file_path');
                 break;
             case 'tidak ada ijazah':
-                $query->where('br.jenis_berkas_id', 5)
-                    ->whereNull('br.file_path');
+                $query->where('br.jenis_berkas_id', 5)->whereNull('br.file_path');
                 break;
             default:
                 $query->whereRaw('0 = 1');

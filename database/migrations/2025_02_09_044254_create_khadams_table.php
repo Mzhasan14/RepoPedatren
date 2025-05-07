@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('khadam', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('biodata_id')->unique();
+            $table->uuid('biodata_id');
             $table->string('keterangan');
             $table->date('tanggal_mulai');
             $table->date('tanggal_akhir')->nullable();

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('riwayat_domisili', function (Blueprint $table) {
             $table->id();
-            $table->uuid('santri_id');
-            $table->unsignedBigInteger('wilayah_id')->nullable();
+            $table->unsignedBigInteger('santri_id');
+            $table->unsignedBigInteger('wilayah_id');
             $table->unsignedBigInteger('blok_id')->nullable();
             $table->unsignedBigInteger('kamar_id')->nullable();
             $table->datetime('tanggal_masuk');

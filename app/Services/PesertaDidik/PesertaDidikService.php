@@ -6,8 +6,15 @@ use App\Models\Santri;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use App\Services\PesertaDidik\Formulir\BerkasService;
+use App\Services\PesertaDidik\Formulir\BiodataService;
+use App\Services\PesertaDidik\Formulir\DomisiliService;
+use App\Services\PesertaDidik\Formulir\PendidikanService;
 
 class PesertaDidikService
 {
@@ -46,6 +53,7 @@ class PesertaDidikService
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))
             ->select([
+                'b.id as biodata_id',
                 's.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
                 'b.nama',
@@ -70,6 +78,7 @@ class PesertaDidikService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            'biodata_id'       => $item->biodata_id,
             'id'               => $item->id,
             'nik_or_passport'  => $item->identitas,
             'nama'             => $item->nama,
@@ -85,25 +94,20 @@ class PesertaDidikService
 
     public function store(array $data)
     {
-        $pesertaDidik = DB::transaction(function () use ($data) {
-            // Generate unique NIS (sebagai string)
-            do {
-                $nis = (string) now()->format('YmdHis') . Str::random(2);
-            } while (DB::table('santri')->where('nis', $nis)->exists());
-
-            // Generate unique smartcard
+        DB::beginTransaction();
+        try {
             do {
                 $smartcard = 'SC-' . strtoupper(Str::random(10));
             } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
             $biodataId = DB::table('biodata')->insertGetId([
+                'nama' => $data['nama'],
                 'negara_id' => $data['negara_id'],
                 'provinsi_id' => $data['provinsi_id'] ?? null,
                 'kabupaten_id' => $data['kabupaten_id'] ?? null,
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'jalan' => $data['jalan'] ?? null,
                 'kode_pos' => $data['kode_pos'] ?? null,
-                'nama' => $data['nama'],
                 'no_passport' => $data['no_passport'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'tanggal_lahir' => $data['tanggal_lahir'],
@@ -124,232 +128,244 @@ class PesertaDidikService
                 'updated_at' => now(),
             ]);
 
-            // Generate UUID untuk santri_id
+            // Ambil semua id_biodata dari keluarga yang memiliki nomor KK yang sama dengan input
+            $existingParents = DB::table('keluarga')
+                ->where('no_kk', $data['no_kk'])
+                ->pluck('id_biodata');
+
+            // Jika ada data keluarga dengan nomor KK tersebut
+            if ($existingParents->isNotEmpty()) {
+                // Ambil semua NIK dari biodata yang sesuai dengan id_biodata yang ditemukan
+                $existingNIKs = DB::table('biodata')
+                    ->whereIn('id', $existingParents)
+                    ->pluck('nik');
+
+                // Cek apakah NIK ayah, ibu, atau wali dari input ada di daftar NIK yang sudah terdaftar
+                foreach (['nik_ayah', 'nik_ibu', 'nik_wali'] as $nikKey) {
+                    // Jika NIK diinputkan tidak kosong dan belum ada di daftar NIK yang terdaftar
+                    if (!empty($data[$nikKey]) && !$existingNIKs->contains($data[$nikKey])) {
+                        throw ValidationException::withMessages([
+                            'no_kk' => ['No KK ini sudah digunakan oleh kombinasi orang tua yang berbeda.'],
+                        ]);
+                    }
+                }
+            }
+
+            // Simpan no_kk untuk Peserta Didik
+            DB::table('keluarga')->insert([
+                'id_biodata' => $biodataId,
+                'no_kk' => $data['no_kk'],
+                'status' => true,
+                'created_by' => Auth::id(),
+            ]);
+
+            do {
+                $nis = (string) now()->format('YmdHis') . Str::random(2);
+            } while (DB::table('santri')->where('nis', $nis)->exists());
+
             do {
                 $santriId = Str::uuid()->toString();
             } while (DB::table('santri')->where('id', $santriId)->exists());
 
-            DB::table('santri')->insert([
+            DB::table('santri')->insertGetId([
                 'id' => $santriId,
                 'biodata_id' => $biodataId,
                 'nis' => $nis,
                 'tanggal_masuk' => now(),
-                'status' => 'aktif',
                 'created_by' => Auth::id(),
+                'status' => 'aktif',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // Insert ke riwayat_pendidikan jika tersedia
-            if (!empty($data['lembaga_id'])) {
-                do {
-                    $noInduk = now()->format('His') . Str::random(3);
-                } while (DB::table('riwayat_pendidikan')->where('no_induk', $noInduk)->exists());
+            // Ambil id_hubungan_keluarga
+            $hubungan = DB::table('hubungan_keluarga')
+                ->whereIn('nama_status', ['ayah', 'ibu', 'wali'])
+                ->pluck('id', 'nama_status');
 
-                DB::table('riwayat_pendidikan')->insert([
-                    'santri_id' => $santriId,
-                    'no_induk' => $noInduk,
-                    'lembaga_id' => $data['lembaga_id'],
-                    'jurusan_id' => $data['jurusan_id'] ?? null,
-                    'kelas_id' => $data['kelas_id'] ?? null,
-                    'rombel_id' => $data['rombel_id'] ?? null,
-                    'tanggal_masuk' => now()->toDateString(),
-                    'created_by' => Auth::id(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            // 3. Cek dan Simpan Ayah
+            if (!empty($data['nama_ayah'])) {
+                // Cek apakah ayah sudah ada di biodata berdasarkan nik
+                $ayahId = DB::table('biodata')->where('nik', $data['nik_ayah'])->value('id');
 
-            // Insert ke riwayat_domisili jika tersedia salah satu
-            if (!empty($data['wilayah_id']) || !empty($data['blok_id']) || !empty($data['kamar_id'])) {
-                DB::table('riwayat_domisili')->insert([
-                    'santri_id' => $santriId,
-                    'wilayah_id' => $data['wilayah_id'] ?? null,
-                    'blok_id' => $data['blok_id'] ?? null,
-                    'kamar_id' => $data['kamar_id'] ?? null,
-                    'tanggal_masuk' => now(),
-                    'created_by' => Auth::id(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            return [
-                'santri_id' => $santriId,
-                'nama' => $data['nama'],
-                'email' => $data['email'],
-                'tanggal_masuk' => now()->toDateString(),
-            ];
-        });
-
-        return $pesertaDidik;
-    }
-
-    // Update data peserta didik
-    public function update(array $data, string $santriId)
-    {
-        return DB::transaction(function () use ($data, $santriId) {
-            $userId = Auth::id();
-
-            // 1. Ambil biodata_id dari santri
-            $biodataId = DB::table('santri')
-                ->where('id', $santriId)
-                ->value('biodata_id');
-
-            if (! $biodataId) {
-                throw new \Exception("Santri #{$santriId} tidak memiliki biodata_id.");
-            }
-
-            // 2. Ambil biodata lama untuk cek perubahan
-            $oldBiodata = DB::table('biodata')->where('id', $biodataId)->first();
-
-            $biodataUpdate = [
-                'negara_id'                   => $data['negara_id'],
-                'provinsi_id'                 => $data['provinsi_id'] ?? null,
-                'kabupaten_id'                => $data['kabupaten_id'] ?? null,
-                'kecamatan_id'                => $data['kecamatan_id'] ?? null,
-                'jalan'                       => $data['jalan'] ?? null,
-                'kode_pos'                    => $data['kode_pos'] ?? null,
-                'nama'                        => $data['nama'],
-                'no_passport'                 => $data['no_passport'] ?? null,
-                'jenis_kelamin'               => $data['jenis_kelamin'],
-                'tanggal_lahir'               => $data['tanggal_lahir'],
-                'tempat_lahir'                => $data['tempat_lahir'],
-                'nik'                         => $data['nik'] ?? null,
-                'no_telepon'                  => $data['no_telepon'],
-                'no_telepon_2'                => $data['no_telepon_2'] ?? null,
-                'email'                       => $data['email'],
-                'jenjang_pendidikan_terakhir' => $data['jenjang_pendidikan_terakhir'] ?? null,
-                'nama_pendidikan_terakhir'    => $data['nama_pendidikan_terakhir'] ?? null,
-                'anak_keberapa'               => $data['anak_keberapa'] ?? null,
-                'dari_saudara'                => $data['dari_saudara'] ?? null,
-                'tinggal_bersama'             => $data['tinggal_bersama'] ?? null,
-                'status'                      => $data['status_biodata'] ?? true,
-            ];
-
-            // Hanya update jika berbeda
-            $hasChanged = false;
-            foreach ($biodataUpdate as $key => $val) {
-                if ($oldBiodata->$key != $val) {
-                    $hasChanged = true;
-                    break;
-                }
-            }
-
-            if ($hasChanged) {
-                $biodataUpdate['updated_by'] = $userId;
-                $biodataUpdate['updated_at'] = now();
-                DB::table('biodata')
-                    ->where('id', $biodataId)
-                    ->update($biodataUpdate);
-            }
-
-            // 3. Update data santri jika status berubah
-            if (!empty($data['status_santri'])) {
-                DB::table('santri')
-                    ->where('id', $santriId)
-                    ->update([
-                        'status'     => $data['status_santri'],
-                        'updated_by' => $userId,
+                if (!$ayahId) {
+                    // Insert ayah baru jika nik tidak ditemukan
+                    $ayahId = DB::table('biodata')->insertGetId([
+                        'nama' => $data['nama_ayah'],
+                        'nik' => $data['nik_ayah'],
+                        'tempat_lahir' => $data['tempat_lahir_ayah'] ?? null,
+                        'tanggal_lahir' => $data['tanggal_lahir_ayah'] ?? null,
+                        'no_telepon' => $data['no_telepon_ayah'] ?? null,
+                        'jenjang_pendidikan_terakhir' => $data['pendidikan_terakhir_ayah'] ?? null,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-            }
 
-            // === RIWAYAT DOMISILI ===
-            $lastDom = DB::table('riwayat_domisili')
-                ->where('santri_id', $santriId)
-                ->whereNull('tanggal_keluar')
-                ->orderByDesc('tanggal_masuk')
-                ->first();
-
-            if (!empty($data['status_keluar_domisili'])) {
-                if ($lastDom) {
-                    DB::table('riwayat_domisili')->where('id', $lastDom->id)->update([
-                        'status'         => 'keluar',
-                        'tanggal_keluar' => now(),
-                        'updated_by'     => $userId,
-                        'updated_at'     => now(),
+                    DB::table('orang_tua_wali')->insert([
+                        'id_biodata' => $ayahId,
+                        'pekerjaan' => $data['pekerjaan_ayah'] ?? null,
+                        'penghasilan' => $data['penghasilan_ayah'] ?? null,
+                        'id_hubungan_keluarga' => $hubungan['ayah'] ?? null,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
-            } else {
-                $wilayahChanged = isset($data['wilayah_id']) && $lastDom && $data['wilayah_id'] !== $lastDom->wilayah_id;
-                $blokChanged    = isset($data['blok_id']) && $lastDom && $data['blok_id'] !== $lastDom->blok_id;
-                $kamarChanged   = isset($data['kamar_id']) && $lastDom && $data['kamar_id'] !== $lastDom->kamar_id;
 
-                if ($wilayahChanged || $blokChanged || $kamarChanged) {
-                    if ($lastDom) {
-                        DB::table('riwayat_domisili')->where('id', $lastDom->id)->update([
-                            'status'         => 'pindah',
-                            'tanggal_keluar' => now(),
-                            'updated_by'     => $userId,
-                            'updated_at'     => now(),
+                // Periksa apakah kombinasi no_kk dan id_biodata ayah sudah ada di keluarga
+                $existingKeluarga = DB::table('keluarga')
+                    ->where('no_kk', $data['no_kk'])
+                    ->where('id_biodata', $ayahId)
+                    ->exists();
+
+                if (!$existingKeluarga) {
+                    DB::table('keluarga')->insert([
+                        'id_biodata' => $ayahId,
+                        'no_kk' => $data['no_kk'],
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            // 4. Cek dan Simpan Ibu
+            if (!empty($data['nama_ibu'])) {
+                // Cek apakah ibu sudah ada di biodata berdasarkan nik
+                $ibuId = DB::table('biodata')->where('nik', $data['nik_ibu'])->value('id');
+
+                if (!$ibuId) {
+                    // Insert ibu baru jika nik tidak ditemukan
+                    $ibuId = DB::table('biodata')->insertGetId([
+                        'nama' => $data['nama_ibu'],
+                        'nik' => $data['nik_ibu'],
+                        'tempat_lahir' => $data['tempat_lahir_ibu'] ?? null,
+                        'tanggal_lahir' => $data['tanggal_lahir_ibu'] ?? null,
+                        'no_telepon' => $data['no_telepon_ibu'] ?? null,
+                        'jenjang_pendidikan_terakhir' => $data['pendidikan_terakhir_ibu'] ?? null,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    DB::table('orang_tua_wali')->insert([
+                        'id_biodata' => $ibuId,
+                        'pekerjaan' => $data['pekerjaan_ibu'] ?? null,
+                        'penghasilan' => $data['penghasilan_ibu'] ?? null,
+                        'id_hubungan_keluarga' => $hubungan['ibu'] ?? null,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                // Periksa apakah kombinasi no_kk dan id_biodata ibu sudah ada di keluarga
+                $existingKeluarga = DB::table('keluarga')
+                    ->where('no_kk', $data['no_kk'])
+                    ->where('id_biodata', $ibuId)
+                    ->exists();
+
+                if (!$existingKeluarga) {
+                    DB::table('keluarga')->insert([
+                        'id_biodata' => $ibuId,
+                        'no_kk' => $data['no_kk'],
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            // 5. Cek dan Simpan Wali jika ada
+            if (!empty($data['nama_wali'])) {
+                $waliNik = $data['nik_wali'] ?? null;
+                $waliId = DB::table('biodata')->where('nik', $waliNik)->value('id');
+
+                if (!$waliId) {
+                    // Insert wali baru jika nik tidak ditemukan
+                    $waliId = DB::table('biodata')->insertGetId([
+                        'nama' => $data['nama_wali'],
+                        'nik' => $waliNik,
+                        'tempat_lahir' => $data['tempat_lahir_wali'] ?? null,
+                        'tanggal_lahir' => $data['tanggal_lahir_wali'] ?? null,
+                        'no_telepon' => $data['no_telepon_wali'] ?? null,
+                        'jenjang_pendidikan_terakhir' => $data['pendidikan_terakhir_wali'] ?? null,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    DB::table('orang_tua_wali')->insert([
+                        'id_biodata' => $waliId,
+                        'pekerjaan' => $data['pekerjaan_wali'] ?? null,
+                        'penghasilan' => $data['penghasilan_wali'] ?? null,
+                        'id_hubungan_keluarga' => $hubungan['wali'] ?? null,
+                        'wali' => true,
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    // Jika nik wali sudah ada, update status 'wali' menjadi true di tabel orang_tua_wali
+                    DB::table('orang_tua_wali')
+                        ->where('id_biodata', $waliId)
+                        ->update(['wali' => true]);
+                }
+
+                // Periksa apakah kombinasi no_kk dan id_biodata wali sudah ada di keluarga
+                $existingKeluarga = DB::table('keluarga')
+                    ->where('no_kk', $data['no_kk'])
+                    ->where('id_biodata', $waliId)
+                    ->exists();
+
+                if (!$existingKeluarga) {
+                    // Insert ke tabel keluarga untuk wali
+                    DB::table('keluarga')->insert([
+                        'id_biodata' => $waliId,
+                        'no_kk' => $data['no_kk'],
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+
+                // 6. Simpan data berkas jika ada
+                if (!empty($data['berkas']) && is_array($data['berkas'])) {
+                    foreach ($data['berkas'] as $item) {
+
+                        $path = $item['file_path']->store('PesertaDidik', 'public');
+
+                        $jenisBerkasId = (int) $item['jenis_berkas_id'];
+
+                        $filePath = Storage::url($path);
+
+                        DB::table('berkas')->insert([
+                            'biodata_id' => $biodataId,
+                            'jenis_berkas_id' => $jenisBerkasId,
+                            'file_path' => $filePath,
+                            'status' => true,
+                            'created_by' => Auth::id(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
                         ]);
                     }
-
-                    DB::table('riwayat_domisili')->insert([
-                        'santri_id'     => $santriId,
-                        'wilayah_id'    => $data['wilayah_id'] ?? optional($lastDom)->wilayah_id,
-                        'blok_id'       => $data['blok_id'] ?? optional($lastDom)->blok_id,
-                        'kamar_id'      => $data['kamar_id'] ?? optional($lastDom)->kamar_id,
-                        'tanggal_masuk' => now(),
-                        'status'        => 'aktif',
-                        'created_by'    => $userId,
-                        'created_at'    => now(),
-                        'updated_at'    => now(),
-                    ]);
                 }
             }
 
-            // === RIWAYAT PENDIDIKAN ===
-            $lastPend = DB::table('riwayat_pendidikan')
-                ->where('santri_id', $santriId)
-                ->whereNull('tanggal_keluar')
-                ->orderByDesc('tanggal_masuk')
-                ->first();
-
-            if (!empty($data['status_berhenti_pendidikan'])) {
-                if ($lastPend) {
-                    DB::table('riwayat_pendidikan')->where('id', $lastPend->id)->update([
-                        'status'         => 'berhenti',
-                        'tanggal_keluar' => now(),
-                        'updated_by'     => $userId,
-                        'updated_at'     => now(),
-                    ]);
-                }
-            } else {
-                $lembagaChanged = isset($data['lembaga_id']) && $lastPend && $data['lembaga_id'] !== $lastPend->lembaga_id;
-                $jurusanChanged = isset($data['jurusan_id']) && $lastPend && $data['jurusan_id'] !== $lastPend->jurusan_id;
-                $kelasChanged   = isset($data['kelas_id']) && $lastPend && $data['kelas_id'] !== $lastPend->kelas_id;
-                $rombelChanged  = isset($data['rombel_id']) && $lastPend && $data['rombel_id'] !== $lastPend->rombel_id;
-
-                if ($lembagaChanged || $jurusanChanged || $kelasChanged || $rombelChanged) {
-                    if ($lastPend) {
-                        DB::table('riwayat_pendidikan')->where('id', $lastPend->id)->update([
-                            'status'         => 'pindah',
-                            'tanggal_keluar' => now(),
-                            'updated_by'     => $userId,
-                            'updated_at'     => now(),
-                        ]);
-                    }
-
-                    DB::table('riwayat_pendidikan')->insert([
-                        'santri_id'      => $santriId,
-                        'no_induk'       => $lastPend?->no_induk,
-                        'lembaga_id'     => $data['lembaga_id'] ?? optional($lastPend)->lembaga_id,
-                        'jurusan_id'     => $data['jurusan_id'] ?? optional($lastPend)->jurusan_id,
-                        'kelas_id'       => $data['kelas_id'] ?? optional($lastPend)->kelas_id,
-                        'rombel_id'      => $data['rombel_id'] ?? optional($lastPend)->rombel_id,
-                        'tanggal_masuk'  => now(),
-                        'status'         => 'aktif',
-                        'created_by'     => $userId,
-                        'created_at'     => now(),
-                        'updated_at'     => now(),
-                    ]);
-                }
-            }
-        });
+            DB::commit();
+            return [
+                'santri_id' => $santriId,
+                'biodata_diri' => $biodataId
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
-
 
     public function destroy(string $santriId)
     {

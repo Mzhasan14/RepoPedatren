@@ -28,7 +28,7 @@ return new class extends Migration
 
         Schema::create('berkas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('biodata_id');
+            $table->uuid('biodata_id');
             $table->unsignedBigInteger('jenis_berkas_id');
             $table->string('file_path');
             $table->unsignedBigInteger('created_by');

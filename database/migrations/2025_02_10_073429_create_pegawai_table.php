@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pegawai', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('biodata_id');
+            $table->uuid('biodata_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->unsignedBigInteger('jurusan_id')->nullable();
             $table->unsignedBigInteger('kelas_id')->nullable();

@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Santri;
 use App\Models\Catatan_kognitif;
-use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Catatan_kognitif>
@@ -20,7 +21,7 @@ class CatatanKognitifFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_santri' => (new SantriFactory())->create()->id,
+            'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
             'kebahasaan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'kebahasaan_tindak_lanjut' => $this->faker->sentence(),

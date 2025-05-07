@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('catatan_kognitif', function (Blueprint $table) {
             $table->id();
-            $table->uuid('id_santri');
+            $table->unsignedBigInteger('id_santri');
             $table->unsignedBigInteger('id_wali_asuh');
             $table->enum('kebahasaan_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('kebahasaan_tindak_lanjut');

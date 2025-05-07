@@ -5,12 +5,9 @@ namespace App\Services\PesertaDidik\Filters;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterPesertaDidikService
+class FilterBersaudaraService
 {
-    /**
-     * Panggil semua filter berurutan
-     */
-    public function pesertaDidikFilters(Builder $query, Request $request): Builder
+    public function bersaudaraFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
@@ -25,9 +22,11 @@ class FilterPesertaDidikService
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyPemberkasan($query, $request);
         $query = $this->applySorting($query, $request);
+        $query = $this->applyStatusSaudara($query, $request);
 
         return $query;
     }
+
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('negara')) {
@@ -310,6 +309,35 @@ class FilterPesertaDidikService
             $query->whereRaw('0 = 1');
         }
 
+        return $query;
+    }
+
+    public function applyStatusSaudara(Builder $query, Request $request)
+    {
+        if (! $request->filled('status_saudara')) {
+            return $query;
+        }
+
+        $status_saudara = strtolower($request->status_saudara);
+        switch ($status_saudara) {
+            case 'ibu kandung terisi':
+                $query->whereNotNull('parents.nama_ibu');
+                break;
+            case 'ibu kandung tidak terisi':
+                $query->where(fn($sub) => $sub->whereNull('parents.nama_ibu')->orWhere('parents.nama_ibu', 'Tidak Diketahui'));
+                break;
+            case 'kk sama dgn ibu kandung':
+                // Pastikan sudah join subquery ibu_info di atas
+                $query->whereColumn('k.no_kk', 'parents.no_kk');
+                break;
+            case 'kk berbeda dgn ibu kandung':
+                // Pastikan sudah join subquery ibu_info di atas
+                $query->whereColumn('k.no_kk', '!=', 'parents.no_kk');
+                break;
+            default:
+                $query->whereRaw('0 = 1');
+                break;
+        }
         return $query;
     }
 }

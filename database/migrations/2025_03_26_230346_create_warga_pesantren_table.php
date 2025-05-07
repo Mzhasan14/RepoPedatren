@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('warga_pesantren', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('biodata_id');
-            $table->string('niup');
+            $table->uuid('biodata_id');
+            $table->string('niup')->unique();
             $table->boolean('status');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

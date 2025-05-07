@@ -13,7 +13,7 @@ class PengajarSeeder extends Seeder
      */
     public function run(): void
     {
-        (new PengajarFactory())->count(300)->create();
+        (new PengajarFactory())->count(100)->create();
         
     }
 }

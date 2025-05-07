@@ -7,6 +7,7 @@ use App\Models\Khadam;
 use App\Models\Keluarga;
 use App\Models\Alamat\Desa;
 use App\Models\JenisBerkas;
+use Illuminate\Support\Str;
 use App\Models\PesertaDidik;
 use App\Models\Alamat\Negara;
 use App\Models\WargaPesantren;
@@ -25,8 +26,17 @@ class Biodata extends Model
     use HasFactory;
     use SoftDeletes;
     protected $table = 'biodata';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $guarded = ['id'];
 
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
     public function santri()
     {
         return $this->hasOne(Santri::class, 'biodata_id', 'id');

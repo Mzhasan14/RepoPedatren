@@ -29,7 +29,7 @@ return new class extends Migration
             // Tabel orang_tua_wali (Informasi Orang Tua atau Wali)
             Schema::create('orang_tua_wali', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('id_biodata');
+                $table->uuid('id_biodata');
                 $table->unsignedBigInteger('id_hubungan_keluarga');
                 $table->boolean('wali')->default(false);
                 $table->string('pekerjaan')->nullable();
@@ -53,7 +53,7 @@ return new class extends Migration
             Schema::create('keluarga', function (Blueprint $table) {
                 $table->id();
                 $table->char('no_kk', 16)->nullable();
-                $table->unsignedBigInteger('id_biodata');
+                $table->uuid('id_biodata');
                 $table->boolean('status');
                 $table->softDeletes();
                 $table->unsignedBigInteger('created_by');

@@ -2,6 +2,7 @@
 
 namespace App\Exports\PesertaDidik;
 
+use App\Services\PesertaDidik\Filters\FilterBersaudaraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
@@ -35,15 +36,15 @@ class BersaudaraExport implements
 
     private string $fileName = 'peserta_didik.xlsx';
     private Request $request;
-    private FilterPesertaDidikService $filterService;
+    private FilterBersaudaraService $filter;
     private array $availableColumns;
     private array $selected;
     private int $counter = 0;
 
-    public function __construct(Request $request, FilterPesertaDidikService $filterService)
+    public function __construct(Request $request, FilterBersaudaraService $filter)
     {
         $this->request       = $request;
-        $this->filterService = $filterService;
+        $this->filter = $filter;
 
         // Definisikan kolom dan ekspresi SQL-nya sebagai string
         $this->availableColumns = [
@@ -138,7 +139,7 @@ class BersaudaraExport implements
         }
 
         // Terapkan filter bisnis dan kembalikan query
-        return $this->filterService->pesertaDidikFilters($query, $this->request);
+        return $this->filter->bersaudaraFilters($query, $this->request);
     }
 
     public function chunkSize(): int

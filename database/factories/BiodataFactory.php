@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use Illuminate\Support\Arr;
-use Database\Factories\Alamat\KabupatenFactory;
-use Database\Factories\Alamat\KecamatanFactory;
+use Illuminate\Support\Str;
 use Database\Factories\Alamat\NegaraFactory;
 use Database\Factories\Alamat\ProvinsiFactory;
+use Database\Factories\Alamat\KabupatenFactory;
+use Database\Factories\Alamat\KecamatanFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,6 +23,7 @@ class BiodataFactory extends Factory
     public function definition(): array
     {
         return [
+            'id' => (string) Str::uuid(),
             'negara_id' =>  (new NegaraFactory())->create()->id,
             'provinsi_id' =>  (new ProvinsiFactory())->create()->id,
             'kabupaten_id' =>  (new KabupatenFactory())->create()->id,

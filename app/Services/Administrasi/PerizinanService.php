@@ -152,7 +152,6 @@ class PerizinanService
 
         try {
             $data = $request->validated();
-            // $data['lama_izin'] = $this->hitungLamaIzin($data['tanggal_mulai'], $data['tanggal_akhir']);
             $data['created_by'] = Auth::id();
 
             Perizinan::create($data);

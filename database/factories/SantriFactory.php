@@ -25,7 +25,6 @@ class SantriFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
             'biodata_id' => Biodata::inRandomOrder()->first()?->id ?? Biodata::factory(),
             'nis' => $this->faker->unique()->numerify('###########'),
             'tanggal_masuk' => $this->faker->date,

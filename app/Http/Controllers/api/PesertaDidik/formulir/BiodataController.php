@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Http\Controllers\api\PesertaDidik\formulir;
+
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\BiodataRequest;
+use App\Services\PesertaDidik\Formulir\BiodataService;
+
+class BiodataController extends Controller
+{
+    private BiodataService $biodata;
+
+    public function __construct(BiodataService $biodata)
+    {
+        $this->biodata = $biodata;
+    }
+
+    public function edit($id)
+    {
+        try {
+            $result = $this->biodata->edit($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail domisili: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(BiodataRequest $request, $id)
+    {
+        try {
+            $result = $this->biodata->update($request->validated(), $id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Biodata berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal memperbarui biodata: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memperbarui data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

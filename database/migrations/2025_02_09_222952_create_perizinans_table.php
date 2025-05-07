@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('perizinan', function (Blueprint $table) {
             $table->id();
-            $table->uuid('santri_id');
+            $table->unsignedBigInteger('santri_id');
             $table->unsignedBigInteger('pengasuh_id')->nullable();
             $table->unsignedBigInteger('biktren_id')->nullable();
             $table->unsignedBigInteger('kamtib_id')->nullable();

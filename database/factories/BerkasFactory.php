@@ -22,7 +22,7 @@ class BerkasFactory extends Factory
     public function definition(): array
     {
         return [
-            'biodata_id' => Biodata::factory(),
+            'biodata_id' => \App\Models\Biodata::factory()->create()->id,
             'jenis_berkas_id' => JenisBerkas::factory(),
             'file_path' => 'storage/berkas/' . Str::random(10) . '.png',
             'created_by' => 1,

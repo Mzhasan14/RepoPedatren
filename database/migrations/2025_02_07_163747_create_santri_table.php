@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('santri', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->unsignedBigInteger('biodata_id');
+            $table->id();
+            $table->uuid('biodata_id');
             $table->string('nis')->unique()->nullable();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();

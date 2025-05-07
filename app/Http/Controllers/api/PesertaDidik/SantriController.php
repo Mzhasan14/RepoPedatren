@@ -63,50 +63,12 @@ class SantriController extends Controller
         ]);
     }
 
-    // Santri Non Domisili
-    public function getNonDomisili(Request $request)
-    {
-        try {
-            $query = $this->nonDomisiliService->getAllNonDomisili($request);
-            $query = $this->filterController->santriFilters($query, $request);
-
-            $perPage     = (int) $request->input('limit', 25);
-            $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-        } catch (\Throwable $e) {
-            Log::error("[NonDomisiliController] Error: {$e->getMessage()}");
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server',
-            ], 500);
-        }
-
-        if ($results->isEmpty()) {
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kosong',
-                'data'    => [],
-            ], 200);
-        }
-
-        $formatted = $this->nonDomisiliService->formatData($results);
-
-        return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
-        ]);
-    }
+    
 
     public function santriExport(Request $request, FilterSantriService $filterService)
     {
         return Excel::download(new SantriExport($request, $filterService), 'santri.xlsx');
     }
 
-    // public function nonDomisiliExport(Request $request, FilterSantriService $filterService)
-    // {
-    //     return Excel::download(new Export($request, $filterService), 'santri_non_domisili.xlsx');
-    // }
+   
 }

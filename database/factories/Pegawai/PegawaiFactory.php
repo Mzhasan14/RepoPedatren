@@ -28,11 +28,12 @@ class PegawaiFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
-            'biodata_id' => (new BiodataFactory())->create()->id,
-            'lembaga_id' =>  (new LembagaFactory())->create()->id,
-            'jurusan_id' =>  (new JurusanFactory())->create()->id,
-            'kelas_id' =>  (new KelasFactory())->create()->id,
-            'rombel_id' =>  (new RombelFactory())->create()->id,
+            'biodata_id' => \App\Models\Biodata::factory()->create()->id,
+
+            'lembaga_id' => (new LembagaFactory())->create()->id,
+            'jurusan_id' => (new JurusanFactory())->create()->id,
+            'kelas_id' => (new KelasFactory())->create()->id,
+            'rombel_id' => (new RombelFactory())->create()->id,
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->boolean(),

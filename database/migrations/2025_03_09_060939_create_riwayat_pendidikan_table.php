@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('riwayat_pendidikan', function (Blueprint $table) {
             $table->id();
-            $table->uuid('santri_id');
+            $table->unsignedBigInteger('santri_id');
             $table->string('no_induk')->nullable();
             $table->unsignedBigInteger('lembaga_id');
             $table->unsignedBigInteger('jurusan_id')->nullable();

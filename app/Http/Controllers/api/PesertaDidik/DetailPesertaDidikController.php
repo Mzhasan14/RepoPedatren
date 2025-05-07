@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Models\Santri;
+use App\Models\Biodata;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\DetailPesertaDidikService;
@@ -16,20 +17,10 @@ class DetailPesertaDidikController extends Controller
         $this->detailPesertaDidikService = $detailPesertaDidikService;
     }
 
-    public function getDetailPesertaDidik(string $idSantri)
+    public function getDetailPesertaDidik(string $bioId)
     {
         try {
-            $santri = Santri::find($idSantri);
-            if (!$santri) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'ID Santri tidak ditemukan',
-                    'data' => []
-                ], 404);
-            }
-
-            $data = $this->detailPesertaDidikService->getDetailPesertaDidik($idSantri);
-            
+            $data = $this->detailPesertaDidikService->getDetailPesertaDidik($bioId);
             return response()->json([
                 'status' => true,
                 'data'    => $data,

@@ -2,9 +2,10 @@
 
 namespace Database\Seeders\Kewilayahan;
 
+use Illuminate\Database\Seeder;
+use App\Models\Kewilayahan\Wilayah;
 use Database\Factories\Kewilayahan\WilayahFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 
 class WilayahSeeder extends Seeder
 {
@@ -14,6 +15,5 @@ class WilayahSeeder extends Seeder
     public function run(): void
     {
         (new WilayahFactory())->count(5)->create();
-        
     }
 }

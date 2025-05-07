@@ -12,15 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('biodata', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('negara_id');
+            $table->uuid('id')->primary();
+            $table->unsignedBigInteger('negara_id')->nullable();
             $table->unsignedBigInteger('provinsi_id')->nullable();
             $table->unsignedBigInteger('kabupaten_id')->nullable();
             $table->unsignedBigInteger('kecamatan_id')->nullable();
             $table->string('jalan')->nullable();
             $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
-            // $table->char('niup', 11)->nullable();
             $table->string('no_passport')->nullable();
             $table->enum('jenis_kelamin', ['l', 'p']);
             $table->date('tanggal_lahir');
@@ -28,7 +27,7 @@ return new class extends Migration
             $table->char('nik', 16)->nullable();
             $table->string('no_telepon', 20);
             $table->string('no_telepon_2', 20)->nullable();
-            $table->string('email', 100)->unique('bd_email_unique');
+            $table->string('email', 100)->unique('bd_email_unique')->nullable();
             $table->enum(
                 'jenjang_pendidikan_terakhir',
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
@@ -45,7 +44,6 @@ return new class extends Migration
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
-
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
