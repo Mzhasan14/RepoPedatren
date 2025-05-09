@@ -160,16 +160,6 @@ Route::middleware('auth:sanctum')->group(function () {
 //    });
 // });
 
-// Route::prefix('formulir')->group(function () {
-//     Route::get('/{id}/biodata', [PesertaDidikFormulir::class, 'getBiodata']);
-//     Route::get('/{id}/keluarga', [PesertaDidikFormulir::class, 'getKeluarga']);
-//     Route::get('/{id}/santri', [PesertaDidikFormulir::class, 'getSantri']);
-//     Route::get('/{id}/domisili', [PesertaDidikFormulir::class, 'getDomisiliSantri']);
-//     Route::get('/{id}/pendidikan', [PesertaDidikFormulir::class, 'getPendidikan']);
-//     Route::get('/{id}/berkas', [PesertaDidikFormulir::class, 'getBerkas']);
-//     Route::get('/{id}/wargapesantren', [PesertaDidikFormulir::class, 'getWargaPesantren']);
-// });
-
 Route::prefix('export')->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'santriExport'])->name('santri.export');
@@ -178,13 +168,25 @@ Route::prefix('export')->group(function () {
     Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 });
 
-// Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
-//     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
-//     Route::put('/pesertadidik/{id}', [PesertaDidikController::class, 'update']);
-//     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
-//     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
-//     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
-// });
+Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
+    Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
+    Route::put('/pesertadidik/{id}', [PesertaDidikController::class, 'update']);
+    Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+    Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
+    Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
+
+    //perizinan
+    Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
+    Route::get('/{id}/perizinan/edit', [PerizinanController::class, 'edit']);
+    Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
+    Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+
+    //pelanggaran
+    Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
+    Route::get('/{id}/pelanggaran/edit', [PelanggaranController::class, 'edit']);
+    Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
+    Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+});
 
 Route::prefix('data-pokok')->group(function () {
 

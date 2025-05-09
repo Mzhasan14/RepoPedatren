@@ -24,10 +24,9 @@ class DomisiliRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'santri_id' => 'nullable|exists:santri,id',
-            'wilayah_id' => 'nullable|exists:wilayah,id',
-            'blok_id' => 'nullable|exists:blok,id',
-            'kamar_id' => 'nullable|exists:kamar,id',
+            'wilayah_id' => 'required|exists:wilayah,id',
+            'blok_id' => 'required|exists:blok,id',
+            'kamar_id' => 'required|exists:kamar,id',
             'tanggal_masuk' => 'nullable|date',
             'tanggal_keluar' => 'nullable|date',
         ];

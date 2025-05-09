@@ -2,9 +2,12 @@
 
 namespace App\Services\Administrasi;
 
+use App\Models\Santri;
+use App\Models\Pelanggaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PelanggaranService
 {
@@ -69,7 +72,7 @@ class PelanggaranService
         return collect($results->items())->map(function ($item) {
             return [
                 'id'                   => $item->id,
-                'nama_santri'          => $item->nama,                     
+                'nama_santri'          => $item->nama,
                 'provinsi'             => $item->nama_provinsi ?? '-',
                 'kabupaten'            => $item->nama_kabupaten ?? '-',
                 'kecamatan'            => $item->nama_kecamatan ?? '-',
@@ -87,6 +90,119 @@ class PelanggaranService
                 'tgl_input'            => Carbon::parse($item->created_at)
                     ->translatedFormat('d F Y H:i:s'),
             ];
+        });
+    }
+
+    public function index(string $bioId): array
+    {
+        $pelanggaran = Pelanggaran::with('santri.biodata:id')
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->latest()
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id,
+                'status_pelanggaran' => $item->status_pelanggaran,
+                'jenis_putusan' => $item->jenis_putusan,
+                'jenis_pelanggaran' => $item->jenis_pelanggaran,
+                'diproses_mahkamah' => $item->diproses_mahkamah,
+                'keterangan' => $item->keterangan,
+                'created_at' => $item->created_at->toDateTimeString(),
+            ]);
+
+        return ['status' => true, 'data' => $pelanggaran];
+    }
+
+    public function store(array $data, string $bioId): array
+    {
+        return DB::transaction(function () use ($data, $bioId) {
+            $santri = Santri::where('biodata_id', $bioId)->latest()->first();
+
+            if (!$santri) {
+                return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
+            }
+
+            $pelanggaran = Pelanggaran::create([
+                'santri_id'         => $santri->id,
+                'status_pelanggaran' => $data['status_pelanggaran'],
+                'jenis_putusan'     => $data['jenis_putusan'],
+                'jenis_pelanggaran' => $data['jenis_pelanggaran'],
+                'diproses_mahkamah' => $data['diproses_mahkamah'],
+                'keterangan'        => $data['keterangan'],
+                'created_by'        => Auth::id(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+
+            activity('pelanggaran_create')
+                ->causedBy(Auth::user())
+                ->performedOn($pelanggaran)
+                ->withProperties([
+                    'after' => $pelanggaran->toArray(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create_pelanggaran')
+                ->log('Pelanggaran baru ditambahkan.');
+
+            return ['status' => true, 'data' => $pelanggaran];
+        });
+    }
+
+    public function edit($id): array
+    {
+        $pelanggaran = Pelanggaran::find($id);
+
+        if (!$pelanggaran) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        }
+
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $pelanggaran->id,
+                'status_pelanggaran' => $pelanggaran->status_pelanggaran,
+                'jenis_putusan' => $pelanggaran->jenis_putusan,
+                'jenis_pelanggaran' => $pelanggaran->jenis_pelanggaran,
+                'diproses_mahkamah' => $pelanggaran->diproses_mahkamah,
+                'keterangan' => $pelanggaran->keterangan,
+            ],
+        ];
+    }
+
+    public function update(array $data, string $id): array
+    {
+        return DB::transaction(function () use ($data, $id) {
+            $pelanggaran = Pelanggaran::find($id);
+
+            if (!$pelanggaran) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            }
+
+            $before = $pelanggaran->toArray();
+
+            $pelanggaran->update([
+                'status_pelanggaran' => $data['status_pelanggaran'],
+                'jenis_putusan'     => $data['jenis_putusan'],
+                'jenis_pelanggaran' => $data['jenis_pelanggaran'],
+                'diproses_mahkamah' => $data['diproses_mahkamah'],
+                'keterangan'        => $data['keterangan'],
+                'updated_by'        => Auth::id(),
+                'updated_at'        => now(),
+            ]);
+
+            activity('pelanggaran_update')
+                ->causedBy(Auth::user())
+                ->performedOn($pelanggaran)
+                ->withProperties([
+                    'before' => $before,
+                    'after' => $pelanggaran->toArray(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('update_pelanggaran')
+                ->log('Data pelanggaran diperbarui.');
+
+            return ['status' => true, 'data' => $pelanggaran];
         });
     }
 }

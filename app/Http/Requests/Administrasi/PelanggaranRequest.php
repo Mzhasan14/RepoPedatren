@@ -1,14 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\Administrasi;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StatusSantriRequest extends FormRequest
+class PelanggaranRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,17 +23,12 @@ class StatusSantriRequest extends FormRequest
      */
     public function rules(): array
     {
-        $id = $this->route('id');
-        $biodataId = DB::table('santri')->where('id', $id)->value('id');
         return [
-            'nis' => [
-                'required',
-                'string',
-                Rule::unique('santri', 'nis')->ignore($biodataId),
-            ],
-            'tanggal_masuk' => 'required|date',
-            'tanggal_keluar' => 'nullable|date',
-            'status' => 'nullable'
+            'status_pelanggaran' => 'required|in:Belum diproses,Sedang diproses,Sudah diproses',
+            'jenis_putusan' => 'required|in:Belum ada putusan,Disanksi,Dibebaskan',
+            'jenis_pelanggaran' => 'required|in:Ringan,Sedang,Berat',
+            'diproses_mahkamah' => 'required|boolean',
+            'keterangan' => 'required|string',
         ];
     }
 

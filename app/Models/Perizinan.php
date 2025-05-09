@@ -20,13 +20,9 @@ class Perizinan extends Model
         'id'
     ];
 
-    // public function PeserizinanSantri()
-    // {
-    //     return $this->belongsTo(PesertaDidik::class,'id_peserta_didik', 'id');
-    // }
+    public function santri()
+    {
+        return $this->belongsTo(Santri::class, 'santri_id');
+    }
 
-    // public function PerizinanWaliAsuh()
-    // {
-    //     return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');
-    // }
 }

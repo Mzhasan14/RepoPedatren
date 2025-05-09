@@ -2,6 +2,7 @@
 
 namespace App\Services\Administrasi;
 
+use App\Models\Santri;
 use App\Models\Perizinan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -146,26 +147,140 @@ class PerizinanService
         ]);
     }
 
-    public function store(PerizinanRequest $request)
+    public function index(string $bioId): array
     {
-        DB::beginTransaction();
+        $perizinan = Perizinan::with('santri.biodata:id')
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->latest()
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id,
+                'alasan_izin' => $item->alasan_izin,
+                'alamat_tujuan' => $item->alamat_tujuan,
+                'tanggal_mulai' => $item->tanggal_mulai,
+                'tanggal_akhir' => $item->tanggal_akhir,
+                'tanggal_kembali' => $item->tanggal_kembali,
+                'jenis_izin' => $item->jenis_izin,
+                'status' => $item->status,
+                'keterangan' => $item->keterangan,
+                'created_at' => $item->created_at->toDateTimeString(),
+            ]);
 
-        try {
-            $data = $request->validated();
-            $data['created_by'] = Auth::id();
+        return ['status' => true, 'data' => $perizinan];
+    }
 
-            Perizinan::create($data);
+    public function store(array $data, string $bioId): array
+    {
+        return DB::transaction(function () use ($data, $bioId) {
+            $santri = Santri::where('biodata_id', $bioId)->latest()->first();
 
-            DB::commit();
-            return response()->json([
-                'message' => 'Data perizinan berhasil disimpan',
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Data perizinan gagal disimpan',
-                'error' => $e->getMessage(),
-            ], 500);
+            if (!$santri) {
+                return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
+            }
+
+            $izin = Perizinan::create([
+                'santri_id'        => $santri->id,
+                'pengasuh_id'      => $data['pengasuh_id'] ?? null,
+                'biktren_id'       => $data['biktren_id'] ?? null,
+                'kamtib_id'        => $data['kamtib_id'] ?? null,
+                'pengantar_id'     => $data['pengantar_id'] ?? null,
+                'alasan_izin'      => $data['alasan_izin'],
+                'alamat_tujuan'    => $data['alamat_tujuan'],
+                'tanggal_mulai'    => $data['tanggal_mulai'],
+                'tanggal_akhir'    => $data['tanggal_akhir'],
+                'tanggal_kembali'  => $data['tanggal_kembali'] ?? null,
+                'jenis_izin'       => $data['jenis_izin'],
+                'status'           => $data['status'],
+                'keterangan'       => $data['keterangan'] ?? null,
+                'created_by'       => Auth::id(),
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
+
+            activity('perizinan_create')
+                ->causedBy(Auth::user())
+                ->performedOn($izin)
+                ->withProperties([
+                    'after' => $izin->toArray(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create_perizinan')
+                ->log('Perizinan santri ditambahkan.');
+
+            return ['status' => true, 'data' => $izin];
+        });
+    }
+
+    public function edit($id): array
+    {
+        $izin = Perizinan::find($id);
+
+        if (!$izin) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
+
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $izin->id,
+                'pengasuh_id' => $izin->pengasuh_id,
+                'biktren_id' => $izin->biktren_id,
+                'kamtib_id' => $izin->kamtib_id,
+                'pengantar_id' => $izin->pengantar_id,
+                'alasan_izin' => $izin->alasan_izin,
+                'alamat_tujuan' => $izin->alamat_tujuan,
+                'tanggal_mulai' => $izin->tanggal_mulai,
+                'tanggal_akhir' => $izin->tanggal_akhir,
+                'tanggal_kembali' => $izin->tanggal_kembali,
+                'jenis_izin' => $izin->jenis_izin,
+                'status' => $izin->status,
+                'keterangan' => $izin->keterangan,
+            ],
+        ];
+    }
+
+    public function update(array $data, string $id): array
+    {
+        return DB::transaction(function () use ($data, $id) {
+            $izin = Perizinan::find($id);
+
+            if (!$izin) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            }
+
+            $before = $izin->toArray();
+
+            $izin->update([
+                'pengasuh_id'      => $data['pengasuh_id'] ?? null,
+                'biktren_id'       => $data['biktren_id'] ?? null,
+                'kamtib_id'        => $data['kamtib_id'] ?? null,
+                'pengantar_id'     => $data['pengantar_id'] ?? null,
+                'alasan_izin'      => $data['alasan_izin'],
+                'alamat_tujuan'    => $data['alamat_tujuan'],
+                'tanggal_mulai'    => $data['tanggal_mulai'],
+                'tanggal_akhir'    => $data['tanggal_akhir'],
+                'tanggal_kembali'  => $data['tanggal_kembali'] ?? null,
+                'jenis_izin'       => $data['jenis_izin'],
+                'status'           => $data['status'],
+                'keterangan'       => $data['keterangan'] ?? null,
+                'updated_by'       => Auth::id(),
+                'updated_at'       => now(),
+            ]);
+
+            activity('perizinan_update')
+                ->causedBy(Auth::user())
+                ->performedOn($izin)
+                ->withProperties([
+                    'before' => $before,
+                    'after' => $izin->toArray(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('update_perizinan')
+                ->log('Perizinan santri diperbarui.');
+
+            return ['status' => true, 'data' => $izin];
+        });
     }
 }

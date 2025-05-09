@@ -24,11 +24,10 @@ class PerizinanRequest extends FormRequest
     public function rules()
     {
         return [
-            'santri_id'       => 'required|uuid',
-            'pengasuh_id'     => 'nullable|integer|exists:pengasuh,id',
-            'biktren_id'      => 'nullable|integer|exists:biktren,id',
-            'kamtib_id'       => 'nullable|integer|exists:kamtib,id',
-            'pengantar_id'    => 'nullable|integer|exists:pengantar,id',
+            'pengasuh_id'     => 'nullable|integer|exists:users,id',
+            'biktren_id'      => 'nullable|integer|exists:users,id',
+            'kamtib_id'       => 'nullable|integer|exists:users,id',
+            'pengantar_id'    => 'nullable|integer',
             'alasan_izin'     => 'required|string',
             'alamat_tujuan'   => 'required|string',
             'tanggal_mulai'   => 'required|date',

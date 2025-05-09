@@ -23,21 +23,10 @@ class BerkasRequest extends FormRequest
      */
     public function rules()
     {
-        // if ($this->isMethod('post')) {
-        //     // Untuk store: menerima array of berkas
         return [
             'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
             'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
-        // }
-
-        // if ($this->isMethod('put') || $this->isMethod('patch')) {
-        //     // Untuk update: hanya satu berkas
-        //     return [
-        //         'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
-        //         'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        //     ];
-        // }
     }
 
     protected function failedValidation(Validator $validator)
