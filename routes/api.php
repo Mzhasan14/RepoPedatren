@@ -199,10 +199,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
-    Route::apiResource('/crud/keluarga', KeluargaController::class);
     Route::get('/keluarga', [KeluargaController::class, 'keluarga']);
-    Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
-    Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
     Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
@@ -214,9 +211,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/kecamatan', KecamatanController::class);
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
-    Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
-    Route::apiResource('/crud/waliasuh', WaliasuhController::class);
-    Route::apiResource('/ceud/anakasuh', AnakasuhController::class);
     Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
     Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
     Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);

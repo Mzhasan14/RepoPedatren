@@ -33,6 +33,8 @@ class WaliasuhService
             ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
