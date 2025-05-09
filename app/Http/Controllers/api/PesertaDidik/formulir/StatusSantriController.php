@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers\api\PesertaDidik\formulir;
 
-use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\BerkasRequest;
-use App\Services\PesertaDidik\Formulir\BerkasService;
+use App\Services\PesertaDidik\Formulir\StatusSantriService;
+use App\Http\Requests\PesertaDidik\StatusSantriRequest;
 
-class BerkasController extends Controller
+class StatusSantriController extends Controller
 {
-    private BerkasService $berkas;
-    public function __construct(BerkasService $berkas)
-    {
-        $this->berkas = $berkas;
-    }
+    private StatusSantriService $santri;
 
-    public function index($id)
+    public function __construct(StatusSantriService $santri)
+    {
+        $this->santri = $santri;
+    }
+     public function index($id)
     {
         try {
-            $result = $this->berkas->index($id);
+            $result = $this->santri->index($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
@@ -30,7 +30,7 @@ class BerkasController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data berkas: ' . $e->getMessage());
+            Log::error('Gagal ambil data santri: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -39,10 +39,10 @@ class BerkasController extends Controller
         }
     }
 
-     public function store(BerkasRequest $request, $bioId)
+     public function store(StatusSantriRequest $request, $bioId)
     {
         try {
-            $result = $this->berkas->store($request->validated(), $bioId);
+            $result = $this->santri->store($request->validated(), $bioId);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
@@ -53,7 +53,7 @@ class BerkasController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah biodata: ' . $e->getMessage());
+            Log::error('Gagal tambah santri: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage()
@@ -61,10 +61,10 @@ class BerkasController extends Controller
         }
     }
 
-    public function edit($id)
+      public function edit($id)
     {
         try {
-            $result = $this->berkas->edit($id);
+            $result = $this->santri->edit($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
@@ -75,7 +75,7 @@ class BerkasController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail berkas: ' . $e->getMessage());
+            Log::error('Gagal ambil detail santri: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
                 'error' => $e->getMessage()
@@ -83,19 +83,27 @@ class BerkasController extends Controller
         }
     }
 
-    public function update(BerkasRequest $request, $id)
+    public function update(StatusSantriRequest $request, $id)
     {
         try {
-            $berkas = $this->berkas->update($request->validated(), $id);
+            $result = $this->santri->update($request->validated(), $id);
 
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
             return response()->json([
-                'message' => 'Berkas berhasil di update.'
-            ], Response::HTTP_OK);
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
         } catch (\Exception $e) {
+            Log::error('Gagal update santri: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memperbarui data.',
+                'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            ], 500);
         }
     }
+
 }

@@ -2,6 +2,8 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
+use App\Models\Berkas;
+use App\Models\JenisBerkas;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -48,50 +50,99 @@ class BerkasService
         return ['status' => true, 'data' => $berkas];
     }
 
+    public function store(array $berkasData, string $biodataId)
+    {
+        return DB::transaction(function () use ($berkasData, $biodataId) {
+            if (empty($berkasData['file_path']) || !$berkasData['file_path'] instanceof UploadedFile) {
+                return ['status' => false, 'message' => 'Data berkas tidak valid.'];
+            }
+
+            if (empty($berkasData['jenis_berkas_id']) || !JenisBerkas::where('id', $berkasData['jenis_berkas_id'])->exists()) {
+                return ['status' => false, 'message' => 'Jenis berkas tidak ditemukan.'];
+            }
+
+            $uploadedFile = $berkasData['file_path'];
+            $filePath = $uploadedFile->store('PesertaDidik', 'public');
+            $fileUrl  = Storage::url($filePath);
+
+            $berkas = new Berkas();
+            $berkas->biodata_id = $biodataId;
+            $berkas->jenis_berkas_id = $berkasData['jenis_berkas_id'];
+            $berkas->file_path = $fileUrl;
+            $berkas->status = true;
+            $berkas->created_by = Auth::id();
+            $berkas->save();
+
+            activity('berkas')
+                ->causedBy(Auth::user())
+                ->performedOn($berkas)
+                ->withProperties([
+                    'new_attributes' => $berkas->toArray(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create')
+                ->log("Menambah berkas baru untuk biodata ID: {$biodataId}");
+
+            return [
+                'status' => true,
+                'data' => array_merge($berkas->toArray())
+            ];
+        });
+    }
+
+
     public function update(array $berkasData, string $berkasId)
     {
-        // Ambil record berkas berdasarkan id_berkas
-        $existing = DB::table('berkas')->where('id', $berkasId)->first();
-        if (! $existing) {
-            return ['status' => false, 'message' => "Berkas dengan ID #{$berkasId} tidak ditemukan"];
-        }
+        return DB::transaction(function () use ($berkasData, $berkasId) {
+            $berkas = Berkas::find($berkasId);
+            if (!$berkas) {
+                return ['status' => false, 'message' => "Berkas dengan ID #{$berkasId} tidak ditemukan"];
+            }
 
-        // Validasi file yang diunggah
-        if (empty($berkasData['file_path']) || ! $berkasData['file_path'] instanceof UploadedFile) {
-            return ['status' => false, 'message' => 'Data berkas tidak valid.'];
-        }
+            $before = $berkas->toArray();
 
-        // Hapus file lama jika ada
-        if (! empty($existing->file_path) && Storage::disk('public')->exists($existing->file_path)) {
-            Storage::disk('public')->delete($existing->file_path);
-        }
+            if (empty($berkasData['file_path']) || !$berkasData['file_path'] instanceof UploadedFile) {
+                return ['status' => false, 'message' => 'Data berkas tidak valid.'];
+            }
 
-        // Simpan file baru di disk public
-        $uploadedFile = $berkasData['file_path'];
-        $filePath     = $uploadedFile->store('PesertaDidik', 'public');
-        $fileUrl      = Storage::url($filePath);
+            if (!empty($berkasData['jenis_berkas_id']) && !JenisBerkas::where('id', $berkasData['jenis_berkas_id'])->exists()) {
+                return ['status' => false, 'message' => 'Jenis berkas tidak ditemukan.'];
+            }
 
-        // Update record berkas
-        DB::table('berkas')
-            ->where('id', $berkasId)
-            ->update([
-                'file_path'  => $fileUrl,
-                'status'     => true,
-                'updated_by' => Auth::id(),
-                'updated_at' => now(),
-            ]);
+            if (!empty($berkas->file_path) && Storage::disk('public')->exists($berkas->file_path)) {
+                Storage::disk('public')->delete($berkas->file_path);
+            }
 
-        // Ambil kembali data yang telah diupdate untuk response
-        $updated = DB::table('berkas as br')
-            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
-            ->where('br.id', $berkasId)
-            ->select(
-                'br.id',
-                'br.file_path',
-                'jk.nama_jenis_berkas'
-            )
-            ->first();
+            $uploadedFile = $berkasData['file_path'];
+            $filePath = $uploadedFile->store('PesertaDidik', 'public');
+            $fileUrl  = Storage::url($filePath);
 
-        return ['status' => true, 'data' => $updated];
+            $berkas->file_path = $fileUrl;
+            $berkas->jenis_berkas_id = $berkasData['jenis_berkas_id'];
+            $berkas->status = true;
+            $berkas->updated_by = Auth::id();
+
+            $berkas->save();
+
+            $after = $berkas->toArray();
+
+            activity('berkas')
+                ->causedBy(Auth::user())
+                ->performedOn($berkas)
+                ->withProperties([
+                    'before' => $before,
+                    'after' => $after,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('update')
+                ->log("Mengubah berkas dengan ID: {$berkasId}");
+
+            return [
+                'status' => true,
+                'data' => array_merge($after)
+            ];
+        });
     }
 }

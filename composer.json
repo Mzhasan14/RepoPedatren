@@ -11,6 +11,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "3.1.64",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {

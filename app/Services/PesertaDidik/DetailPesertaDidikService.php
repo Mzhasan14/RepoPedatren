@@ -174,8 +174,10 @@ class DetailPesertaDidikService
             : [];
 
         // --- Perizinan ---
-        $izin = DB::table('perizinan')
-            ->where('santri_id', $santriId)
+        $izin = DB::table('perizinan as pr')
+            ->join('santri as s', 'pr.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->where('b.id', $bioId)
             ->select([
                 DB::raw("CONCAT(tanggal_mulai,' s/d ',tanggal_akhir) as tanggal"),
                 'keterangan',
@@ -183,7 +185,7 @@ class DetailPesertaDidikService
                             THEN CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/86400),' Hari | Bermalam')
                             ELSE CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/3600),' Jam')
                      END as lama_waktu"),
-                'status'
+                'pr.status'
             ])
             ->get();
 
@@ -198,7 +200,9 @@ class DetailPesertaDidikService
 
         // --- Domisili ---
         $dom = DB::table('riwayat_domisili as rd')
-            ->where('rd.santri_id', $santriId)
+            ->where('b.id', $bioId)
+            ->join('santri as s', 'rd.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
@@ -227,11 +231,13 @@ class DetailPesertaDidikService
 
         // --- Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
-            ->where('rp.santri_id', $santriId)
+            ->join('santri as s', 'rp.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
             ->leftJoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
+            ->where('b.id', $bioId)
             ->select([
                 'rp.id',
                 'rp.no_induk',
@@ -259,7 +265,9 @@ class DetailPesertaDidikService
 
         // --- Catatan Afektif ---
         $af = DB::table('catatan_afektif as ca')
-            ->where('ca.id_santri', $santriId)
+            ->join('santri as s', 'ca.id_santri', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->where('b.id', $bioId)
             ->latest('ca.created_at')
             ->first();
 
@@ -276,7 +284,9 @@ class DetailPesertaDidikService
 
         // --- Catatan Kognitif ---
         $kg = DB::table('catatan_kognitif as ck')
-            ->where('ck.id_santri', $santriId)
+            ->where('b.id', $bioId)
+            ->join('santri as s', 'ck.id_santri', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->latest('ck.created_at')
             ->first();
 
@@ -299,7 +309,9 @@ class DetailPesertaDidikService
 
         // --- Kunjungan Mahrom ---
         $kun = DB::table('pengunjung_mahrom as pm')
-            ->where('pm.santri_id', $santriId)
+            ->join('santri as s', 'pm.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->where('b.id', $bioId)
             ->select(['pm.nama_pengunjung', 'pm.tanggal'])
             ->get();
 

@@ -29,7 +29,8 @@ use App\Http\Controllers\api\PesertaDidik\formulir\{
     PendidikanController,
     BiodataController,
     WargaPesantrenController,
-    BerkasController
+    BerkasController,
+    StatusSantriController
 };
 
 use App\Http\Controllers\Api\keluarga\{
@@ -73,11 +74,28 @@ use App\Http\Controllers\Api\Pegawai\{
     DropdownController
 };
 
+// Endpoint menampilkan log
+Route::middleware(['auth:sanctum', 'role:admin', 'log.activity'])
+    ->get('activity-logs', function () {
+        return \Spatie\Activitylog\Models\Activity::with('causer', 'subject')
+            ->where('log_name', 'api')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+    });
+
+
 // Formulir Peserta Didik
-Route::prefix('formulir')->middleware('auth:sanctum')->group(function() {
+Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Biodata
     Route::get('/{id}/biodata/edit', [BiodataController::class, 'edit']);
+    Route::post('/biodata', [BiodataController::class, 'store']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
+
+    // Santri
+    Route::get('/{id}/santri', [StatusSantriController::class, 'index']);
+    Route::get('{id}/santri/edit', [StatusSantriController::class, 'edit']);
+    Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
+    Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
 
     // Domisili
     Route::get('/{id}/domisili', [DomisiliController::class, 'index']);
@@ -85,23 +103,22 @@ Route::prefix('formulir')->middleware('auth:sanctum')->group(function() {
     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
     Route::put('/{id}/domisili', [DomisiliController::class, 'update']);
 
-   // Pendidikan
-   Route::get('/{id}/pendidikan', [PendidikanController::class, 'index']);
-   Route::get('{id}/pendidikan/edit', [PendidikanController::class, 'edit']);
-   Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
-   Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
+    // Pendidikan
+    Route::get('/{id}/pendidikan', [PendidikanController::class, 'index']);
+    Route::get('{id}/pendidikan/edit', [PendidikanController::class, 'edit']);
+    Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
+    Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
 
-   // Warga Pesantren
-   Route::get('/{id}/wargapesantren/edit', [WargaPesantrenController::class, 'edit']);
-   Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
-   Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
+    // Warga Pesantren
+    Route::get('/{id}/wargapesantren/edit', [WargaPesantrenController::class, 'edit']);
+    Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
+    Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
-   // Berkas
-   Route::get('/{id}/berkas', [BerkasController::class, 'index']);
-   Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
-   Route::post('/{id}/berkas', [BerkasController::class, 'store']);
-   Route::put('/{id}/berkas', [BerkasController::class, 'update']);
-
+    // Berkas
+    Route::get('/{id}/berkas', [BerkasController::class, 'index']);
+    Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
+    Route::post('/{id}/berkas', [BerkasController::class, 'store']);
+    Route::put('/{id}/berkas', [BerkasController::class, 'update']);
 });
 
 Route::post('register', [AuthController::class, 'register']);
@@ -241,7 +258,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/karyawan/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::post('pegawai',[PegawaiController::class,'store']);
+    Route::post('pegawai', [PegawaiController::class, 'store']);
 });
 
 Route::prefix('dropdown')->group(function () {
