@@ -102,6 +102,19 @@ Route::prefix('formulir')->middleware('auth:sanctum')->group(function() {
    Route::post('/{id}/berkas', [BerkasController::class, 'store']);
    Route::put('/{id}/berkas', [BerkasController::class, 'update']);
 
+      // Kepegawaian
+   Route::get('{id}/karyawan',[KaryawanController::class,'index']);
+   Route::get('/{id}/karyawan/edit', [KaryawanController::class, 'edit']);
+   Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
+   Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
+   Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
+   Route::get('/{id}/pengajar/edit', [PengajarController::class, 'edit']);
+   Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
+   Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+   Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
+   Route::get('/{id}/pengurus/edit', [PengurusController::class, 'edit']);
+   Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
+   Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 });
 
 Route::post('register', [AuthController::class, 'register']);

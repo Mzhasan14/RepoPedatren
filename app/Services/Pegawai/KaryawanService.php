@@ -33,7 +33,8 @@ class KaryawanService
                         // join pegawai yang hanya berstatus true atau akif
                         ->join('pegawai',function ($join){
                             $join->on('pegawai.id','=','karyawan.pegawai_id')
-                                ->where('pegawai.status_aktif','aktif');
+                                ->where('pegawai.status_aktif','aktif')
+                                ->whereNull('pegawai.deleted_at');
                         })
                         ->join('biodata as b','b.id','=','pegawai.biodata_id')
                         // relasi ke golongan jabatan yang hanya berstatus true
@@ -48,23 +49,14 @@ class KaryawanService
                         ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))                            
                         ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                         ->leftJoin('lembaga as l','l.id','=','karyawan.lembaga_id')
-                        // Join riwayat Jabatan karyawan mengambil data yang terbaru
-                        ->leftJoin('riwayat_jabatan_karyawan', function ($join) {
-                            $join->on('riwayat_jabatan_karyawan.karyawan_id', '=', 'karyawan.id')
-                                ->whereRaw('riwayat_jabatan_karyawan.tanggal_mulai = (
-                                    SELECT MAX(tanggal_mulai) 
-                                    FROM riwayat_jabatan_karyawan 
-                                    WHERE riwayat_jabatan_karyawan.karyawan_id = karyawan.id
-                                )');
-                        })
                         ->whereNull('karyawan.deleted_at')
                         ->select(
-                            'karyawan.pegawai_id as id', 
+                            'pegawai.biodata_id as biodata_uuid', 
                             'b.nama',
                             'wp.niup',
                             'b.nik',
                             DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
-                            'riwayat_jabatan_karyawan.keterangan_jabatan as KeteranganJabatan',
+                            'karyawan.keterangan_jabatan as KeteranganJabatan',
                             'l.nama_lembaga',
                             'karyawan.jabatan',
                             'g.nama_golongan_jabatan as nama_golongan',
@@ -73,12 +65,12 @@ class KaryawanService
                             DB::raw("DATE_FORMAT(karyawan.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                             DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
-                                'karyawan.pegawai_id', 
+                                'pegawai.biodata_id', 
                                 'b.nama',
                                 'b.nik',
                                 'wp.niup',
                                 'b.tanggal_lahir',
-                                'riwayat_jabatan_karyawan.keterangan_jabatan',
+                                'karyawan.keterangan_jabatan',
                                 'l.nama_lembaga',
                                 'karyawan.jabatan',
                                 'g.nama_golongan_jabatan',
@@ -99,7 +91,7 @@ class KaryawanService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
-            "id" => $item->id,
+            "id" => $item->biodata_uuid,
             "nama" => $item->nama,
             "niup" => $item->niup ?? "-",
             "nik" => $item->nik,

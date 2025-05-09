@@ -21,7 +21,11 @@ class MateriAjarFactory extends Factory
             'nama_materi' => $this->faker->sentence(3),
             'jumlah_menit' => $this->faker->numberBetween(30, 180), // Antara 30 - 180 menit
             'created_by' => 1,
-            'status' => $this->faker->boolean(80)
+            'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
+            'tahun_akhir' => $this->faker->boolean(70) 
+                ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d') 
+                : null,
+            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
         ];
     }
 }

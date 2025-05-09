@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pengajar', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('pegawai_id');
+            $table->id();
+            $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->unsignedBigInteger('golongan_id')->nullable();  
             $table->string('jabatan');
@@ -32,12 +32,14 @@ return new class extends Migration
         });
         Schema::create('materi_ajar', function (Blueprint $table) {
             $table->id();
-            $table->uuid('pengajar_id');
+            $table->unsignedBigInteger('pengajar_id');
             $table->string('nama_materi');
             $table->integer('jumlah_menit')->nullable()->default(0); // Simpan dalam satuan menit
+            $table->date('tahun_masuk')->nullable();
+            $table->date('tahun_akhir')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->boolean('status')->default(1);
+            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->timestamps();
 
             $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');

@@ -23,7 +23,6 @@ class WaliKelasFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
             'pegawai_id' => (new PegawaiFactory())->create()->id,
             'lembaga_id' =>  (new LembagaFactory())->create()->id,
             'jurusan_id' =>  (new JurusanFactory())->create()->id,

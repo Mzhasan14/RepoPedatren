@@ -33,58 +33,85 @@ class PegawaiController extends Controller
 
     /**
      * Display a listing of the resource.
-     */
-    // public function index()
-    // {
-    //     $pegawai = Pegawai::all();
-    //     return new PdResource(true,'Data berhasil ditampilkan', $pegawai);
-    // }
-
-    // public function store(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(),[
-    //         'id_biodata' => 'required|integer',
-    //         'created_by' => 'required|integer',
-    //         'status'     => 'required|boolean',
-    //     ]);
-    //     if($validator->fails()){
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Data gagal buat',
-    //             'data' => $validator->errors()
-    //         ]);
-    //     }
-
-    //     $pegawai = Pegawai::create($validator->validated());
-    //     return new PdResource(true, 'Data berhasil ditambahkan', $pegawai);
-    // }
-
-    // public function show(string $id)
-    // {
-    //     $pegawai = Pegawai::findOrFail($id);
-    //     return new PdResource(true,'Data berhasil ditampilkan',$pegawai);
-    // }
-
-
-    // public function update(Request $request, string $id)
-    // {
-    //     $pegawai = Pegawai::findOrFail($id);
-    //     $validator = Validator::make($request->all(),[
-    //         'id_biodata' => 'required|integer',
-    //         'updated_by' => 'nullable|integer',
-    //         'status'     => 'required|boolean',
-    //     ]);
-    //     if($validator->fails()){
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Data gagal buat',
-    //             'data' => $validator->errors()
-    //         ]);
-    //     }
-    //     $pegawai->update($validator->validated());
-    //     return new PdResource(true,'Data berhasil diupdate',$pegawai);
+     */        
+        public function store(PegawaiRequest $request)
+        {
+            $validated = $request->validated();
+    
+            // try {
+                $pegawai = $this->pegawaiService->store($validated);
+    
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Data pegawai berhasil ditambahkan',
+                    'data'    => $pegawai->load('biodata')  // Mengambil data terkait biodata jika perlu
+                ]);
+            // } catch (\Exception $e) {
+            //     return response()->json([
+            //         'status'  => 'error',
+            //         'message' => 'Terjadi kesalahan saat menambahkan pegawai',
+            //     ], 500);
+            // }
+        }
+        // public function show(string $id)
+        // {
+            //     $pegawai = Pegawai::findOrFail($id);
+            //     return new PdResource(true,'Data berhasil ditampilkan',$pegawai);
+            // }
+            
+            public function dataPegawai(Request $request)
+            {
+                try {
+                    $query = $this->pegawaiService->getAllPegawai($request);
+                    $query = $this->filterController->applyAllFilters($query, $request);
         
-    // }
+                    $perPage     = (int) $request->input('limit', 25);
+                    $currentPage = (int) $request->input('page', 1);
+                    $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+                } catch (\Throwable $e) {
+                    Log::error("[PegawaiController] Error: {$e->getMessage()}");
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Terjadi kesalahan pada server',
+                    ], 500);
+                }
+        
+                if ($results->isEmpty()) {
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => 'Data kosong',
+                        'data'    => [],
+                    ], 200);
+                }
+        
+                $formatted = $this->pegawaiService->formatData($results);
+        
+                return response()->json([
+                    "total_data"   => $results->total(),
+                    "current_page" => $results->currentPage(),
+                    "per_page"     => $results->perPage(),
+                    "total_pages"  => $results->lastPage(),
+                    "data"         => $formatted
+                ]);
+            }
+
+            // public function update(PegawaiRequest $request, string $id)
+            // {
+            //     $validated = $request->validated();
+            //     try {
+            //         $pegawai = $this->pegawaiService->update($validated, $id);
+            //         return response()->json([
+            //             'status'  => 'success',
+            //             'message' => 'Data pegawai berhasil diperbarui',
+            //             'data'    => $pegawai
+            //         ]);
+            //     } catch (\Exception $e) {
+            //         return response()->json([
+            //             'status'  => 'error',
+            //             'message' => 'Terjadi kesalahan saat memperbarui pegawai',
+            //         ], 500);
+            //     }
+            // }
 
     // public function destroy(string $id)
     // {
@@ -92,60 +119,6 @@ class PegawaiController extends Controller
     //     $pegawai->delete();
     //     return new PdResource(true,'Data berhasil dihapus',$pegawai);
     // }
-    public function dataPegawai(Request $request)
-    {
-        try {
-            $query = $this->pegawaiService->getAllPegawai($request);
-            $query = $this->filterController->applyAllFilters($query, $request);
-
-            $perPage     = (int) $request->input('limit', 25);
-            $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-        } catch (\Throwable $e) {
-            Log::error("[PegawaiController] Error: {$e->getMessage()}");
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server',
-            ], 500);
-        }
-
-        if ($results->isEmpty()) {
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kosong',
-                'data'    => [],
-            ], 200);
-        }
-
-        $formatted = $this->pegawaiService->formatData($results);
-
-        return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
-        ]);
-    }
-    public function store(PegawaiRequest $request)
-    {
-        $validated = $request->validated();
-
-        // try {
-            $pegawai = $this->pegawaiService->store($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data pegawai berhasil ditambahkan',
-                'data'    => $pegawai->load('biodata')  // Mengambil data terkait biodata jika perlu
-            ]);
-        // } catch (\Exception $e) {
-        //     return response()->json([
-        //         'status'  => 'error',
-        //         'message' => 'Terjadi kesalahan saat menambahkan pegawai',
-        //     ], 500);
-        // }
-    }
     // public function dataPegawai(Request $request)
     // {
     // try

@@ -20,7 +20,7 @@ class Kabupaten extends Model
     public $incrementing = true;
 
     protected $fillable = [
-        'id_provinsi',
+        'provinsi_id',
         'nama_kabupaten',
         'created_by',
         'updated_by',

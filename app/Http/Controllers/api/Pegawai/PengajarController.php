@@ -11,8 +11,10 @@ use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\FilterController;
+use App\Http\Requests\Pegawai\PengajarResquest;
 use App\Models\JenisBerkas;
 use App\Services\Pegawai\Filters\FilterPengajarService;
+use App\Services\Pegawai\Filters\Formulir\PengajarService as FormulirPengajarService;
 use App\Services\Pegawai\PengajarService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -23,72 +25,102 @@ class PengajarController extends Controller
 
     private PengajarService $pengajarService;
     private FilterPengajarService $filterController;
+    private FormulirPengajarService $formulirPengajarService;
 
-    public function __construct(PengajarService $pengajarService, FilterPengajarService $filterController)
+    public function __construct(FormulirPengajarService $formulirPengajarService , PengajarService $pengajarService, FilterPengajarService $filterController)
     {
         $this->pengajarService = $pengajarService;
         $this->filterController = $filterController;
+        $this->formulirPengajarService = $formulirPengajarService;
     }
 
-    public function index()
+    public function index($id)
     {
-        $pengajar = Pengajar::all();
-        return new PdResource(true, 'Data berhasil ditampilkan', $pengajar);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_pegawai'   => 'required|integer',
-            'id_golongan'  => 'required|integer',
-            'id_lembaga'   => 'required|integer',
-            'created_by'   => 'required|integer',
-            'status'       => 'required|boolean',
-        ]);
-
-        if ($validator->fails()) {
+        try {
+            $result = $this->formulirPengajarService->index($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
             return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
             ]);
-        }
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data pengajar: ' . $e->getMessage());
 
-        $pengajar = Pengajar::create($validator->validated());
-        return new PdResource(true, 'Data berhasil ditambahkan', $pengajar);
-    }
-
-    public function show(string $id)
-    {
-        $pengajar = Pengajar::findOrFail($id);
-        return new PdResource(true, 'Data berhasil ditampilkan', $pengajar);
-    }
-    public function update(Request $request, string $id)
-    {
-        $pengajar = Pengajar::findOrFail($id);
-        $validator = Validator::make($request->all(), [
-            'id_pegawai'   => 'required|integer',
-            'id_golongan'  => 'required|integer',
-            'id_lembaga'   => 'required|integer',
-            'updated_by'   => 'nullable|integer',
-            'status'       => 'required|boolean',
-        ]);
-
-        if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'message' => 'Data gagal ditambahkan',
-                'data' => $validator->errors()
-            ]);
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $pengajar->update($validator->validated());
-        return new PdResource(true, 'Data berhasil diupdate', $pengajar);
     }
-    public function destroy(string $id)
+
+    public function edit($id)
     {
-        $pengajar = Pengajar::findOrFail($id);
-        $pengajar->delete();
-        return new PdResource(true, 'Data berhasil dihapus', $pengajar);
+        try {
+            $result = $this->formulirPengajarService->edit($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data pengajar: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+        public function store(PengajarResquest $request, $bioId)
+    {
+        try {
+            $result = $this->formulirPengajarService->store($request->validated(), $bioId);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah Pengajar: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(PengajarResquest $request, string $id)
+    {
+            try {
+            $result = $this->formulirPengajarService->update($request->validated(), $id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal update Pengajar: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getallPengajar(Request $request)

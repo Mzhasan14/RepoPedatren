@@ -10,12 +10,14 @@ class Provinsi extends Model
     use HasFactory;
 
     protected $table = 'provinsi';
-    protected $primaryKey = 'id';
-    public $timestamps = true;
-    public $incrementing = true;
 
-    protected $guarded = [
-        'id'
+    protected $fillable = [
+        'negara_id',
+        'nama_provinsi',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+        'status'
     ];
 
     public function scopeActive($query)

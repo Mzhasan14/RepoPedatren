@@ -13,8 +13,8 @@ return new class extends Migration
     {
 
         Schema::create('wali_kelas', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('pegawai_id');
+            $table->id();
+            $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->unsignedBigInteger('jurusan_id')->nullable();
             $table->unsignedBigInteger('kelas_id')->nullable();

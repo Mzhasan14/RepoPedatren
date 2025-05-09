@@ -122,7 +122,6 @@ class DatabaseSeeder extends Seeder
             MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
             PengunjungMahrom::class,
-            RiwayatJabatanKaryawanSeeder::class,
             GolonganJabatanSeeder::class,
             
         ]);

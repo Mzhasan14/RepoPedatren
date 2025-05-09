@@ -40,19 +40,19 @@ class PengurusService
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
                                 $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
-                                    ->where('pegawai.status_aktif', 'aktif');
+                                    ->where('pegawai.status_aktif', 'aktif')
+                            ->whereNull('pegawai.deleted_at');;
                             })
                             ->join('biodata as b','pegawai.biodata_id','=','b.id')
                             //  Join Warga Pesantren Terakhir Berstatus Aktif
                             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-                            ->join('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')  
+                            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')  
                             // join berkas pas foto terakhir
                             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-                            ->leftJoin('lembaga as l', 'pegawai.lembaga_id', '=', 'l.id')
                             ->whereNull('pengurus.deleted_at')
                             ->select(
-                                'pengurus.pegawai_id as id',
+                                'pegawai.biodata_id as biodata_uuid',
                                 'b.nama',
                                 'b.nik',
                                 'wp.niup',
@@ -68,7 +68,7 @@ class PengurusService
                                 )    
                                 ->groupBy(
                                     'wp.niup',
-                                    'pengurus.pegawai_id',
+                                    'pegawai.biodata_id',
                                     'b.nama',
                                     'b.nik',
                                     'pengurus.keterangan_jabatan',
@@ -93,7 +93,7 @@ class PengurusService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
-            "id" => $item->id,
+            "id" => $item->biodata_uuid,
             "nama" => $item->nama,
             "nik" => $item->nik,
             "niup" => $item->niup ?? "-",

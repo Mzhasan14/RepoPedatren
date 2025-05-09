@@ -24,27 +24,57 @@ class FilterPegawaiService
     }
     private function applyLembagaFilter(Builder $query, Request $request): Builder
     {
-        if ($request->filled('lembaga')) {
-            $query->leftJoin('lembaga as l', 'l.id', '=', 'pegawai.lembaga_id')
-                  ->whereRaw('LOWER(l.nama_lembaga) = ?', [strtolower($request->lembaga)]);
-    
-            if ($request->filled('jurusan')) {
-                $query->leftJoin('jurusan as j', 'j.id', '=', 'pegawai.jurusan_id')
-                      ->whereRaw('LOWER(j.nama_jurusan) = ?', [strtolower($request->jurusan)]);
-    
-                if ($request->filled('kelas')) {
-                    $query->leftJoin('kelas as k', 'k.id', '=', 'pegawai.kelas_id')
-                          ->whereRaw('LOWER(k.nama_kelas) = ?', [strtolower($request->kelas)]);
-    
-                    if ($request->filled('rombel')) {
-                        $query->leftJoin('rombel as r', 'r.id', '=', 'pegawai.rombel_id')
-                              ->whereRaw('LOWER(r.nama_rombel) = ?', [strtolower($request->rombel)]);
-                    }
-                }
-            }
-        }
-    
-        return $query;
+    // Lembaga filter: hanya pegawai yang memiliki lembaga yang sesuai
+    if ($request->filled('lembaga')) {
+        $query
+            ->leftJoin('lembaga as lk', 'lk.id', '=', 'karyawan.lembaga_id')
+            ->leftJoin('lembaga as lp', 'lp.id', '=', 'pengajar.lembaga_id')
+            ->leftJoin('lembaga as lw', 'lw.id', '=', 'wali_kelas.lembaga_id')
+            ->where(function ($q) use ($request) {
+                $nama = strtolower($request->lembaga);
+                // Cek nama lembaga untuk karyawan, pengajar, atau wali kelas
+                $q->whereRaw('LOWER(lk.nama_lembaga) = ?', [$nama])
+                  ->orWhereRaw('LOWER(lp.nama_lembaga) = ?', [$nama])
+                  ->orWhereRaw('LOWER(lw.nama_lembaga) = ?', [$nama]);
+            })
+            // Pastikan pegawai memiliki lembaga yang sesuai (karyawan, pengajar, atau wali kelas)
+            ->where(function ($q) {
+                // Pastikan salah satu dari karyawan, pengajar, atau wali_kelas memiliki lembaga_id yang tidak null
+                $q->whereNotNull('karyawan.lembaga_id')
+                  ->orWhereNotNull('pengajar.lembaga_id')
+                  ->orWhereNotNull('wali_kelas.lembaga_id');
+            });
+    }
+
+    // Jurusan filter: hanya untuk wali_kelas
+    if ($request->filled('jurusan')) {
+        $query->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
+              ->whereRaw('LOWER(j.nama_jurusan) = ?', [strtolower($request->jurusan)]);
+    }
+
+    // Kelas filter: hanya untuk wali_kelas
+    if ($request->filled('kelas')) {
+        $query->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
+              ->whereRaw('LOWER(k.nama_kelas) = ?', [strtolower($request->kelas)]);
+    }
+
+    // Rombel filter: hanya untuk wali_kelas
+    if ($request->filled('rombel')) {
+        $query->leftJoin('rombel as r', 'r.id', '=', 'wali_kelas.rombel_id')
+              ->whereRaw('LOWER(r.nama_rombel) = ?', [strtolower($request->rombel)]);
+    }
+
+    // Filter pegawai yang memiliki relasi aktif dengan karyawan, pengajar, dan wali_kelas
+    $query->where(function ($q) {
+        $q->whereNotNull('karyawan.pegawai_id')
+          ->orWhereNotNull('pengajar.pegawai_id')
+          ->orWhereNotNull('wali_kelas.pegawai_id');
+    });
+
+    // Tambahkan filter status aktif untuk pegawai
+    $query->where('pegawai.status_aktif', 'aktif');  // Pastikan hanya pegawai aktif yang ditampilkan
+
+    return $query;
     }
     private function applyAlamatFilter(Builder $query, Request $request): Builder
     {

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class PengajarService
 {
+
     public function getAllPengajar(Request $request)
     {
         try {
@@ -32,7 +33,8 @@ class PengajarService
                 // join pegawai yang hanya berstatus true atau akif
                 ->join('pegawai',function ($join){
                     $join->on('pegawai.id','=','pengajar.pegawai_id')
-                                ->where('pegawai.status_aktif','aktif');
+                            ->where('pegawai.status_aktif','aktif')
+                            ->whereNull('pegawai.deleted_at');
                 })
                 // relasi ke biodata
                 ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
@@ -50,11 +52,13 @@ class PengajarService
                 ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                 ->leftJoin('materi_ajar', function ($join) {
                     $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
-                         ->where('materi_ajar.status', 1);
+                         ->where('materi_ajar.status_aktif', 'aktif')
+                            ->whereNull('materi_ajar.tahun_akhir');
+
                 })
                 ->whereNull('pengajar.deleted_at')
                 ->select(
-                    'pengajar.pegawai_id as id',
+                    'pegawai.biodata_id as biodata_uuid',
                     'b.nama',
                     'wp.niup',
                     DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
@@ -91,7 +95,7 @@ class PengajarService
                     DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                     )   
                      ->groupBy(
-                        'pengajar.pegawai_id',
+                        'pegawai.biodata_id',
                         'b.nama',
                         'wp.niup',
                         'b.tanggal_lahir',
@@ -117,7 +121,7 @@ class PengajarService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
-            "id" => $item->id,
+            "id" => $item->biodata_uuid,
             "nama" => $item->nama,
             "niup" => $item->niup ?? "-",
             "umur" => $item->umur,

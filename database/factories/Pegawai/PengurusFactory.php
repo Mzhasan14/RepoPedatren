@@ -23,7 +23,6 @@ class PengurusFactory extends Factory
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
         return [
-            'id' => (string) Str::uuid(),
             'pegawai_id' =>(new PegawaiFactory())->create()->id,
             'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
