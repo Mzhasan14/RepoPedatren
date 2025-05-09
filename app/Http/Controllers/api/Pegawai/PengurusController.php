@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\PengurusRequest;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Pengurus;
 use App\Services\FilterPengurusService;
 use App\Services\Pegawai\Filters\FilterPengurusService as FiltersFilterPengurusService;
+use App\Services\Pegawai\Filters\Formulir\PengurusService as FormulirPengurusService;
 use App\Services\Pegawai\PengurusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,84 +24,102 @@ class PengurusController extends Controller
 {
     private PengurusService $pengurusService;
     private FiltersFilterPengurusService $filterController;
+    private FormulirPengurusService $formulirPengurus;
 
-    public function __construct(PengurusService $pengurusService, FiltersFilterPengurusService $filterController)
+    public function __construct(FormulirPengurusService $formulirPengurus ,PengurusService $pengurusService, FiltersFilterPengurusService $filterController)
     {
         $this->pengurusService = $pengurusService;
         $this->filterController = $filterController;
+        $this->formulirPengurus = $formulirPengurus;
     }
-    /**
-     * Display a listing of the resource.
-     */
-    // public function index()
-    // {
-    //     $pengurus = Pengurus::all();
-    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-    // }
-    // public function store(Request $request)
-    // {
-    //     $validator =Validator::make($request->all(),[
-    //         'id_pegawai' => ['required', 'exists:pegawai,id'],
-    //         'id_golongan' => ['required', 'exists:golongan,id'],
-    //         'satuan_kerja' => ['required', 'string', 'max:255'],
-    //         'jabatan' => ['required', 'string', 'max:255'],
-    //         'created_by' => ['required', 'integer'],
-    //         'status' => ['required', 'boolean'],
-    //     ]);
-    //     if ($validator->fails())
-    //     {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Data gagal ditambahkan',
-    //             'data' => $validator->errors()
-    //         ]);
-    //     }
 
-    //     $pengurus = Pengurus::create($validator->validated());
-    //     return new PdResource(true,'Data berhasil diitambahkan',$pengurus);
-    // }
+        public function index($id)
+        {
+            try {
+                $result = $this->formulirPengurus->index($id);
+                if (!$result['status']) {
+                    return response()->json([
+                        'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    ], 200);
+                }
+                return response()->json([
+                    'message' => 'Data berhasil ditampilkan',
+                    'data' => $result['data']
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal ambil data Pengurus: ' . $e->getMessage());
 
+                return response()->json([
+                    'message' => 'Terjadi kesalahan saat menampilkan data.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+        public function edit($id)
+        {
+            try {
+                $result = $this->formulirPengurus->edit($id);
+                if (!$result['status']) {
+                    return response()->json([
+                        'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    ], 200);
+                }
+                return response()->json([
+                    'message' => 'Detail data berhasil ditampilkan',
+                    'data' => $result['data']
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal ambil detail Pengurus: ' . $e->getMessage());
+                return response()->json([
+                    'message' => 'Terjadi kesalahan saat menampilkan data.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+        public function store(PengurusRequest $request, $bioId)
+        {
+            try {
+                $result = $this->formulirPengurus->store($request->validated(), $bioId);
+                if (!$result['status']) {
+                    return response()->json([
+                        'message' => $result['message']
+                    ], 200);
+                }
+                return response()->json([
+                    'message' => 'Data berhasil ditambah',
+                    'data' => $result['data']
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal tambah Pengurus: ' . $e->getMessage());
+                return response()->json([
+                    'message' => 'Terjadi kesalahan saat memproses data',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
+        public function update(PengurusRequest $request, $id)
+        {
+            try {
+                $result = $this->formulirPengurus->update($request->validated(), $id);
 
-    // public function show(string $id)
-    // {
-    //     $pengurus = Pengurus::findOrFail($id);
-    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-    // }
+                if (!$result['status']) {
+                    return response()->json([
+                        'message' => $result['message']
+                    ], 200);
+                }
+                return response()->json([
+                    'message' => 'Data berhasil diperbarui',
+                    'data' => $result['data']
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal update Pengurus: ' . $e->getMessage());
+                return response()->json([
+                    'message' => 'Terjadi kesalahan saat memproses data',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
 
-    // public function update(Request $request, string $id)
-    // {
-    //     $pengurus = Pengurus::findOrFail($id);
-    //     $validator =Validator::make($request->all(),[
-    //         'id_pegawai' =>'required', 'exists:pegawai,id',
-    //         'id_golongan' => 'required', 'exists:golongan,id',
-    //         'satuan_kerja' => 'required', 'string', 'max:255',
-    //         'jabatan' => 'required', 'string', 'max:255',
-    //         'updated_by' => 'nullable', 'integer',
-    //         'status' => 'required', 'boolean',
-    //     ]);
-    //     if ($validator->fails())
-    //     {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Data gagal ditambahkan',
-    //             'data' => $validator->errors()
-    //         ]);
-    //     }
-    //     $pengurus->update($validator->validated());
-    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-
-    // }
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
-    // public function destroy(string $id)
-    // {
-    //     $pengurus = Pengurus::findOrFail($id);
-    //     $pengurus->delete();
-    //     return new PdResource(true,'Data berhasil ditampilkan',$pengurus);
-
-    // }
     public function dataPengurus(Request $request)
     {
         try {

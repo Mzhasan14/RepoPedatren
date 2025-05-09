@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
+use App\Models\Biodata;
 use App\Models\Pegawai\Pegawai;
 use App\Services\Pegawai\GetDetailKepegawaianService;
 use Illuminate\Http\Request;
@@ -17,12 +18,12 @@ class DetailKepegawaianController extends Controller
     }
     public function getAllKepegawaian(string $id)
     {
-        // try {
-            $Pegawai = Pegawai::find($id);
+        try {
+            $Pegawai = Biodata::find($id);
             if (!$Pegawai) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'ID Santri tidak ditemukan',
+                    'message' => 'ID Kepegawaian tidak ditemukan',
                     'data' => []
                 ], 404);
             }
@@ -33,12 +34,12 @@ class DetailKepegawaianController extends Controller
                 'status' => true,
                 'data'    => $data,
             ], 200);
-        // } catch (\Exception $e) {
-        //     Log::error("Error DetailKepegawaian: " . $e->getMessage());
-        //     return response()->json([
-        //         'status'  => 'error',
-        //         'message' => 'Terjadi kesalahan pada server',
-        //     ], 500);
-        // }
+        } catch (\Exception $e) {
+            Log::error("Error DetailKepegawaian: " . $e->getMessage());
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
+        }
     }
 }

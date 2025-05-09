@@ -12,11 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('karyawan', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('pegawai_id')->unique();
+            $table->id();
+            $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('golongan_jabatan_id')->nullable();
             $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->string('jabatan')->nullable();// kulturan, tetap, kontrak, pengkaderan 
+            $table->string('keterangan_jabatan'); // contohnya : kepala sekolah, wakil kepala bag --- dll
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_selesai')->nullable(); 
             $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
@@ -28,8 +31,8 @@ return new class extends Migration
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
         });
         Schema::create('pengurus', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('pegawai_id');
+            $table->id();
+            $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('golongan_jabatan_id')->nullable();
             $table->string('jabatan')->nullable(); // kulturan, tetap, kontrak, pengkaderan 
             $table->string('satuan_kerja');
@@ -45,19 +48,19 @@ return new class extends Migration
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
             $table->foreign('golongan_jabatan_id')->references('id')->on('golongan_jabatan')->onDelete('cascade');
         });
-        Schema::create('riwayat_jabatan_karyawan', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('karyawan_id'); 
-            $table->string('keterangan_jabatan'); // contohnya : kepala sekolah, wakil kepala bag --- dll
-            $table->date('tanggal_mulai');
-            $table->date('tanggal_selesai')->nullable(); // NULL jika masih menjabat
-            $table->boolean('status');
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->timestamps();
+        // Schema::create('riwayat_jabatan_karyawan', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->uuid('karyawan_id'); 
+        //     $table->string('keterangan_jabatan'); // contohnya : kepala sekolah, wakil kepala bag --- dll
+        //     $table->date('tanggal_mulai');
+        //     $table->date('tanggal_selesai')->nullable(); // NULL jika masih menjabat
+        //     $table->boolean('status');
+        //     $table->unsignedBigInteger('created_by');
+        //     $table->unsignedBigInteger('updated_by')->nullable();
+        //     $table->timestamps();
         
-            $table->foreign('karyawan_id')->references('id')->on('karyawan')->onDelete('cascade');
-        });       
+        //     $table->foreign('karyawan_id')->references('id')->on('karyawan')->onDelete('cascade');
+        // });       
     }
 
     /**

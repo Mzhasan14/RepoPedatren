@@ -12,9 +12,6 @@ class Pengajar extends Model
     use HasFactory;
 
     protected $table = 'pengajar';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     protected $guarded = [
         'created_at'
     ];

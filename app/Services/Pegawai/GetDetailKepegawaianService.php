@@ -13,9 +13,8 @@ class GetDetailKepegawaianService
         $base = DB::table('pegawai')
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('pegawai.id', $Id)
+            ->where('b.id', $Id)
             ->select([
-                'pegawai.id as pegawai_id',
                 'b.id as biodata_id',
                 'k.no_kk',
             ])
@@ -24,7 +23,6 @@ class GetDetailKepegawaianService
         if (! $base) {
             return ['error' => 'Pegawai tersebut tidak ditemukan'];
         }
-        $pegawaiId  = $base->pegawai_id;
         $bioId     = $base->biodata_id;
         $noKk      = $base->no_kk;
 
@@ -93,49 +91,73 @@ class GetDetailKepegawaianService
 
                 ];
 
-        // -- Keluarga Detail -- 
-        $ortu = DB::table('keluarga as k')
-                    ->where('k.no_kk', $noKk)
-                    ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
-                    ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
-                    ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-                    ->select([
-                        'bo.nama',
-                        'bo.nik',
-                        DB::raw("hk.nama_status as status"),
-                        'ow.wali'
-                    ])
-                    ->get();
+// -- Orang Tua / Wali --
+$ortu = DB::table('keluarga as k')
+    ->where('k.no_kk', $noKk)
+    ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
+    ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
+    ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+    ->select([
+        'bo.nama',
+        'bo.nik',
+        DB::raw("hk.nama_status as status"),
+        'ow.wali'
+    ])
+    ->get();
 
-        // Ambil semua id biodata yang sudah menjadi orang tua / wali
-        $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+// Ambil id biodata yang termasuk orang tua/wali
+$excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
 
-        // Ambil saudara kandung (tidak termasuk orang tua/wali dan bukan pegawai itu sendiri)
-        $saudara = DB::table('keluarga as k')
-                    ->where('k.no_kk', $noKk)
-                    ->whereNotIn('k.id_biodata', $excluded)
-                    ->where('k.id_biodata', '!=', $bioId)
-                    ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
-                    ->select([
-                        'bs.nama',
-                        'bs.nik',
-                        DB::raw("'Saudara Kandung' as status"),
-                        DB::raw("NULL as wali")
-                    ])
-                    ->get();
+// Ambil id anak aktif
+$anakAktifIds = DB::table('keluarga as k')
+    ->where('k.no_kk', $noKk)
+    ->where('k.id_biodata', '!=', $bioId)
+    ->join('santri as s', 'k.id_biodata', '=', 's.biodata_id')
+    ->join('riwayat_pendidikan as rp', 's.id', '=', 'rp.santri_id')
+    ->where('rp.status', 'aktif')
+    ->pluck('k.id_biodata')
+    ->toArray();
 
-        // Merge ortu dan saudara jadi satu
-        $keluarga = $ortu->merge($saudara);
+// Ambil Anak Aktif
+$anakAktif = DB::table('keluarga as k')
+    ->whereIn('k.id_biodata', $anakAktifIds)
+    ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+    ->select([
+        'b.nama',
+        'b.nik',
+        DB::raw("'Anak Aktif' as status"),
+        DB::raw("NULL as wali")
+    ])
+    ->get();
 
-        // Mapping hasil akhir
-        $data['Keluarga'] = $keluarga->isNotEmpty()
-        ? $keluarga->map(fn($i) => [
-            'nama'   => $i->nama,
-            'nik'    => $i->nik,
-            'status' => $i->status,
-            'wali'   => $i->wali ?? '-',
-        ])->toArray()
-        : [];
+// Ambil Saudara Kandung yang bukan ortu dan bukan anak aktif
+$saudara = DB::table('keluarga as k')
+    ->where('k.no_kk', $noKk)
+    ->whereNotIn('k.id_biodata', $excluded)
+    ->whereNotIn('k.id_biodata', $anakAktifIds)
+    ->where('k.id_biodata', '!=', $bioId)
+    ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
+    ->select([
+        'bs.nama',
+        'bs.nik',
+        DB::raw("'Saudara Kandung' as status"),
+        DB::raw("NULL as wali")
+    ])
+    ->get();
+
+// Gabungkan dengan urutan: ortu -> anak aktif -> saudara
+$keluarga = collect()->merge($ortu)->merge($anakAktif)->merge($saudara);
+
+// Mapping hasil akhir
+$data['Keluarga'] = $keluarga->isNotEmpty()
+    ? $keluarga->map(fn($i) => [
+        'nama'   => $i->nama,
+        'nik'    => $i->nik,
+        'status' => $i->status,
+        'wali'   => $i->wali ?? '-',
+    ])->toArray()
+    : [];
+
     
 
 
@@ -166,7 +188,7 @@ class GetDetailKepegawaianService
                 ->orOn('kw.id_anak_asuh', 'aa.id');
             })
             ->leftJoin('grup_wali_asuh as g', 'g.id', '=', 'wa.id_grup_wali_asuh')
-            ->where('p.id', $pegawaiId) 
+            ->where('b.id', $bioId) 
             ->selectRaw(implode(', ', [
                 'g.nama_grup',
                 "CASE WHEN wa.id IS NOT NULL THEN 'Wali Asuh' ELSE 'Anak Asuh' END as role",
@@ -206,7 +228,7 @@ class GetDetailKepegawaianService
                     ->leftJoin('santri as s', 'pp.santri_id', '=', 's.id')
                     ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
                     ->leftJoin('pegawai as p', 'b.id', '=', 'p.biodata_id')
-                    ->where('p.id', $pegawaiId) // Cari berdasarkan pegawai ID
+                    ->where('b.id', $bioId) // Cari berdasarkan pegawai ID
                     ->select([
                         DB::raw("CONCAT(pp.tanggal_mulai,' s/d ',pp.tanggal_akhir) as tanggal"),
                         'pp.keterangan',
@@ -229,14 +251,10 @@ class GetDetailKepegawaianService
                     : [];
 
         // -- Domisili detail -- 
-        // Cari santri berdasarkan biodata_id pegawai
-        $santri = DB::table('santri')
-            ->where('biodata_id', $bioId) // bioId ini dari base yang kamu ambil di awal
-            ->first();
-
-        if ($santri) {
             $dom = DB::table('riwayat_domisili as rd')
-                ->where('rd.santri_id', $santri->id) 
+                ->join('santri as s', 's.id', '=', 'rd.santri_id')
+                ->where('biodata_id', $bioId) // bioId ini dari base yang kamu ambil di awal
+                // ->where('rd.santri_id', $santri->id) 
                 ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
                 ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
                 ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
@@ -258,7 +276,6 @@ class GetDetailKepegawaianService
                     'tanggal_pindah'    => $d->tanggal_keluar ?? '-',
                 ])
                 : [];
-        }
 
 
 
@@ -271,7 +288,7 @@ class GetDetailKepegawaianService
             // Relasi biodata dengan pegawai
             ->join('pegawai', 'biodata.id', '=', 'pegawai.biodata_id')
             // Filter berdasarkan id pegawai
-            ->where('pegawai.id', $pegawaiId)
+            ->where('biodata.id', $bioId)
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
@@ -303,40 +320,39 @@ class GetDetailKepegawaianService
         $karyawan = DB::table('pegawai')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
             ->leftJoin('karyawan', 'karyawan.pegawai_id', '=', 'pegawai.id')
-            ->leftJoin('riwayat_jabatan_karyawan', 'riwayat_jabatan_karyawan.karyawan_id', '=', 'karyawan.id')
-            ->where('pegawai.id', $pegawaiId)
+            // ->leftJoin('riwayat_jabatan_karyawan', 'riwayat_jabatan_karyawan.karyawan_id', '=', 'karyawan.id')
+            ->where('biodata.id', $bioId)
             ->select(
-                'riwayat_jabatan_karyawan.keterangan_jabatan',
+                'karyawan.keterangan_jabatan',
                 DB::raw("
                     CONCAT(
-                        'Sejak ', DATE_FORMAT(riwayat_jabatan_karyawan.tanggal_mulai, '%e %b %Y'),
+                        'Sejak ', DATE_FORMAT(karyawan.tanggal_mulai, '%e %b %Y'),
                         ' Sampai ',
-                        IFNULL(DATE_FORMAT(riwayat_jabatan_karyawan.tanggal_selesai, '%e %b %Y'), 'Sekarang')
+                        IFNULL(DATE_FORMAT(karyawan.tanggal_selesai, '%e %b %Y'), 'Sekarang')
                     ) AS masa_jabatan
                 ")
             )
-            ->orderBy('riwayat_jabatan_karyawan.tanggal_mulai', 'asc')
-            ->distinct()
+            ->orderBy('karyawan.tanggal_mulai', 'asc')
             ->get();
 
-            $data['Karyawan'] = $karyawan->filter(fn($item) => $item->keterangan_jabatan !== null)
+            $data['Karyawan'] = $karyawan
+            ->filter(fn($item) => $item->keterangan_jabatan !== null && $item->masa_jabatan !== null)
             ->map(fn($item) => [
                 'keterangan_jabatan' => $item->keterangan_jabatan,
                 'masa_jabatan'       => $item->masa_jabatan,
             ])
-            ->values();
-        
+            ->values(); // supaya hasilnya berupa array indeks biasa (bukan collection key-preserved)
         
 
         // --- Ambil data pengajar dan riwayat materi ---
         $pengajar = DB::table('pengajar')
             ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')  // Join dengan pegawai
-            ->leftJoin('lembaga', 'lembaga.id', '=', 'pegawai.lembaga_id')  // Join dengan lembaga
+            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')  // Join dengan lembaga
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')  // Join dengan biodata
             ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')  // Join dengan golongan
             ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')  // Join dengan kategori golongan
             ->leftJoin('materi_ajar', 'materi_ajar.pengajar_id', '=', 'pengajar.id')  // Join dengan materi ajar
-            ->where('pegawai.id', $pegawaiId)  // Filter berdasarkan ID pegawai
+            ->where('biodata.id', $bioId)  // Filter berdasarkan ID pegawai
             ->select(
                 'lembaga.nama_lembaga',
                 'pengajar.jabatan as PekerjaanKontrak',
@@ -365,21 +381,19 @@ class GetDetailKepegawaianService
                 'pengajar.tahun_masuk',
                 'pengajar.tahun_akhir'
             )
-            ->first();  // Ambil data pertama
+            ->get();
 
-        // Memasukkan data ke dalam array jika data ditemukan
-        $data['Pengajar'] = $pengajar
-        ? [
-            'lembaga'                 => $pengajar->nama_lembaga ?? '-',
-            'pekerjaan_kontrak'      => $pengajar->PekerjaanKontrak ?? '-',
-            'kategori_golongan'      => $pengajar->nama_kategori_golongan ?? '-',
-            'nama_golongan'          => $pengajar->nama_golongan ?? '-',
-            'periode_ajar'           => $pengajar->keterangan ?? '-',
-            'total_jam_materi'       => $pengajar->total_waktu_materi ?? '0 jam 0 menit',
-            'jumlah_materi_diajarkan'=> $pengajar->total_materi ?? 0,
-        ]
-        : [];
-
+            $data['Pengajar'] = $pengajar->isNotEmpty()
+            ? $pengajar->map(fn($item) => [
+                'lembaga'                 => $item->nama_lembaga ?? '-',
+                'pekerjaan_kontrak'      => $item->PekerjaanKontrak ?? '-',
+                'kategori_golongan'      => $item->nama_kategori_golongan ?? '-',
+                'nama_golongan'          => $item->nama_golongan ?? '-',
+                'periode_ajar'           => $item->keterangan ?? '-',
+                'total_jam_materi'       => $item->total_waktu_materi ?? '0 jam 0 menit',
+                'jumlah_materi_diajarkan'=> $item->total_materi ?? 0,
+            ])
+            : [];
     
     
 
@@ -387,7 +401,7 @@ class GetDetailKepegawaianService
         $pengurus = DB::table('pengurus')
             ->join('pegawai', 'pegawai.id', '=', 'pengurus.pegawai_id')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
-            ->where('pegawai.id', $pegawaiId)
+            ->where('biodata.id', $bioId)
             ->select(
                 'pengurus.keterangan_jabatan',
                 DB::raw("
@@ -398,14 +412,13 @@ class GetDetailKepegawaianService
                     ) AS masa_jabatan
                 ")
             )
-            ->distinct()
-            ->first();
-
-        $data['Pengurus'] = $pengurus
-            ? [
-                "keterangan_jabatan" => $pengurus->keterangan_jabatan ?? '-',
-                "masa_jabatan"       => $pengurus->masa_jabatan ?? '-',
-            ]
+            ->orderBy('pengurus.tanggal_mulai', 'asc')
+            ->get();
+            $data['Pengurus'] = $pengurus->isNotEmpty()
+            ? $pengurus->map(fn($item) => [
+                'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
+                'masa_jabatan'       => $item->masa_jabatan ?? '-',
+            ])
             : [];
 
 
@@ -418,7 +431,7 @@ class GetDetailKepegawaianService
             ->join('santri', 'santri.id', '=', 'ca.id_santri')
             ->join('biodata', 'biodata.id', '=', 'santri.biodata_id')
             ->join('pegawai as p', 'biodata.id', '=', 'p.biodata_id')
-            ->where('p.id', $pegawaiId)
+            ->where('biodata.id', $bioId)
             ->latest('ca.created_at')
             ->first();
 
@@ -438,7 +451,7 @@ class GetDetailKepegawaianService
             ->join('santri', 'santri.id', '=', 'ck.id_santri')
             ->join('biodata', 'biodata.id', '=', 'santri.biodata_id')
             ->join('pegawai as p', 'biodata.id', '=', 'p.biodata_id')
-            ->where('p.id', $pegawaiId)
+            ->where('biodata.id', $bioId)
             ->latest('ck.created_at')
             ->first();
 
@@ -464,7 +477,7 @@ class GetDetailKepegawaianService
                 ->join('santri as s', 'pm.santri_id', '=', 's.id')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->join('pegawai as p', 'b.id', '=', 'p.biodata_id')
-                ->where('p.id', $pegawaiId)
+                ->where('b.id', $bioId)
                 ->select(['pm.nama_pengunjung', 'pm.tanggal'])
                 ->get();
     

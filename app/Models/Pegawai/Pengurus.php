@@ -10,9 +10,6 @@ class Pengurus extends Model
     use HasFactory;
 
     protected $table = 'pengurus';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
 
     protected $guarded = [
         'created_at'

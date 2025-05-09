@@ -11,13 +11,8 @@ class MateriAjar extends Model
 
     protected $table = 'materi_ajar';
 
-    protected $fillable = [
-        'id_pengajar',
-        'nama_materi',
-        'jumlah_menit',
-        'created_by',
-        'updated_by',
-        'status'
+    protected $guarded = [
+        'id'
     ];
 
     public function MateriAjarPengajar()

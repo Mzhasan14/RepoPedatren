@@ -36,7 +36,8 @@ class WaliKelasService
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
                                     $join->on('wali_kelas.pegawai_id', '=', 'pegawai.id')
-                                         ->where('pegawai.status_aktif', 'aktif');
+                                         ->where('pegawai.status_aktif', 'aktif')
+                                         ->whereNull('pegawai.deleted_at');
                             })
                             ->join('biodata as b','b.id','=','pegawai.biodata_id')  
                             //  Join Warga Pesantren Terakhir Berstatus Aktif
@@ -51,7 +52,7 @@ class WaliKelasService
                             ->leftJoin('lembaga as l','l.id','=','wali_kelas.lembaga_id')
                             ->whereNull('wali_kelas.deleted_at')
                             ->select(
-                                'wali_kelas.pegawai_id as id',
+                                'pegawai.biodata_id as biodata_uuid',
                                 'b.nama',
                                 'wp.niup',
                                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -66,7 +67,7 @@ class WaliKelasService
                                 DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
-                                'wali_kelas.pegawai_id', 
+                                'pegawai.biodata_id', 
                                 'b.nama', 
                                 'wp.niup', 
                                 'l.nama_lembaga',
@@ -94,7 +95,7 @@ class WaliKelasService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item)=>[
-            "id" => $item->id,
+            "id" => $item->biodata_uuid,
             "nama" => $item->nama,
             "niup" => $item->niup ?? "-",
             "nik_or_Passport" => $item->identitas,

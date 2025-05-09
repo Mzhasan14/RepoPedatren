@@ -10,8 +10,6 @@ class WaliKelas extends Model
     use HasFactory;
 
     protected $table = 'wali_kelas';
-    public $incrementing = false;
-    protected $keyType = 'string';
 
 
     protected $guarded = [

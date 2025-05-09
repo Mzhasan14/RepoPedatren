@@ -24,7 +24,6 @@ class PengajarFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
             'pegawai_id' => (new PegawaiFactory())->create()->id,
             'golongan_id' => (new GolonganFactory())->create()->id,
             'lembaga_id' =>  (new LembagaFactory())->create()->id,

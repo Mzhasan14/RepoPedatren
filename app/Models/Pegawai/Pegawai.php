@@ -11,16 +11,15 @@ class Pegawai extends Model
     use HasFactory;
 
     protected $table = 'pegawai';
-    public $incrementing = false;
-    protected $keyType = 'string';
 
 
     protected $guarded = [
+        'id'
     ];
 
     public function biodata()
     {
-        return $this->belongsTo(Biodata::class,'id_biodata', 'id');
+        return $this->belongsTo(Biodata::class,'biodata_id', 'id');
     }
 
     public function pengajar()

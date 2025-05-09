@@ -119,6 +119,20 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
     Route::post('/{id}/berkas', [BerkasController::class, 'store']);
     Route::put('/{id}/berkas', [BerkasController::class, 'update']);
+
+    // Kepegawaian
+    Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
+    Route::get('/{id}/karyawan/edit', [KaryawanController::class, 'edit']);
+    Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
+    Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
+    Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
+    Route::get('/{id}/pengajar/edit', [PengajarController::class, 'edit']);
+    Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
+    Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+    Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
+    Route::get('/{id}/pengurus/edit', [PengurusController::class, 'edit']);
+    Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
+    Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 });
 
 Route::post('register', [AuthController::class, 'register']);
@@ -203,10 +217,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
-    Route::apiResource('/crud/keluarga', KeluargaController::class);
     Route::get('/keluarga', [KeluargaController::class, 'keluarga']);
-    Route::apiResource('/crud/status-keluarga', StatusKeluargaController::class);
-    Route::apiResource('/crud/orangtua', OrangTuaWaliController::class);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
     Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
@@ -218,9 +229,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/kecamatan', KecamatanController::class);
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
-    Route::apiResource('/grup-waliasuh', GrupWaliAsuhController::class);
-    Route::apiResource('/crud/waliasuh', WaliasuhController::class);
-    Route::apiResource('/ceud/anakasuh', AnakasuhController::class);
     Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
     Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
     Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);

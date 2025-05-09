@@ -62,7 +62,7 @@ class BerkasService
             }
 
             $uploadedFile = $berkasData['file_path'];
-            $filePath = $uploadedFile->store('PesertaDidik', 'public');
+            $filePath = $uploadedFile->store('formulir', 'public');
             $fileUrl  = Storage::url($filePath);
 
             $berkas = new Berkas();
@@ -115,7 +115,7 @@ class BerkasService
             }
 
             $uploadedFile = $berkasData['file_path'];
-            $filePath = $uploadedFile->store('PesertaDidik', 'public');
+            $filePath = $uploadedFile->store('formulir', 'public');
             $fileUrl  = Storage::url($filePath);
 
             $berkas->file_path = $fileUrl;
