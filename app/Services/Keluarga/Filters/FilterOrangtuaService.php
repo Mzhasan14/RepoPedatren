@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Keluarga;
+namespace App\Services\Keluarga\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class FilterOrangtuaService
 {
 
-    public function applyAllFilters(Builder $query, Request $request): Builder
+    public function orangTuaFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);

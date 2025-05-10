@@ -133,6 +133,11 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('/{id}/pengurus/edit', [PengurusController::class, 'edit']);
     Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
+
+    // Keluarga
+    Route::post('/orangtua',[OrangTuaWaliController::class,'store']);
+    Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
+    Route::put('/{id}/orangtua', [OrangTuaWaliController::class, 'update']);
 });
 
 Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum','role:admin|superadmin');

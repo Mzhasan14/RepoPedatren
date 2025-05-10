@@ -2,25 +2,32 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
+use Illuminate\Support\Str;
 use App\Models\OrangTuaWali;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\Keluarga\DetailOrangtuaService;
-use App\Services\Keluarga\FilterOrangtuaService;
+use App\Http\Requests\OrangtuaWaliRequest;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Keluarga\OrangtuaWaliService;
+use App\Services\Keluarga\DetailOrangtuaService;
+use App\Services\Keluarga\FIlters\FilterOrangtuaService;
 
 class OrangTuaWaliController extends Controller
 {
+    private OrangtuaWaliService $orangtuaWaliService;
     private DetailOrangtuaService $detailOrangtuaService;
     private FilterOrangtuaService $filterController;
 
 
-    public function __construct(FilterOrangtuaService $filterController, DetailOrangtuaService $detailOrangtuaService)
+    public function __construct(OrangtuaWaliService $orangtuaWaliService, FilterOrangtuaService $filterController, DetailOrangtuaService $detailOrangtuaService)
     {
+        $this->orangtuaWaliService = $orangtuaWaliService;
         $this->filterController = $filterController;
         $this->detailOrangtuaService = $detailOrangtuaService;
     }
@@ -32,69 +39,10 @@ class OrangTuaWaliController extends Controller
      * @return JsonResponse
      */
 
-    public function getAllOrangtua(Request $request): JsonResponse
+    public function getAllOrangtua(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
-        $pasFotoId = DB::table('jenis_berkas')
-            ->where('nama_jenis_berkas', 'Pas foto')
-            ->value('id');
-
-        // 2) Subquery: foto terakhir per biodata
-        $fotoLast = DB::table('berkas')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('jenis_berkas_id', $pasFotoId)
-            ->groupBy('biodata_id');
-
-        // 3) Query utama: data orang_tua all
-        $query = DB::table('orang_tua_wali AS o')
-            ->join('biodata AS b', 'o.id_biodata', '=', 'b.id')
-            // join berkas pas foto terakhir
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->join('hubungan_keluarga AS hk', 'hk.id', '=', 'o.id_hubungan_keluarga')
-            ->join('keluarga AS kel', 'b.id', '=', 'kel.id_biodata') //dari orangtua ke tabel keluarga
-            ->join('keluarga as ka', 'kel.no_kk', '=', 'ka.no_kk') //dari keluarga ke keluarga lainnya
-            ->join('biodata as ba', 'ka.id_biodata', '=', 'ba.id') //dari keluarga ke anak
-            ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            // hanya yang berstatus aktif
-            ->where(fn($q) => $q->where('o.status', true))
-            ->select([
-                'o.id',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
-                'b.nama',
-                'b.no_telepon AS telepon_1',
-                'b.no_telepon_2 AS telepon_2',
-                'kb.nama_kabupaten AS kota_asal',
-                'o.created_at',
-                // ambil updated_at terbaru antar s, rp, rd
-                DB::raw("
-                        GREATEST(
-                            o.updated_at,
-                            hk.updated_at,
-                            kel.updated_at
-                        ) AS updated_at
-                    "),
-                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->groupBy([
-                'o.id',
-                'b.nik',
-                'b.no_passport',
-                'b.nama',
-                'b.no_telepon',
-                'b.no_telepon_2',
-                'kb.nama_kabupaten',
-                'o.created_at',
-                'o.updated_at',
-                'hk.updated_at',
-                'kel.updated_at',
-                'br.file_path'
-            ])
-            ->orderBy('o.id');
-
-        // Terapkan filter dan pagination
-        $query = $this->filterController->applyAllFilters($query, $request);
-
+        $query = $this->orangtuaWaliService->getAllOrangtua($request);
+        $query = $this->filterController->OrangtuaFilters($query, $request);
 
         $perPage     = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);
@@ -108,24 +56,14 @@ class OrangTuaWaliController extends Controller
             ], 200);
         }
 
-        $formatted = collect($results->items())->map(fn($item) => [
-            'id'               => $item->id,
-            'nik_or_passport'  => $item->identitas,
-            'nama'             => $item->nama,
-            'telepon_1'             => $item->telepon_1,
-            'telepon_2'          => $item->telepon_2,
-            'kota_asal'        => $item->kota_asal,
-            'tgl_update'       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            'tgl_input'        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            'foto_profil'      => url($item->foto_profil),
-        ]);
+        $formatted = $this->orangtuaWaliService->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
-            'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            "total_data"   => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
         ]);
     }
 
@@ -158,26 +96,58 @@ class OrangTuaWaliController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'id_biodata' => 'required|exists:biodata,id',
-    //         'id_hubungan_keluarga' => 'required|string',
-    //         'wali' => 'nullable',
-    //         'pekerjaan' => 'nullable|string',
-    //         'penghasilan' => 'nullable|integer',
-    //         'wafat'=>'nullable',
-    //         'status' => 'nullable',
-    //         'created_by' => 'required|exist:users,id'
-    //     ]);
+    public function store(OrangtuaWaliRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->orangtuaWaliService->store($validated);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        }
+         catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
-    //     if ($validator->fails()) {
-    //         return response()->json($validator->errors(), 422);
-    //     }
+    public function edit($id)
+    {
+        $result = $this->orangtuaWaliService->edit($id);
+        if (!$result['status']) {
+            return response()->json([
+                'message' => $result['message'] ?? 'Data tidak ditemukan.',
+            ], 200);
+        }
+        return response()->json(
+            [
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]
+        );
+    }
 
-    //     $ortu = OrangTuaWali::create($validator->validated());
-    //     return new PdResource(true, 'Data berhasil Ditambah', $ortu);
-    // }
+    public function update(OrangtuaWaliRequest $request, $id) {
+        $result = $this->orangtuaWaliService->update($request->validated(),$id);
+        if (!$result['status']) {
+            return response()->json([
+                'message' => $result['message'] ??
+                'Data tidak ditemukan.'
+            ],200);
+        }
+        return response()->json([
+            'message' => 'Orang tua berhasil diperbarui',
+            'data' => $result['data']
+        ]);
+    }
 
     // /**
     //  * Display the specified resource.

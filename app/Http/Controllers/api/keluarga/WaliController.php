@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Services\Keluarga\DetailWaliService;
-use App\Services\Keluarga\FilterWaliService;
+use App\Services\Keluarga\Filters\FilterWaliService;
 
 class WaliController extends Controller
 {

@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services\Keluarga;
+namespace App\Services\Keluarga\Filters;
 
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class FilterWaliService {
-    public function applyAllFilters(Builder $query, Request $request): Builder {
+    public function waliFilters(Builder $query, Request $request): Builder {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
