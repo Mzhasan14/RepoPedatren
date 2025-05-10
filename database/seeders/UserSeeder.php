@@ -87,12 +87,12 @@ class UserSeeder extends Seeder
         ]);
         $pengasuh->assignRole('pengasuh');
 
-        // Buat pengasuh
-        $pengasuh = User::create([
+        // Buat creator
+        $creator = User::create([
             'name' => 'Orang Dalam',
             'email' => 'pedatrennurja@gmail.com',
             'password' => Hash::make('password'),
         ]);
-        $pengasuh->assignRole('superadmin');
+        $creator->assignRole('superadmin');
     }
 }

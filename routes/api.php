@@ -135,7 +135,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 });
 
-Route::post('register', [AuthController::class, 'register']);
+Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum','role:admin|superadmin');
 Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
 Route::post('forgot',   [AuthController::class, 'forgotPassword']);
 Route::post('reset',    [AuthController::class, 'resetPassword'])->name('password.reset');

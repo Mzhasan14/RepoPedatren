@@ -53,6 +53,7 @@ class AlumniService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
             ->select([
+                'b.id as biodata_id',
                 's.id',
                 'wp.niup',
                 'b.nama',
@@ -76,6 +77,7 @@ class AlumniService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id" => $item->id,
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',

@@ -59,18 +59,20 @@ class BiodataService
             ]);
 
             // Log activity untuk menyimpan biodata baru
-            $batchUuid = Str::uuid()->toString();
+            // $batchUuid = Str::uuid()->toString();
 
             activity('biodata_create')
                 ->performedOn($biodata)
                 ->withProperties([
                     'new_attributes' => $biodata->getAttributes(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
                 ])
-                ->tap(function ($activity) use ($batchUuid) {
-                    if ($activity) {
-                        $activity->batch_uuid = $batchUuid;
-                    }
-                })
+                // ->tap(function ($activity) use ($batchUuid) {
+                //     if ($activity) {
+                //         $activity->batch_uuid = $batchUuid;
+                //     }
+                // })
                 ->event('create_biodata')
                 ->log('Biodata baru berhasil disimpan');
 
@@ -178,19 +180,21 @@ class BiodataService
             $biodata->updated_at = now();
             $biodata->save();
 
-            $batchUuid = Str::uuid()->toString();
+            // $batchUuid = Str::uuid()->toString();
 
             activity('biodata_update')
                 ->performedOn($biodata)
                 ->withProperties([
                     'before' => $biodataBefore,
                     'after' => $biodataUpdate,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
                 ])
-                ->tap(function ($activity) use ($batchUuid) {
-                    if ($activity) {
-                        $activity->batch_uuid = $batchUuid;
-                    }
-                })
+                // ->tap(function ($activity) use ($batchUuid) {
+                //     if ($activity) {
+                //         $activity->batch_uuid = $batchUuid;
+                //     }
+                // })
                 ->event('update_biodata')
                 ->log('Biodata telah berhasil diperbarui');
 

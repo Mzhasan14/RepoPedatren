@@ -4,32 +4,50 @@ namespace App\Services\Auth;
 
 use App\Models\User;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class AuthService
 {
+
     public function register(array $data): User
     {
-        // Membuat user baru
+        $authUser = Auth::user();
+
+        // Cek apakah yang login adalah admin atau superadmin
+        if (!($authUser instanceof User) || !$authUser->hasAnyRole(['admin', 'superadmin'])) {
+            throw new AuthorizationException('Anda tidak memiliki akses untuk mendaftarkan pengguna.');
+        }
+
+        // Validasi role yang ingin diberikan
+        $role = $data['role'] ?? 'santri'; // default ke 'santri' jika tidak ada
+        if (!Role::where('name', $role)->exists()) {
+            throw new \InvalidArgumentException("Role '{$role}' tidak ditemukan.");
+        }
+
+        // Buat user baru
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
 
-        // Menambahkan role "santri" pada user
-        $user->assignRole('santri');
+        // Berikan role sesuai input
+        $user->assignRole($role);
 
-        // Menambahkan log aktivitas
+        // Log aktivitas
         activity('auth')
             ->performedOn($user)
-            ->causedBy($user)
+            ->causedBy($authUser)
             ->withProperties([
                 'new_user_data' => $user->only(['id', 'name', 'email']),
+                'created_by'    => $authUser->only(['id', 'name', 'email']),
+                'assigned_role' => $role,
             ])
-            ->log('Pengguna baru terdaftar');
+            ->log('Pengguna baru didaftarkan oleh admin');
 
         return $user;
     }
@@ -72,11 +90,11 @@ class AuthService
     public function sendResetLink(string $email): string
     {
         // Menambahkan log aktivitas untuk pengiriman reset link
-        activity('auth')
-            ->withProperties([
-                'email' => $email,
-            ])
-            ->log('Link reset password dikirim ke email');
+        // activity('auth')
+        //     ->withProperties([
+        //         'email' => $email,
+        //     ])
+        //     ->log('Link reset password dikirim ke email');
 
         return Password::sendResetLink(['email' => $email]);
     }

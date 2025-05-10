@@ -90,8 +90,6 @@ class DomisiliService
         });
     }
 
-
-
     public function edit($id): array
     {
         $domisili = RiwayatDomisili::with(['wilayah', 'blok', 'kamar'])
