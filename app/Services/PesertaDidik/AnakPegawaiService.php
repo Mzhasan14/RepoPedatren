@@ -37,7 +37,7 @@ class AnakPegawaiService
             ->join('orang_tua_wali AS otw', 'otw.id_biodata', '=', 'parent_k.id_biodata')
             ->join('pegawai AS p', function ($j) {
                 $j->on('p.biodata_id', '=', 'otw.id_biodata')
-                    ->where('p.status', true);
+                    ->where('p.status_aktif', 'aktif');
             })
             ->join('biodata AS bp', 'bp.id', '=', 'p.biodata_id')
             ->leftJoin('riwayat_pendidikan AS rp', function ($j) {
