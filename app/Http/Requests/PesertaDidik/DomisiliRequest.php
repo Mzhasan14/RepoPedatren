@@ -27,7 +27,7 @@ class DomisiliRequest extends FormRequest
             'wilayah_id' => 'required|exists:wilayah,id',
             'blok_id' => 'required|exists:blok,id',
             'kamar_id' => 'required|exists:kamar,id',
-            'tanggal_masuk' => 'nullable|date',
+            'tanggal_masuk' => 'required|date',
             'tanggal_keluar' => 'nullable|date',
         ];
     }

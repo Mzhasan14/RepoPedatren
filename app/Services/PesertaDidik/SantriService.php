@@ -44,6 +44,7 @@ class SantriService
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))
             ->select([
+                'b.id as biodata_id',
                 's.id',
                 's.nis',
                 'b.nama',
@@ -71,6 +72,7 @@ class SantriService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id" => $item->id,
             "nis" => $item->nis,
             "nama" => $item->nama,

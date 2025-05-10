@@ -39,6 +39,7 @@ class KhadamService
                 ->whereNull('s.deleted_at')
                 ->whereNull('kh.deleted_at'))
             ->select(
+                'b.id as biodata_id',
                 'kh.id',
                 'wp.niup',
                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -53,6 +54,7 @@ class KhadamService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id_khadam" => $item->id,
             "niup" => $item->niup ?? '-',
             "nik" => $item->identitas ?? '-',

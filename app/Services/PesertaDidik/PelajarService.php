@@ -43,8 +43,9 @@ class PelajarService
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(fn($q) => $q->whereNull('b.deleted_at')
-            ->whereNull('s.deleted_at'))
+                ->whereNull('s.deleted_at'))
             ->select([
+                'b.id as biodata_id',
                 's.id',
                 'rp.no_induk',
                 'b.nama',
@@ -71,6 +72,7 @@ class PelajarService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id" => $item->id,
             "no_induk" => $item->no_induk,
             "nama" => $item->nama,
