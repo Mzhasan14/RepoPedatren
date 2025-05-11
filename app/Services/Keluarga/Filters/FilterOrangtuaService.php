@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Services\Keluarga;
+namespace App\Services\Keluarga\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterWaliService {
-    public function applyAllFilters(Builder $query, Request $request): Builder {
+class FilterOrangtuaService
+{
+
+    public function orangTuaFilters(Builder $query, Request $request): Builder
+    {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
@@ -35,7 +38,8 @@ class FilterWaliService {
 
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->where('kb.nama_kabupaten', $request->kabupaten);
+                    $query
+                        ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
@@ -160,5 +164,4 @@ class FilterWaliService {
 
         return $query;
     }
-
 }

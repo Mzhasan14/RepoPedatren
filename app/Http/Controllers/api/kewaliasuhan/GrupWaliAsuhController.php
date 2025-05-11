@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
+use id;
 use App\Models\Biodata;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
-use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
 use App\Services\Kewaliasuhan\GrupWaliasuhService;
+use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
+use Illuminate\Support\Arr;
 
 class GrupWaliAsuhController extends Controller
 {
@@ -48,6 +53,44 @@ class GrupWaliAsuhController extends Controller
             "per_page"     => $results->perPage(),
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
+        ]);
+    }
+
+    public function store(grupWaliasuhRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->grupWaliasuhService->store($validated);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Update grup
+    public function update(grupWaliasuhRequest $request, $id)
+    {
+        $result = $this->grupWaliasuhService->update($request->validated(), $id);
+        if (!$result['status']) {
+            return response()->json([
+                'message' => $result['message'] ??
+                    'Data tidak ditemukan.'
+            ], 200);
+        }
+        return response()->json([
+            'message' => 'Grup waliasuh berhasil diperbarui',
+            'data' => $result['data']
         ]);
     }
 

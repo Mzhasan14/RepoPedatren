@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
-use App\Services\Keluarga\FilterWaliService;
 use App\Services\Kewaliasuhan\DetailWaliasuhService;
 use App\Services\Kewaliasuhan\WaliasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
