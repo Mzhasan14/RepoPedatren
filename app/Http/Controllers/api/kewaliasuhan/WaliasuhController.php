@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Santri;
-use App\Services\Kewaliasuhan\DetailWaliasuhService;
-use App\Services\Kewaliasuhan\WaliasuhService;
-use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 use Database\Seeders\PesertaDidikSeeder;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Kewaliasuhan\WaliasuhService;
+use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
+use App\Services\Kewaliasuhan\DetailWaliasuhService;
+use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
 class WaliasuhController extends Controller
 {
@@ -72,6 +73,36 @@ class WaliasuhController extends Controller
             'status' => true,
             'data'    => $data,
         ], 200);
+    }
+
+    public function store(waliAsuhRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->waliasuhService->store($validated);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id) {
+        $this->waliasuhService->destroy($id);
+        return response()->json([
+            'message' => 'data berhasil dihapus'
+        ], 200);
+
     }
     /**
      * Display a listing of the resource.

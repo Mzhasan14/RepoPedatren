@@ -8,6 +8,7 @@ use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\AnakasuhService;
@@ -69,6 +70,42 @@ class AnakasuhController extends Controller
             'status' => true,
             'data'    => $data,
         ], 200);
+    }
+
+    public function store(anakAsuhRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->anakasuhService->store($validated);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $result = $this->anakasuhService->destroy($id);
+        if (!$result['status']) {
+            return response()->json([
+                'message' => $result['message']
+            ], 200);
+        }
+        return response()->json([
+            'message' => 'Data berhasil dihapus',
+            'data' => $result['data']
+        ]);
     }
     /**
      * Display a listing of the resource.

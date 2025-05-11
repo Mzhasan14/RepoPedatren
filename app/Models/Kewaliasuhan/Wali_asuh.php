@@ -2,6 +2,7 @@
 
 namespace App\Models\Kewaliasuhan;
 
+use App\Models\User;
 use App\Models\Santri;
 use App\Models\Perizinan;
 use Illuminate\Support\Str;
@@ -24,6 +25,7 @@ class Wali_asuh extends Model
     protected $keyType = 'int';
     public $timestamps = true;
     public $incrementing = true;
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'id_santri',
@@ -56,6 +58,11 @@ class Wali_asuh extends Model
         return $this->belongsTo(Grup_WaliAsuh::class, 'id_grup_wali_asuh', 'id');
     }
 
+    public function Kewaliasuhan()
+    {
+        return $this->hasOne(Kewaliasuhan::class, 'id_wali_asuh', 'id');
+    }
+
     public function WaliAsuhPesrizinan()
     {
         return $this->hasOne(Perizinan::class, 'id_wali_asuh', 'id');
@@ -69,12 +76,12 @@ class Wali_asuh extends Model
         return $this->belongsTo(Catatan_afektif::class, 'id_wali_asuh', 'id');
     }
 
-    // public function createdBy()
-    // {
-    //     return $this->belongsTo(user::class, 'created_by');
-    // }
-    // public function updatedBy()
-    // {
-    //     return $this->belongsTo(user::class, 'updated_by');
-    // }
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 }

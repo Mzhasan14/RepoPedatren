@@ -22,6 +22,7 @@ class Grup_WaliAsuh extends Model
     protected $keyType = 'int';
     public $timestamps = true;
     public $incrementing = true;
+    protected $dates = ['deleted_at'];
     
     protected $fillable = [
         'id_wilayah',
