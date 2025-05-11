@@ -14,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class PesertaDidikExport implements
+class AlumniExport implements
     FromCollection,
     WithHeadings,
     WithMapping,
@@ -26,26 +26,37 @@ class PesertaDidikExport implements
 
     public function collection()
     {
+        // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
+        $riwayatLast = DB::table('riwayat_pendidikan')
+            ->select('santri_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
+            ->where('status', 'alumni')
+            ->groupBy('santri_id');
+
+        // 2) Sub‐query: santri alumni terakhir
+        $santriLast = DB::table('santri')
+            ->select('id', DB::raw('MAX(id) AS last_id'))
+            ->where('status', 'alumni')
+            ->groupBy('id');
+
+        // 5) Subquery: warga_pesantren terakhir per biodata (status = true)
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri AS s')
-            ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-            ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
-            ->leftJoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
-            ->leftJoin('kamar as km', 'rd.kamar_id', '=', 'km.id')
+        return DB::table('santri as s')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->leftJoinSub($riwayatLast, 'lr', fn($j) => $j->on('lr.santri_id', '=', 's.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', '=', 'aktif'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'))
+            ->where('s.status', 'alumni')
+            // ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
             ->select([
                 'b.nama as nama_lengkap',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
@@ -54,10 +65,8 @@ class PesertaDidikExport implements
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
                 DB::raw("CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi) as alamat"),
                 DB::raw("CONCAT(b.tempat_lahir, ', ', b.tanggal_lahir) as TTL"),
-                DB::raw("CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah) as domisili"),
                 'l.nama_lembaga as pendidikan',
-                DB::raw('YEAR(s.tanggal_masuk) as angkatan_santri'),
-                DB::raw('YEAR(rp.tanggal_masuk) as angkatan_pelajar'),
+                DB::raw('YEAR(rp.tanggal_keluar) as tahun_lulus'),
             ])
             ->orderBy('s.id')
             ->get();
@@ -74,10 +83,8 @@ class PesertaDidikExport implements
             $row->jenis_kelamin,
             $row->alamat,
             $row->TTL,
-            $row->domisili,
             $row->pendidikan,
-            $row->angkatan_santri,
-            $row->angkatan_pelajar,
+            $row->tahun_lulus,
         ];
     }
 
@@ -92,10 +99,8 @@ class PesertaDidikExport implements
             'Jenis Kelamin',
             'Alamat Lengkap',
             'Tempat, Tanggal Lahir',
-            'Domisili',
             'Lembaga Pendidikan',
-            'Angkatan Santri',
-            'Angkatan Pelajar',
+            'Tahun Lulus',
         ];
     }
 

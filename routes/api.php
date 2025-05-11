@@ -45,6 +45,7 @@ use App\Http\Controllers\Api\Alamat\{
     KabupatenController,
     KecamatanController
 };
+use App\Http\Controllers\api\Biometric\BiometricScanController;
 use App\Http\Controllers\Api\Kewaliasuhan\{
     GrupWaliAsuhController,
     WaliasuhController,
@@ -92,19 +93,19 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
 
     // Santri
-    Route::get('/{id}/santri', [StatusSantriController::class, 'index']);
+    Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
     Route::get('{id}/santri/edit', [StatusSantriController::class, 'edit']);
     Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
     Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
 
     // Domisili
-    Route::get('/{id}/domisili', [DomisiliController::class, 'index']);
+    Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
     Route::get('{id}/domisili/edit', [DomisiliController::class, 'edit']);
     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
     Route::put('/{id}/domisili', [DomisiliController::class, 'update']);
 
     // Pendidikan
-    Route::get('/{id}/pendidikan', [PendidikanController::class, 'index']);
+    Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
     Route::get('{id}/pendidikan/edit', [PendidikanController::class, 'edit']);
     Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
     Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
@@ -115,7 +116,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
     // Berkas
-    Route::get('/{id}/berkas', [BerkasController::class, 'index']);
+    Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
     Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
     Route::post('/{id}/berkas', [BerkasController::class, 'store']);
     Route::put('/{id}/berkas', [BerkasController::class, 'update']);
@@ -155,22 +156,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// Untuk Data Pokok Nanti
-// Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|admin|supervisor'])->group(function () {
-//    // Route CRUD
-//    Route::middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
-//     // CRUD Pelajar
-//     Route::post('/pelajar', [PelajarController::class, 'store']);
-//     Route::put('/pelajar/{id}', [PelajarController::class, 'update']);
-//     Route::delete('/pelajar/{id}', [PelajarController::class, 'destroy']);
-//    });
-// });
+// Biometric
+Route::prefix('biometric')->group(function () {
+    Route::post('/register', [BiometricScanController::class, 'register']);
+    Route::post('/scan', [BiometricScanController::class, 'scan']);
+});
 
+// Export
 Route::prefix('export')->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
-    Route::get('/santri', [SantriController::class, 'santriExport'])->name('santri.export');
-    Route::get('/pelajar', [PelajarController::class, 'pelajarExport'])->name('pelajar.export');
-    Route::get('/pesertadidik-bersaudara', [PelajarController::class, 'bersaudaraExport'])->name('bersaudara.export');
+    Route::get('/alumni', [AlumniController::class, 'alumniExport'])->name('alumni.export');
     Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 });
 

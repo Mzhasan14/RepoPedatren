@@ -14,8 +14,8 @@ class CreateActivityLogTable extends Migration
             $table->text('description');
             $table->unsignedBigInteger('causer_id'); // ID pengguna yang menyebabkan activity
             $table->string('causer_type');
-            $table->uuid('subject_id'); // UUID dari entitas yang terpengaruh (misalnya Biodata)
-            $table->string('subject_type');
+            $table->uuid('subject_id')->nullable();
+            $table->string('subject_type')->nullable();
             $table->json('properties')->nullable();
             $table->timestamps();
             $table->index('log_name');

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Exports\PesertaDidik\AlumniExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\AlumniRequest;
-use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\PesertaDidik\AlumniService;
+use App\Http\Requests\PesertaDidik\AlumniRequest;
 use App\Services\PesertaDidik\Filters\FilterAlumniService;
 
 class AlumniController extends Controller
@@ -101,5 +101,10 @@ class AlumniController extends Controller
                 'message' => 'Terjadi kesalahan server.',
             ], 500);
         }
+    }
+
+     public function alumniExport()
+    {
+        return Excel::download(new AlumniExport, 'alumni.xlsx');
     }
 }

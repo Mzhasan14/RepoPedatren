@@ -196,7 +196,7 @@ class BiodataService
                 //     }
                 // })
                 ->event('update_biodata')
-                ->log('Biodata telah berhasil diperbarui');
+                ->log("Mengubah biodata dengan ID: {$bioId}");
 
             return [
                 'status' => true,

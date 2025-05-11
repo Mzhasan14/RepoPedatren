@@ -75,9 +75,10 @@ class AuthService
 
     public function logout($token)
     {
+        $user = Auth::user();
         // Menambahkan log aktivitas logout
         activity('auth')
-            ->causedBy(Auth::id())
+            ->causedBy($user)
             ->withProperties([
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),

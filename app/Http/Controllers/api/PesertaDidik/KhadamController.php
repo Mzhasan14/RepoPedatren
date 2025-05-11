@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\PesertaDidik;
 
 use Illuminate\Http\Request;
+use App\Exports\PesertaDidik\KhadamExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PesertaDidik\KhadamExport;
 use App\Services\PesertaDidik\KhadamService;
 use App\Services\PesertaDidik\Filters\FilterKhadamService;
 
@@ -57,8 +57,8 @@ class KhadamController extends Controller
         ]);
     }
 
-    public function khadamExport(Request $request, FilterKhadamService $filterService)
+    public function khadamExport()
     {
-        return Excel::download(new KhadamExport($request, $filterService), 'khadam.xlsx');
+        return Excel::download(new KhadamExport, 'khadam.xlsx');
     }
 }

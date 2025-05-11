@@ -120,7 +120,7 @@ class StatusSantriService
                     'user_agent' => request()->userAgent(),
                 ])
                 ->event('update')
-                ->log('Data santri telah diperbarui.');
+                ->log("Mengubah santri dengan ID: {$id}");
 
             return ['status' => true, 'data' => $santri];
         });
