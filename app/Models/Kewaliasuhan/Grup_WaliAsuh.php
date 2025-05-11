@@ -24,6 +24,7 @@ class Grup_WaliAsuh extends Model
     public $incrementing = true;
     
     protected $fillable = [
+        'id_wilayah',
         'nama_grup',
         'created_by',
         'updated_by',

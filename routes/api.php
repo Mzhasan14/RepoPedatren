@@ -138,7 +138,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('/keluarga', [KeluargaController::class, 'index']);
     Route::post('/orangtua',[OrangTuaWaliController::class,'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
-    Route::put('/{id}/orangtua', [OrangTuaWaliController::class, 'update']);
+    Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
 });
 
 Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum','role:admin|superadmin');
@@ -192,6 +192,10 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::get('/{id}/pelanggaran/edit', [PelanggaranController::class, 'edit']);
     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+
+    //Kewaliasuhan
+    Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
+    Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
 });
 
 Route::prefix('data-pokok')->group(function () {

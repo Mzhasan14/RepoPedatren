@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\OrangtuaWaliRequest;
+use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Keluarga\OrangtuaWaliService;
 use App\Services\Keluarga\DetailOrangtuaService;
