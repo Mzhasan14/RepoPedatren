@@ -135,6 +135,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 
     // Keluarga
+    Route::get('/keluarga', [KeluargaController::class, 'index']);
     Route::post('/orangtua',[OrangTuaWaliController::class,'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/{id}/orangtua', [OrangTuaWaliController::class, 'update']);
@@ -224,7 +225,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
-    Route::get('/keluarga', [KeluargaController::class, 'keluarga']);
+    Route::get('/keluarga/{id_biodata}', [KeluargaController::class, 'getKeluargaByIdBio']);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
     Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);

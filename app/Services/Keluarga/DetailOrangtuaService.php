@@ -128,8 +128,8 @@ class DetailOrangtuaService
             $data['Keluarga'] = $keluarga->map(fn($i) => [
                 'nama'   => $i->nama,
                 'nik'    => $i->nik,
-                'status' => $i->status,
-                'wali'   => $i->wali,
+                'status_keluarga' => $i->status,
+                'sebagai_wali'   => $i->wali,
             ]);
         }
         return $data;
