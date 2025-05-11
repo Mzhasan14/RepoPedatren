@@ -43,7 +43,7 @@ class AlumniService
         return DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoinSub($riwayatLast, 'lr', fn($j) => $j->on('lr.santri_id', '=', 's.id'))
-            ->leftJoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
@@ -51,7 +51,8 @@ class AlumniService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
+            ->where('s.status', 'alumni')
+            // ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
             ->select([
                 'b.id as biodata_id',
                 's.id',

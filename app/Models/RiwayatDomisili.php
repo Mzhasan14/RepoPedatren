@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Kewilayahan\Blok;
 use App\Models\Kewilayahan\Kamar;
 use App\Models\Kewilayahan\Wilayah;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

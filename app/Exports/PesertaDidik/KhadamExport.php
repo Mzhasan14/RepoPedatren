@@ -2,211 +2,163 @@
 
 namespace App\Exports\PesertaDidik;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Cell\Cell;
-use Maatwebsite\Excel\Events\AfterSheet;
-use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Illuminate\Contracts\Support\Responsable;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
-use App\Services\PesertaDidik\Filters\FilterKhadamService;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Maatwebsite\Excel\Events\AfterSheet;
 
 class KhadamExport implements
-    FromQuery,
-    WithMapping,
+    FromCollection,
     WithHeadings,
-    ShouldAutoSize,
-    WithEvents,
+    WithMapping,
     WithStyles,
-    Responsable,
-    WithCustomValueBinder,
-    WithChunkReading
+    WithEvents,
+    ShouldAutoSize
 {
-    use Exportable;
+    protected $index = 1;
 
-    private string $fileName = 'pelajar.xlsx';
-    private Request $request;
-    private FilterKhadamService $filterService;
-    private array $availableColumns;
-    private array $selected;
-    private int $counter = 0;
-
-    public function __construct(Request $request, FilterKhadamService $filterService)
+    public function collection()
     {
-        $this->request       = $request;
-        $this->filterService = $filterService;
-
-        // Definisikan kolom dan ekspresi SQL-nya sebagai string
-        $this->availableColumns = [
-            // 'id'               => ['label' => 'Id',               'expr' => 'kh.id'],
-            // 'nama'             => ['label' => 'Nama',             'expr' => 'b.nama'],
-            'no_kk'            => ['label' => 'No KK',            'expr' => 'k.no_kk'],
-            'identitas'        => ['label' => 'Identitas',        'expr' => 'COALESCE(b.nik, b.no_passport)'],
-            'niup'             => ['label' => 'NIUP',             'expr' => 'wp.niup'],
-            'anak_ke'          => ['label' => 'Anak Ke',          'expr' => 'b.anak_keberapa'],
-            'jumlah_saudara'   => ['label' => 'Jumlah Saudara',   'expr' => 'COALESCE(siblings.jumlah_saudara, 0)'],
-            'alamat'           => ['label' => 'Alamat',           'expr' => "CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi)"],
-            'domisili'         => ['label' => 'Domisili',         'expr' => "CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah)"],
-            'pendidikan'   => ['label' => 'Pendidikan Terakhir',   'expr' => 'l.nama_lembaga'],
-            'ibu'              => ['label' => 'Ibu Kandung',      'expr' => 'parents.nama_ibu'],
-            'ayah'              => ['label' => 'Ayah Kandung',      'expr' => 'parents.nama_ayah'],
-        ];
-
-        // Pilih kolom sesuai permintaan
-        $cols = $request->input('columns', []);
-        $this->selected = in_array('all', $cols)
-            ? array_keys($this->availableColumns)
-            : array_values(array_intersect(array_keys($this->availableColumns), $cols));
-    }
-
-    public function query()
-    {
-        // Subquery untuk pas foto terbaru
-        $pasFotoId = DB::table('jenis_berkas')
-            ->where('nama_jenis_berkas', 'Pas foto')
-            ->value('id');
-
-        $fotoSub = DB::table('berkas')
-            ->select('biodata_id', DB::raw('MAX(id) as last_id'))
-            ->where('jenis_berkas_id', $pasFotoId)
-            ->groupBy('biodata_id');
-
-        // Subquery untuk warga pesantren aktif terbaru
-        $wpSub = DB::table('warga_pesantren')
-            ->select('biodata_id', DB::raw('MAX(id) as last_id'))
+        $wpLast = DB::table('warga_pesantren')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // Subquery untuk nama ibu dan ayah per No KK
-        $parents = DB::table('orang_tua_wali as otw')
-            ->join('keluarga as k2', 'k2.id_biodata', '=', 'otw.id_biodata')
-            ->join('biodata as b2', 'b2.id', '=', 'otw.id_biodata')
-            ->join('hubungan_keluarga as hk', 'hk.id', '=', 'otw.id_hubungan_keluarga')
-            ->select(
-                'k2.no_kk',
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ibu'  THEN b2.nama END) as nama_ibu"),
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ayah' THEN b2.nama END) as nama_ayah")
-            )
-            ->groupBy('k2.no_kk');
-
-        // Subquery untuk jumlah saudara (anak dalam keluarga) per No KK
-        $siblings = DB::table('keluarga as k2')
-            ->select(
-                'k2.no_kk',
-                DB::raw('CASE WHEN (COUNT(*) - 1) = 0 THEN 0 ELSE (COUNT(*) - 1) END as jumlah_saudara')
-            )
-            ->whereNotIn('k2.id_biodata', function ($q) {
-                $q->select('id_biodata')->from('orang_tua_wali');
-            })
-            ->groupBy('k2.no_kk');
-
-        // Query utama
-        $query = DB::table('khadam as kh')
-            ->join('biodata as b', 'kh.biodata_id', '=', 'b.id')
-            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
-            ->leftJoin('riwayat_pendidikan as rp', 's.id', '=', 'rp.santri_id')
+        return DB::table('khadam AS kh')
+            ->join('biodata AS b', 'kh.biodata_id', '=', 'b.id')
+            ->leftjoin('santri AS s', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+            ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
+            ->leftJoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
+            ->leftJoin('kamar as km', 'rd.kamar_id', '=', 'km.id')
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
-            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
-            ->leftJoinSub($parents,   'parents',  fn($join) => $join->on('k.no_kk', '=', 'parents.no_kk'))
-            ->leftJoinSub($siblings,  'siblings', fn($join) => $join->on('k.no_kk', '=', 'siblings.no_kk'))
-            ->leftJoinSub($fotoSub,   'fl',       fn($join) => $join->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpSub,     'wl',       fn($join) => $join->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
-            ->leftjoin('lembaga as l', 'l.id', 'rp.lembaga_id')
-            ->leftJoin(
-                'riwayat_domisili as rd',
-                fn($join) =>
-                $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif')
-            )
-            ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
-            ->leftJoin('blok as bl',     'rd.blok_id',     '=', 'bl.id')
-            ->leftJoin('kamar as km',    'rd.kamar_id',    '=', 'km.id')
-            ->whereNull('s.id')
-            ->orWhere(fn($query) =>
-                $query
-                    ->where('s.status', 'aktif')
-                    ->orWhere('rp.status', 'aktif')
-            )
-            ->orderBy('kh.id');
-
-        // Tambahkan SELECT sesuai kolom terpilih
-        foreach ($this->selected as $key) {
-            $expr = $this->availableColumns[$key]['expr'];
-            $query->addSelect(DB::raw("{$expr} as {$key}"));
-        }
-
-        // Terapkan filter bisnis dan kembalikan query
-        return $this->filterService->khadamFilters($query, $this->request);
-    }
-
-    public function chunkSize(): int
-    {
-        return $this->request->input('chunk_size', 1000);
+            ->where('kh.status', true)
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at')
+                ->whereNull('kh.deleted_at'))
+            ->select([
+                'b.nama as nama_lengkap',
+                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                's.nis',
+                'wp.niup',
+                DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
+                DB::raw("CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi) as alamat"),
+                DB::raw("CONCAT(b.tempat_lahir, ', ', b.tanggal_lahir) as TTL"),
+                DB::raw("CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah) as domisili"),
+                'l.nama_lembaga as pendidikan',
+                DB::raw('YEAR(s.tanggal_masuk) as angkatan_santri'),
+                DB::raw('YEAR(rp.tanggal_masuk) as angkatan_pelajar'),
+            ])
+            ->orderBy('s.id')
+            ->get();
     }
 
     public function map($row): array
     {
-        $this->counter++;
-        $out = [$this->counter];
-        foreach ($this->selected as $key) {
-            $out[] = $row->{$key} ?? '';
-        }
-        return $out;
+        return [
+            $this->index++,
+            $row->nama_lengkap,
+            $row->nik,
+            $row->nis,
+            $row->niup,
+            $row->jenis_kelamin,
+            $row->alamat,
+            $row->TTL,
+            $row->domisili,
+            $row->pendidikan,
+            $row->angkatan_santri,
+            $row->angkatan_pelajar,
+        ];
     }
 
     public function headings(): array
     {
-        $heads = ['No'];
-        foreach ($this->selected as $key) {
-            $heads[] = $this->availableColumns[$key]['label'];
-        }
-        return $heads;
-    }
-
-    public function bindValue(Cell $cell, $value)
-    {
-        $cell->setValueExplicit((string) ($value ?? ''), DataType::TYPE_STRING);
-        return true;
+        return [
+            'No',
+            'Nama Lengkap',
+            'NIK / Passport',
+            'NIS',
+            'NIUP',
+            'Jenis Kelamin',
+            'Alamat Lengkap',
+            'Tempat, Tanggal Lahir',
+            'Domisili',
+            'Lembaga Pendidikan',
+            'Angkatan Santri',
+            'Angkatan Pelajar',
+        ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $lastCol = $sheet->getHighestColumn();
-        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
-            'font'      => ['bold' => true],
-            'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        ]);
+        return [
+            1 => [
+                'font' => ['bold' => true],
+                'alignment' => ['horizontal' => 'center'],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FFD9D9D9'],
+                ],
+            ],
+        ];
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function ($event) {
-                $event->sheet->freezePane('A2');
-                $lastRow = $this->counter + 1;
-                $lastCol = $event->sheet->getDelegate()->getHighestColumn();
-                $event->sheet->getDelegate()
-                    ->getStyle("A1:{$lastCol}{$lastRow}")
-                    ->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+
+                // 1. Format kolom NIK dan NIUP sebagai teks agar tidak E+
+                foreach (range(2, $highestRow) as $row) {
+                    // NIK (kolom C)
+                    $nik = $sheet->getCell("C{$row}")->getValue();
+                    $sheet->setCellValueExplicit("C{$row}", $nik, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+
+                    // NIUP (kolom E)
+                    $niup = $sheet->getCell("E{$row}")->getValue();
+                    $sheet->setCellValueExplicit("E{$row}", $niup, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                }
+
+                // 2. Rata kiri semua isi data (baris 2 ke bawah)
+                $sheet->getStyle("A2:{$highestColumn}{$highestRow}")
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+
+                // 3. Header bold, tengah, abu-abu
+                $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FFD9D9D9'],
+                    ],
+                ]);
+
+                // 4. Border kotak semua
+                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                    ->getBorders()
+                    ->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN);
+
+                // 5. Freeze header
+                $sheet->freezePane('A2');
             },
         ];
-    }
-
-    public function toResponse($request)
-    {
-        return $this->download($this->fileName, \Maatwebsite\Excel\Excel::XLSX);
     }
 }

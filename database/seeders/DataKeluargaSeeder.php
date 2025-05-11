@@ -234,7 +234,7 @@ class DataKeluargaSeeder extends Seeder
                     'kamar_id'      => $faker->randomElement($kamarIds),
                     'tanggal_masuk' => $faker->dateTime(),
                     'tanggal_keluar' => $stSantri === 'alumni' ? $faker->dateTime() : null,
-                    'status'        => $stSantri,
+                    'status'        => $stSantri === 'alumni' ? 'keluar' : $stSantri,
                     'created_by'    => 1,
                     'created_at'    => now(),
                     'updated_at'    => now(),

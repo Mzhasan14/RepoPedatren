@@ -70,19 +70,14 @@ class DomisiliService
                 'updated_at'    => now(),
             ]);
 
-            $batchUuid = Str::uuid()->toString();
-
             activity('riwayat_domisili_create')
                 ->causedBy(Auth::user())
                 ->performedOn($domisili)
                 ->withProperties([
-                    'after'       => $domisili->toArray(),
+                    'new_attributes'   => $domisili->toArray(),
                     'ip'          => request()->ip(),
                     'user_agent'  => request()->userAgent(),
                 ])
-                ->tap(function ($activity) use ($batchUuid) {
-                    $activity->batch_uuid = $batchUuid;
-                })
                 ->event('create_domisili')
                 ->log('Riwayat domisili baru dibuat.');
 
@@ -115,6 +110,7 @@ class DomisiliService
     public function update(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
+
             $domisili = RiwayatDomisili::find($id);
 
             if (!$domisili) {
@@ -139,7 +135,7 @@ class DomisiliService
                     'updated_by' => Auth::id()
                 ]);
 
-                $batchUuid = Str::uuid()->toString();
+
 
                 activity('riwayat_domisili_update')
                     ->performedOn($domisili)
@@ -147,9 +143,6 @@ class DomisiliService
                         'before' => $before,
                         'after' => $domisili->toArray(),
                     ])
-                    ->tap(function ($activity) use ($batchUuid) {
-                        $activity->batch_uuid = $batchUuid;
-                    })
                     ->event('update_domisili')
                     ->log('Riwayat domisili diperbarui (keluar).');
 
@@ -168,17 +161,12 @@ class DomisiliService
                     'updated_by' => Auth::id()
                 ]);
 
-                $batchUuid = Str::uuid()->toString();
-
                 activity('riwayat_domisili_update')
                     ->performedOn($domisili)
                     ->withProperties([
                         'before' => $before,
                         'after' => $domisili->toArray(),
                     ])
-                    ->tap(function ($activity) use ($batchUuid) {
-                        $activity->batch_uuid = $batchUuid;
-                    })
                     ->event('update_domisili')
                     ->log('Riwayat domisili diperbarui (pindah).');
 
@@ -200,9 +188,6 @@ class DomisiliService
                         'before' => null,
                         'after' => $new->toArray(),
                     ])
-                    ->tap(function ($activity) use ($batchUuid) {
-                        $activity->batch_uuid = $batchUuid;
-                    })
                     ->event('create_domisili')
                     ->log('Riwayat domisili baru dibuat setelah pindah.');
 

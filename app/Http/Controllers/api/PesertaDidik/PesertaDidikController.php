@@ -63,7 +63,7 @@ class PesertaDidikController extends Controller
         ]);
     }
 
- 
+
 
     public function store(CreatePesertaDidikRequest $request)
     {
@@ -84,7 +84,7 @@ class PesertaDidikController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-   
+
 
     public function destroy($id): JsonResponse
     {
@@ -102,10 +102,8 @@ class PesertaDidikController extends Controller
     }
 
     // Export Peserta Didik
-    public function pesertaDidikExport(Request $request, FilterPesertaDidikService $filterService)
+    public function pesertaDidikExport()
     {
-        return Excel::download(new PesertaDidikExport($request, $filterService), 'peserta_didik.xlsx');
+        return Excel::download(new PesertaDidikExport, 'pesertadidik.xlsx');
     }
-
-    
 }
