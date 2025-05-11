@@ -2,8 +2,9 @@
 
 namespace App\Services\Keluarga\Filters;
 
-use Illuminate\Database\Eloquent\Builder;
+
 use Illuminate\Http\Request;
+use Illuminate\Database\Query\Builder;
 
 class FilterWaliService {
     public function waliFilters(Builder $query, Request $request): Builder {
