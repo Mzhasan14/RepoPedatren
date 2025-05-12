@@ -3,7 +3,6 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Santri;
-use Illuminate\Support\Str;
 use App\Models\RiwayatDomisili;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -42,20 +41,24 @@ class DomisiliService
     public function store(array $data, string $bioId)
     {
         return DB::transaction(function () use ($data, $bioId) {
-            $exist = RiwayatDomisili::where('status', 'aktif')
-                ->whereHas('santri.biodata', function ($query) use ($bioId) {
-                    $query->where('id', $bioId);
-                })
-                ->first();
-
-            if ($exist) {
-                return ['status' => false, 'message' => 'Santri masih memiliki domisili aktif'];
-            }
-
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
 
             if (!$santri) {
                 return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
+            }
+
+            // Cek dan update domisili aktif jika ada
+            $existing = RiwayatDomisili::where('status', 'aktif')
+                ->where('santri_id', $santri->id)
+                ->first();
+
+            if ($existing) {
+                $existing->update([
+                    'status'         => 'pindah',
+                    'tanggal_keluar' => now(),
+                    'updated_by'     => Auth::id(),
+                    'updated_at'     => now(),
+                ]);
             }
 
             $domisili = RiwayatDomisili::create([
@@ -70,20 +73,10 @@ class DomisiliService
                 'updated_at'    => now(),
             ]);
 
-            activity('riwayat_domisili_create')
-                ->causedBy(Auth::user())
-                ->performedOn($domisili)
-                ->withProperties([
-                    'new_attributes'   => $domisili->toArray(),
-                    'ip'          => request()->ip(),
-                    'user_agent'  => request()->userAgent(),
-                ])
-                ->event('create_domisili')
-                ->log('Riwayat domisili baru dibuat.');
-
             return ['status' => true, 'data' => $domisili];
         });
     }
+
 
     public function edit($id): array
     {
@@ -118,12 +111,18 @@ class DomisiliService
             }
 
             if (!is_null($domisili->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat tidak boleh diubah!'];
+                return ['status' => false, 'message' => 'Data riwayat tidak boleh diubah setelah keluar'];
             }
 
-            $before = $domisili->toArray();
+            // Cek percobaan perubahan tempat
+            $isWilayahChanged = isset($data['wilayah_id']) && $domisili->wilayah_id != $data['wilayah_id'];
+            $isBlokChanged    = isset($data['blok_id']) && $domisili->blok_id != $data['blok_id'];
+            $isKamarChanged   = isset($data['kamar_id']) && $domisili->kamar_id != $data['kamar_id'];
 
-            // Handle perubahan tanggal keluar
+            if ($isWilayahChanged || $isBlokChanged || $isKamarChanged) {
+                return ['status' => false, 'message' => 'Perubahan wilayah, blok, atau kamar tidak diperbolehkan'];
+            }
+
             if (!empty($data['tanggal_keluar'])) {
                 if (strtotime($data['tanggal_keluar']) < strtotime($domisili->tanggal_masuk)) {
                     return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk.'];
@@ -135,66 +134,10 @@ class DomisiliService
                     'updated_by' => Auth::id()
                 ]);
 
-
-
-                activity('riwayat_domisili_update')
-                    ->performedOn($domisili)
-                    ->withProperties([
-                        'before' => $before,
-                        'after' => $domisili->toArray(),
-                    ])
-                    ->event('update_domisili')
-                    ->log('Riwayat domisili diperbarui (keluar).');
-
                 return ['status' => true, 'data' => $domisili];
             }
 
-            // Handle perubahan tempat
-            $isWilayahChanged = $domisili->wilayah_id != $data['wilayah_id'];
-            $isBlokChanged    = $domisili->blok_id != $data['blok_id'];
-            $isKamarChanged   = $domisili->kamar_id != $data['kamar_id'];
-
-            if ($isWilayahChanged || $isBlokChanged || $isKamarChanged) {
-                $domisili->update([
-                    'status' => 'pindah',
-                    'tanggal_keluar' => now(),
-                    'updated_by' => Auth::id()
-                ]);
-
-                activity('riwayat_domisili_update')
-                    ->performedOn($domisili)
-                    ->withProperties([
-                        'before' => $before,
-                        'after' => $domisili->toArray(),
-                    ])
-                    ->event('update_domisili')
-                    ->log('Riwayat domisili diperbarui (pindah).');
-
-                $new = RiwayatDomisili::create([
-                    'santri_id'     => $domisili->santri_id,
-                    'wilayah_id'    => $data['wilayah_id'],
-                    'blok_id'       => $data['blok_id'],
-                    'kamar_id'      => $data['kamar_id'],
-                    'tanggal_masuk' => now(),
-                    'status'        => 'aktif',
-                    'created_by'    => Auth::id(),
-                    'created_at'    => now(),
-                    'updated_at'    => now(),
-                ]);
-
-                activity('riwayat_domisili_create')
-                    ->performedOn($new)
-                    ->withProperties([
-                        'before' => null,
-                        'after' => $new->toArray(),
-                    ])
-                    ->event('create_domisili')
-                    ->log('Riwayat domisili baru dibuat setelah pindah.');
-
-                return ['status' => true, 'data' => $new];
-            }
-
-            return ['status' => false, 'message' => 'Tidak ada perubahan data'];
+            return ['status' => false, 'message' => 'Tidak ada perubahan yang diizinkan selain tanggal keluar'];
         });
     }
 }

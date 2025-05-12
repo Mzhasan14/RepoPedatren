@@ -3,7 +3,6 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Biodata;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +11,6 @@ class BiodataService
     public function store(array $data)
     {
         return DB::transaction(function () use ($data) {
-            // Validasi input data
             if (empty($data['nama']) || empty($data['no_telepon']) || empty($data['email'])) {
                 return [
                     'status' => false,
@@ -29,7 +27,6 @@ class BiodataService
                 ];
             }
 
-            // Buat entri biodata baru
             $biodata = Biodata::create([
                 'no_passport'                 => $data['no_passport'] ?? null,
                 'nik'                          => $data['nik'] ?? null,
@@ -57,24 +54,6 @@ class BiodataService
                 'created_at'                  => now(),
                 'updated_at'                  => now(),
             ]);
-
-            // Log activity untuk menyimpan biodata baru
-            // $batchUuid = Str::uuid()->toString();
-
-            activity('biodata_create')
-                ->performedOn($biodata)
-                ->withProperties([
-                    'new_attributes' => $biodata->getAttributes(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                // ->tap(function ($activity) use ($batchUuid) {
-                //     if ($activity) {
-                //         $activity->batch_uuid = $batchUuid;
-                //     }
-                // })
-                ->event('create_biodata')
-                ->log('Biodata baru berhasil disimpan');
 
             $newBio = Biodata::find($biodata->id);
 
@@ -134,6 +113,7 @@ class BiodataService
                 ];
             }
 
+            // Menyiapkan array data untuk update biodata.
             $biodataUpdate = [
                 'negara_id'                   => $data['negara_id'],
                 'provinsi_id'                 => $data['provinsi_id'] ?? null,
@@ -157,8 +137,10 @@ class BiodataService
                 'tinggal_bersama'             => $data['tinggal_bersama'] ?? null,
             ];
 
+            // Mengisi properti model $biodata dengan data dari $biodataUpdate
             $biodata->fill($biodataUpdate);
 
+            // Mengecek apakah ada perubahan data setelah diisi.
             if (!$biodata->isDirty()) {
                 return [
                     'status' => false,
@@ -175,28 +157,9 @@ class BiodataService
                 ];
             }
 
-            $biodataBefore = $biodata->getOriginal();
             $biodata->updated_by = Auth::id();
             $biodata->updated_at = now();
             $biodata->save();
-
-            // $batchUuid = Str::uuid()->toString();
-
-            activity('biodata_update')
-                ->performedOn($biodata)
-                ->withProperties([
-                    'before' => $biodataBefore,
-                    'after' => $biodataUpdate,
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                // ->tap(function ($activity) use ($batchUuid) {
-                //     if ($activity) {
-                //         $activity->batch_uuid = $batchUuid;
-                //     }
-                // })
-                ->event('update_biodata')
-                ->log("Mengubah biodata dengan ID: {$bioId}");
 
             return [
                 'status' => true,
@@ -205,3 +168,10 @@ class BiodataService
         });
     }
 }
+
+// $batchUuid = Str::uuid()->toString();
+// ->tap(function ($activity) use ($batchUuid) {
+                //     if ($activity) {
+                //         $activity->batch_uuid = $batchUuid;
+                //     }
+                // })

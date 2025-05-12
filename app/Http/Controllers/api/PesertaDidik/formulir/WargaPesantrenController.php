@@ -16,6 +16,29 @@ class WargaPesantrenController extends Controller
         $this->wargaPesantren = $wargaPesantren;
     }
 
+    public function index($id)
+    {
+        try {
+            $result = $this->wargaPesantren->index($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data wargapesantren: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(WargaPesantrenRequest $request, $bioId)
     {
         try {
@@ -81,5 +104,4 @@ class WargaPesantrenController extends Controller
             ], 500);
         }
     }
-    
 }

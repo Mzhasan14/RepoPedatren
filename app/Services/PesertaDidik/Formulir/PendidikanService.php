@@ -35,49 +35,42 @@ class PendidikanService
         return ['status' => true, 'data' => $pendidikan];
     }
 
-
     public function store(array $data, string $bioId)
     {
         return DB::transaction(function () use ($data, $bioId) {
-            // Cek apakah santri sudah memiliki pendidikan aktif
-            $exist = RiwayatPendidikan::whereHas('santri.biodata', function ($query) use ($bioId) {
-                $query->where('id', $bioId);
-            })->where('status', 'aktif')->first();
-
-            if ($exist) {
-                return ['status' => false, 'message' => 'Santri masih memiliki pendidikan aktif'];
-            }
-
-            // Cek apakah santri dengan biodata ini ada
+            // Ambil data santri terbaru
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
 
             if (!$santri) {
                 return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
             }
 
-            // Simpan riwayat pendidikan baru
-            $new = RiwayatPendidikan::create([
-                'santri_id' => $santri->id,
-                'lembaga_id' => $data['lembaga_id'],
-                'jurusan_id' => $data['jurusan_id'],
-                'kelas_id' => $data['kelas_id'],
-                'rombel_id' => $data['rombel_id'],
-                'tanggal_masuk' => $data['tanggal_masuk'] ?? now(),
-                'status' => 'aktif',
-                'created_by' => Auth::id(),
-            ]);
+            // Cek apakah santri memiliki pendidikan aktif
+            $existing = RiwayatPendidikan::where('status', 'aktif')
+                ->where('santri_id', $santri->id)
+                ->first();
 
-            // Log aktivitas
-            activity('pendidikan_create')
-                ->causedBy(Auth::user())
-                ->performedOn($new)
-                ->withProperties([
-                    'new_attributes' => $new,
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('create')
-                ->log('Riwayat pendidikan santri berhasil ditambahkan.');
+            if ($existing) {
+                $existing->update([
+                    'status'         => 'pindah',
+                    'tanggal_keluar' => now(),
+                    'updated_by'     => Auth::id(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
+            $new = RiwayatPendidikan::create([
+                'santri_id'   => $santri->id,
+                'lembaga_id'  => $data['lembaga_id'],
+                'jurusan_id'  => $data['jurusan_id'],
+                'kelas_id'    => $data['kelas_id'],
+                'rombel_id'   => $data['rombel_id'],
+                'tanggal_masuk' => $data['tanggal_masuk'] ?? now(),
+                'status'      => 'aktif',
+                'created_by'  => Auth::id(),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
 
             return ['status' => true, 'data' => $new];
         });
@@ -110,7 +103,6 @@ class PendidikanService
     public function update(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
-            // Ambil riwayat pendidikan yang ingin diupdate
             $pendidikan = RiwayatPendidikan::find($id);
 
             if (!$pendidikan) {
@@ -122,79 +114,32 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Data riwayat pendidikan tidak boleh diubah setelah berhenti'];
             }
 
+            // Cek percobaan perubahan lembaga, jurusan, kelas, atau rombel
+            $isLembagaChanged = isset($data['lembaga_id']) && $pendidikan->lembaga_id != $data['lembaga_id'];
+            $isJurusanChanged = isset($data['jurusan_id']) && $pendidikan->jurusan_id != $data['jurusan_id'];
+            $isKelasChanged   = isset($data['kelas_id']) && $pendidikan->kelas_id != $data['kelas_id'];
+            $isRombelChanged  = isset($data['rombel_id']) && $pendidikan->rombel_id != $data['rombel_id'];
+
+            if ($isLembagaChanged || $isJurusanChanged || $isKelasChanged || $isRombelChanged) {
+                return ['status' => false, 'message' => 'Perubahan lembaga, jurusan, kelas, atau rombel tidak diperbolehkan'];
+            }
+
             // Jika ada tanggal keluar
             if (!empty($data['tanggal_keluar'])) {
                 if (strtotime($data['tanggal_keluar']) < strtotime($pendidikan->tanggal_masuk)) {
                     return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
                 }
 
-                // Update status dan tanggal keluar
                 $pendidikan->update([
                     'tanggal_keluar' => $data['tanggal_keluar'],
                     'status' => 'berhenti',
                     'updated_by' => Auth::id(),
                 ]);
 
-                // Log aktivitas
-                activity('pendidikan_update')
-                    ->causedBy(Auth::user())
-                    ->performedOn($pendidikan)
-                    ->withProperties([
-                        'before' => $pendidikan->getOriginal(),
-                        'after' => $pendidikan->toArray(),
-                        'ip' => request()->ip(),
-                        'user_agent' => request()->userAgent(),
-                    ])
-                    ->event('update')
-                    ->log('Riwayat pendidikan berhenti.');
-
                 return ['status' => true, 'data' => $pendidikan];
             }
 
-            // Cek jika ada perubahan data (lembaga, jurusan, kelas, rombel)
-            $changed = (
-                $pendidikan->lembaga_id != $data['lembaga_id'] ||
-                $pendidikan->jurusan_id != $data['jurusan_id'] ||
-                $pendidikan->kelas_id != $data['kelas_id'] ||
-                $pendidikan->rombel_id != $data['rombel_id']
-            );
-
-            if ($changed) {
-                // Tandai pendidikan sebelumnya sebagai "pindah"
-                $pendidikan->update([
-                    'status' => 'pindah',
-                    'tanggal_keluar' => now(),
-                    'updated_by' => Auth::id(),
-                ]);
-
-                // Simpan riwayat pendidikan baru
-                $new = RiwayatPendidikan::create([
-                    'santri_id' => $pendidikan->santri_id,
-                    'lembaga_id' => $data['lembaga_id'],
-                    'jurusan_id' => $data['jurusan_id'],
-                    'kelas_id' => $data['kelas_id'],
-                    'rombel_id' => $data['rombel_id'],
-                    'tanggal_masuk' => now(),
-                    'status' => 'aktif',
-                    'created_by' => Auth::id(),
-                ]);
-
-                // Log aktivitas
-                activity('pendidikan_update')
-                    ->causedBy(Auth::user())
-                    ->performedOn($new)
-                    ->withProperties([
-                        'new_attributes' => $new,
-                        'ip' => request()->ip(),
-                        'user_agent' => request()->userAgent(),
-                    ])
-                    ->event('update')
-                    ->log('Riwayat pendidikan santri pindah.');
-
-                return ['status' => true, 'data' => $new];
-            }
-
-            return ['status' => false, 'message' => 'Tidak ada perubahan data'];
+            return ['status' => false, 'message' => 'Tidak ada perubahan yang diizinkan selain tanggal keluar'];
         });
     }
 }

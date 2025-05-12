@@ -111,6 +111,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
 
     // Warga Pesantren
+    Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
     Route::get('/{id}/wargapesantren/edit', [WargaPesantrenController::class, 'edit']);
     Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
     Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);

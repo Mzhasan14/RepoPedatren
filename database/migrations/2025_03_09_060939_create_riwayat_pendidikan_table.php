@@ -22,6 +22,7 @@ return new class extends Migration
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
             $table->enum('status', ['aktif', 'do', 'berhenti', 'alumni', 'pindah'])->default('aktif');
+            $table->text('keterangan')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

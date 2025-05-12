@@ -20,6 +20,7 @@ return new class extends Migration
             $table->datetime('tanggal_masuk');
             $table->datetime('tanggal_keluar')->nullable();
             $table->enum('status', ['aktif', 'pindah', 'keluar'])->default('aktif');
+            $table->text('keterangan')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

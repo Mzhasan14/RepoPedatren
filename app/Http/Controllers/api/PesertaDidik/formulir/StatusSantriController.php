@@ -16,7 +16,8 @@ class StatusSantriController extends Controller
     {
         $this->santri = $santri;
     }
-     public function index($id)
+    
+    public function index($id)
     {
         try {
             $result = $this->santri->index($id);
@@ -39,7 +40,7 @@ class StatusSantriController extends Controller
         }
     }
 
-     public function store(StatusSantriRequest $request, $bioId)
+    public function store(StatusSantriRequest $request, $bioId)
     {
         try {
             $result = $this->santri->store($request->validated(), $bioId);
@@ -61,7 +62,7 @@ class StatusSantriController extends Controller
         }
     }
 
-      public function edit($id)
+    public function edit($id)
     {
         try {
             $result = $this->santri->edit($id);
@@ -105,5 +106,4 @@ class StatusSantriController extends Controller
             ], 500);
         }
     }
-
 }

@@ -10,7 +10,6 @@ class StatusSantriService
 {
     public function index($bioId)
     {
-        $bioId = trim($bioId);
         $santri = Santri::where('biodata_id', $bioId)
             ->get()
             ->map(function ($item) {
@@ -33,8 +32,6 @@ class StatusSantriService
     public function store(array $data, string $bioId)
     {
         return DB::transaction(function () use ($data, $bioId) {
-            $bioId = trim($bioId);
-            // Cek apakah santri dengan biodata ini sudah ada dan aktif
             $exist = Santri::where('status', 'aktif')
                 ->whereHas('biodata', function ($query) use ($bioId) {
                     $query->where('id', $bioId);
@@ -45,27 +42,14 @@ class StatusSantriService
                 return ['status' => false, 'message' => 'Data masih santri aktif'];
             }
 
-            // Menyimpan data santri baru
             $santri = new Santri();
             $santri->biodata_id = $bioId;
             $santri->nis = $data['nis'];
             $santri->tanggal_masuk = $data['tanggal_masuk'] ?? now();
-            $santri->tanggal_keluar = $data['tanggal_keluar'] ?? null; // optional field
+            $santri->tanggal_keluar = $data['tanggal_keluar'] ?? null;
             $santri->status = 'aktif';
             $santri->created_by = Auth::id();
             $santri->save();
-
-            // Log aktivitas
-            activity('santri_create')
-                ->causedBy(Auth::user())
-                ->performedOn($santri)
-                ->withProperties([
-                    'new_attributes' => $santri,
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('create')
-                ->log('Santri baru berhasil ditambahkan.');
 
             return ['status' => true, 'data' => $santri];
         });
@@ -100,27 +84,13 @@ class StatusSantriService
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            // Update data santri
             $santri->nis = $data['nis'] ?? $santri->nis;
             $santri->tanggal_masuk = $data['tanggal_masuk'] ?? $santri->tanggal_masuk;
             $santri->tanggal_keluar = $data['tanggal_keluar'] ?? $santri->tanggal_keluar;
-            $santri->status = $data['status'] ?? $santri->status; // optional status update
+            $santri->status = $data['status'] ?? $santri->status;
             $santri->updated_by = Auth::id();
             $santri->updated_at = now();
             $santri->save();
-
-            // Log aktivitas
-            activity('santri_update')
-                ->causedBy(Auth::user())
-                ->performedOn($santri)
-                ->withProperties([
-                    'before' => $santri->getOriginal(),
-                    'after' => $santri->toArray(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('update')
-                ->log("Mengubah santri dengan ID: {$id}");
 
             return ['status' => true, 'data' => $santri];
         });
