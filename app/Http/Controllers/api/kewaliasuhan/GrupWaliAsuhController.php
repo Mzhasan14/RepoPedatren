@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use App\Services\Kewaliasuhan\GrupWaliasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
@@ -92,6 +93,67 @@ class GrupWaliAsuhController extends Controller
             'message' => 'Grup waliasuh berhasil diperbarui',
             'data' => $result['data']
         ]);
+    }
+
+    public function destroy($id)
+    {
+        return DB::transaction(function () use ($id) {
+            if (!Auth::id()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pengguna tidak terautentikasi'
+                ], 401);
+            }
+
+            $grup = Grup_WaliAsuh::withTrashed()->find($id);
+
+            if (!$grup) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data grup wali asuh tidak ditemukan'
+                ], 404);
+            }
+
+            if ($grup->trashed()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data grup sudah dihapus sebelumnya'
+                ], 410);
+            }
+
+            // Cek apakah grup masih memiliki anggota aktif
+            $hasActiveMembers = Wali_asuh::where('id_grup_wali_asuh', $id)
+                ->where('status', true)
+                ->exists();
+
+            if ($hasActiveMembers) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif'
+                ], 400);
+            }
+
+            // Soft delete
+            $grup->delete();
+
+            // Log activity
+            activity('grup_wali_asuh_delete')
+                ->performedOn($grup)
+                ->withProperties([
+                    'deleted_at' => now(),
+                    'deleted_by' => Auth::id()
+                ])
+                ->event('delete_grup_wali_asuh')
+                ->log('Grup wali asuh berhasil dihapus (soft delete)');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Grup wali asuh berhasil dihapus',
+                'data' => [
+                    'deleted_at' => $grup->deleted_at
+                ]
+            ]);
+        });
     }
 
     /**

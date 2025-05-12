@@ -2,9 +2,14 @@
 
 namespace App\Services\Kewaliasuhan;
 
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
 
 class WaliasuhService
 {
@@ -80,4 +85,125 @@ class WaliasuhService
             "foto_profil" => url($item->foto_profil)
         ]);
     }
+
+    public function store(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            if (!Auth::id()) {
+                return [
+                    'status' => false,
+                    'message' => 'Pengguna tidak terautentikasi',
+                    'data' => null
+                ];
+            }
+
+
+            // Cek apakah santri sudah menjadi wali atau anak asuh
+            if (
+                Wali_asuh::where('id_santri', $data['id_santri'])->exists() ||
+                Anak_asuh::where('id_santri', $data['id_santri'])->exists()
+            ) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri sudah terdaftar sebagai wali asuh atau anak asuh',
+                    'data' => null
+                ];
+            }
+
+            // Buat wali asuh baru
+            $waliAsuh = Wali_asuh::create([
+                'id_santri' => $data['id_santri'],
+                'id_grup_wali_asuh' => $data['id_grup_wali_asuh'],
+                'created_by' => Auth::id(),
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Update status santri
+            Santri::where('id', $data['id_santri'])->update(['status_wali_asuh' => true]);
+
+            // Log activity
+            activity('wali_asuh_create')
+                ->performedOn($waliAsuh)
+                ->withProperties([
+                    'new_attributes' => $waliAsuh->getAttributes(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create_wali_asuh')
+                ->log('Wali asuh baru berhasil dibuat');
+
+            return [
+                'status' => true,
+                'message' => 'Wali asuh berhasil dibuat',
+                'data' => $waliAsuh
+            ];
+        });
+    }
+
+    public function destroy($id)
+    {
+        return DB::transaction(function () use ($id) {
+            if (!Auth::id()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pengguna tidak terautentikasi'
+                ], 401);
+            }
+
+            $waliAsuh = Wali_asuh::withTrashed()->find($id);
+
+            if (!$waliAsuh) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data wali asuh tidak ditemukan'
+                ], 404);
+            }
+
+            if ($waliAsuh->trashed()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data wali asuh sudah dihapus sebelumnya'
+                ], 410);
+            }
+
+            // Cek relasi aktif sebelum hapus
+            $hasActiveRelation = Kewaliasuhan::where('id_wali_asuh', $id)
+                ->whereNull('tanggal_berakhir')
+                ->exists();
+
+            if ($hasActiveRelation) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak dapat menghapus wali asuh yang masih memiliki anak asuh aktif'
+                ], 400);
+            }
+
+            // Soft delete
+            $waliAsuh->delete();
+
+            // // Update status santri
+            // Santri::where('id', $waliAsuh->id_santri)->update(['status_wali_asuh' => false]);
+
+            // Log activity
+            activity('wali_asuh_delete')
+                ->performedOn($waliAsuh)
+                ->withProperties([
+                    'deleted_at' => now(),
+                    'deleted_by' => Auth::id()
+                ])
+                ->event('delete_wali_asuh')
+                ->log('Wali asuh berhasil dihapus (soft delete)');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Wali asuh berhasil dihapus',
+                'data' => [
+                    'deleted_at' => $waliAsuh->deleted_at
+                ]
+            ]);
+        });
+    }
 }
+  

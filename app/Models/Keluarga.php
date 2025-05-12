@@ -13,6 +13,7 @@ class Keluarga extends Model
 
     use SoftDeletes;
     //
+    protected $dates = ['deleted_at'];
     protected $table = 'keluarga';
 
     protected $fillable = [

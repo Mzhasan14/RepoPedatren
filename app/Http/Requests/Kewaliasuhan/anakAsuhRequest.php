@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class grupWaliasuhRequest extends FormRequest
+class anakAsuhRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,9 +24,7 @@ class grupWaliasuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wilayah' => 'required|exists:wilayah,id',
-            'nama_grup' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:l,p'
+            'id_santri' => 'required|exists:santri,id',
         ];
     }
 

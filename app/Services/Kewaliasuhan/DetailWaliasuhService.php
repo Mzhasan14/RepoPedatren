@@ -204,7 +204,7 @@ class DetailWaliasuhService {
                             THEN CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/86400),' Hari | Bermalam')
                             ELSE CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/3600),' Jam')
                      END as lama_waktu"),
-                'status_kembali'
+                'status'
             ])
             ->get();
 
@@ -213,7 +213,7 @@ class DetailWaliasuhService {
                 'tanggal'        => $z->tanggal,
                 'keterangan'     => $z->keterangan,
                 'lama_waktu'     => $z->lama_waktu,
-                'status_kembali' => $z->status_kembali,
+                'status_kembali' => $z->status,
             ]);
         }
 
