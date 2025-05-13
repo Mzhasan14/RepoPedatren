@@ -53,6 +53,7 @@ class WaliKelasService
                             ->whereNull('wali_kelas.deleted_at')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
+                                'wali_kelas.id as id',
                                 'b.nama',
                                 'wp.niup',
                                 DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
@@ -68,6 +69,7 @@ class WaliKelasService
                                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                             )->groupBy(
                                 'pegawai.biodata_id', 
+                                'wali_kelas.id',
                                 'b.nama', 
                                 'wp.niup', 
                                 'l.nama_lembaga',

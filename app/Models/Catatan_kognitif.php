@@ -22,8 +22,13 @@ class Catatan_kognitif extends Model
     {
         return $query->where('catatan_kognitif.status',true);
     }
-    public function WaliAsuhCatatanKognitif()
+    public function santri()
     {
-        return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');
+        return $this->belongsTo(Santri::class, 'id_santri');
+    }
+
+    public function waliAsuh()
+    {
+        return $this->belongsTo(Wali_asuh::class, 'id_wali_asuh');
     }
 }

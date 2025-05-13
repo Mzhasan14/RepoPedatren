@@ -20,12 +20,7 @@ class Pengajar extends Model
     {
         return $this->hasOneThrough(Biodata::class, Pegawai::class, 'id', 'id', 'id', 'id');
     }
-
-    public function pegawai()
-    {
-        return $this->belongsTo(Pegawai::class, 'id_pegawai', 'id');
-    }
-
+    
     public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'id_lembaga','id');
@@ -44,8 +39,15 @@ class Pengajar extends Model
     {
         return $query->where('pengajar.status_aktif','aktif');
     }
-    public function MateriAjarPengajar()
+    public function MateriAjar()
     {
-        return $this->belongsTo(MateriAjar::class,'id_pengajar','id');
+        return $this->hasMany(MateriAjar::class);
     }
+
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class);
+    }
+
+
 }

@@ -3,72 +3,129 @@
 namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\KategoriGolonganRequest;
 use App\Http\Resources\PdResource;
 use App\Models\Pegawai\KategoriGolongan;
+use App\Services\Pegawai\KategoriGolonganService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class KategoriGolonganController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+     private KategoriGolonganService $GolonganService;
+    public function __construct(KategoriGolonganService $GolonganService)
+    {
+        $this->GolonganService = $GolonganService;
+    }
     public function index()
     {
-        $kategori = KategoriGolongan::all();
-        return new PdResource(true,'Data berhasil ditampilkan',$kategori);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(),[
-            'nama_kategori_golongan' => 'required|string|max:255|unique:kategori_golongan,nama_kategori_golongan',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean',
-        ]);
-
-        if ($validator->fails()){
+        try {
+            $result = $this->GolonganService->index();
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
             return response()->json([
-                'status' => false,
-                'message' => 'Data gagal di tambahkan',
-                'data' => $validator->errors()
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
             ]);
-        }
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data Golongan: ' . $e->getMessage());
 
-        $kategori = KategoriGolongan::create($validator->validated());
-        return new PdResource(true,'Data berehasil ditambahkan',$kategori);
-    }
-
-    public function show(string $id)
-    {
-        $kategori = KategoriGolongan::findOrFail($id);
-        return new PdResource(true,'Data berhasil Ditampilkan',$kategori);
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $kategori = KategoriGolongan::findOrFail($id);
-        $validator = Validator::make($request->all(),[
-            'nama_kategori_golongan' => 'required|string|max:255|unique:kategori_golongan,nama_kategori_golongan',
-            'updated_by' => 'nullable |integer',
-            'status' => 'required|boolean',
-        ]);
-
-        if ($validator->fails()){
             return response()->json([
-                'status' => false,
-                'message' => 'Data gagal di tambahkan',
-                'data' => $validator->errors()
-            ]);
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $kategori->update($validator->validated());
-        return new PdResource(true,'Data berhasil di update',$kategori);
     }
 
-    public function destroy(string $id)
+    public function store(KategoriGolonganRequest $request)
     {
-        $kategori = KategoriGolongan::findOrFail($id);
-        $kategori->delete();
-        return new PdResource(true,'Data berhasil dihapus',$kategori);
+        try {
+            $result = $this->GolonganService->store($request->validated());
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah Lembaga: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function edit($id)
+    {
+        try {
+            $result = $this->GolonganService->edit($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail Golongan: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(KategoriGolonganRequest $request, $id)
+    {
+        try {
+            $result = $this->GolonganService->update($request->validated(), $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal update Golongan: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+        public function destroy($id)
+    {
+        try {
+            $result = $this->GolonganService->destroy($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail Golongan: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

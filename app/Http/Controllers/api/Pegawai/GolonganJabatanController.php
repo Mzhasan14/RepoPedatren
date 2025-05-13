@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Pegawai\GolonganRequest;
-use App\Http\Resources\PdResource;
-use App\Models\Pegawai\Golongan;
-use App\Services\Pegawai\GolonganService;
+use App\Http\Requests\Pegawai\GolonganJabatanRequest;
+use App\Services\Pegawai\GolonganJabatanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
-class GolonganController extends Controller
+class GolonganJabatanController extends Controller
 {
-    private GolonganService $GolonganService;
-    public function __construct(GolonganService $GolonganService)
+    private GolonganJabatanService $GolonganService;
+    public function __construct(GolonganJabatanService $GolonganService)
     {
         $this->GolonganService = $GolonganService;
     }
@@ -41,7 +38,7 @@ class GolonganController extends Controller
         }
     }
 
-    public function store(GolonganRequest $request)
+    public function store(GolonganJabatanRequest $request)
     {
         try {
             $result = $this->GolonganService->store($request->validated());
@@ -85,7 +82,7 @@ class GolonganController extends Controller
         }
     }
 
-    public function update(GolonganRequest $request, $id)
+    public function update(GolonganJabatanRequest $request, $id)
     {
         try {
             $result = $this->GolonganService->update($request->validated(), $id);
@@ -128,5 +125,4 @@ class GolonganController extends Controller
             ], 500);
         }
     }
-
 }

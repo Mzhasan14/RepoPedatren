@@ -12,6 +12,7 @@ use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
  */
 class CatatanKognitifFactory extends Factory
 {
+    
     protected $model = Catatan_kognitif::class;
     /**
      * Define the model's default state.
@@ -20,6 +21,10 @@ class CatatanKognitifFactory extends Factory
      */
     public function definition(): array
     {
+        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
+            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
+            : null; // NULL jika masih menjabat
         return [
             'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
@@ -35,6 +40,8 @@ class CatatanKognitifFactory extends Factory
             'tulis_alquran_tindak_lanjut' => $this->faker->sentence(),
             'baca_alquran_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'baca_alquran_tindak_lanjut' => $this->faker->sentence(),
+                        'tanggal_buat' => $tanggalMulai,
+            'tanggal_selesai' => $tanggalSelesai,
             'created_by' => 1,
             'updated_by' => 1,
             'status' => 1,

@@ -109,4 +109,8 @@ class Biodata extends Model
     {
         return $this->hasMany(Santri::class, 'biodata_id');
     }
+    public function berkas()
+    {
+        return $this->hasMany(Berkas::class);
+    }
 }

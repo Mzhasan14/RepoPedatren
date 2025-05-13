@@ -15,8 +15,8 @@ class MateriAjar extends Model
         'id'
     ];
 
-    public function MateriAjarPengajar()
+    public function Pengajar()
     {
-        return $this->belongsTo(Pengajar::class,'id_pengajar','id');
+        return $this->belongsTo(Pengajar::class);
     }
 }

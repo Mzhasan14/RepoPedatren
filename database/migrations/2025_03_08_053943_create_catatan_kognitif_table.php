@@ -27,6 +27,8 @@ return new class extends Migration
             $table->text('tulis_alquran_tindak_lanjut');
             $table->enum('baca_alquran_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('baca_alquran_tindak_lanjut');
+            $table->date('tanggal_buat');
+            $table->date('tanggal_selesai')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');

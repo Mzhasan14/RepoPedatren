@@ -10,7 +10,6 @@ class Karyawan extends Model
     use HasFactory;
 
     protected $table = 'karyawan';
-    public $incrementing = false;
     protected $keyType = 'string';
 
 
@@ -20,5 +19,9 @@ class Karyawan extends Model
     public function ScopeActive($query)
     {
         return $query->where('karyawan.status_aktif','aktif');
+    }
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class);
     }
 }

@@ -20,6 +20,10 @@ class CatatanAfektifFactory extends Factory
      */
     public function definition(): array
     {
+            $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
+            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
+            : null; // NULL jika masih menjabat
         return [
             'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
             'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
@@ -29,6 +33,8 @@ class CatatanAfektifFactory extends Factory
             'kebersihan_tindak_lanjut' => $this->faker->sentence(),
             'akhlak_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'akhlak_tindak_lanjut' => $this->faker->sentence(),
+            'tanggal_buat' => $tanggalMulai,
+            'tanggal_selesai' => $tanggalSelesai,
             'created_by' => 1,
             'updated_by' => 1,
             'status' => 1,

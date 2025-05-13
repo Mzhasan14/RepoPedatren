@@ -38,7 +38,7 @@ class PegawaiController extends Controller
         {
             $validated = $request->validated();
     
-            // try {
+            try {
                 $pegawai = $this->pegawaiService->store($validated);
     
                 return response()->json([
@@ -46,12 +46,12 @@ class PegawaiController extends Controller
                     'message' => 'Data pegawai berhasil ditambahkan',
                     'data'    => $pegawai->load('biodata')  // Mengambil data terkait biodata jika perlu
                 ]);
-            // } catch (\Exception $e) {
-            //     return response()->json([
-            //         'status'  => 'error',
-            //         'message' => 'Terjadi kesalahan saat menambahkan pegawai',
-            //     ], 500);
-            // }
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Terjadi kesalahan saat menambahkan pegawai',
+                ], 500);
+            }
         }
         // public function show(string $id)
         // {

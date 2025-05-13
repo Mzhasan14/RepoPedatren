@@ -53,6 +53,7 @@ class PengurusService
                             ->whereNull('pengurus.deleted_at')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
+                                'pengurus.id as id',
                                 'b.nama',
                                 'b.nik',
                                 'wp.niup',
@@ -68,6 +69,7 @@ class PengurusService
                                 )    
                                 ->groupBy(
                                     'wp.niup',
+                                    'pengurus.id',
                                     'pegawai.biodata_id',
                                     'b.nama',
                                     'b.nik',
@@ -93,7 +95,8 @@ class PengurusService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
-            "id" => $item->biodata_uuid,
+            "biodata_id" => $item->biodata_uuid,
+            "id" => $item->id,
             "nama" => $item->nama,
             "nik" => $item->nik,
             "niup" => $item->niup ?? "-",
