@@ -5,7 +5,11 @@ namespace App\Http\Controllers\api\PesertaDidik\formulir;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\CreateDomisiliRequest;
 use App\Http\Requests\PesertaDidik\DomisiliRequest;
+use App\Http\Requests\PesertaDidik\KeluarDomisiliRequest;
+use App\Http\Requests\PesertaDidik\PindahDomisiliRequest;
+use App\Http\Requests\PesertaDidik\UpdateDomisiliRequest;
 use App\Services\PesertaDidik\Formulir\DomisiliService;
 
 class DomisiliController extends Controller
@@ -40,7 +44,7 @@ class DomisiliController extends Controller
         }
     }
 
-    public function store(DomisiliRequest $request, $bioId)
+    public function store(CreateDomisiliRequest $request, $bioId)
     {
         try {
             $result = $this->domisili->store($request->validated(), $bioId);
@@ -84,10 +88,55 @@ class DomisiliController extends Controller
         }
     }
 
-    public function update(DomisiliRequest $request, $id)
+    public function update(UpdateDomisiliRequest $request, $id)
     {
         try {
             $result = $this->domisili->update($request->validated(), $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal update domisili: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function pindahDomisili(PindahDomisiliRequest $request, $id)
+    {
+        try {
+            $result = $this->domisili->pindahDomisili($request->validated(), $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal update domisili: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function keluarDomisili(KeluarDomisiliRequest $request, $id)
+    {
+        try {
+            $result = $this->domisili->keluarDomisili($request->validated(), $id);
 
             if (!$result['status']) {
                 return response()->json([

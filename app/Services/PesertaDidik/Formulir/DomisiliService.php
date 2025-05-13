@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Santri;
+use Illuminate\Support\Carbon;
 use App\Models\RiwayatDomisili;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -48,17 +49,12 @@ class DomisiliService
             }
 
             // Cek dan update domisili aktif jika ada
-            $existing = RiwayatDomisili::where('status', 'aktif')
+            $exist = RiwayatDomisili::where('status', 'aktif')
                 ->where('santri_id', $santri->id)
                 ->first();
 
-            if ($existing) {
-                $existing->update([
-                    'status'         => 'pindah',
-                    'tanggal_keluar' => now(),
-                    'updated_by'     => Auth::id(),
-                    'updated_at'     => now(),
-                ]);
+            if ($exist) {
+                return ['status' => false, 'message' => 'Santri masih memiliki domisili aktif'];
             }
 
             $domisili = RiwayatDomisili::create([
@@ -67,6 +63,7 @@ class DomisiliService
                 'blok_id'       => $data['blok_id'],
                 'kamar_id'      => $data['kamar_id'],
                 'tanggal_masuk' => $data['tanggal_masuk'] ?? now(),
+                'tanggal_keluar' => null,
                 'status'        => 'aktif',
                 'created_by'    => Auth::id(),
                 'created_at'    => now(),
@@ -100,44 +97,123 @@ class DomisiliService
         ];
     }
 
-    public function update(array $data, string $id)
+    public function pindahDomisili(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
-
             $domisili = RiwayatDomisili::find($id);
 
             if (!$domisili) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            if (!is_null($domisili->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat tidak boleh diubah setelah keluar'];
+            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
+            if (!empty($domisili->tanggal_keluar)) {
+                return ['status' => false, 'message' => 'Data riwayat domisili tidak boleh diubah setelah keluar'];
             }
 
-            // Cek percobaan perubahan tempat
-            $isWilayahChanged = isset($data['wilayah_id']) && $domisili->wilayah_id != $data['wilayah_id'];
-            $isBlokChanged    = isset($data['blok_id']) && $domisili->blok_id != $data['blok_id'];
-            $isKamarChanged   = isset($data['kamar_id']) && $domisili->kamar_id != $data['kamar_id'];
+            if (empty($data['tanggal_masuk']) || !strtotime($data['tanggal_masuk'])) {
+                return ['status' => false, 'message' => 'Tanggal masuk wajib diisi dan harus format tanggal yang valid'];
+            }
 
-            if ($isWilayahChanged || $isBlokChanged || $isKamarChanged) {
-                return ['status' => false, 'message' => 'Perubahan wilayah, blok, atau kamar tidak diperbolehkan'];
+            $tanggalKeluar = now();
+            $tanggalMasukBaru = Carbon::parse($data['tanggal_masuk']);
+
+            if ($tanggalMasukBaru->toDateString() < $tanggalKeluar->toDateString()) {
+                return ['status' => false, 'message' => 'Tanggal masuk tidak boleh lebih awal dari tanggal keluar sebelumnya'];
+            }
+
+            $domisili->update([
+                'status'         => 'pindah',
+                'tanggal_keluar' => $tanggalKeluar,
+                'updated_by'     => Auth::id(),
+                'updated_at'     => now(),
+            ]);
+
+            $new = RiwayatDomisili::create([
+                'santri_id'      => $domisili->santri_id,
+                'wilayah_id'    => $data['wilayah_id'],
+                'blok_id'       => $data['blok_id'],
+                'kamar_id'      => $data['kamar_id'],
+                'tanggal_masuk'  => $data['tanggal_masuk'],
+                'status'         => 'aktif',
+                'created_by'     => Auth::id(),
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+
+            return ['status' => true, 'data' => $new];
+        });
+    }
+
+    public function keluarDomisili(array $data, string $id)
+    {
+        return DB::transaction(function () use ($data, $id) {
+            $domisili = RiwayatDomisili::find($id);
+
+            if (!$domisili) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            }
+
+            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
+            if (!empty($domisili->tanggal_keluar)) {
+                return ['status' => false, 'message' => 'Data riwayat domisili tidak boleh diubah setelah berhenti'];
+            }
+
+            if (empty($data['tanggal_keluar']) || !strtotime($data['tanggal_keluar'])) {
+                return ['status' => false, 'message' => 'Tanggal keluar wajib diisi dan harus format tanggal yang valid'];
+            }
+
+            if (strtotime($data['tanggal_keluar']) < strtotime($domisili->tanggal_masuk)) {
+                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
+            }
+
+            $tanggalKeluarBaru = Carbon::parse($data['tanggal_keluar']);
+            $tanggalMasukLama = Carbon::parse($domisili->tanggal_masuk);
+
+            if ($tanggalKeluarBaru->lt($tanggalMasukLama)) {
+                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
+            }
+
+            // Update data
+            $domisili->update([
+                'status'         => 'keluar',
+                'tanggal_keluar' => $data['tanggal_keluar'],
+                'updated_by'     => Auth::id(),
+                'updated_at'     => now(),
+            ]);
+
+            return ['status' => true, 'data' => $domisili];
+        });
+    }
+
+    public function update(array $data, string $id)
+    {
+        return DB::transaction(function () use ($data, $id) {
+            $domisili = RiwayatDomisili::find($id);
+
+            if (!$domisili) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
             if (!empty($data['tanggal_keluar'])) {
+                // Validasi tanggal keluar tidak boleh lebih awal dari tanggal masuk
                 if (strtotime($data['tanggal_keluar']) < strtotime($domisili->tanggal_masuk)) {
-                    return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk.'];
+                    return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
                 }
-
-                $domisili->update([
-                    'tanggal_keluar' => $data['tanggal_keluar'],
-                    'status' => 'keluar',
-                    'updated_by' => Auth::id()
-                ]);
-
-                return ['status' => true, 'data' => $domisili];
             }
 
-            return ['status' => false, 'message' => 'Tidak ada perubahan yang diizinkan selain tanggal keluar'];
+            // Update data
+            $domisili->update([
+                'wilayah_id'    => $data['wilayah_id'],
+                'blok_id'       => $data['blok_id'],
+                'kamar_id'      => $data['kamar_id'],
+                'tanggal_masuk'  => $data['tanggal_masuk'],
+                'tanggal_keluar'  => $data['tanggal_keluar'] ?? null,
+                'updated_by'     => Auth::id(),
+                'updated_at'     => now(),
+            ]);
+
+            return ['status' => true, 'data' => $domisili];
         });
     }
 }

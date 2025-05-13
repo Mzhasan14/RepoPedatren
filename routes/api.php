@@ -102,13 +102,20 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
     Route::get('{id}/domisili/edit', [DomisiliController::class, 'edit']);
     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
-    Route::put('/{id}/domisili', [DomisiliController::class, 'update']);
+    Route::put('/{id}/domisili', [DomisiliController::class, 'update'])->middleware('role:superadmin|admin');
+
+    Route::put('/{id}/domisili/pindah', [DomisiliController::class, 'pindahDomisili']);
+    Route::put('/{id}/domisili/keluar', [DomisiliController::class, 'keluarDomisili']);
 
     // Pendidikan
     Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
     Route::get('{id}/pendidikan/edit', [PendidikanController::class, 'edit']);
     Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
-    Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
+    Route::put('/{id}/pendidikan', [PendidikanController::class, 'update'])->middleware('role:superadmin|admin');
+
+    Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
+    Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
+
 
     // Warga Pesantren
     Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
@@ -138,12 +145,12 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'index']);
-    Route::post('/orangtua',[OrangTuaWaliController::class,'store']);
+    Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
 });
 
-Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum','role:admin|superadmin');
+Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum', 'role:admin|superadmin');
 Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
 Route::post('forgot',   [AuthController::class, 'forgotPassword']);
 Route::post('reset',    [AuthController::class, 'resetPassword'])->name('password.reset');

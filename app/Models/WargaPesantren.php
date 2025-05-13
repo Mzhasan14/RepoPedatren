@@ -32,7 +32,10 @@ class WargaPesantren extends Model
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by = Auth::id());
+       static::creating(function ($model) {
+            $model->created_by ??= Auth::id();
+        });
+        // static::creating(fn($model) => $model->created_by = Auth::id());
         static::updating(fn($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();

@@ -15,12 +15,12 @@ use Faker\Factory as Faker;
 
 class BiodataSeeder extends Seeder
 {
-    
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        (new BiodataFactory())->count(10)->create();
+        Biodata::factory()->count(10)->create();
     }
 }

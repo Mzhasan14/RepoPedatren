@@ -33,6 +33,7 @@ use Database\Seeders\Pegawai\AnakPegawaiSeeder;
 use Database\Seeders\Pegawai\GolonganJabatanSeeder;
 use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Pegawai\RiwayatJabatanKaryawanSeeder;
+use Spatie\Activitylog\Facades\Activity;
 
 class DatabaseSeeder extends Seeder
 {
@@ -41,43 +42,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory()->create([
-        //     'name' => 'Super Admin',
-        //     'email' => 'superadmin@example.com',
-        //     'password' => Hash::make('superadmin'), // Password: superadmin
-        //     'role' => 'superadmin',
-        //     'email_verified_at' => now(),
-        //     'remember_token' => Str::random(10),
-        // ]);
-
-        // User::factory()->create([
-        //     'name' => 'Admin',
-        //     'email' => 'admin@example.com',
-        //     'password' => Hash::make('admin'), // Password: admin
-        //     'role' => 'admin',
-        //     'email_verified_at' => now(),
-        //     'remember_token' => Str::random(10),
-        // ]);
-
-        // User::factory()->create([
-        //     'name' => 'Staff',
-        //     'email' => 'staff@example.com',
-        //     'password' => Hash::make('staff'), // Password: staff
-        //     'role' => 'staff',
-        //     'email_verified_at' => now(),
-        //     'remember_token' => Str::random(10),
-        // ]);
-
-        // User::factory()->create([
-        //     'name' => 'Santri',
-        //     'email' => 'santri@example.com',
-        //     'password' => Hash::make('santri'), // Password: santri
-        //     'role' => 'santri',
-        //     'email_verified_at' => now(),
-        //     'remember_token' => Str::random(10),
-        // ]);
+        Activity::disableLogging();
 
         $this->call([
             RoleSeeder::class,
@@ -125,5 +90,8 @@ class DatabaseSeeder extends Seeder
             GolonganJabatanSeeder::class,
             
         ]);
+
+        // Aktifkan kembali logging activity setelah seeding selesai
+        Activity::enableLogging();
     }
 }

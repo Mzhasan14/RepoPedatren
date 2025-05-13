@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Database\Factories\Alamat\NegaraFactory;
@@ -22,6 +23,7 @@ class BiodataFactory extends Factory
      */
     public function definition(): array
     {
+        
         return [
             'id' => (string) Str::uuid(),
             'negara_id' =>  (new NegaraFactory())->create()->id,
@@ -31,7 +33,6 @@ class BiodataFactory extends Factory
             'jalan' =>  $this->faker->streetAddress,
             'kode_pos' =>  $this->faker->postcode,
             'nama' => $this->faker->name(),
-            // 'niup' => $this->faker->unique()->numerify('###########'),
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),
             'tanggal_lahir' => $this->faker->date(),
             'tempat_lahir' => $this->faker->city(),
@@ -52,5 +53,6 @@ class BiodataFactory extends Factory
             'updated_by' => null,
             'deleted_by' => null,
         ];
+        dd('test');
     }
 }

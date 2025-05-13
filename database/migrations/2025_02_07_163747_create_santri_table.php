@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nis')->unique()->nullable();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
-            $table->enum('status', ['aktif', 'alumni', 'do', 'berhenti'])->default('aktif');
+            $table->enum('status', ['aktif', 'alumni', 'do', 'berhenti', 'cuti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
