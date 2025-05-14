@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Exports\Pegawai\PengajarExport;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Biodata;
@@ -19,6 +20,8 @@ use App\Services\Pegawai\PengajarService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class PengajarController extends Controller
 {
@@ -158,6 +161,11 @@ class PengajarController extends Controller
             "data"         => $formatted
         ]);
     }
+
+        public function pengajarExport()
+        {
+            return Excel::download(new PengajarExport, 'data_pengajar.xlsx');
+        }
 
     // public function filterPengajar(Request $request)
     // {

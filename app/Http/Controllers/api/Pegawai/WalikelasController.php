@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Exports\Pegawai\WaliKelasExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PdResource;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class WalikelasController extends Controller
 {
@@ -131,6 +133,10 @@ class WalikelasController extends Controller
             "data"         => $formatted
         ]);
     }
+            public function waliKelasExport()
+        {
+            return Excel::download(new WaliKelasExport, 'data_Wali-Kelas.xlsx');
+        }
 
     // public function dataWalikelas(Request $request)
     // {
