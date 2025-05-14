@@ -72,7 +72,8 @@ use App\Http\Controllers\Api\Pegawai\{
     PengurusController,
     KaryawanController,
     MateriAjarController,
-    DropdownController
+    DropdownController,
+    GolonganJabatanController
 };
 
 // Endpoint menampilkan log
@@ -147,6 +148,18 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
+
+    // Catatan Santri
+    Route::get('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'index']);
+    Route::get('/{id}/catatan-afektif/edit',[AdministrasiCatatanAfektifController::class,'edit']);
+    Route::put('/{id}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'update']);
+    Route::post('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'store']);
+    Route::get('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'index']);
+    Route::get('/{id}/catatan-kognitif/edit',[CatatanKognitifController::class,'edit']);
+    Route::put('/{id}/catatan-kognitif',[CatatanKognitifController::class,'update']);
+    Route::post('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'store']);
+
+
 });
 
 Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum', 'role:admin|superadmin');
@@ -211,6 +224,27 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy']);
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
     Route::delete('/anakasuh', [AnakasuhController::class, 'destroy']);
+
+    //golongan
+    Route::get('golongan',[GolonganController::class,'index']);
+    Route::post('golongan',[GolonganController::class,'store']);
+    Route::get('{id}/golongan/edit',[GolonganController::class,'edit']);
+    Route::put('{id}/golongan',[GolonganController::class,'update']);
+    Route::delete('{id}/golongan',[GolonganController::class,'destroy']);
+
+    //kategori golongan
+    Route::get('kategori-golongan',[KategoriGolonganController::class,'index']);
+    Route::post('kategori-golongan',[KategoriGolonganController::class,'store']);
+    Route::get('{id}/kategori-golongan/edit',[KategoriGolonganController::class,'edit']);
+    Route::put('{id}/kategori-golongan',[KategoriGolonganController::class,'update']);
+    Route::delete('{id}/kategori-golongan',[KategoriGolonganController::class,'destroy']);
+
+    //golongan Jabatan
+    Route::get('golongan-jabatan',[GolonganJabatanController::class,'index']);
+    Route::post('golongan-jabatan',[GolonganJabatanController::class,'store']);
+    Route::get('{id}/golongan-jabatan/edit',[GolonganJabatanController::class,'edit']);
+    Route::put('{id}/golongan-jabatan',[GolonganJabatanController::class,'update']);
+    Route::delete('{id}/golongan-jabatan',[GolonganJabatanController::class,'destroy']);
 });
 
 Route::prefix('data-pokok')->group(function () {
@@ -275,25 +309,26 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/rombel', RombelController::class);
 
     // 👨‍🏫 Pegawai & Guru
-    // Route::apiResource('/pegawai', PegawaiController::class);
-    Route::apiResource('/pengajar', PengajarController::class);
-    Route::apiResource('/walikelas', WalikelasController::class);
+    Route::apiResource('/crud/pegawai', PegawaiController::class);
+    Route::apiResource('/crud/pengajar', PengajarController::class);
+    Route::apiResource('/crud/walikelas', WalikelasController::class);
     Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
-    Route::apiResource('/golongan', GolonganController::class);
-    Route::apiResource('/pengurus', PengurusController::class);
-    Route::apiResource('/karyawan', KaryawanController::class);
-    Route::apiResource('/materiAjar', MateriAjarController::class);
-    Route::get('/pengajars', [PengajarController::class, 'getallPengajar']);
+    Route::apiResource('/crud/golongan', GolonganController::class);
+    Route::apiResource('/crud/pengurus', PengurusController::class);
+    Route::apiResource('/crud/karyawan', KaryawanController::class);
+    Route::apiResource('/crud/materiAjar', MateriAjarController::class);
+    Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
-    Route::get('/karyawans', [KaryawanController::class, 'dataKaryawan']);
-    Route::get('/pegawais', [PegawaiController::class, 'dataPegawai']);
+    Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
+    Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
     Route::get('/pengurus/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/pengajar/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/karyawan/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::post('pegawai', [PegawaiController::class, 'store']);
+
 });
 
 Route::prefix('dropdown')->group(function () {

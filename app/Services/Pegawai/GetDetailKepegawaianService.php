@@ -92,74 +92,142 @@ class GetDetailKepegawaianService
                 ];
 
 // -- Orang Tua / Wali --
-$ortu = DB::table('keluarga as k')
-    ->where('k.no_kk', $noKk)
-    ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
-    ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
-    ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-    ->select([
-        'bo.nama',
-        'bo.nik',
-        DB::raw("hk.nama_status as status"),
-        'ow.wali'
-    ])
-    ->get();
+// $ortu = DB::table('keluarga as k')
+//     ->where('k.no_kk', $noKk)
+//     ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
+//     ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
+//     ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+//     ->select([
+//         'bo.nama',
+//         'bo.nik',
+//         DB::raw("hk.nama_status as status"),
+//         'ow.wali'
+//     ])
+//     ->get();
 
-// Ambil id biodata yang termasuk orang tua/wali
-$excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+// // Ambil id biodata yang termasuk orang tua/wali
+// $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
 
-// Ambil id anak aktif
-$anakAktifIds = DB::table('keluarga as k')
-    ->where('k.no_kk', $noKk)
-    ->where('k.id_biodata', '!=', $bioId)
-    ->join('santri as s', 'k.id_biodata', '=', 's.biodata_id')
-    ->join('riwayat_pendidikan as rp', 's.id', '=', 'rp.santri_id')
-    ->where('rp.status', 'aktif')
-    ->pluck('k.id_biodata')
-    ->toArray();
+// // Ambil id anak aktif
+// $anakAktifIds = DB::table('keluarga as k')
+//     ->where('k.no_kk', $noKk)
+//     ->where('k.id_biodata', '!=', $bioId)
+//     ->join('santri as s', 'k.id_biodata', '=', 's.biodata_id')
+//     ->join('riwayat_pendidikan as rp', 's.id', '=', 'rp.santri_id')
+//     ->where('rp.status', 'aktif')
+//     ->pluck('k.id_biodata')
+//     ->toArray();
 
-// Ambil Anak Aktif
-$anakAktif = DB::table('keluarga as k')
-    ->whereIn('k.id_biodata', $anakAktifIds)
-    ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
-    ->select([
-        'b.nama',
-        'b.nik',
-        DB::raw("'Anak Aktif' as status"),
-        DB::raw("NULL as wali")
-    ])
-    ->get();
+// // Ambil Anak Aktif
+// $anakAktif = DB::table('keluarga as k')
+//     ->whereIn('k.id_biodata', $anakAktifIds)
+//     ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+//     ->select([
+//         'b.nama',
+//         'b.nik',
+//         DB::raw("'Anak Aktif' as status"),
+//         DB::raw("NULL as wali")
+//     ])
+//     ->get();
 
-// Ambil Saudara Kandung yang bukan ortu dan bukan anak aktif
-$saudara = DB::table('keluarga as k')
-    ->where('k.no_kk', $noKk)
-    ->whereNotIn('k.id_biodata', $excluded)
-    ->whereNotIn('k.id_biodata', $anakAktifIds)
-    ->where('k.id_biodata', '!=', $bioId)
-    ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
-    ->select([
-        'bs.nama',
-        'bs.nik',
-        DB::raw("'Saudara Kandung' as status"),
-        DB::raw("NULL as wali")
-    ])
-    ->get();
+// // Ambil Saudara Kandung yang bukan ortu dan bukan anak aktif
+// $saudara = DB::table('keluarga as k')
+//     ->where('k.no_kk', $noKk)
+//     ->whereNotIn('k.id_biodata', $excluded)
+//     ->whereNotIn('k.id_biodata', $anakAktifIds)
+//     ->where('k.id_biodata', '!=', $bioId)
+//     ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
+//     ->select([
+//         'bs.nama',
+//         'bs.nik',
+//         DB::raw("'Saudara Kandung' as status"),
+//         DB::raw("NULL as wali")
+//     ])
+//     ->get();
 
-// Gabungkan dengan urutan: ortu -> anak aktif -> saudara
-$keluarga = collect()->merge($ortu)->merge($anakAktif)->merge($saudara);
+// // Gabungkan dengan urutan: ortu -> anak aktif -> saudara
+// $keluarga = collect()->merge($ortu)->merge($anakAktif)->merge($saudara);
 
-// Mapping hasil akhir
-$data['Keluarga'] = $keluarga->isNotEmpty()
-    ? $keluarga->map(fn($i) => [
-        'nama'   => $i->nama,
-        'nik'    => $i->nik,
-        'status' => $i->status,
-        'wali'   => $i->wali ?? '-',
-    ])->toArray()
-    : [];
+// // Mapping hasil akhir
+// $data['Keluarga'] = $keluarga->isNotEmpty()
+//     ? $keluarga->map(fn($i) => [
+//         'nama'   => $i->nama,
+//         'nik'    => $i->nik,
+//         'status' => $i->status,
+//         'wali'   => $i->wali ?? '-',
+//     ])->toArray()
+//     : [];
+        // Ambil no KK pegawai
+        $pegawaiKk = DB::table('keluarga')
+            ->where('id_biodata', $bioId)
+            ->value('no_kk');
 
-    
+        // Ambil data ortu (orang tua / wali)
+        $ortu = DB::table('keluarga as k')
+            ->where('k.no_kk', $pegawaiKk)
+            ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
+            ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
+            ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+            ->select([
+                'bo.nama',
+                'bo.nik',
+                DB::raw("hk.nama_status as status"),
+                'ow.wali',
+                'k.no_kk'
+            ])
+            ->get();
 
+        // Ambil id biodata yang sudah menjadi orang tua
+        $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
+
+        // Ambil data saudara kandung
+        $saudara = DB::table('keluarga as k')
+            ->where('k.no_kk', $pegawaiKk)
+            ->whereNotIn('k.id_biodata', $excluded)
+            ->where('k.id_biodata', '!=', $bioId)
+            ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
+            ->select([
+                'bs.nama',
+                'bs.nik',
+                DB::raw("'Saudara Kandung' as status"),
+                DB::raw("NULL as wali"),
+                'k.no_kk'
+            ])
+            ->get();
+
+        // Gabungkan ortu dan saudara kandung
+        $keluargaKandung = $ortu->merge($saudara);
+
+        // Cek apakah KK ortu/saudara sama dengan KK pegawai
+        $kkKandungSama = $keluargaKandung->pluck('no_kk')->contains($pegawaiKk);
+
+        if ($kkKandungSama) {
+            // Jika KK sama, tampilkan ortu dan saudara
+            $keluarga = $keluargaKandung;
+        } else {
+            // Jika KK berbeda, tampilkan anak pegawai (santri)
+            $keluarga = DB::table('keluarga as k')
+                ->where('k.no_kk', $pegawaiKk)
+                ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+                ->join('santri as s', 'b.id', '=', 's.biodata_id')
+                ->select([
+                    'b.nama',
+                    'b.nik',
+                    DB::raw("'Anak' as status"),
+                    DB::raw("NULL as wali")
+                ])
+                ->get();
+        }
+
+        // Output akhir
+        $data['Keluarga'] = $keluarga->isNotEmpty()
+            ? $keluarga->map(fn($i) => [
+                'nama'   => $i->nama,
+                'nik'    => $i->nik,
+                'status' => $i->status,
+                'wali'   => $i->wali,
+            ])
+            : [];
 
         // ---  Informasi Pegawai yang juga Santri ---
         $santriInfo = DB::table('santri as s')

@@ -18,12 +18,16 @@ class Catatan_afektif extends Model
         'id'
     ];
 
-    public function WaliAsuhCatatanAfektif()
+    public function waliAsuh()
     {
-        return $this->belongsTo(Wali_asuh::class,'id_wali_asuh','id');
+        return $this->belongsTo(Wali_asuh::class, 'id_wali_asuh');
     }
     public function ScopeActive($query)
     {
         return $query->where('catatan_afektif.status',true);
+    }
+    public function santri()
+    {
+        return $this->belongsTo(Santri::class,'id_santri');
     }
 }

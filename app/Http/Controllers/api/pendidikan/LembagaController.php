@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\api\pendidikan;
 
 use Illuminate\Http\Request;
-use App\Http\Resources\PdResource;
 use App\Models\Pendidikan\Lembaga;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class LembagaController extends Controller
 {
@@ -15,12 +13,6 @@ class LembagaController extends Controller
     {
         $lembagas = Lembaga::where('status', true)->get();
         return response()->json($lembagas);
-    }
-
-    public function show($id)
-    {
-        $lembaga = Lembaga::findOrFail($id);
-        return response()->json($lembaga);
     }
 
     public function store(Request $request)
@@ -51,14 +43,14 @@ class LembagaController extends Controller
 
         return response()->json($lembaga);
     }
-
+    
     public function destroy($id)
     {
+
         $lembaga = Lembaga::findOrFail($id);
         $lembaga->deleted_by = Auth::id();
         $lembaga->save();
         $lembaga->delete();
-
         return response()->json(null, 204);
     }
 }

@@ -20,22 +20,22 @@ use Illuminate\Support\Facades\DB;
 class DropdownController extends Controller
 {
     public function menuWilayahBlokKamar()
-    {
+{
     $query = DB::table('wilayah as w')
-                ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
-                ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
-                ->select(
-                    'w.id as wilayah_id',
-                    'w.nama_wilayah',
-                    'b.id as blok_id',
-                    'b.wilayah_id',
-                    'b.nama_blok',
-                    'k.id as kamar_id',
-                    'k.blok_id',
-                    'k.nama_kamar'
-                )
-                ->orderBy('w.id')
-                ->get();
+        ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
+        ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
+        ->select(
+            'w.id as wilayah_id',
+            'w.nama_wilayah',
+            'b.id as blok_id',
+            'b.wilayah_id',
+            'b.nama_blok',
+            'k.id as kamar_id',
+            'k.blok_id',
+            'k.nama_kamar'
+        )
+        ->orderBy('w.id')
+        ->get();
 
     $wilayahs = [];
 
@@ -69,19 +69,95 @@ class DropdownController extends Controller
         }
     }
 
-    // Konversi struktur nested menjadi array numerik (tanpa key ID sebagai key array)
+    // Konversi dan urutkan berdasarkan abjad
     $result = [
         'wilayah' => array_values(array_map(function ($wilayah) {
-            $wilayah['blok'] = array_values(array_map(function ($blok) {
-                $blok['kamar'] = array_values($blok['kamar']);
-                return $blok;
-            }, $wilayah['blok']));
+            // Urutkan kamar berdasarkan nama_kamar
+            foreach ($wilayah['blok'] as &$blok) {
+                usort($blok['kamar'], function ($a, $b) {
+                    return strcmp($a['nama_kamar'], $b['nama_kamar']);
+                });
+            }
+
+            // Urutkan blok berdasarkan nama_blok
+            usort($wilayah['blok'], function ($a, $b) {
+                return strcmp($a['nama_blok'], $b['nama_blok']);
+            });
+
             return $wilayah;
         }, $wilayahs)),
     ];
 
+    // Urutkan wilayah berdasarkan nama_wilayah
+    usort($result['wilayah'], function ($a, $b) {
+        return strcmp($a['nama_wilayah'], $b['nama_wilayah']);
+    });
+
     return response()->json($result);
 }
+//     public function menuWilayahBlokKamar()
+//     {
+//     $query = DB::table('wilayah as w')
+//                 ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
+//                 ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
+//                 ->select(
+//                     'w.id as wilayah_id',
+//                     'w.nama_wilayah',
+//                     'b.id as blok_id',
+//                     'b.wilayah_id',
+//                     'b.nama_blok',
+//                     'k.id as kamar_id',
+//                     'k.blok_id',
+//                     'k.nama_kamar'
+//                 )
+//                 ->orderBy('w.id')
+//                 ->get();
+
+//     $wilayahs = [];
+
+//     foreach ($query as $row) {
+//         // Inisialisasi wilayah
+//         if (!isset($wilayahs[$row->wilayah_id])) {
+//             $wilayahs[$row->wilayah_id] = [
+//                 'id' => $row->wilayah_id,
+//                 'nama_wilayah' => $row->nama_wilayah,
+//                 'blok' => [],
+//             ];
+//         }
+
+//         // Inisialisasi blok
+//         if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
+//             $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
+//                 'id' => $row->blok_id,
+//                 'wilayah_id' => $row->wilayah_id,
+//                 'nama_blok' => $row->nama_blok,
+//                 'kamar' => [],
+//             ];
+//         }
+
+//         // Tambahkan kamar jika ada
+//         if (!is_null($row->kamar_id)) {
+//             $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
+//                 'id' => $row->kamar_id,
+//                 'id_blok' => $row->blok_id,
+//                 'nama_kamar' => $row->nama_kamar,
+//             ];
+//         }
+//     }
+
+//     // Konversi struktur nested menjadi array numerik (tanpa key ID sebagai key array)
+//     $result = [
+//         'wilayah' => array_values(array_map(function ($wilayah) {
+//             $wilayah['blok'] = array_values(array_map(function ($blok) {
+//                 $blok['kamar'] = array_values($blok['kamar']);
+//                 return $blok;
+//             }, $wilayah['blok']));
+//             return $wilayah;
+//         }, $wilayahs)),
+//     ];
+
+//     return response()->json($result);
+// }
 public function menuNegaraProvinsiKabupatenKecamatan()
 {
     $data = DB::table('negara as n')
@@ -335,39 +411,10 @@ public function menuLembagaJurusanKelasRombel()
     }
 
 
-    // Dropdown untuk Pengajar!!
-    public function menuMateriAjar()
-    {
-        $query = Pengajar::leftJoin('materi_ajar', 'pengajar.id', '=', 'materi_ajar.pengajar_id')
-                        ->select(
-                            DB::raw('COUNT(DISTINCT materi_ajar.id) as total_materi')
-                            )
-                        ->groupBy('pengajar.id')
-                        ->get();
-
-    $materiAjar1 = $query->where('total_materi', 1)->count();
-    $materiAjarLebihDari1 = $query->where('total_materi', '>', 1)->count();
-
-    $result = [
-        [
-            'label' => 'Materi Ajar 1',
-            'jumlah pengajar' => $materiAjar1
-        ],
-        [
-            'label' => 'Materi Ajar Lebih dari 1',
-            'jumlah pengajar' => $materiAjarLebihDari1
-        ]
-    ];
-
-    return response()->json([
-            'data' => $result
-        ]);
-    }
-
     public function getPeriodeOptions()
 {
     $periodes = Catatan_afektif::Active()
-        ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as periode")
+        ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
         ->groupBy('periode')
         ->orderBy('periode', 'desc')
         ->get()

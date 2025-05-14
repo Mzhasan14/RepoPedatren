@@ -23,9 +23,9 @@ class Pengurus extends Model
     {
         return $this->belongsTo(Golongan::class,'id_golongan','id');
     }
-    public function PengurusPegawai()
+        public function pegawai()
     {
-        return $this->belongsTo(Pegawai::class,'id_pegawai','id');
+        return $this->belongsTo(Pegawai::class);
     }
 
 

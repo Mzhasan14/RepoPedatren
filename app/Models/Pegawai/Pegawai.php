@@ -17,15 +17,6 @@ class Pegawai extends Model
         'id'
     ];
 
-    public function biodata()
-    {
-        return $this->belongsTo(Biodata::class,'biodata_id', 'id');
-    }
-
-    public function pengajar()
-    {
-        return $this->hasMany(Pengajar::class,'id_pegawai', 'id');
-    }
 
     public function entitasPegawai()
     {
@@ -39,4 +30,24 @@ class Pegawai extends Model
     {
         return $query->where('pegawai.status_aktif','aktif');
     }
+
+    public function karyawan()
+    {
+        return $this->hasMany(Karyawan::class);
+    }
+    public function pengajar()
+    {
+        return $this->hasMany(Pengajar::class);
+    }
+
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class);
+    }
+        public function pengurus()
+    {
+        return $this->hasMany(Pengurus::class);
+    }
+
+
 }

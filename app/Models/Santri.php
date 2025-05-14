@@ -86,4 +86,12 @@ class Santri extends Model
     {
         return $this->hasMany(Anak_asuh::class, 'santri_id');
     }
+        public function catatanafektif()
+    {
+        return $this->hasMany(Catatan_afektif::class,'id_santri');
+    }
+        public function catatankognitif()
+    {
+        return $this->hasMany(Catatan_kognitif::class,'id_santri');
+    }
 }
