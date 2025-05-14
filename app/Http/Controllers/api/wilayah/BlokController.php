@@ -2,71 +2,66 @@
 
 namespace App\Http\Controllers\api\wilayah;
 
-use App\Models\Kewilayahan\Blok;
 use Illuminate\Http\Request;
+use App\Models\Kewilayahan\Blok;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class BlokController extends Controller
 {
     public function index()
     {
-        $blok = Blok::Active()->get();
-        return new PdResource(true, 'List data blok', $blok);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_blok' => 'required|string|max:100',
-            'id_wilayah' => 'required|integer',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $blok = Blok::create($validator->validated());
-
-        return new PdResource(true, 'Data Berhasil Ditambah', $blok);
+        $bloks = Blok::with('wilayah')->where('status', true)->get();
+        return response()->json($bloks);
     }
 
     public function show($id)
     {
-        $blok = Blok::findOrFail($id);
+        $blok = Blok::with('wilayah')->findOrFail($id);
+        return response()->json($blok);
+    }
 
-        return new PdResource(true, 'Detail data', $blok);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'wilayah_id' => 'required|exists:wilayah,id',
+            'nama_blok'  => 'required|string|max:255',
+        ]);
+
+        $blok = Blok::create([
+            'wilayah_id' => $request->wilayah_id,
+            'nama_blok'  => $request->nama_blok,
+            'created_by' => Auth::id(),
+        ]);
+
+        return response()->json($blok, 201);
     }
 
     public function update(Request $request, $id)
     {
-
-        $blok = Blok::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_blok' => 'required|string|max:100',
-            'id_wilayah' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        $request->validate([
+            'wilayah_id' => 'sometimes|required|exists:wilayah,id',
+            'nama_blok'  => 'sometimes|required|string|max:255',
+            'status'     => 'sometimes|required|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $blok = Blok::findOrFail($id);
+        $blok->fill($request->only('wilayah_id', 'nama_blok', 'status'));
+        $blok->updated_by = Auth::id();
+        $blok->save();
 
-        $blok->update($request->validated());
-
-        return new PdResource(true, 'Data Berhasil Diubah', $blok);
+        return response()->json($blok);
     }
 
     public function destroy($id)
     {
         $blok = Blok::findOrFail($id);
-
+        $blok->deleted_by = Auth::id();
+        $blok->save();
         $blok->delete();
-        return new PdResource(true, 'Data Berhasil Dihapus', null);
+
+        return response()->json(null, 204);
     }
 }

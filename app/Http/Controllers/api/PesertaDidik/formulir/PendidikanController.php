@@ -4,14 +4,15 @@ namespace App\Http\Controllers\api\PesertaDidik\formulir;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\PendidikanRequest;
+use App\Services\PesertaDidik\Formulir\PendidikanService;
 use App\Http\Requests\PesertaDidik\CreatePendidikanRequest;
 use App\Http\Requests\PesertaDidik\KeluarPendidikanRequest;
-use App\Http\Requests\PesertaDidik\PendidikanRequest;
 use App\Http\Requests\PesertaDidik\PindahPendidikanRequest;
 use App\Http\Requests\PesertaDidik\UpdatePendidikanRequest;
-use App\Services\PesertaDidik\Formulir\PendidikanService;
 
 class PendidikanController extends Controller
 {
@@ -22,137 +23,174 @@ class PendidikanController extends Controller
         $this->pendidikan = $pendidikan;
     }
 
-    public function index($id)
+    /**
+     * List semua data pendidikan berdasarkan ID bio.
+     */
+    public function index($bioId): JsonResponse
     {
         try {
-            $result = $this->pendidikan->index($id);
+            $result = $this->pendidikan->index($bioId);
+
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data pendidikan: ' . $e->getMessage());
+            Log::error("Gagal ambil data pendidikan: {$e->getMessage()}");
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function store(CreatePendidikanRequest $request, $bioId)
+    /**
+     * Simpan data pendidikan baru untuk ID bio.
+     */
+    public function store(CreatePendidikanRequest $request, $bioId): JsonResponse
     {
         try {
-            $result = $this->pendidikan->store($request->validated(), $bioId);
+            $data   = $request->validated();
+            $result = $this->pendidikan->store($data, $bioId);
+
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah pendidikan: ' . $e->getMessage());
+            Log::error("Gagal tambah pendidikan: {$e->getMessage()}");
+
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
-            ], 500);    
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 
-    public function edit($id)
+    /**
+     * Tampilkan detail pendidikan berdasarkan ID.
+     */
+    public function show($id): JsonResponse
     {
         try {
-            $result = $this->pendidikan->edit($id);
+            $result = $this->pendidikan->show($id);
+
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail pendidikan: ' . $e->getMessage());
+            Log::error("Gagal ambil detail pendidikan: {$e->getMessage()}");
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function update(UpdatePendidikanRequest $request, $id)
+    /**
+     * Perbarui data pendidikan berdasarkan ID.
+     */
+    public function update(UpdatePendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $result = $this->pendidikan->update($request->validated(), $id);
+            $data   = $request->validated();
+            $result = $this->pendidikan->update($data, $id);
 
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update pendidikan: ' . $e->getMessage());
+            Log::error("Gagal update pendidikan: {$e->getMessage()}");
+
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function pindahPendidikan(PindahPendidikanRequest $request, $id)
+    /**
+     * Proses perpindahan pendidikan.
+     */
+    public function pindahPendidikan(PindahPendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $result = $this->pendidikan->pindahPendidikan($request->validated(), $id);
+            $data   = $request->validated();
+            $result = $this->pendidikan->pindahPendidikan($data, $id);
 
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'message' => 'Pendidikan baru berhasil dibuat',
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update pendidikan: ' . $e->getMessage());
+            Log::error("Gagal pindah pendidikan: {$e->getMessage()}");
+
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function keluarPendidikan(KeluarPendidikanRequest $request, $id)
+    /**
+     * Proses keluar dari pendidikan.
+     */
+    public function keluarPendidikan(KeluarPendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $result = $this->pendidikan->keluarPendidikan($request->validated(), $id);
+            $data   = $request->validated();
+            $result = $this->pendidikan->keluarPendidikan($data, $id);
 
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data'    => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update pendidikan: ' . $e->getMessage());
+            Log::error("Gagal keluar pendidikan: {$e->getMessage()}");
+
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

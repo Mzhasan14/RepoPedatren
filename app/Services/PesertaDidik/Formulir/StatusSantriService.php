@@ -3,96 +3,152 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Santri;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class StatusSantriService
 {
-    public function index($bioId)
+    public function index(string $bioId): array
     {
         $santri = Santri::where('biodata_id', $bioId)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nis' => $item->nis,
-                    'tanggal_masuk' => $item->tanggal_masuk,
-                    'tanggal_keluar' => $item->tanggal_keluar,
-                    'status' => $item->status
-                ];
-            });
+            ->get();
 
-        if (!$santri) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        if ($santri->isEmpty()) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan',
+            ];
         }
 
-        return ['status' => true, 'data' => $santri];
+        $data = $santri->map(fn(Santri $santri) => [
+            'id'             => $santri->id,
+            'nis'            => $santri->nis,
+            'tanggal_masuk'  => $santri->tanggal_masuk,
+            'tanggal_keluar' => $santri->tanggal_keluar,
+            'status'         => $santri->status,
+        ])->toArray();
+
+        return [
+            'status' => true,
+            'data'   => $data,
+        ];
     }
 
-    public function store(array $data, string $bioId)
+    public function store(array $input, string $bioId): array
     {
-        return DB::transaction(function () use ($data, $bioId) {
-            $exist = Santri::where('status', 'aktif')
-                ->whereHas('biodata', function ($query) use ($bioId) {
-                    $query->where('id', $bioId);
-                })
-                ->first();
+        return DB::transaction(function () use ($input, $bioId) {
+            // Check existing active santri
+            $exists = Santri::where('biodata_id', $bioId)
+                ->where('status', 'aktif')
+                ->exists();
 
-            if ($exist) {
-                return ['status' => false, 'message' => 'Data masih santri aktif'];
+            if ($exists) {
+                return [
+                    'status'  => false,
+                    'message' => 'Santri masih dalam status aktif',
+                ];
             }
 
-            $santri = new Santri();
-            $santri->biodata_id = $bioId;
-            $santri->nis = $data['nis'];
-            $santri->tanggal_masuk = $data['tanggal_masuk'] ?? now();
-            $santri->tanggal_keluar = $data['tanggal_keluar'] ?? null;
-            $santri->status = 'aktif';
-            $santri->created_by = Auth::id();
-            $santri->save();
+            $santri = Santri::create([
+                'biodata_id'    => $bioId,
+                'nis'           => $input['nis'],
+                'tanggal_masuk' => isset($input['tanggal_masuk'])
+                    ? Carbon::parse($input['tanggal_masuk'])
+                    : Carbon::now(),
+                'tanggal_keluar' => $input['tanggal_keluar']
+                    ? Carbon::parse($input['tanggal_keluar'])
+                    : null,
+                'status'        => 'aktif',
+                'created_by'    => Auth::id(),
+            ]);
 
-            return ['status' => true, 'data' => $santri];
+            return [
+                'status' => true,
+                'data'   => $santri,
+            ];
         });
     }
 
-    public function edit($id)
+    public function show(int $id): array
     {
         $santri = Santri::find($id);
 
-        if (!$santri) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        if (! $santri) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan',
+            ];
         }
 
         return [
             'status' => true,
-            'data' => [
-                'id' => $santri->id,
-                'nis' => $santri->nis,
-                'tanggal_masuk' => $santri->tanggal_masuk,
+            'data'   => [
+                'id'             => $santri->id,
+                'nis'            => $santri->nis,
+                'tanggal_masuk'  => $santri->tanggal_masuk,
                 'tanggal_keluar' => $santri->tanggal_keluar,
-                'status' => $santri->status
+                'status'         => $santri->status,
             ],
         ];
     }
 
-    public function update(array $data, $id)
+    public function update(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
+        return DB::transaction(function () use ($input, $id) {
             $santri = Santri::find($id);
 
-            if (!$santri) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            if (! $santri) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data tidak ditemukan',
+                ];
             }
 
-            $santri->nis = $data['nis'] ?? $santri->nis;
-            $santri->tanggal_masuk = $data['tanggal_masuk'] ?? $santri->tanggal_masuk;
-            $santri->tanggal_keluar = $data['tanggal_keluar'] ?? $santri->tanggal_keluar;
-            $santri->status = $data['status'] ?? $santri->status;
-            $santri->updated_by = Auth::id();
-            $santri->updated_at = now();
+            // Assign only provided fields
+            $santri->nis            = $input['nis'] ?? $santri->nis;
+            $santri->tanggal_masuk  = isset($input['tanggal_masuk'])
+                ? Carbon::parse($input['tanggal_masuk'])
+                : $santri->tanggal_masuk;
+            $santri->tanggal_keluar = isset($input['tanggal_keluar'])
+                ? Carbon::parse($input['tanggal_keluar'])
+                : $santri->tanggal_keluar;
+            $santri->status         = $input['status'] ?? $santri->status;
+            $santri->updated_by     = Auth::id();
+
+            // Check if any change
+            if (! $santri->isDirty()) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tidak ada perubahan data',
+                ];
+            }
+
             $santri->save();
 
-            return ['status' => true, 'data' => $santri];
+            return [
+                'status' => true,
+                'data'   => $santri,
+            ];
         });
+    }
+
+    public function delete(int $id): array
+    {
+        $santri = Santri::find($id);
+
+        if (! $santri) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan',
+            ];
+        }
+
+        $santri->delete();
+
+        return [
+            'status'  => true,
+            'message' => 'Data berhasil dihapus',
+        ];
     }
 }

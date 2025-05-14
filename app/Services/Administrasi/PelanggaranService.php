@@ -133,17 +133,6 @@ class PelanggaranService
                 'updated_at'        => now(),
             ]);
 
-            activity('pelanggaran_create')
-                ->causedBy(Auth::user())
-                ->performedOn($pelanggaran)
-                ->withProperties([
-                    'after' => $pelanggaran->toArray(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('create_pelanggaran')
-                ->log('Pelanggaran baru ditambahkan.');
-
             return ['status' => true, 'data' => $pelanggaran];
         });
     }
@@ -178,8 +167,6 @@ class PelanggaranService
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            $before = $pelanggaran->toArray();
-
             $pelanggaran->update([
                 'status_pelanggaran' => $data['status_pelanggaran'],
                 'jenis_putusan'     => $data['jenis_putusan'],
@@ -189,18 +176,6 @@ class PelanggaranService
                 'updated_by'        => Auth::id(),
                 'updated_at'        => now(),
             ]);
-
-            activity('pelanggaran_update')
-                ->causedBy(Auth::user())
-                ->performedOn($pelanggaran)
-                ->withProperties([
-                    'before' => $before,
-                    'after' => $pelanggaran->toArray(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('update_pelanggaran')
-                ->log('Data pelanggaran diperbarui.');
 
             return ['status' => true, 'data' => $pelanggaran];
         });

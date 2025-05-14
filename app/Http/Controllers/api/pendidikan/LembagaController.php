@@ -6,70 +6,59 @@ use Illuminate\Http\Request;
 use App\Http\Resources\PdResource;
 use App\Models\Pendidikan\Lembaga;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class LembagaController extends Controller
 {
     public function index()
     {
-        $lembaga = Lembaga::Active()->get();
-        return new PdResource(true, 'Data Lembaga', $lembaga);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_lembaga' => 'required|string|max:100',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $lembaga = Lembaga::create($validator->validated());
-        return new PdResource(true, 'Lembaga Berhasil Ditambah', $lembaga);
+        $lembagas = Lembaga::where('status', true)->get();
+        return response()->json($lembagas);
     }
 
     public function show($id)
     {
         $lembaga = Lembaga::findOrFail($id);
-        return new PdResource(true, 'Detail Lembaga', $lembaga);
+        return response()->json($lembaga);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nama_lembaga' => 'required|string|max:255',
+        ]);
+
+        $lembaga = Lembaga::create([
+            'nama_lembaga' => $request->nama_lembaga,
+            'created_by'   => Auth::id(),
+        ]);
+
+        return response()->json($lembaga, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $lembaga = Lembaga::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_lembaga' => 'required|string|max:100',
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        $request->validate([
+            'nama_lembaga' => 'sometimes|required|string|max:255',
+            'status'       => 'sometimes|required|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $lembaga = Lembaga::findOrFail($id);
+        $lembaga->fill($request->only('nama_lembaga', 'status'));
+        $lembaga->updated_by = Auth::id();
+        $lembaga->save();
 
-        $lembaga->update($validator->validated());
-        return new PdResource(true, 'Lembaga Berhasil Diubah', $lembaga);
+        return response()->json($lembaga);
     }
 
     public function destroy($id)
     {
         $lembaga = Lembaga::findOrFail($id);
+        $lembaga->deleted_by = Auth::id();
+        $lembaga->save();
         $lembaga->delete();
-        return new PdResource(true, 'Lembaga Berhasil Dihapus', null);
-    }
 
-    public function getLembagaList()
-    {
-        $lembagas = Lembaga::select('id', 'nama')->orderBy('nama')->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data'   => $lembagas
-        ]);
+        return response()->json(null, 204);
     }
 }

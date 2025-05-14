@@ -37,6 +37,7 @@ return new class extends Migration
             $table->text('keterangan');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('pengantar_id')->references('id')->on('orang_tua_wali')->onDelete('cascade');

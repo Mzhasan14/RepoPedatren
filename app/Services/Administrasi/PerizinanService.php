@@ -197,17 +197,6 @@ class PerizinanService
                 'updated_at'       => now(),
             ]);
 
-            activity('perizinan_create')
-                ->causedBy(Auth::user())
-                ->performedOn($izin)
-                ->withProperties([
-                    'after' => $izin->toArray(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('create_perizinan')
-                ->log('Perizinan santri ditambahkan.');
-
             return ['status' => true, 'data' => $izin];
         });
     }
@@ -249,8 +238,6 @@ class PerizinanService
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            $before = $izin->toArray();
-
             $izin->update([
                 'pengasuh_id'      => $data['pengasuh_id'] ?? null,
                 'biktren_id'       => $data['biktren_id'] ?? null,
@@ -267,18 +254,6 @@ class PerizinanService
                 'updated_by'       => Auth::id(),
                 'updated_at'       => now(),
             ]);
-
-            activity('perizinan_update')
-                ->causedBy(Auth::user())
-                ->performedOn($izin)
-                ->withProperties([
-                    'before' => $before,
-                    'after' => $izin->toArray(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('update_perizinan')
-                ->log('Perizinan santri diperbarui.');
 
             return ['status' => true, 'data' => $izin];
         });

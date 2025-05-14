@@ -6,67 +6,62 @@ use Illuminate\Http\Request;
 use App\Models\Kewilayahan\Kamar;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class KamarController extends Controller
 {
     public function index()
     {
-        $kamar = Kamar::Active()->get();
-        return new PdResource(true, 'List data kamar', $kamar);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_kamar' => 'required|string|max:100',
-            'id_blok' => 'required|integer',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $kamar = Kamar::create($validator->validated());
-
-        return new PdResource(true, 'Data Berhasil Ditambah', $kamar);
+        $kamars = Kamar::with('blok')->where('status', true)->get();
+        return response()->json($kamars);
     }
 
     public function show($id)
     {
-        $kamar = Kamar::findOrFail($id);
+        $kamar = Kamar::with('blok')->findOrFail($id);
+        return response()->json($kamar);
+    }
 
-        return new PdResource(true, 'Detail data', $kamar);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'blok_id'    => 'required|exists:blok,id',
+            'nama_kamar' => 'required|string|max:255',
+        ]);
+
+        $kamar = Kamar::create([
+            'blok_id'    => $request->blok_id,
+            'nama_kamar' => $request->nama_kamar,
+            'created_by' => Auth::id(),
+        ]);
+
+        return response()->json($kamar, 201);
     }
 
     public function update(Request $request, $id)
     {
-
-        $kamar = Kamar::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_kamar' => 'required|string|max:100',
-            'id_blok' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        $request->validate([
+            'blok_id'    => 'sometimes|required|exists:blok,id',
+            'nama_kamar' => 'sometimes|required|string|max:255',
+            'status'     => 'sometimes|required|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $kamar = Kamar::findOrFail($id);
+        $kamar->fill($request->only('blok_id', 'nama_kamar', 'status'));
+        $kamar->updated_by = Auth::id();
+        $kamar->save();
 
-        $kamar->update($request->validated());
-
-        return new PdResource(true, 'Data Berhasil Diubah', $kamar);
+        return response()->json($kamar);
     }
 
     public function destroy($id)
     {
         $kamar = Kamar::findOrFail($id);
-
+        $kamar->deleted_by = Auth::id();
+        $kamar->save();
         $kamar->delete();
-        return new PdResource(true, 'Data Berhasil Dihapus', null);
+
+        return response()->json(null, 204);
     }
 }

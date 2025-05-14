@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('angkatan', function (Blueprint $table) {
+        Schema::create('kelulusan', function (Blueprint $table) {
             $table->id();
-            $table->string('angkatan')->unique();
+            $table->unsignedBigInteger('santri_id');
             $table->unsignedBigInteger('tahun_ajaran_id');
-            $table->boolean('status')->default(true);
+            $table->enum('status', ['lulus', 'tidak lulus']);
             $table->timestamps();
-
-            $table->foreign('tahun_ajaran_id')->references('id')->on('tahun_ajaran')->onDelete('cascade');
         });
     }
 
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('angkatan');
+        Schema::dropIfExists('kelulusan');
     }
 };

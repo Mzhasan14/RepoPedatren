@@ -11,110 +11,141 @@ use Illuminate\Support\Facades\Storage;
 
 class BerkasService
 {
-    public function index($bioId)
+    public function index(string $biodataId): array
     {
-        $berkas = DB::table('berkas as br')
-            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
-            ->where('br.biodata_id', $bioId)
-            ->select(
-                'br.id',
-                'br.file_path',
-                'jk.nama_jenis_berkas'
-            )
+        $br = Berkas::with('jenisBerkas:id,nama_jenis_berkas')
+            ->where('biodata_id', $biodataId)
             ->get();
 
-        if (!$berkas) {
-            return ['status' => false, 'message' => 'tidak memiliki berkas'];
+        if ($br->isEmpty()) {
+            return [
+                'status'  => false,
+                'message' => 'Biodata tidak memiliki berkas.',
+            ];
         }
 
-        return ['status' => true, 'data' => $berkas];
+        $data = $br->map(fn(Berkas $br) => [
+            'id'                 => $br->id,
+            'file_path'          => $br->file_path,
+            'jenis_berkas_id'    => $br->jenis_berkas_id,
+            'nama_jenis_berkas'  => $br->jenisBerkas->nama_jenis_berkas,
+        ])->toArray();
+
+        return [
+            'status' => true,
+            'data'   => $data,
+        ];
     }
 
-    public function edit($id)
+    public function show(int $id): array
     {
-        $berkas = DB::table('berkas as br')
-            ->join('jenis_berkas as jk', 'br.jenis_berkas_id', 'jk.id')
-            ->where('br.id', $id)
-            ->select(
-                'br.id',
-                'br.file_path',
-                'br.jenis_berkas_id',
-                'jk.nama_jenis_berkas'
-            )
-            ->first();
+        $br = Berkas::with('jenisBerkas:id,nama_jenis_berkas')->find($id);
 
-        if (!$berkas) {
-            return ['status' => false, 'message' => 'tidak memiliki berkas'];
+        if (! $br) {
+            return [
+                'status'  => false,
+                'message' => "Berkas dengan ID #{$id} tidak ditemukan.",
+            ];
         }
 
-        return ['status' => true, 'data' => $berkas];
+        return [
+            'status' => true,
+            'data'   => [
+                'id'                 => $br->id,
+                'file_path'          => $br->file_path,
+                'jenis_berkas_id'    => $br->jenis_berkas_id,
+                'nama_jenis_berkas'  => $br->jenisBerkas->nama_jenis_berkas,
+            ],
+        ];
     }
 
-    public function store(array $data, string $biodataId)
+    public function store(array $input, string $biodataId): array
     {
-        return DB::transaction(function () use ($data, $biodataId) {
-            if (empty($data['file_path']) || !$data['file_path'] instanceof UploadedFile) {
-                return ['status' => false, 'message' => 'Data berkas tidak valid.'];
+        return DB::transaction(function () use ($input, $biodataId) {
+            // Validasi berkas
+            if (empty($input['file']) || ! $input['file'] instanceof UploadedFile) {
+                return [
+                    'status'  => false,
+                    'message' => 'File tidak valid.',
+                ];
             }
 
-            if (empty($data['jenis_berkas_id']) || !JenisBerkas::where('id', $data['jenis_berkas_id'])->exists()) {
-                return ['status' => false, 'message' => 'Jenis berkas tidak ditemukan.'];
+            // Validasi jenis berkas
+            $jenisId = $input['jenis_berkas_id'] ?? null;
+            if (! $jenisId || ! JenisBerkas::where('id', $jenisId)->exists()) {
+                return [
+                    'status'  => false,
+                    'message' => 'Jenis berkas tidak ditemukan.',
+                ];
             }
 
-            $uploadedFile = $data['file_path'];
-            $filePath = $uploadedFile->store('formulir', 'public');
-            $fileUrl  = Storage::url($filePath);
+            // Simpan file
+            $uploadedFile = $input['file'];
+            $path = $uploadedFile->store('formulir', 'public');
 
-            $berkas = new Berkas();
-            $berkas->biodata_id = $biodataId;
-            $berkas->jenis_berkas_id = $data['jenis_berkas_id'];
-            $berkas->file_path = $fileUrl;
-            $berkas->status = true;
-            $berkas->created_by = Auth::id();
-            $berkas->save();
+            // Buat record
+            $br = Berkas::create([
+                'biodata_id'        => $biodataId,
+                'jenis_berkas_id'   => $jenisId,
+                'file_path'         => Storage::url($path),
+                'status'            => true,
+                'created_by'        => Auth::id(),
+            ]);
 
             return [
                 'status' => true,
-                'data' => $berkas
+                'data'   => $br,
             ];
         });
     }
 
-
-    public function update(array $data, string $id)
+    public function update(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $berkas = Berkas::find($id);
-            if (!$berkas) {
-                return ['status' => false, 'message' => "Berkas dengan ID #{$id} tidak ditemukan"];
+        return DB::transaction(function () use ($input, $id) {
+            $br = Berkas::find($id);
+            if (! $br) {
+                return [
+                    'status'  => false,
+                    'message' => "Berkas dengan ID #{$id} tidak ditemukan.",
+                ];
             }
 
-            if (empty($data['file_path']) || !$data['file_path'] instanceof UploadedFile) {
-                return ['status' => false, 'message' => 'Data berkas tidak valid.'];
+            // Validasi berkas baru
+            if (empty($input['file']) || ! $input['file'] instanceof UploadedFile) {
+                return [
+                    'status'  => false,
+                    'message' => 'File tidak valid.',
+                ];
             }
 
-            if (!empty($data['jenis_berkas_id']) && !JenisBerkas::where('id', $data['jenis_berkas_id'])->exists()) {
-                return ['status' => false, 'message' => 'Jenis berkas tidak ditemukan.'];
+            // Validasi jenis berkas jika diinput
+            $jenisId = $input['jenis_berkas_id'] ?? $br->jenis_berkas_id;
+            if (! JenisBerkas::where('id', $jenisId)->exists()) {
+                return [
+                    'status'  => false,
+                    'message' => 'Jenis berkas tidak ditemukan.',
+                ];
             }
 
-            if (!empty($berkas->file_path) && Storage::disk('public')->exists($berkas->file_path)) {
-                Storage::disk('public')->delete($berkas->file_path);
+            // Hapus file lama jika ada
+            $oldPath = str_replace(Storage::url(''), '', $br->file_path);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
             }
 
-            $uploadedFile = $data['file_path'];
-            $filePath = $uploadedFile->store('formulir', 'public');
-            $fileUrl  = Storage::url($filePath);
+            // Simpan file baru
+            $uploadedFile = $input['file'];
+            $path = $uploadedFile->store('formulir', 'public');
 
-            $berkas->file_path = $fileUrl;
-            $berkas->jenis_berkas_id = $data['jenis_berkas_id'];
-            $berkas->status = true;
-            $berkas->updated_by = Auth::id();
-
-            $berkas->save();
+            // Update record
+            $br->file_path        = Storage::url($path);
+            $br->jenis_berkas_id  = $jenisId;
+            $br->updated_by       = Auth::id();
+            $br->save();
 
             return [
                 'status' => true,
-                'data' => $berkas
+                'data'   => $br,
             ];
         });
     }

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('keterangan');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');

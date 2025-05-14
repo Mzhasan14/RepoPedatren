@@ -58,7 +58,7 @@ class DetailPelanggaranService
         if ($pelanggaran) {
             $data['pelanggaran'] = [
                 'id'                   => $pelanggaran->id,
-                'nama_santri'          => $pelanggaran->nama,                     
+                'nama_santri'          => $pelanggaran->nama,
                 'provinsi'             => $pelanggaran->nama_provinsi ?? '-',
                 'kabupaten'            => $pelanggaran->nama_kabupaten ?? '-',
                 'kecamatan'            => $pelanggaran->nama_kecamatan ?? '-',
@@ -80,15 +80,15 @@ class DetailPelanggaranService
 
         // Berkas Pelanggaran
         $berkas = DB::table('pelanggaran as pl')
-        ->join('santri as s', 's.id', 'pl.santri_id')
-        ->join('biodata as b', 's.biodata_id', 'b.id')
-        ->join('berkas_pelanggaran as bp', 'pl.id', 'bp.pelanggaran_id')
-        ->where('pl.id', $pelanggaranId)
-        ->whereColumn('bp.created_at', '>=', 'pl.created_at')
-        ->orderBy('bp.created_at', 'desc')
-        ->limit(4)
-        ->selectRaw("COALESCE(bp.file_path, 'default.jpg') as file_path")
-        ->get();
+            ->join('santri as s', 's.id', 'pl.santri_id')
+            ->join('biodata as b', 's.biodata_id', 'b.id')
+            ->join('berkas_pelanggaran as bp', 'pl.id', 'bp.pelanggaran_id')
+            ->where('pl.id', $pelanggaranId)
+            ->whereColumn('bp.created_at', '>=', 'pl.created_at')
+            ->orderBy('bp.created_at', 'desc')
+            ->limit(4)
+            ->selectRaw("COALESCE(bp.file_path, 'default.jpg') as file_path")
+            ->get();
 
         $data['Berkas'] = $berkas->map(function ($r) {
             return URL::to($r->file_path);

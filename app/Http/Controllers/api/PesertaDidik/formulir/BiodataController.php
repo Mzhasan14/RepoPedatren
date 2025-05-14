@@ -39,10 +39,10 @@ class BiodataController extends Controller
         }
     }
 
-    public function edit($id)
+    public function show($id)
     {
         try {
-            $result = $this->biodata->edit($id);
+            $result = $this->biodata->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'

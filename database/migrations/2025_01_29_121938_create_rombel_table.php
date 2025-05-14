@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('rombel', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_rombel')->nullable(false);
+            $table->string('nama_rombel');
             $table->enum('gender_rombel', ['putra', 'putri']);
             $table->unsignedBigInteger('kelas_id');
-            $table->unsignedBigInteger('created_by')->nullable(false);
+            $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
-            $table->boolean('status')->nullable(false);
+            $table->boolean('status')->default(true);
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

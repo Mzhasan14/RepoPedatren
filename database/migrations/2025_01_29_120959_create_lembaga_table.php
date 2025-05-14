@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('lembaga', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_lembaga')->nullable(false);
-            $table->unsignedBigInteger('created_by')->nullable(false);
+            $table->string('nama_lembaga');
+            $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
-            $table->boolean('status')->nullable(false);
+            $table->boolean('status')->default(true);
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

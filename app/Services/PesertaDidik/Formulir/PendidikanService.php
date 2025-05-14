@@ -3,219 +3,206 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Santri;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PendidikanService
 {
-    public function index(string $bioId)
+
+    public function index(string $bioId): array
     {
-        $pendidikan = RiwayatPendidikan::with([
+        $collection = RiwayatPendidikan::with([
             'lembaga:id,nama_lembaga',
             'jurusan:id,nama_jurusan',
             'kelas:id,nama_kelas',
             'rombel:id,nama_rombel',
-            'santri.biodata:id'
+            'santri.biodata:id',
         ])
-            ->whereHas('santri.biodata', function ($query) use ($bioId) {
-                $query->where('id', $bioId);
-            })
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama_lembaga' => $item->lembaga->nama_lembaga,
-                    'nama_jurusan' => $item->jurusan->nama_jurusan,
-                    'nama_kelas' => $item->kelas->nama_kelas,
-                    'nama_rombel' => $item->rombel->nama_rombel,
-                ];
-            });
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->get();
 
-        return ['status' => true, 'data' => $pendidikan];
+        $data = $collection->map(fn(RiwayatPendidikan $rp) => [
+            'id'             => $rp->id,
+            'no_induk'       => $rp->no_induk,
+            'nama_lembaga'   => $rp->lembaga->nama_lembaga,
+            'nama_jurusan'   => $rp->jurusan->nama_jurusan,
+            'nama_kelas'     => $rp->kelas->nama_kelas,
+            'nama_rombel'    => $rp->rombel->nama_rombel,
+            'tanggal_masuk'  => $rp->tanggal_masuk,
+            'tanggal_keluar' => $rp->tanggal_keluar,
+            'status'         => $rp->status,
+        ]);
+
+        return ['status' => true, 'data' => $data];
     }
 
-    public function store(array $data, string $bioId)
+    public function store(array $input, string $bioId): array
     {
-        return DB::transaction(function () use ($data, $bioId) {
+        return DB::transaction(function () use ($input, $bioId) {
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
-
-            if (!$santri) {
-                return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
+            if (! $santri) {
+                return ['status' => false, 'message' => 'Santri tidak ditemukan.'];
             }
 
-            // Cek apakah santri sudah memiliki pendidikan aktif
-            $exist = RiwayatPendidikan::whereHas('santri.biodata', function ($query) use ($bioId) {
-                $query->where('id', $bioId);
-            })->where('status', 'aktif')->first();
-
-            if ($exist) {
-                return ['status' => false, 'message' => 'Santri masih memiliki pendidikan aktif'];
+            // Cek duplikasi pendidikan aktif
+            if (RiwayatPendidikan::where('santri_id', $santri->id)
+                ->where('status', 'aktif')
+                ->exists()
+            ) {
+                return ['status' => false, 'message' => 'Santri sudah memiliki pendidikan aktif.'];
             }
 
-            $new = RiwayatPendidikan::create([
-                'santri_id'   => $santri->id,
-                'no_induk'    => $data['no_induk'] ?? null,
-                'lembaga_id'  => $data['lembaga_id'],
-                'jurusan_id'  => $data['jurusan_id'],
-                'kelas_id'    => $data['kelas_id'],
-                'rombel_id'   => $data['rombel_id'],
-                'tanggal_masuk' => $data['tanggal_masuk'] ?? now(),
-                'tanggal_keluar' => null,
-                'status'      => 'aktif',
-                'created_by'  => Auth::id(),
-                'created_at'  => now(),
-                'updated_at'  => now(),
+            $rp = RiwayatPendidikan::create([
+                'santri_id'      => $santri->id,
+                'no_induk'       => $input['no_induk'] ?? null,
+                'lembaga_id'     => $input['lembaga_id'],
+                'jurusan_id'     => $input['jurusan_id'],
+                'kelas_id'       => $input['kelas_id'],
+                'rombel_id'      => $input['rombel_id'],
+                'tanggal_masuk'  => isset($input['tanggal_masuk'])
+                                    ? Carbon::parse($input['tanggal_masuk'])
+                                    : Carbon::now(),
+                'status'         => 'aktif',
+                'created_by'     => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $new];
+            return ['status' => true, 'data' => $rp];
         });
     }
 
-    public function edit($id): array
+    public function show(int $id): array
     {
-        $pendidikan = RiwayatPendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel'])
-            ->find($id);
-
-        if (!$pendidikan) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        $rp = RiwayatPendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel'])->find($id);
+        if (! $rp) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
         return [
             'status' => true,
-            'data' => [
-                'id' => $pendidikan->id,
-                'nama_lembaga' => $pendidikan->lembaga->nama_lembaga,
-                'nama_jurusan' => $pendidikan->jurusan->nama_jurusan,
-                'nama_kelas' => $pendidikan->kelas->nama_kelas,
-                'nama_rombel' => $pendidikan->rombel->nama_rombel,
-                'tanggal_masuk' => $pendidikan->tanggal_masuk,
-                'tanggal_keluar' => $pendidikan->tanggal_keluar,
-            ]
+            'data'   => [
+                'id'             => $rp->id,
+                'no_induk'       => $rp->no_induk,
+                'nama_lembaga'   => $rp->lembaga->nama_lembaga,
+                'nama_jurusan'   => $rp->jurusan->nama_jurusan,
+                'nama_kelas'     => $rp->kelas->nama_kelas,
+                'nama_rombel'    => $rp->rombel->nama_rombel,
+                'tanggal_masuk'  => $rp->tanggal_masuk,
+                'tanggal_keluar' => $rp->tanggal_keluar,
+                'status'         => $rp->status,
+            ],
         ];
     }
 
-    public function pindahPendidikan(array $data, string $id)
+    public function pindahPendidikan(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $pendidikan = RiwayatPendidikan::find($id);
-
-            if (!$pendidikan) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $old = RiwayatPendidikan::find($id);
+            if (! $old) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
-            if (!empty($pendidikan->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat pendidikan tidak boleh diubah setelah berhenti'];
+            if ($old->tanggal_keluar) {
+                return ['status' => false, 'message' => 'Riwayat sudah ditutup.'];
             }
 
-            if (empty($data['tanggal_masuk']) || !strtotime($data['tanggal_masuk'])) {
-                return ['status' => false, 'message' => 'Tanggal masuk wajib diisi dan harus format tanggal yang valid'];
+            if (empty($input['tanggal_masuk']) || ! strtotime($input['tanggal_masuk'])) {
+                return ['status' => false, 'message' => 'Tanggal masuk tidak valid.'];
             }
 
-            $tanggalKeluar = now();
-            $tanggalMasukBaru = Carbon::parse($data['tanggal_masuk']);
-
-            if ($tanggalMasukBaru->lt($tanggalKeluar)) {
-                return ['status' => false, 'message' => 'Tanggal masuk tidak boleh lebih awal dari tanggal keluar sebelumnya'];
+            $tglBaru = Carbon::parse($input['tanggal_masuk']);
+            $today   = Carbon::now();
+            if ($tglBaru->lt($today)) {
+                return ['status' => false, 'message' => 'Tanggal masuk baru minimal hari ini.'];
             }
 
-            $pendidikan->update([
+            $old->update([
                 'status'         => 'pindah',
-                'tanggal_keluar' => $tanggalKeluar,
+                'tanggal_keluar' => $today,
                 'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
             ]);
 
             $new = RiwayatPendidikan::create([
-                'santri_id'      => $pendidikan->santri_id,
-                'no_induk'       => $pendidikan?->no_induk ?? null,
-                'lembaga_id'     => $data['lembaga_id'],
-                'jurusan_id'     => $data['jurusan_id'],
-                'kelas_id'       => $data['kelas_id'],
-                'rombel_id'      => $data['rombel_id'],
-                'tanggal_masuk'  => $data['tanggal_masuk'],
+                'santri_id'      => $old->santri_id,
+                'no_induk'       => $old->no_induk,
+                'lembaga_id'     => $input['lembaga_id'],
+                'jurusan_id'     => $input['jurusan_id'],
+                'kelas_id'       => $input['kelas_id'],
+                'rombel_id'      => $input['rombel_id'],
+                'tanggal_masuk'  => $tglBaru,
                 'status'         => 'aktif',
                 'created_by'     => Auth::id(),
-                'created_at'     => now(),
-                'updated_at'     => now(),
             ]);
-
 
             return ['status' => true, 'data' => $new];
         });
     }
 
-    public function keluarPendidikan(array $data, string $id)
+    public function keluarPendidikan(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $pendidikan = RiwayatPendidikan::find($id);
-
-            if (!$pendidikan) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $rp = RiwayatPendidikan::find($id);
+            if (! $rp) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
-            if (!empty($pendidikan->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat pendidikan tidak boleh diubah setelah berhenti'];
+            if ($rp->tanggal_keluar) {
+                return ['status' => false, 'message' => 'Riwayat sudah ditutup.'];
             }
 
-            if (empty($data['tanggal_keluar']) || !strtotime($data['tanggal_keluar'])) {
-                return ['status' => false, 'message' => 'Tanggal keluar wajib diisi dan harus format tanggal yang valid'];
+            if (empty($input['tanggal_keluar']) || ! strtotime($input['tanggal_keluar'])) {
+                return ['status' => false, 'message' => 'Tanggal keluar tidak valid.'];
             }
 
-            if (strtotime($data['tanggal_keluar']) < strtotime($pendidikan->tanggal_masuk)) {
-                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
+            $tglKeluar = Carbon::parse($input['tanggal_keluar']);
+            if ($tglKeluar->lt(Carbon::parse($rp->tanggal_masuk))) {
+                return ['status' => false, 'message' => 'Tanggal keluar sebelum tanggal masuk.'];
             }
 
-            $tanggalKeluarBaru = Carbon::parse($data['tanggal_keluar']);
-            $tanggalMasukLama = Carbon::parse($pendidikan->tanggal_masuk);
-
-            if ($tanggalKeluarBaru->lt($tanggalMasukLama)) {
-                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
-            }
-
-            // Update data
-            $pendidikan->update([
-                'status'         => $data['status'],
-                'tanggal_keluar' => $data['tanggal_keluar'],
+            $rp->update([
+                'status'         => 'keluar',
+                'tanggal_keluar' => $tglKeluar,
                 'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
             ]);
 
-            return ['status' => true, 'data' => $pendidikan];
+            return ['status' => true, 'data' => $rp];
         });
     }
 
-    public function update(array $data, string $id)
+    public function update(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $pendidikan = RiwayatPendidikan::find($id);
-
-            if (!$pendidikan) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $rp = RiwayatPendidikan::find($id);
+            if (! $rp) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
-            if (!empty($data['tanggal_keluar'])) {
-                // Validasi tanggal keluar tidak boleh lebih awal dari tanggal masuk
-                if (strtotime($data['tanggal_keluar']) < strtotime($pendidikan->tanggal_masuk)) {
-                    return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
+
+            if (! empty($input['tanggal_keluar'])) {
+                $tglKeluar = Carbon::parse($input['tanggal_keluar']);
+                $tglMasuk  = Carbon::parse($input['tanggal_masuk'] ?? $rp->tanggal_masuk);
+                if ($tglKeluar->lt($tglMasuk)) {
+                    return ['status' => false, 'message' => 'Tanggal keluar sebelum tanggal masuk.'];
                 }
             }
-            // Update data
-            $pendidikan->update([
-                'no_induk'       => $pendidikan?->no_induk ?? null,
-                'lembaga_id'     => $data['lembaga_id'],
-                'jurusan_id'     => $data['jurusan_id'] ?? null,
-                'kelas_id'       => $data['kelas_id'] ?? null,
-                'rombel_id'      => $data['rombel_id'] ?? null,
-                'tanggal_masuk'  => $data['tanggal_masuk'],
-                'tanggal_keluar'  => $data['tanggal_keluar'] ?? null,
+
+            $rp->update([
+                'no_induk'       => $input['no_induk'] ?? $rp->no_induk,
+                'lembaga_id'     => $input['lembaga_id'],
+                'jurusan_id'     => $input['jurusan_id'],
+                'kelas_id'       => $input['kelas_id'],
+                'rombel_id'      => $input['rombel_id'],
+                'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
+                'tanggal_keluar' => ! empty($input['tanggal_keluar'])
+                    ? Carbon::parse($input['tanggal_keluar'])
+                    : null,
                 'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
             ]);
 
-            return ['status' => true, 'data' => $pendidikan];
+            return ['status' => true, 'data' => $rp];
         });
     }
 }

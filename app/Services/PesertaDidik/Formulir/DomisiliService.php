@@ -10,210 +10,221 @@ use Illuminate\Support\Facades\Auth;
 
 class DomisiliService
 {
-
     public function index(string $bioId): array
     {
-        $domisili = RiwayatDomisili::with([
+        $list = RiwayatDomisili::with([
             'wilayah:id,nama_wilayah',
             'blok:id,nama_blok',
             'kamar:id,nama_kamar',
             'santri.biodata:id'
         ])
-            ->whereHas('santri.biodata', function ($query) use ($bioId) {
-                $query->where('id', $bioId);
-            })
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama_wilayah' => $item->wilayah->nama_wilayah,
-                    'nama_blok' => $item->blok->nama_blok,
-                    'nama_kamar' => $item->kamar->nama_kamar,
-                    'tanggal_masuk' => $item->tanggal_masuk,
-                    'tanggal_keluar' => $item->tanggal_keluar,
-                    'status' => $item->status,
-                ];
-            });
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->get();
 
-        return ['status' => true, 'data' => $domisili];
+        $data = $list->map(fn(RiwayatDomisili $item) => [
+            'id'             => $item->id,
+            'nama_wilayah'   => $item->wilayah->nama_wilayah,
+            'nama_blok'      => $item->blok->nama_blok,
+            'nama_kamar'     => $item->kamar->nama_kamar,
+            'tanggal_masuk'  => $item->tanggal_masuk,
+            'tanggal_keluar' => $item->tanggal_keluar,
+            'status'         => $item->status,
+        ]);
+
+        return [
+            'status' => true,
+            'data'   => $data,
+        ];
     }
 
-
-    public function store(array $data, string $bioId)
+    public function store(array $input, string $bioId): array
     {
-        return DB::transaction(function () use ($data, $bioId) {
+        return DB::transaction(function () use ($input, $bioId) {
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
-
-            if (!$santri) {
-                return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
+            if (! $santri) {
+                return [
+                    'status'  => false,
+                    'message' => 'Santri untuk biodata ini tidak ditemukan.',
+                ];
             }
 
-            // Cek dan update domisili aktif jika ada
-            $exist = RiwayatDomisili::where('status', 'aktif')
-                ->where('santri_id', $santri->id)
-                ->first();
-
-            if ($exist) {
-                return ['status' => false, 'message' => 'Santri masih memiliki domisili aktif'];
+            // Tidak boleh ada domisili 'aktif' ganda
+            if (RiwayatDomisili::where('santri_id', $santri->id)
+                ->where('status', 'aktif')
+                ->exists()
+            ) {
+                return [
+                    'status'  => false,
+                    'message' => 'Santri masih memiliki domisili aktif.',
+                ];
             }
 
-            $domisili = RiwayatDomisili::create([
+            $dom = RiwayatDomisili::create([
                 'santri_id'     => $santri->id,
-                'wilayah_id'    => $data['wilayah_id'],
-                'blok_id'       => $data['blok_id'],
-                'kamar_id'      => $data['kamar_id'],
-                'tanggal_masuk' => $data['tanggal_masuk'] ?? now(),
+                'wilayah_id'    => $input['wilayah_id'],
+                'blok_id'       => $input['blok_id'],
+                'kamar_id'      => $input['kamar_id'],
+                'tanggal_masuk' => $input['tanggal_masuk']
+                    ? Carbon::parse($input['tanggal_masuk'])
+                    : Carbon::now(),
                 'tanggal_keluar' => null,
                 'status'        => 'aktif',
                 'created_by'    => Auth::id(),
-                'created_at'    => now(),
-                'updated_at'    => now(),
             ]);
 
-            return ['status' => true, 'data' => $domisili];
+            return [
+                'status' => true,
+                'data'   => $dom,
+            ];
         });
     }
 
-
-    public function edit($id): array
+    public function show(int $id): array
     {
-        $domisili = RiwayatDomisili::with(['wilayah', 'blok', 'kamar'])
-            ->find($id);
+        $dom = RiwayatDomisili::with(['wilayah', 'blok', 'kamar'])->find($id);
 
-        if (!$domisili) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        if (! $dom) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan.',
+            ];
         }
 
         return [
             'status' => true,
-            'data' => [
-                'id' => $domisili->id,
-                'nama_wilayah' => $domisili->wilayah->nama_wilayah,
-                'nama_blok' => $domisili->blok->nama_blok,
-                'nama_kamar' => $domisili->kamar->nama_kamar,
-                'tanggal_masuk' => $domisili->tanggal_masuk,
-                'tanggal_keluar' => $domisili->tanggal_keluar,
+            'data'   => [
+                'id'             => $dom->id,
+                'nama_wilayah'   => $dom->wilayah->nama_wilayah,
+                'nama_blok'      => $dom->blok->nama_blok,
+                'nama_kamar'     => $dom->kamar->nama_kamar,
+                'tanggal_masuk'  => $dom->tanggal_masuk,
+                'tanggal_keluar' => $dom->tanggal_keluar,
+                'status'         => $dom->status,
             ],
         ];
     }
 
-    public function pindahDomisili(array $data, string $id)
+    public function pindahDomisili(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $domisili = RiwayatDomisili::find($id);
-
-            if (!$domisili) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $old = RiwayatDomisili::find($id);
+            if (! $old) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
-            if (!empty($domisili->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat domisili tidak boleh diubah setelah keluar'];
+            if ($old->tanggal_keluar) {
+                return [
+                    'status'  => false,
+                    'message' => 'Riwayat sudah memiliki tanggal keluar, tidak dapat dipindah.',
+                ];
             }
 
-            if (empty($data['tanggal_masuk']) || !strtotime($data['tanggal_masuk'])) {
-                return ['status' => false, 'message' => 'Tanggal masuk wajib diisi dan harus format tanggal yang valid'];
+            $newMasuk = Carbon::parse($input['tanggal_masuk'] ?? '');
+            $today    = Carbon::now();
+
+            if ($newMasuk->lt($today)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal masuk baru tidak boleh sebelum hari ini.',
+                ];
             }
 
-            $tanggalKeluar = now();
-            $tanggalMasukBaru = Carbon::parse($data['tanggal_masuk']);
-
-            if ($tanggalMasukBaru->toDateString() < $tanggalKeluar->toDateString()) {
-                return ['status' => false, 'message' => 'Tanggal masuk tidak boleh lebih awal dari tanggal keluar sebelumnya'];
-            }
-
-            $domisili->update([
+            // Tutup domisili lama
+            $old->update([
                 'status'         => 'pindah',
-                'tanggal_keluar' => $tanggalKeluar,
+                'tanggal_keluar' => $today,
                 'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
             ]);
 
+            // Buat domisili baru
             $new = RiwayatDomisili::create([
-                'santri_id'      => $domisili->santri_id,
-                'wilayah_id'    => $data['wilayah_id'],
-                'blok_id'       => $data['blok_id'],
-                'kamar_id'      => $data['kamar_id'],
-                'tanggal_masuk'  => $data['tanggal_masuk'],
-                'status'         => 'aktif',
-                'created_by'     => Auth::id(),
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'santri_id'     => $old->santri_id,
+                'wilayah_id'    => $input['wilayah_id'],
+                'blok_id'       => $input['blok_id'],
+                'kamar_id'      => $input['kamar_id'],
+                'tanggal_masuk' => $newMasuk,
+                'status'        => 'aktif',
+                'created_by'    => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $new];
+            return [
+                'status' => true,
+                'data'   => $new,
+            ];
         });
     }
 
-    public function keluarDomisili(array $data, string $id)
+    public function keluarDomisili(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $domisili = RiwayatDomisili::find($id);
-
-            if (!$domisili) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $dom = RiwayatDomisili::find($id);
+            if (! $dom) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Jika sudah ada tanggal keluar, tidak bisa diubah lagi
-            if (!empty($domisili->tanggal_keluar)) {
-                return ['status' => false, 'message' => 'Data riwayat domisili tidak boleh diubah setelah berhenti'];
+            if ($dom->tanggal_keluar) {
+                return [
+                    'status'  => false,
+                    'message' => 'Riwayat sudah ditandai keluar.',
+                ];
             }
 
-            if (empty($data['tanggal_keluar']) || !strtotime($data['tanggal_keluar'])) {
-                return ['status' => false, 'message' => 'Tanggal keluar wajib diisi dan harus format tanggal yang valid'];
+            $tglKeluar = Carbon::parse($input['tanggal_keluar'] ?? '');
+            if ($tglKeluar->lt(Carbon::parse($dom->tanggal_masuk))) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
+                ];
             }
 
-            if (strtotime($data['tanggal_keluar']) < strtotime($domisili->tanggal_masuk)) {
-                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
-            }
-
-            $tanggalKeluarBaru = Carbon::parse($data['tanggal_keluar']);
-            $tanggalMasukLama = Carbon::parse($domisili->tanggal_masuk);
-
-            if ($tanggalKeluarBaru->lt($tanggalMasukLama)) {
-                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
-            }
-
-            // Update data
-            $domisili->update([
+            $dom->update([
                 'status'         => 'keluar',
-                'tanggal_keluar' => $data['tanggal_keluar'],
+                'tanggal_keluar' => $tglKeluar,
                 'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
             ]);
 
-            return ['status' => true, 'data' => $domisili];
+            return [
+                'status' => true,
+                'data'   => $dom,
+            ];
         });
     }
 
-    public function update(array $data, string $id)
+    public function update(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            $domisili = RiwayatDomisili::find($id);
-
-            if (!$domisili) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        return DB::transaction(function () use ($input, $id) {
+            $dom = RiwayatDomisili::find($id);
+            if (! $dom) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if (!empty($data['tanggal_keluar'])) {
-                // Validasi tanggal keluar tidak boleh lebih awal dari tanggal masuk
-                if (strtotime($data['tanggal_keluar']) < strtotime($domisili->tanggal_masuk)) {
-                    return ['status' => false, 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk'];
+            if (! empty($input['tanggal_keluar'])) {
+                $tglKeluar = Carbon::parse($input['tanggal_keluar']);
+                $tglMasuk  = Carbon::parse($input['tanggal_masuk'] ?? $dom->tanggal_masuk);
+
+                if ($tglKeluar->lt($tglMasuk)) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
+                    ];
                 }
             }
 
-            // Update data
-            $domisili->update([
-                'wilayah_id'    => $data['wilayah_id'],
-                'blok_id'       => $data['blok_id'],
-                'kamar_id'      => $data['kamar_id'],
-                'tanggal_masuk'  => $data['tanggal_masuk'],
-                'tanggal_keluar'  => $data['tanggal_keluar'] ?? null,
-                'updated_by'     => Auth::id(),
-                'updated_at'     => now(),
+            $dom->update([
+                'wilayah_id'    => $input['wilayah_id'],
+                'blok_id'       => $input['blok_id'],
+                'kamar_id'      => $input['kamar_id'],
+                'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
+                'tanggal_keluar' => ! empty($input['tanggal_keluar'])
+                    ? Carbon::parse($input['tanggal_keluar'])
+                    : null,
+                'updated_by'    => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $domisili];
+            return [
+                'status' => true,
+                'data'   => $dom,
+            ];
         });
     }
 }

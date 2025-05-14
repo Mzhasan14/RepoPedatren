@@ -6,62 +6,62 @@ use Illuminate\Http\Request;
 use App\Models\Pendidikan\Kelas;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class KelasController extends Controller
 {
     public function index()
     {
-        $kelas = Kelas::Active()->get();
-        return new PdResource(true, 'Data Kelas', $kelas);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_kelas' => 'required|string|max:100',
-            'id_jurusan' => 'required|integer',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $kelas = Kelas::create($validator->validated());
-        return new PdResource(true, 'Kelas Berhasil Ditambah', $kelas);
+        $kelases = Kelas::with('jurusan')->where('status', true)->get();
+        return response()->json($kelases);
     }
 
     public function show($id)
     {
-        $kelas = Kelas::findOrFail($id);
-        return new PdResource(true, 'Detail Kelas', $kelas);
+        $kelas = Kelas::with('jurusan')->findOrFail($id);
+        return response()->json($kelas);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nama_kelas'  => 'required|string|max:255',
+            'jurusan_id'  => 'required|exists:jurusan,id',
+        ]);
+
+        $kelas = Kelas::create([
+            'nama_kelas' => $request->nama_kelas,
+            'jurusan_id' => $request->jurusan_id,
+            'created_by' => Auth::id(),
+        ]);
+
+        return response()->json($kelas, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $kelas = Kelas::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_kelas' => 'required|string|max:100',
-            'id_jurusan' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        $request->validate([
+            'nama_kelas'  => 'sometimes|required|string|max:255',
+            'jurusan_id'  => 'sometimes|required|exists:jurusan,id',
+            'status'      => 'sometimes|required|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $kelas = Kelas::findOrFail($id);
+        $kelas->fill($request->only('nama_kelas', 'jurusan_id', 'status'));
+        $kelas->updated_by = Auth::id();
+        $kelas->save();
 
-        $kelas->update($validator->validated());
-        return new PdResource(true, 'Kelas Berhasil Diubah', $kelas);
+        return response()->json($kelas);
     }
 
     public function destroy($id)
     {
-        $kelas = kelas::findOrFail($id);
+        $kelas = Kelas::findOrFail($id);
+        $kelas->deleted_by = Auth::id();
+        $kelas->save();
         $kelas->delete();
-        return new PdResource(true, 'Kelas Berhasil Dihapus', null);
+
+        return response()->json(null, 204);
     }
 }

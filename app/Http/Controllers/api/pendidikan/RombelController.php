@@ -7,61 +7,64 @@ use App\Models\Pendidikan\Rombel;
 use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class RombelController extends Controller
 {
     public function index()
     {
-        $rombel = Rombel::Active()->get();
-        return new PdResource(true, 'Data Rombel', $rombel);
-    }
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_rombel' => 'required|string|max:100',
-            'id_kelas' => 'required|integer',
-            'created_by' => 'required|integer',
-            'status' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $rombel = Rombel::create($validator->validated());
-        return new PdResource(true, 'Rombel Berhasil Ditambah', $rombel);
+        $rombels = Rombel::with('kelas')->where('status', true)->get();
+        return response()->json($rombels);
     }
 
     public function show($id)
     {
-        $rombel = Rombel::findOrFail($id);
-        return new PdResource(true, 'Detail Rombel', $rombel);
+        $rombel = Rombel::with('kelas')->findOrFail($id);
+        return response()->json($rombel);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nama_rombel'   => 'required|string|max:255',
+            'gender_rombel' => 'required|in:putra,putri',
+            'kelas_id'      => 'required|exists:kelas,id',
+        ]);
+
+        $rombel = Rombel::create([
+            'nama_rombel'   => $request->nama_rombel,
+            'gender_rombel' => $request->gender_rombel,
+            'kelas_id'      => $request->kelas_id,
+            'created_by'    => Auth::id(),
+        ]);
+
+        return response()->json($rombel, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $rombel = Rombel::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_rombel' => 'required|string|max:100',
-            'id_kelas' => 'required|integer',
-            'updated_by' => 'required|integer',
-            'status' => 'required|boolean'
+        $request->validate([
+            'nama_rombel'   => 'sometimes|required|string|max:255',
+            'gender_rombel' => 'sometimes|required|in:putra,putri',
+            'kelas_id'      => 'sometimes|required|exists:kelas,id',
+            'status'        => 'sometimes|required|boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $rombel = Rombel::findOrFail($id);
+        $rombel->fill($request->only('nama_rombel', 'gender_rombel', 'kelas_id', 'status'));
+        $rombel->updated_by = Auth::id();
+        $rombel->save();
 
-        $rombel->update($validator->validated());
-        return new PdResource(true, 'Rombel Berhasil Diubah', $rombel);
+        return response()->json($rombel);
     }
 
     public function destroy($id)
     {
         $rombel = Rombel::findOrFail($id);
+        $rombel->deleted_by = Auth::id();
+        $rombel->save();
         $rombel->delete();
-        return new PdResource(true, 'Rombel Berhasil Dihapus', null);
+
+        return response()->json(null, 204);
     }
 }

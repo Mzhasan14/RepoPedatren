@@ -8,78 +8,150 @@ use Illuminate\Support\Facades\Auth;
 
 class WargaPesantrenService
 {
-    public function index($bioId)
+    public function index(string $biodataId): array
     {
-        $santri = WargaPesantren::where('biodata_id', $bioId)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'niup' => $item->niup,
-                    'status' => $item->status
-                ];
-            });
+        $wp = WargaPesantren::where('biodata_id', $biodataId)
+            ->get();
 
-        if (!$santri) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        if ($wp->isEmpty()) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan.',
+            ];
         }
 
-        return ['status' => true, 'data' => $santri];
+        $data = $wp->map(fn(WargaPesantren $wp) => [
+            'id'     => $wp->id,
+            'niup'   => $wp->niup,
+            'status' => (bool) $wp->status,
+        ])->toArray();
+
+        return [
+            'status' => true,
+            'data'   => $data,
+        ];
     }
 
-    public function store(array $data, $id)
+    public function store(array $input, string $biodataId): array
     {
-        return DB::transaction(function () use ($data, $id) {
-            if (WargaPesantren::where('biodata_id', $id)->where('status', true)) {
-                return ['status' => false, 'message' => 'Biodata sudah memiliki NIUP aktif'];
+        return DB::transaction(function () use ($input, $biodataId) {
+            // Cek apakah sudah ada yang aktif
+            $exists = WargaPesantren::where('biodata_id', $biodataId)
+                ->where('status', true)
+                ->exists();
+
+            if ($exists) {
+                return [
+                    'status'  => false,
+                    'message' => 'Biodata sudah memiliki NIUP aktif.',
+                ];
             }
 
-            $warga = new WargaPesantren();
-            $warga->biodata_id = $id;
-            $warga->niup = $data['niup'];
-            $warga->status = $data['status'];
-            $warga->created_by = Auth::id();
-            $warga->save();
+            // Validasi input minimal
+            if (empty($input['niup'])) {
+                return [
+                    'status'  => false,
+                    'message' => 'NIUP wajib diisi.',
+                ];
+            }
 
-            return ['status' => true, 'data' => $warga];
+            $wp = WargaPesantren::create([
+                'biodata_id' => $biodataId,
+                'niup'       => $input['niup'],
+                'status'     => (bool) ($input['status'] ?? true),
+                'created_by' => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'data'   => $wp,
+            ];
         });
     }
 
-    public function edit(string $id)
+    public function show(int $id): array
     {
-        $wp = WargaPesantren::where('id', $id)
-            ->latest()
-            ->first(['id', 'niup', 'status']);
+        $wp = WargaPesantren::find($id);
 
-        return $wp
-            ? ['status' => true, 'data' => $wp]
-            : ['status' => false, 'data' => []];
+        if (! $wp) {
+            return [
+                'status'  => false,
+                'message' => "Data WargaPesantren ID #{$id} tidak ditemukan.",
+            ];
+        }
+
+        return [
+            'status' => true,
+            'data'   => [
+                'id'     => $wp->id,
+                'niup'   => $wp->niup,
+                'status' => (bool) $wp->status,
+            ],
+        ];
     }
 
-    public function update(array $data, string $id)
+    public function update(array $input, int $id): array
     {
-        return DB::transaction(function () use ($data, $id) {
+        return DB::transaction(function () use ($input, $id) {
             $wp = WargaPesantren::find($id);
-
-            if (!$wp) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            if (! $wp) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data tidak ditemukan.',
+                ];
             }
 
-            // Tidak boleh ubah niup
-            if ($wp->niup !== $data['niup']) {
-                return ['status' => false, 'message' => 'NIUP tidak boleh diubah'];
+            // NIUP tidak boleh diubah
+            if (isset($input['niup']) && $input['niup'] !== $wp->niup) {
+                return [
+                    'status'  => false,
+                    'message' => 'NIUP tidak dapat diubah.',
+                ];
             }
 
-            // Jika tidak ada perubahan status, tolak
-            if ($wp->status === $data['status']) {
-                return ['status' => false, 'message' => 'Tidak ada perubahan status'];
+            // Pastikan ada perubahan status
+            $newStatus = (bool) ($input['status'] ?? $wp->status);
+            if ($newStatus === (bool) $wp->status) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tidak ada perubahan status.',
+                ];
             }
 
-            $wp->status = $data['status'];
-            $wp->updated_by = Auth::id();
+            $userId = Auth::id();
+            if (! $userId) {
+                return [
+                    'status'  => false,
+                    'message' => 'Pengguna tidak terautentikasi.',
+                ];
+            }
+
+            $wp->status     = $newStatus;
+            $wp->updated_by = $userId;
             $wp->save();
 
-            return ['status' => true, 'data' => $wp];
+            return [
+                'status' => true,
+                'data'   => $wp,
+            ];
         });
+    }
+
+    public function delete(int $id): array
+    {
+        $wp = WargaPesantren::find($id);
+        if (! $wp) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan.',
+            ];
+        }
+
+        $wp->delete();
+
+        return [
+            'status'  => true,
+            'message' => 'Data berhasil dihapus.',
+        ];
     }
 }
