@@ -68,7 +68,7 @@ class AlumniExport implements
                 'l.nama_lembaga as pendidikan',
                 DB::raw('YEAR(rp.tanggal_keluar) as tahun_lulus'),
             ])
-            ->orderBy('s.id')
+            ->latest()
             ->get();
     }
 

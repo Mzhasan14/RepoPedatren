@@ -59,7 +59,7 @@ class PesertaDidikExport implements
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan_santri'),
                 DB::raw('YEAR(rp.tanggal_masuk) as angkatan_pelajar'),
             ])
-            ->orderBy('s.id')
+            ->latest()
             ->get();
     }
 

@@ -66,4 +66,9 @@ class KhadamService
             "foto_profil" => url($item->foto_profil)
         ]);
     }
+
+    public function store(array $data)
+    {
+        
+    }
 }

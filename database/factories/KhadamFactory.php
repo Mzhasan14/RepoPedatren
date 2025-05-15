@@ -20,8 +20,7 @@ class KhadamFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
-           'biodata_id' => \App\Models\Biodata::factory()->create()->id,
+            'biodata_id' => \App\Models\Biodata::factory()->create()->id,
             'keterangan' => $this->faker->sentence,
             'tanggal_mulai' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'tanggal_akhir' => null,

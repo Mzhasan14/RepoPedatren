@@ -30,6 +30,7 @@ use App\Http\Controllers\api\PesertaDidik\formulir\{
     BiodataController,
     WargaPesantrenController,
     BerkasController,
+    KhadamFormController,
     StatusSantriController
 };
 
@@ -89,19 +90,19 @@ Route::middleware(['auth:sanctum', 'role:admin', 'log.activity'])
 // Formulir Peserta Didik
 Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Biodata
-    Route::get('/{id}/biodata/edit', [BiodataController::class, 'edit']);
+    Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
     Route::post('/biodata', [BiodataController::class, 'store']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
 
     // Santri
     Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
-    Route::get('{id}/santri/edit', [StatusSantriController::class, 'edit']);
+    Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
     Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
     Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
 
     // Domisili
     Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
-    Route::get('{id}/domisili/edit', [DomisiliController::class, 'edit']);
+    Route::get('{id}/domisili/show', [DomisiliController::class, 'show']);
     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
     Route::put('/{id}/domisili', [DomisiliController::class, 'update'])->middleware('role:superadmin|admin');
 
@@ -110,23 +111,31 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Pendidikan
     Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
-    Route::get('{id}/pendidikan/edit', [PendidikanController::class, 'edit']);
+    Route::get('{id}/pendidikan/show', [PendidikanController::class, 'show']);
     Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
     Route::put('/{id}/pendidikan', [PendidikanController::class, 'update'])->middleware('role:superadmin|admin');
 
     Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
     Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
 
+    // Khadam
+    Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
+    Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
+    Route::post('/{id}/khadam', [KhadamFormController::class, 'store']);
+    Route::put('/{id}/khadam', [KhadamFormController::class, 'update'])->middleware('role:superadmin|admin');
+
+    Route::put('/{id}/khadam/pindah', [KhadamFormController::class, 'pindahKhadam']);
+    Route::put('/{id}/khadam/keluar', [KhadamFormController::class, 'keluarKhadam']);
 
     // Warga Pesantren
     Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
-    Route::get('/{id}/wargapesantren/edit', [WargaPesantrenController::class, 'edit']);
+    Route::get('/{id}/wargapesantren/show', [WargaPesantrenController::class, 'show']);
     Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
     Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
     // Berkas
     Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
-    Route::get('/{id}/berkas/edit', [BerkasController::class, 'edit']);
+    Route::get('/{id}/berkas/show', [BerkasController::class, 'show']);
     Route::post('/{id}/berkas', [BerkasController::class, 'store']);
     Route::put('/{id}/berkas', [BerkasController::class, 'update']);
 
