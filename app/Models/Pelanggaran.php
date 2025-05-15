@@ -35,11 +35,11 @@ class Pelanggaran extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('santri')
+            ->useLogName('pelanggaran')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
             ->setDescriptionForEvent(fn(string $event) =>
-            "Data santri {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            "Data pelanggaran {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
     }
 
     protected static function booted()

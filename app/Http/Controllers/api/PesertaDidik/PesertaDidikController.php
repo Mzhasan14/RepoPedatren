@@ -63,8 +63,6 @@ class PesertaDidikController extends Controller
         ]);
     }
 
-
-
     public function store(CreatePesertaDidikRequest $request)
     {
         try {
@@ -84,7 +82,6 @@ class PesertaDidikController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public function destroy($id): JsonResponse
     {

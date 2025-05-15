@@ -43,10 +43,9 @@ class LembagaController extends Controller
 
         return response()->json($lembaga);
     }
-    
+
     public function destroy($id)
     {
-
         $lembaga = Lembaga::findOrFail($id);
         $lembaga->deleted_by = Auth::id();
         $lembaga->save();

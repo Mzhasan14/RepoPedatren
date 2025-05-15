@@ -65,10 +65,10 @@ class SantriController extends Controller
 
     
 
-    public function santriExport(Request $request, FilterSantriService $filterService)
-    {
-        return Excel::download(new SantriExport($request, $filterService), 'santri.xlsx');
-    }
+    // public function santriExport(Request $request, FilterSantriService $filterService)
+    // {
+    //     return Excel::download(new SantriExport($request, $filterService), 'santri.xlsx');
+    // }
 
    
 }

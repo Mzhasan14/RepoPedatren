@@ -192,8 +192,11 @@ Route::prefix('export')->group(function () {
 Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     // Peserta Didik
     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
-    Route::put('/pesertadidik/{id}', [PesertaDidikController::class, 'update']);
     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+
+    // Create Anak Pegawai
+    Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
+
 
     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
@@ -263,6 +266,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/alumni', [AlumniController::class, 'alumni']);
     Route::get('/alumni/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
+    Route::get('/anakpegawai/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
 
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);

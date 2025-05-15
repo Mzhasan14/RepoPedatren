@@ -36,7 +36,7 @@ class BiodataFactory extends Factory
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),
             'tanggal_lahir' => $this->faker->date(),
             'tempat_lahir' => $this->faker->city(),
-            'nik' => $this->faker->unique()->numerify('###############'),
+            'nik' => $this->faker->unique()->numerify('################'),
             'no_telepon' => $this->faker->phoneNumber(),
             'no_telepon_2' => $this->faker->phoneNumber(),
             'email' => $this->faker->unique()->safeEmail(),

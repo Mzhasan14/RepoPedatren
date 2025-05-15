@@ -93,7 +93,7 @@ class BersaudaraService
                 DB::raw("COALESCE(parents.nama_ibu, 'Tidak Diketahui') AS nama_ibu"),
                 DB::raw("COALESCE(parents.nama_ayah, 'Tidak Diketahui') AS nama_ayah"),
             ])
-            ->orderBy('k.no_kk');
+            ->latest();
     }
 
     public function formatData($results)

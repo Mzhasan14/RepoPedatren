@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\AnakPegawaiService;
+use App\Http\Requests\PesertaDidik\CreateAnakPegawaiRequest;
 use App\Services\PesertaDidik\Filters\FilterAnakPegawaiService;
 
 class AnakPegawaiController extends Controller
@@ -54,5 +56,25 @@ class AnakPegawaiController extends Controller
             'total_pages'  => $results->lastPage(),
             'data'         => $formatted,
         ]);
+    }
+
+    public function store(CreateAnakPegawaiRequest $request)
+    {
+        try {
+            // Simpan peserta didik dengan menggunakan service
+            $pesertaDidik = $this->anakPegawaiService->store($request->validated());
+
+            // Response sukses dengan status 201
+            return response()->json([
+                'message' => 'Peserta Didik berhasil disimpan.',
+                'data' => $pesertaDidik
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Tangani error umum (misalnya database, validasi, dll)
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menyimpan data.',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

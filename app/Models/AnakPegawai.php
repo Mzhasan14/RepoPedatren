@@ -5,47 +5,32 @@ namespace App\Models;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Perizinan extends Model
+class AnakPegawai extends Model
 {
-    use HasFactory, LogsActivity;
-
-    protected $table = 'perizinan';
-    protected $primaryKey = 'id';
-    protected $keyType = 'int';
-    public $timestamps = true;
-    public $incrementing = true;
+    use SoftDeletes, LogsActivity;
+    protected $table = 'anak_pegawai';
 
     protected $fillable = [
         'santri_id',
-        'pengasuh_id',
-        'biktren_id',
-        'kamtib_id',
-        'pengantar_id',
-        'alasan_izin',
-        'alamat_tujuan',
-        'tanggal_mulai',
-        'tanggal_akhir',
-        'tanggal_kembali',
-        'jenis_izin',
+        'pegawai_id',
+        'status_hubungan',
         'status',
-        'keterangan',
         'created_by',
         'updated_by',
-        'deleted_by'
+        'deleted_by',
     ];
-
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('perizinan')
+            ->useLogName('anak_pegawai')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
             ->setDescriptionForEvent(fn(string $event) =>
-            "Data perizinan {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            "Data anak pegawai {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
     }
 
     protected static function booted()
@@ -59,10 +44,5 @@ class Perizinan extends Model
             $model->deleted_by = Auth::id();
             $model->save();
         });
-    }
-
-    public function santri()
-    {
-        return $this->belongsTo(Santri::class, 'santri_id');
     }
 }

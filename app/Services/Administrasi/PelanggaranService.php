@@ -64,7 +64,7 @@ class PelanggaranService
                 DB::raw("COALESCE(pencatat.name, '(AutoSystem)') as pencatat"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            ->orderBy('pl.id', 'desc');
+            ->latest();
     }
 
     public function formatData($results)

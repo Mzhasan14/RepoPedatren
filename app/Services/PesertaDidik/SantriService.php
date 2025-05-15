@@ -66,7 +66,7 @@ class SantriService
                "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            ->orderBy('s.id');
+            ->latest();
     }
 
     public function formatData($results)

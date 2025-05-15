@@ -57,8 +57,8 @@ class PelajarController extends Controller
         ]);
     }
 
-    public function pelajarExport(Request $request, FilterPelajarService $filterService)
-    {
-        return Excel::download(new PelajarExport($request, $filterService), 'pelajar.xlsx');
-    }
+    // public function pelajarExport(Request $request, FilterPelajarService $filterService)
+    // {
+    //     return Excel::download(new PelajarExport($request, $filterService), 'pelajar.xlsx');
+    // }
 }

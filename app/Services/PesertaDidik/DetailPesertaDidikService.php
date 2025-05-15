@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\URL;
 
 class DetailPesertaDidikService
 {
-    public function getDetailPesertaDidik(string $id): array
+    public function getDetailPesertaDidik(string $bioId): array
     {
         $base = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('s.biodata_id', $id)
+            ->where('s.biodata_id', $bioId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',
@@ -65,7 +65,7 @@ class DetailPesertaDidikService
             ->first();
 
         $data['Biodata'] = [
-            'id'                 => $id,
+            'id'                 => $bioId,
             'nokk'                 => $noKk ?? '-',
             'nik_nopassport'       => $biodata->identitas,
             'niup'                 => $biodata->niup ?? '-',

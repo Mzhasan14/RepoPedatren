@@ -58,8 +58,8 @@ class BersaudaraController extends Controller
     }
 
     // Export Peserta Didik Bersaudara Kandung
-    public function bersaudaraExport(Request $request, FilterBersaudaraService $filter)
-    {
-        return Excel::download(new BersaudaraExport($request, $filter), 'peserta_didik_bersaudara.xlsx');
-    }
+    // public function bersaudaraExport(Request $request, FilterBersaudaraService $filter)
+    // {
+    //     return Excel::download(new BersaudaraExport($request, $filter), 'peserta_didik_bersaudara.xlsx');
+    // }
 }
