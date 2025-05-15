@@ -63,7 +63,7 @@ class PengajarController extends Controller
     public function edit($id)
     {
         try {
-            $result = $this->formulirPengajarService->edit($id);
+            $result = $this->formulirPengajarService->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'

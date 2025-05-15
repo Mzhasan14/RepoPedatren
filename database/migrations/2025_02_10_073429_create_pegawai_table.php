@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('biodata_id');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->softDeletes();
             $table->timestamps();

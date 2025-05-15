@@ -53,6 +53,7 @@ class CatatanAfektifService
                         ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
                         ->whereNull('catatan_afektif.deleted_at')
                         ->select(
+                            'CatatanBiodata.id as Biodata_uuid',
                             'catatan_afektif.id',
                             'CatatanBiodata.nama',
                             DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
@@ -72,6 +73,7 @@ class CatatanAfektifService
                             DB::raw("COALESCE(MAX(FotoPencatat.file_path), 'default.jpg') as foto_pencatat"),
                         )
                         ->groupBy(
+                            'CatatanBiodata.id',
                             'catatan_afektif.id',
                             'CatatanBiodata.nama',
                             'catatan_afektif.kepedulian_nilai',
@@ -101,6 +103,7 @@ class CatatanAfektifService
     {
         return collect($results->items())->flatMap(fn($item) => [
             [
+                'Biodata_uuid' => $item->Biodata_uuid,
                 'id_santri' => $item->id,
                 'nama_santri' => $item->nama,
                 'blok' => $item->blok,
@@ -117,6 +120,7 @@ class CatatanAfektifService
                 'foto_pencatat' => url($item->foto_pencatat),
             ],
             [
+                'Biodata_uuid' => $item->Biodata_uuid,
                 'id_santri' => $item->id,
                 'nama_santri' => $item->nama,
                 'blok' => $item->blok,
@@ -133,6 +137,7 @@ class CatatanAfektifService
                 'foto_pencatat' => url($item->foto_pencatat),
             ],
             [
+                'Biodata_uuid' => $item->Biodata_uuid,
                 'id_santri' => $item->id,
                 'nama_santri' => $item->nama,
                 'blok' => $item->blok,

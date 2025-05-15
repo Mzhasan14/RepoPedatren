@@ -26,6 +26,7 @@ class PengurusRequest extends FormRequest
         'jabatan'               => 'nullable|string|max:255',
         'satuan_kerja'          => 'nullable|string|max:255',
         'keterangan_jabatan'    => 'nullable|string|max:255',
+        'tanggal_mulai'         => 'nullable|date',
         'tanggal_akhir'         => 'nullable|date|after_or_equal:tanggal_mulai',
         ];
     }

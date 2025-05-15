@@ -30,6 +30,7 @@ return new class extends Migration
             $table->date('tanggal_buat');
             $table->date('tanggal_selesai')->nullable();
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
             $table->softDeletes();

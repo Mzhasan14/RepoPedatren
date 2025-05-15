@@ -4,11 +4,15 @@ namespace App\Models\Pegawai;
 
 use App\Models\Biodata;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
 
 class Pegawai extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'pegawai';
 
@@ -17,15 +21,46 @@ class Pegawai extends Model
         'id'
     ];
 
+    // Logging
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('pegawai')
+            ->logOnlyDirty()
+            ->logOnly([
+                'biodata_id',
+                'status_aktif',
+                'created_by',
+                'updated_by',
+                'deleted_by',
+            ])
+            ->setDescriptionForEvent(function (string $eventName) {
+                $user = Auth::user();
+                $userName = $user ? $user->name : 'Sistem';
 
-    public function entitasPegawai()
-    {
-        return $this->hasMany(EntitasPegawai::class,'id_pegawai','id');
+                return match ($eventName) {
+                    'created' => "Pegawai ditambahkan oleh {$userName}",
+                    'updated' => "Pegawai diperbarui oleh {$userName}",
+                    'deleted' => "Pegawai dihapus oleh {$userName}",
+                };
+            });
     }
-    public function anakPegawai()
+
+    // Audit trail
+    protected static function booted()
     {
-        return $this->hasMany(AnakPegawai::class,'id_pegawai','id');
+        static::creating(function ($model) {
+            $model->created_by ??= Auth::id();
+        });
+
+        static::updating(fn($model) => $model->updated_by = Auth::id());
+
+        static::deleting(function ($model) {
+            $model->deleted_by = Auth::id();
+            $model->save(); // perlu simpan sebelum soft delete
+        });
     }
+    
     public function ScopeActive($query)
     {
         return $query->where('pegawai.status_aktif','aktif');

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('rombel_id')->nullable();
             $table->string('jumlah_murid');
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
             $table->softDeletes();

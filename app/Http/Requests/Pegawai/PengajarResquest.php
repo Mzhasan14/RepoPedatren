@@ -26,13 +26,22 @@ class PengajarResquest extends FormRequest
             'lembaga_id'   => 'required|exists:lembaga,id',
             'golongan_id'  => 'required|exists:golongan,id',
             'jabatan'      => 'nullable|string|max:255',
+
             'nama_materi' => 'nullable|array|min:1',
             'nama_materi.*' => 'nullable|string|max:255',
 
             'jumlah_menit' => 'nullable|array|min:1',
             'jumlah_menit.*' => 'nullable|integer|min:0',
-            'tahun_akhir_pengajar' => 'nullable|date',
-            'tahun_akhir_materi_ajar' => 'nullable|date',
+
+            'tahun_masuk' => 'nullable|date',
+            'tahun_akhir' => 'nullable|date',
+
+            'tahun_masuk_materi_ajar' => 'nullable|array',
+            'tahun_masuk_materi_ajar.*' => 'nullable|date',
+
+
+            'tahun_akhir_materi_ajar' => 'nullable|array',
+            'tahun_akhir_materi_ajar.*' => 'nullable|date',
         ];
     }
         protected function failedValidation(Validator $validator)

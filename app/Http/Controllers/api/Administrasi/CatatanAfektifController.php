@@ -74,7 +74,7 @@ class CatatanAfektifController extends Controller
     public function edit($id)
     {
         try {
-            $result = $this->formulirCatatan->edit($id);
+            $result = $this->formulirCatatan->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'

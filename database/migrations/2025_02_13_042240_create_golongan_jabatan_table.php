@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_golongan_jabatan');
             $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status')->default(1);
             $table->timestamps();

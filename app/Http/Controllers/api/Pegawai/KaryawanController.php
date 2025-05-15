@@ -90,7 +90,7 @@ class KaryawanController extends Controller
     public function edit($id)
     {
         try {
-            $result = $this->formulirKaryawanService->edit($id);
+            $result = $this->formulirKaryawanService->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'

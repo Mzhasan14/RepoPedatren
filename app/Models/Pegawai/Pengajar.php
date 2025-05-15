@@ -6,15 +6,44 @@ use App\Models\Biodata;
 use App\Models\Pendidikan\Lembaga;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Pengajar extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'pengajar';
     protected $guarded = [
         'created_at'
     ];
+
+        public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('pengajar')
+            ->logOnlyDirty()
+            ->logOnly([
+                'pegawai_id', 'lembaga_id', 'golongan_id', 'jabatan', 'tahun_masuk', 'tahun_akhir', 'status_aktif', 
+                'created_by', 'updated_by', 'deleted_by'
+            ])
+            ->setDescriptionForEvent(fn(string $eventName) => 
+                "Pengajar {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            );
+    }
+
+    protected static function booted()
+    {
+        static::creating(fn($model) => $model->created_by ??= Auth::id());
+        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::deleting(function ($model) {
+            $model->deleted_by = Auth::id();
+            $model->save();
+        });
+    }
+
 
     public function biodata()
     {

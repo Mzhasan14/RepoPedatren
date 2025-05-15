@@ -33,8 +33,7 @@ class CatatanAfektifRequest extends FormRequest
             'akhlak_nilai' => 'nullable|string|max:255',
             'akhlak_tindak_lanjut' => 'nullable|string|max:255',
             'tanggal_buat' => 'nullable|date',
-            'tanggal_selesai' => 'nullable', 'date', 'after_or_equal:tanggal_buat',
-
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_buat',
         ];
     }
     protected function failedValidation(Validator $validator)

@@ -60,7 +60,7 @@ class PengurusController extends Controller
         public function edit($id)
         {
             try {
-                $result = $this->formulirPengurus->edit($id);
+                $result = $this->formulirPengurus->show($id);
                 if (!$result['status']) {
                     return response()->json([
                         'message' => $result['message'] ?? 'Data tidak ditemukan.'
