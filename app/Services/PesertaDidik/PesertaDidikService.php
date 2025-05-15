@@ -69,6 +69,7 @@ class PesertaDidikService
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->latest();
+        return $query;
     }
 
     public function formatData($results)
