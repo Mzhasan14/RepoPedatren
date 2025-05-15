@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Exports\Pegawai\KaryawanExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\KaryawanFormulirRequest;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 
 class KaryawanController extends Controller
@@ -164,6 +167,10 @@ class KaryawanController extends Controller
             "data"         => $formatted
         ]);
     }
+        public function karyawanExport()
+        {
+            return Excel::download(new KaryawanExport, 'data_karyawan.xlsx');
+        }
     // public function dataKaryawan(Request $request)
     // {
     // try

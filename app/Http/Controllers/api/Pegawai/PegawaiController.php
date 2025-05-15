@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Exports\Pegawai\PegawaiExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\PegawaiRequest;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class PegawaiController extends Controller
 {
@@ -94,7 +97,11 @@ class PegawaiController extends Controller
                     "data"         => $formatted
                 ]);
             }
-
+        public function pegawaiExport()
+        {
+            return Excel::download(new PegawaiExport, 'data_pegawai.xlsx');
+        }
+        
             // public function update(PegawaiRequest $request, string $id)
             // {
             //     $validated = $request->validated();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Pegawai;
 
+use App\Exports\Pegawai\PengurusExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\PengurusRequest;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PengurusController extends Controller
 {
@@ -155,6 +157,10 @@ class PengurusController extends Controller
             "data"         => $formatted
         ]);
     }
+         public function pengurusExport()
+        {
+            return Excel::download(new PengurusExport, 'data_pengurus.xlsx');
+        }
     // public function dataPengurus(Request $request)
     // {
     // try
