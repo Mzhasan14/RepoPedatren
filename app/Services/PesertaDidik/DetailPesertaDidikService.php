@@ -313,14 +313,16 @@ class DetailPesertaDidikService
         $kun = DB::table('pengunjung_mahrom as pm')
             ->join('santri as s', 'pm.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->join('hubungan_keluarga as hk', 'pm.hubungan_id', '=', 'hk.id')
             ->where('b.id', $bioId)
-            ->select(['pm.nama_pengunjung', 'pm.tanggal'])
+            ->select(['pm.nama_pengunjung', 'hk.nama_status', 'pm.tanggal_kunjungan'])
             ->get();
 
         $data['Kunjungan_Mahrom'] = $kun->isNotEmpty()
             ? $kun->map(fn($k) => [
-                'nama'    => $k->nama_pengunjung,
-                'tanggal' => $k->tanggal,
+                'nama_pengunjung'    => $k->nama_pengunjung,
+                'status'    => $k->nama_status,
+                'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ])
             : [];
 

@@ -15,10 +15,19 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('santri_id');
             $table->string('nama_pengunjung');
+            $table->unsignedBigInteger('hubungan_id');
             $table->tinyInteger('jumlah_rombongan');
-            $table->datetime('tanggal');
+            $table->datetime('tanggal_kunjungan');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('hubungan_id')->references('id')->on('hubungan_keluarga')->onDelete('cascade');
             $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
         });
     }

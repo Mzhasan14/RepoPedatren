@@ -14,7 +14,7 @@ return new class extends Migration
             // Tabel hubungan_keluarga (Jenis Hubungan Keluarga)
             Schema::create('hubungan_keluarga', function (Blueprint $table) {
                 $table->id();
-                $table->enum('nama_status', ['ayah', 'ibu', 'wali']);
+                $table->string('nama_status');
                 $table->softDeletes();
                 $table->unsignedBigInteger('created_by');
                 $table->unsignedBigInteger('updated_by')->nullable();

@@ -43,8 +43,8 @@ class BersaudaraService
             ->join('hubungan_keluarga AS hk', 'hk.id', '=', 'otw.id_hubungan_keluarga')
             ->select([
                 'k2.no_kk',
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ibu' THEN b2.nama END) AS nama_ibu"),
-                DB::raw("MAX(CASE WHEN hk.nama_status = 'ayah' THEN b2.nama END) AS nama_ayah"),
+                DB::raw("MAX(CASE WHEN hk.nama_status IN ('ibu kandung', 'ibu sambung') THEN b2.nama END) AS nama_ibu"),
+                DB::raw("MAX(CASE WHEN hk.nama_status IN ('ayah kandung', 'ayah sambung') THEN b2.nama END) AS nama_ayah"),
             ])
             ->groupBy('k2.no_kk');
 

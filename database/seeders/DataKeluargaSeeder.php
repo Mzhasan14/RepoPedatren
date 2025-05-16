@@ -19,8 +19,8 @@ class DataKeluargaSeeder extends Seeder
         $kecamatanIds = DB::table('kecamatan')->pluck('id')->toArray();
 
         $hk         = DB::table('hubungan_keluarga')->get();
-        $ayahStatus = $hk->firstWhere('nama_status', 'ayah')->id;
-        $ibuStatus  = $hk->firstWhere('nama_status', 'ibu')->id;
+        $ayahStatus = $hk->firstWhere('nama_status', 'ayah kandung')->id;
+        $ibuStatus  = $hk->firstWhere('nama_status', 'ibu kandung')->id;
 
         $pegawaiBiodataIds = DB::table('pegawai')->pluck('biodata_id')->toArray();
 

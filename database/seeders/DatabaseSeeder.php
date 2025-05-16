@@ -85,7 +85,7 @@ class DatabaseSeeder extends Seeder
             CatatanKognitifSeeder::class,
             MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
-            PengunjungMahrom::class,
+            PengunjungMahromSeeder::class,
             GolonganJabatanSeeder::class,
             AnakPegawaiSeeder::class
             
