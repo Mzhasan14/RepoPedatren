@@ -127,7 +127,7 @@ class DetailWaliService
                 'nama'   => $i->nama,
                 'nik'    => $i->nik,
                 'status' => $i->status,
-                'wali'   => $i->wali,
+                'sebagai wali'   => $i->wali,
             ]);
         }
 

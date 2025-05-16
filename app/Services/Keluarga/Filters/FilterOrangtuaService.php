@@ -62,9 +62,19 @@ class FilterOrangtuaService
         }
 
         $jenis_kelamin = strtolower($request->jenis_kelamin);
-        if ($jenis_kelamin === 'laki-laki' || $jenis_kelamin === 'ayah') {
+        // if ($jenis_kelamin === 'laki-laki' || $jenis_kelamin === 'ayah') {
+        //     $query->where('b.jenis_kelamin', 'l');
+        // } elseif ($jenis_kelamin === 'perempuan' || $jenis_kelamin === 'ibu') {
+        //     $query->where('b.jenis_kelamin', 'p');
+        // } else {
+        //     // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
+        //     $query->whereRaw('0 = 1');
+        // }
+
+
+        if (in_array($jenis_kelamin, ['laki-laki', 'l', 'ayah'])) {
             $query->where('b.jenis_kelamin', 'l');
-        } elseif ($jenis_kelamin === 'perempuan' || $jenis_kelamin === 'ibu') {
+        } elseif (in_array($jenis_kelamin, ['perempuan', 'p', 'ibu'])) {
             $query->where('b.jenis_kelamin', 'p');
         } else {
             // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
