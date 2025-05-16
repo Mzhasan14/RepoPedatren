@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\PesertaDidik\{
     PelajarController,
     SantriController,
     AlumniController,
-    DetailPesertaDidikController,
+    DetailController,
     KhadamController,
     BersaudaraController,
     NonDomisiliController
@@ -280,22 +280,22 @@ Route::prefix('data-pokok')->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
-    Route::get('/pesertadidik-bersaudara/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
-    Route::get('/pesertadidik/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
-    Route::get('/santri-nondomisili/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
-    Route::get('/santri/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
     Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
-    Route::get('/pelajar/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/pelajar/{id}', [DetailController::class, 'getDetail']);
     Route::get('/alumni', [AlumniController::class, 'alumni']);
-    Route::get('/alumni/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
-    Route::get('/anakpegawai/{id}', [DetailPesertaDidikController::class, 'getDetailPesertaDidik']);
+    Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
 
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
-    Route::get('/khadam/{id}', [KhadamController::class, 'getDetailKhadam']);
+    Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
 
     // 🚨 Administrasi
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
