@@ -394,6 +394,37 @@ class PesertaDidikService
                 }
             }
 
+            // Tambah Riwayat Pendidikan jika lembaga diisi
+            if (!empty($data['lembaga_id'])) {
+                DB::table('riwayat_pendidikan')->insert([
+                    'santri_id'      => $santriId,
+                    'lembaga_id'     => $data['lembaga_id'],
+                    'jurusan_id'     => $data['jurusan_id'] ?? null,
+                    'kelas_id'       => $data['kelas_id'] ?? null,
+                    'rombel_id'      => $data['rombel_id'] ?? null,
+                    'tanggal_masuk'  => $data['tanggal_masuk_pendidikan'],
+                    'status'         => 'aktif',
+                    'created_by'     => $userId,
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ]);
+            }
+
+            // Tambah Riwayat Domisili jika wilayah diisi
+            if (!empty($data['wilayah_id'])) {
+                DB::table('riwayat_domisili')->insert([
+                    'santri_id'     => $santriId,
+                    'wilayah_id'    => $data['wilayah_id'],
+                    'blok_id'       => $data['blok_id'],
+                    'kamar_id'      => $data['kamar_id'],
+                    'tanggal_masuk' => $data['tanggal_masuk_domisili'],
+                    'status'        => 'aktif',
+                    'created_by'    => $userId,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
+                ]);
+            }
+
             // Berkas
             if (!empty($data['berkas']) && is_array($data['berkas'])) {
                 foreach ($data['berkas'] as $item) {
@@ -426,6 +457,19 @@ class PesertaDidikService
                         'ibu'  => $data['nik_ibu'] ?? null,
                         'wali' => $data['nik_wali'] ?? null,
                     ],
+                    'riwayat_pendidikan' => !empty($data['lembaga_id']) ? [
+                        'lembaga_id'     => $data['lembaga_id'],
+                        'jurusan_id'     => $data['jurusan_id'] ?? null,
+                        'kelas_id'       => $data['kelas_id'] ?? null,
+                        'rombel_id'      => $data['rombel_id'] ?? null,
+                        'tanggal_masuk'  => $data['tanggal_masuk_pendidikan'],
+                    ] : null,
+                    'riwayat_domisili' => !empty($data['wilayah_id']) ? [
+                        'wilayah_id'     => $data['wilayah_id'],
+                        'blok_id'        => $data['blok_id'],
+                        'kamar_id'       => $data['kamar_id'],
+                        'tanggal_masuk'  => $data['tanggal_masuk_domisili'],
+                    ] : null,
                     'berkas'        => collect($data['berkas'] ?? [])->pluck('jenis_berkas_id'),
                     'ip'            => request()->ip(),
                     'user_agent'    => request()->userAgent(),

@@ -85,6 +85,7 @@ class CreatePesertaDidikRequest extends FormRequest
             'penghasilan_wali' => 'required|string|max:100',
 
             // Rencana Pendidikan
+            'no_induk'  => 'nullable|string',
             'lembaga_id' => 'nullable|exists:lembaga,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
