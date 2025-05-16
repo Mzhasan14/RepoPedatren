@@ -29,11 +29,21 @@ class Berkas extends Model
             ->useLogName('berkas')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Berkas {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data berkas berhasil {$action} oleh {$user}.";
+            });
     }
 
-       protected static function booted()
+    protected static function booted()
     {
         static::creating(fn($model) => $model->created_by = Auth::id());
         static::updating(fn($model) => $model->updated_by = Auth::id());

@@ -34,6 +34,7 @@ class PengunjungMahromSeeder extends Seeder
                     'hubungan_id' => $hubunganId,
                     'jumlah_rombongan' => $faker->numberBetween(1, 5),
                     'tanggal_kunjungan' => $faker->dateTimeBetween('-1 month', 'now'),
+                    'status'    => 'selesai',
                     'created_by' => 1,
                     'updated_by' => null,
                     'deleted_by' => null,

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Administrasi\{
     PerizinanController,
     PelanggaranController,
     DetailPerizinanController,
+    PengunjungMahromController,
 };
 use App\Http\Controllers\Api\PesertaDidik\{
     AnakPegawaiController,
@@ -218,15 +219,21 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
 
     //perizinan
     Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
-    Route::get('/{id}/perizinan/edit', [PerizinanController::class, 'edit']);
+    Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
     Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
 
     //pelanggaran
     Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
-    Route::get('/{id}/pelanggaran/edit', [PelanggaranController::class, 'edit']);
+    Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+
+    //pelanggaran
+    Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
+    Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+    Route::post('/{id}/pengunjung', [PengunjungMahromController::class, 'store']);
+    Route::put('/{id}/pengunjung', [PengunjungMahromController::class, 'update']);
 
     //Kewaliasuhan
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);

@@ -201,7 +201,7 @@ class PerizinanService
         });
     }
 
-    public function edit($id): array
+    public function show($id): array
     {
         $izin = Perizinan::find($id);
 

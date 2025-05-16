@@ -29,8 +29,18 @@ class AnakPegawai extends Model
             ->useLogName('anak_pegawai')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Data anak pegawai {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data anak pegawai berhasil {$action} oleh {$user}.";
+            });
     }
 
     protected static function booted()

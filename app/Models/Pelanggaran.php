@@ -38,8 +38,18 @@ class Pelanggaran extends Model
             ->useLogName('pelanggaran')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Data pelanggaran {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data pelanggaran berhasil {$action} oleh {$user}.";
+            });
     }
 
     protected static function booted()

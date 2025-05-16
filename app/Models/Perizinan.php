@@ -44,8 +44,18 @@ class Perizinan extends Model
             ->useLogName('perizinan')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Data perizinan {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data perizinan berhasil {$action} oleh {$user}.";
+            });
     }
 
     protected static function booted()

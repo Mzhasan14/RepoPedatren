@@ -41,13 +41,23 @@ class RiwayatPendidikan extends Model
             ->useLogName('riwayat_pendidikan')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Riwayat pendidikan {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data Riwayat Pendidikan berhasil {$action} oleh {$user}.";
+            });
     }
 
     protected static function booted()
     {
-         static::creating(function ($model) {
+        static::creating(function ($model) {
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());

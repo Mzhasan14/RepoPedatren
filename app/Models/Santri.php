@@ -43,8 +43,18 @@ class Santri extends Model
             ->useLogName('santri')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(fn(string $event) =>
-            "Data santri {$event} oleh " . (Auth::user()->name ?? 'Sistem'));
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
+
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data Santri berhasil {$action} oleh {$user}.";
+            });
     }
 
     protected static function booted()
@@ -86,12 +96,12 @@ class Santri extends Model
     {
         return $this->hasMany(Anak_asuh::class, 'santri_id');
     }
-        public function catatanafektif()
+    public function catatanafektif()
     {
-        return $this->hasMany(Catatan_afektif::class,'id_santri');
+        return $this->hasMany(Catatan_afektif::class, 'id_santri');
     }
-        public function catatankognitif()
+    public function catatankognitif()
     {
-        return $this->hasMany(Catatan_kognitif::class,'id_santri');
+        return $this->hasMany(Catatan_kognitif::class, 'id_santri');
     }
 }

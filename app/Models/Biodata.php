@@ -64,15 +64,17 @@ class Biodata extends Model
             ->useLogName('biodata')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
-            ->setDescriptionForEvent(function (string $eventName) {
-                $user = Auth::user();
-                $userName = $user ? $user->name : 'Sistem';
+            ->setDescriptionForEvent(function (string $event) {
+                $verbs = [
+                    'created' => 'ditambahkan',
+                    'updated' => 'diperbarui',
+                    'deleted' => 'dihapus',
+                ];
 
-                return match ($eventName) {
-                    'created' => "Biodata ditambahkan oleh {$userName}",
-                    'updated' => "Biodata diperbarui oleh {$userName}",
-                    'deleted' => "Biodata dihapus oleh {$userName}",
-                };
+                $action = $verbs[$event] ?? $event;
+                $user = Auth::user()->name ?? 'Sistem';
+
+                return "Data Biodata berhasil {$action} oleh {$user}.";
             });
     }
 

@@ -1,65 +1,26 @@
 <?php
 
-namespace App\Http\Controllers\Api\Administrasi;
+namespace App\Http\Controllers\api\Administrasi;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\Administrasi\PelanggaranService;
-use App\Http\Requests\Administrasi\PelanggaranRequest;
-use App\Services\Administrasi\Filters\FilterPelanggaranService;
+use App\Services\Administrasi\PengunjungMahromService;
+use App\Http\Requests\Administrasi\PengunjungMahromRequest;
 
-class PelanggaranController extends Controller
+class PengunjungMahromController extends Controller
 {
-    private PelanggaranService $pelanggaran;
-    private FilterPelanggaranService $filter;
+    private PengunjungMahromService $pengunjung;
 
-    public function __construct(FilterPelanggaranService $filter, PelanggaranService $pelanggaran)
+    public function __construct(PengunjungMahromService $pengunjung)
     {
-        $this->pelanggaran = $pelanggaran;
-        $this->filter = $filter;
-    }
-
-    public function getAllPelanggaran(Request $request)
-    {
-        try {
-            $query = $this->pelanggaran->getAllPelanggaran($request);
-            $query = $this->filter->pelanggaranFilters($query, $request);
-
-            $perPage     = (int) $request->input('limit', 25);
-            $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-        } catch (\Throwable $e) {
-            Log::error("[PelanggaranController] Error: {$e->getMessage()}");
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server',
-            ], 500);
-        }
-
-        if ($results->isEmpty()) {
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kosong',
-                'data'    => [],
-            ], 200);
-        }
-
-        $formatted = $this->pelanggaran->formatData($results);
-
-        return response()->json([
-            'total_data'   => $results->total(),
-            'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
-        ]);
+        $this->pengunjung = $pengunjung;
     }
 
     public function index($bioId)
     {
         try {
-            $result = $this->pelanggaran->index($bioId);
+            $result = $this->pengunjung->index($bioId);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
@@ -71,7 +32,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data pelanggaran: ' . $e->getMessage());
+            Log::error('Gagal ambil data pengunjung mahrom: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -80,10 +41,10 @@ class PelanggaranController extends Controller
         }
     }
 
-    public function store(PelanggaranRequest $request, $bioId)
+    public function store(PengunjungMahromRequest $request, $bioId)
     {
         try {
-            $result = $this->pelanggaran->store($request->validated(), $bioId);
+            $result = $this->pengunjung->store($request->validated(), $bioId);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
@@ -95,7 +56,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah pelanggaran: ' . $e->getMessage());
+            Log::error('Gagal tambah pengunjung mahrom: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -107,7 +68,7 @@ class PelanggaranController extends Controller
     public function show($id)
     {
         try {
-            $result = $this->pelanggaran->show($id);
+            $result = $this->pengunjung->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
@@ -119,7 +80,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail pelanggaran: ' . $e->getMessage());
+            Log::error('Gagal ambil detail pengunjung mahrom: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -128,10 +89,10 @@ class PelanggaranController extends Controller
         }
     }
 
-    public function update(PelanggaranRequest $request, $id)
+    public function update(PengunjungMahromRequest $request, $id)
     {
         try {
-            $result = $this->pelanggaran->update($request->validated(), $id);
+            $result = $this->pengunjung->update($request->validated(), $id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
@@ -143,7 +104,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update pelanggaran: ' . $e->getMessage());
+            Log::error('Gagal update pengunjung mahrom: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',

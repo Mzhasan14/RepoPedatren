@@ -137,7 +137,7 @@ class PelanggaranService
         });
     }
 
-    public function edit($id): array
+    public function show($id): array
     {
         $pelanggaran = Pelanggaran::find($id);
 

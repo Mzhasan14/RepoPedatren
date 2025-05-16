@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('hubungan_id');
             $table->tinyInteger('jumlah_rombongan');
             $table->datetime('tanggal_kunjungan');
+            $table->enum('status', ['menunggu', 'berlangsung', 'selesai', 'ditolak']);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

@@ -106,10 +106,10 @@ class PerizinanController extends Controller
         }
     }
 
-    public function edit($id)
+    public function show($id)
     {
         try {
-            $result = $this->perizinan->edit($id);
+            $result = $this->perizinan->show($id);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
