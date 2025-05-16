@@ -5,14 +5,14 @@ namespace App\Services\PesertaDidik;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
-class DetailPesertaDidikService
+class DetailService
 {
-    public function getDetailPesertaDidik(string $bioId): array
+    public function getDetail(string $biodataId): array
     {
         $base = DB::table('santri as s')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('s.biodata_id', $bioId)
+            ->where('s.biodata_id', $biodataId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',
@@ -46,7 +46,7 @@ class DetailPesertaDidikService
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftJoin('negara as ng', 'b.negara_id', '=', 'ng.id')
-            ->where('b.id', $bioId)
+            ->where('b.id', $biodataId)
             ->selectRaw(implode(', ', [
                 'b.id',
                 'COALESCE(b.nik, b.no_passport) as identitas',
@@ -328,7 +328,7 @@ class DetailPesertaDidikService
 
         // --- Khadam ---
         $kh = DB::table('khadam as kh')
-            ->where('kh.biodata_id', $bioId)
+            ->where('kh.biodata_id', $biodataId)
             ->select(['kh.keterangan', 'kh.tanggal_mulai', 'kh.tanggal_akhir'])
             ->get();
 

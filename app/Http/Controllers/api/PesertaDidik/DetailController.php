@@ -6,27 +6,28 @@ use App\Models\Santri;
 use App\Models\Biodata;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\DetailPesertaDidikService;
+use App\Services\PesertaDidik\DetailService;
 
-class DetailPesertaDidikController extends Controller
+class DetailController extends Controller
 {
 
-    private DetailPesertaDidikService $detailPesertaDidikService;
-    public function __construct(DetailPesertaDidikService $detailPesertaDidikService)
+    private DetailService $detail;
+    public function __construct(DetailService $detail)
     {
-        $this->detailPesertaDidikService = $detailPesertaDidikService;
+        $this->detail = $detail;
     }
 
-    public function getDetailPesertaDidik(string $bioId)
+    // Detail for peserta didik all, khadam, alumni
+    public function getDetail(string $bioId)
     {
         try {
-            $data = $this->detailPesertaDidikService->getDetailPesertaDidik($bioId);
+            $data = $this->detail->getDetail($bioId);
             return response()->json([
                 'status' => true,
                 'data'    => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error DetailPesertaDidik: " . $e->getMessage());
+            Log::error("Error Detail : " . $e->getMessage());
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
