@@ -159,6 +159,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
+    Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy']);
 
     // Catatan Santri
     Route::get('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'index']);

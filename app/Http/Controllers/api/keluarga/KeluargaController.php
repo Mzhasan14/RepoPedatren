@@ -166,8 +166,8 @@ class KeluargaController extends Controller
                 $anggota = $ortu->merge($saudara)->sortBy(function ($i) {
                     $status = strtolower($i->status ?? '');
                     return match ($status) {
-                        'ayah' => 1,
-                        'ibu' => 2,
+                        'ayah_kandung' => 1,
+                        'ibu_kandung' => 2,
                         default => 3,
                     };
                 })->values();

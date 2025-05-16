@@ -1,16 +1,17 @@
-<?php 
+<?php
 
 namespace App\Services\Kewaliasuhan;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
-class DetailWaliasuhService {
+class DetailWaliasuhService
+{
     public function getDetailWaliasuh(string $WaliasuhId): array
     {
         // --- 1. Ambil basic wali asuh santri + biodata_id + no_kk sekaligus ---
         $base = DB::table('wali_asuh as ws')
-            ->join('santri as s','ws.id_santri' ,'=', 's.id')
+            ->join('santri as s', 'ws.id_santri', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
             ->where('ws.id', $WaliasuhId)
@@ -149,49 +150,53 @@ class DetailWaliasuhService {
             }
         }
 
-    // --- 5. Kewaliasuhan ---
+        // --- 5. Kewaliasuhan ---
         $kew = DB::table('santri as s')
             ->where('s.id', $santriId)
             ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
             ->leftJoin('anak_asuh as aa', 's.id', '=', 'aa.id_santri')
-            ->leftJoin('kewaliasuhan as kw', function ($j) {
-                $j->on('kw.id_wali_asuh', 'wa.id')
-                    ->orOn('kw.id_anak_asuh', 'aa.id');
+            // Pisahkan query untuk wali asuh dan anak asuh
+            ->leftJoin('kewaliasuhan as kw_wali', function ($join) {
+                $join->on('kw_wali.id_wali_asuh', '=', 'wa.id');
+            })
+            ->leftJoin('kewaliasuhan as kw_anak', function ($join) {
+                $join->on('kw_anak.id_anak_asuh', '=', 'aa.id');
             })
             ->leftJoin('grup_wali_asuh as g', 'g.id', '=', 'wa.id_grup_wali_asuh')
-            ->selectRaw(implode(', ', [
+            ->select([
                 'g.nama_grup',
-                "CASE WHEN wa.id IS NOT NULL THEN 'Wali Asuh' ELSE 'Anak Asuh' END as role",
-                "GROUP_CONCAT(
-                  CASE
-                    WHEN wa.id IS NOT NULL THEN (
-                      select bio2.nama from biodata bio2
-                      join santri s3 on bio2.id = s3.biodata_id
-                      join wali_asuh wa3 on wa3.id_santri = s3.id
-                      where wa3.id = kw.id_wali_asuh
-                    )
-                    ELSE (
-                      select bio.nama from biodata bio
-                      join santri s2 on bio.id = s2.biodata_id
-                      join anak_asuh aa2 on aa2.id_santri = s2.id
-                      where aa2.id = kw.id_anak_asuh
-                    )
-                  END
-                  SEPARATOR ', '
-              ) as relasi"
-            ]))
+                DB::raw("CASE WHEN wa.id IS NOT NULL THEN 'Wali Asuh' ELSE 'Anak Asuh' END as role"),
+                // Untuk wali asuh (mencari anak asuhnya)
+                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ') 
+        FROM biodata bio
+        JOIN santri s2 ON bio.id = s2.biodata_id
+        JOIN anak_asuh aa2 ON aa2.id_santri = s2.id
+        JOIN kewaliasuhan kw2 ON kw2.id_anak_asuh = aa2.id
+        WHERE kw2.id_wali_asuh = wa.id) as anak_asuh_names"),
+                // Untuk anak asuh (mencari wali asuhnya)
+                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ') 
+        FROM biodata bio
+        JOIN santri s3 ON bio.id = s3.biodata_id
+        JOIN wali_asuh wa3 ON wa3.id_santri = s3.id
+        JOIN kewaliasuhan kw3 ON kw3.id_wali_asuh = wa3.id
+        WHERE kw3.id_anak_asuh = aa.id) as wali_asuh_names")
+            ])
             ->groupBy('g.nama_grup', 'wa.id', 'aa.id')
             ->get();
 
         if ($kew->isNotEmpty()) {
-            $data['Status_Santri']['Kewaliasuhan'] = $kew->map(fn($k) => [
-                'group'        => $k->nama_grup,
-                'sebagai'      => $k->role,
-                $k->role === 'Anak Asuh'
-                    ? 'Nama Wali Asuh'
-                    : 'Nama Anak Asuh'
-                => $k->relasi ?? '-',
-            ]);
+            $data['Status_Santri']['Kewaliasuhan'] = $kew->map(function ($k) {
+                $result = [
+                    'group_kewaliasuhan' => $k->nama_grup,
+                    'sebagai' => $k->role,
+                ];
+
+                if ($k->role === 'Anak Asuh') {
+                    $result['Nama Wali Asuh'] = $k->wali_asuh_names ?? '-';
+                }
+
+                return $result;
+            });
         }
 
         // --- 6. Perizinan ---
@@ -328,13 +333,13 @@ class DetailWaliasuhService {
         // --- 10. Kunjungan Mahrom ---
         $kun = DB::table('pengunjung_mahrom as pm')
             ->where('pm.santri_id', $santriId)
-            ->select(['pm.nama_pengunjung', 'pm.tanggal'])
+            ->select(['pm.nama_pengunjung', 'pm.tanggal_kunjungan'])
             ->get();
 
         if ($kun->isNotEmpty()) {
             $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
                 'nama'    => $k->nama_pengunjung,
-                'tanggal' => $k->tanggal,
+                'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ]);
         }
 

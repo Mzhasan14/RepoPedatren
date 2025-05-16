@@ -12,10 +12,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Keluarga\OrangtuaWaliService;
 use App\Services\Keluarga\DetailOrangtuaService;
+use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
 use App\Services\Keluarga\FIlters\FilterOrangtuaService;
 
 class OrangTuaWaliController extends Controller
@@ -187,13 +188,28 @@ class OrangTuaWaliController extends Controller
     // /**
     //  * Remove the specified resource from storage.
     //  */
-    // public function destroy(string $id)
-    // {
-    //     $ortu = OrangTuaWali::findOrFail($id);
-
-    //     $ortu->delete();
-    //     return new PdResource(true, 'Data berhasil dihapus', null);
-    // }
+    public function destroy(string $id)
+    {    
+        $ortu = OrangTuaWali::findOrFail($id);
+        if (!$ortu) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orang tua tidak ditemukan'
+            ], 404);
+        }
+        // $ortu->delete();
+        OrangTuaWali::where('id', $id)
+            ->update([
+                'status' => false,
+                'deleted_at' => now(),
+                'deleted_by' => Auth::id()
+            ]);
+            
+        return response()->json([
+            'status' => true,
+            'message' => 'data orang tua berhasil dihapus.'
+        ]);
+    }
 
 
     // public function orangTuaWali(Request $request)

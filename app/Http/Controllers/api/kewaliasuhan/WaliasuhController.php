@@ -8,8 +8,10 @@ use App\Models\Peserta_didik;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use Database\Seeders\PesertaDidikSeeder;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\WaliasuhService;
 use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
@@ -62,7 +64,7 @@ class WaliasuhController extends Controller
         if (!$waliasuh) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'ID Orangtua tidak ditemukan',
+                'message' => 'ID wali asuh tidak ditemukan',
                 'data' => []
             ], 404);
         }
@@ -98,10 +100,61 @@ class WaliasuhController extends Controller
     }
 
     public function destroy($id) {
-        $this->waliasuhService->destroy($id);
-        return response()->json([
-            'message' => 'data berhasil dihapus'
-        ], 200);
+        DB::transaction(function () use ($id) {
+            $waliasuh = Wali_Asuh::findOrFail($id);
+            if (!$waliasuh) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'wali asuh tidak ditemukan'
+                ], 404);
+            }
+            $originalAttributes = $waliasuh->getAttributes();
+            $relations = Kewaliasuhan::where('id_wali_asuh', $id)->get();
+            // 1. Nonaktifkan semua relasi
+            Kewaliasuhan::where('id_wali_asuh', $id)
+                ->update([
+                    'tanggal_berakhir' =>now(),
+                    'status' => false,
+                    'deleted_at' => now(),
+                    'deleted_by' => Auth::id()
+                ]);
+
+            // 2. Nonaktifkan wali asuh
+            Wali_Asuh::where('id', $id)
+                ->update([
+                    'id_grup_wali_asuh' => null,
+                    'status' => false,
+                    'deleted_at' => now(),
+                    'deleted_by' => Auth::id()
+                ]);
+
+            activity('anak_asuh_delete')
+                ->performedOn($waliasuh)
+                ->withProperties([
+                    'old_attributes' => $originalAttributes,
+                    'deleted_by' => Auth::id(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'affected_relations' => $relations->pluck('id') // ID relasi yang dinonaktifkan
+                ])
+                ->event('nonaktif_wali_asuh')
+                ->log('Wali asuh dinonaktifkan beserta semua relasinya');
+
+            // Log untuk setiap relasi yang dinonaktifkan
+            foreach ($relations as $relation) {
+                activity('kewaliasuhan_delete')
+                    ->performedOn($relation)
+                    ->withProperties([
+                        'id_wali_asuh' => $relation->id_wali_asuh,
+                        'id_anak_asuh' => $relation->id_anak_asuh,
+                        'deleted_by' => Auth::id()
+                    ])
+                    ->event('nonaktif_relasi_wali_asuh')
+                    ->log('Relasi kewaliasuhan dinonaktifkan karena wali asuh dinonaktifkan');
+            }
+        });
+
+        return response()->json(['message' => 'Wali asuh dinonaktifkan']);
 
     }
     /**
