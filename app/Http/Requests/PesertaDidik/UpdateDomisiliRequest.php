@@ -28,7 +28,6 @@ class UpdateDomisiliRequest extends FormRequest
             'blok_id' => 'required|exists:blok,id',
             'kamar_id' => 'required|exists:kamar,id',
             'tanggal_masuk' => 'required|date',
-            'tanggal_keluar' => 'nullable|date',
         ];
     }
 

@@ -41,7 +41,7 @@ class KhadamFormService
                 return ['status' => false, 'message' => 'Masih ada khadam aktif untuk santri ini.'];
             }
 
-            $khadam = Khadam::create([
+            $kh = Khadam::create([
                 'biodata_id'     => $bioId,
                 'keterangan'     => $input['keterangan'],
                 'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
@@ -49,44 +49,44 @@ class KhadamFormService
                 'created_by'     => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $khadam];
+            return ['status' => true, 'data' => $kh];
         });
     }
 
     public function show(int $id): array
     {
-        $khadam = Khadam::find($id);
+        $kh = Khadam::find($id);
 
-        if (!$khadam) {
+        if (!$kh) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
-        return ['status' => true, 'data' => $khadam];
+        return ['status' => true, 'data' => $kh];
     }
 
     public function update(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $khadam = Khadam::find($id);
-            if (!$khadam) {
+            $kh = Khadam::find($id);
+            if (!$kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if (
-                !empty($input['tanggal_akhir']) &&
-                Carbon::parse($input['tanggal_akhir'])->lt(Carbon::parse($input['tanggal_mulai']))
-            ) {
-                return ['status' => false, 'message' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.'];
+            // Jika data sudah memiliki tanggal keluar sebelumnya, larang perubahan
+            if (! is_null($kh->tanggal_keluar)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data riwayat ini telah memiliki tanggal akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                ];
             }
 
-            $khadam->update([
+            $kh->update([
                 'keterangan'     => $input['keterangan'],
                 'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
-                'tanggal_akhir'  => !empty($input['tanggal_akhir']) ? Carbon::parse($input['tanggal_akhir']) : null,
                 'updated_by'     => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $khadam];
+            return ['status' => true, 'data' => $kh];
         });
     }
 
@@ -130,24 +130,24 @@ class KhadamFormService
     public function keluarKhadam(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $khadam = Khadam::find($id);
-            if (!$khadam) {
+            $kh = Khadam::find($id);
+            if (!$kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
             $tglKeluar = Carbon::parse($input['tanggal_akhir'] ?? '');
 
-            if ($tglKeluar->lt(Carbon::parse($khadam->tanggal_mulai))) {
+            if ($tglKeluar->lt(Carbon::parse($kh->tanggal_mulai))) {
                 return ['status' => false, 'message' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.'];
             }
 
-            $khadam->update([
+            $kh->update([
                 'tanggal_akhir'  => $tglKeluar,
                 'status'         => false,
                 'updated_by'     => Auth::id(),
             ]);
 
-            return ['status' => true, 'data' => $khadam];
+            return ['status' => true, 'data' => $kh];
         });
     }
 }

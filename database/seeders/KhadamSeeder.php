@@ -15,7 +15,6 @@ class KhadamSeeder extends Seeder
      */
     public function run(): void
     {
-        // (new KhadamFactory())->count(100)->create();
         $userId = 1; // ID user pembuat data
 
         // Ambil biodata_id yang berelasi ke santri dan riwayat_domisili
@@ -31,9 +30,7 @@ class KhadamSeeder extends Seeder
         $selectedBiodataIds = collect($biodataIds)->random($jumlahKhadam);
 
         foreach ($selectedBiodataIds as $biodataId) {
-            // Tentukan 1-3 riwayat jabatan
             $jumlahRiwayat = rand(1, 3);
-
             $tanggalMulai = Carbon::now()->subYears(rand(1, 5))->subMonths(rand(0, 11));
 
             for ($i = 1; $i <= $jumlahRiwayat; $i++) {
@@ -51,12 +48,11 @@ class KhadamSeeder extends Seeder
                     'created_by' => $userId,
                     'updated_by' => null,
                     'deleted_by' => null,
-                    'status' => true,
+                    'status' => $tanggalAkhir ? false : true, // UBAH DI SINI
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                // Jika ada periode berikutnya, tanggal mulai berikutnya harus setelah tanggal_akhir saat ini
                 if ($tanggalAkhir) {
                     $tanggalMulai = (clone $tanggalAkhir)->addDays(rand(1, 30));
                 }

@@ -198,16 +198,12 @@ class DomisiliService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if (! empty($input['tanggal_keluar'])) {
-                $tglKeluar = Carbon::parse($input['tanggal_keluar']);
-                $tglMasuk  = Carbon::parse($input['tanggal_masuk'] ?? $dom->tanggal_masuk);
-
-                if ($tglKeluar->lt($tglMasuk)) {
-                    return [
-                        'status'  => false,
-                        'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
-                    ];
-                }
+            // Jika data sudah memiliki tanggal keluar sebelumnya, larang perubahan
+            if (! is_null($dom->tanggal_keluar)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data riwayat ini telah memiliki tanggal keluar dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                ];
             }
 
             $dom->update([
@@ -215,9 +211,6 @@ class DomisiliService
                 'blok_id'       => $input['blok_id'],
                 'kamar_id'      => $input['kamar_id'],
                 'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
-                'tanggal_keluar' => ! empty($input['tanggal_keluar'])
-                    ? Carbon::parse($input['tanggal_keluar'])
-                    : null,
                 'updated_by'    => Auth::id(),
             ]);
 

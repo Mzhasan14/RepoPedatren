@@ -36,7 +36,6 @@ class UpdatePendidikanRequest extends FormRequest
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
             'tanggal_masuk' => 'required|date',
-            'tanggal_keluar' => 'nullable|date',
         ];
     }
 

@@ -26,7 +26,6 @@ class UpdateKhadamRequest extends FormRequest
         return [
             'keterangan'     => 'required|string|max:255',
             'tanggal_mulai'  => 'required|date',
-            'tanggal_akhir'  => 'nullable|date|after_or_equal:tanggal_mulai',
         ];
     }
 
