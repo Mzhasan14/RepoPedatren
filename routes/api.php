@@ -241,9 +241,10 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
     Route::post('/waliasuh', [WaliasuhController::class, 'store']);
+    Route::put('/waliasuh/{id}', [WaliasuhController::class, 'update']);
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy']);
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
-    Route::delete('/anakasuh', [AnakasuhController::class, 'destroy']);
+    Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
     
     // lembaga

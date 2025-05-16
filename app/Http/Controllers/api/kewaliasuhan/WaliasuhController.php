@@ -99,6 +99,20 @@ class WaliasuhController extends Controller
         }
     }
 
+    public function update(waliAsuhRequest $request, $id) {
+        $result = $this->waliasuhService->update($request->validated(),$id);
+        if (!$result['status']) {
+            return response()->json([
+                'message' => $result['message'] ??
+                    'Data tidak ditemukan.'
+            ], 200);
+        }
+        return response()->json([
+            'message' => 'waliasuh berhasil diperbarui',
+            'data' => $result['data']
+        ]);
+    }
+
     public function destroy($id) {
         DB::transaction(function () use ($id) {
             $waliasuh = Wali_Asuh::findOrFail($id);
@@ -154,7 +168,7 @@ class WaliasuhController extends Controller
             }
         });
 
-        return response()->json(['message' => 'Wali asuh dinonaktifkan']);
+        return response()->json(['message' => 'Wali asuh dihapus']);
 
     }
     /**

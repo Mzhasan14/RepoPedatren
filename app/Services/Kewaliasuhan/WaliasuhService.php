@@ -3,6 +3,7 @@
 namespace App\Services\Kewaliasuhan;
 
 use App\Models\Santri;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -141,6 +142,72 @@ class WaliasuhService
             ];
         });
     }
+
+    public function update(array $data, string $id)
+{
+    return DB::transaction(function () use($data, $id) {
+        $waliAsuh = Wali_Asuh::findOrFail($id);
+        
+        // Simpan data sebelum diupdate
+        $before = $waliAsuh->getOriginal();
+        
+        // Persiapkan data update
+        $updateData = [
+            'id_santri' => $data['id_santri'] ?? $waliAsuh->id_santri,
+            'id_grup_wali_asuh' => $data['id_grup_wali_asuh'] ?? $waliAsuh->id_grup_wali_asuh,
+            'updated_by' => Auth::id(),
+            'status' => $data['status'] ?? $waliAsuh->status,
+            'updated_at' => now()
+        ];
+
+        // Jika grup wali asuh diubah, nonaktifkan relasi lama
+        if (isset($data['id_grup_wali_asuh']) && $data['id_grup_wali_asuh'] != $waliAsuh->id_grup_wali_asuh) {
+            Kewaliasuhan::where('id_wali_asuh', $id)
+                     ->where('status', true)
+                     ->update([
+                         'status' => false,
+                         'updated_by' => Auth::id(),
+                         'updated_at' => now()
+                     ]);
+            
+            // Log aktivitas untuk nonaktifkan relasi lama
+            activity('kewaliasuhan_update')
+                ->performedOn($waliAsuh)
+                ->withProperties([
+                    'action' => 'nonaktif_relasi_lama',
+                    'grup_lama' => $waliAsuh->id_grup_wali_asuh,
+                    'grup_baru' => $data['id_grup_wali_asuh']
+                ])
+                ->log('Nonaktifkan relasi lama karena perubahan grup');
+        }
+
+        $waliAsuh->fill($updateData);
+
+        if (!$waliAsuh->isDirty()) {
+            return ['status' => false, 'message' => 'Tidak ada perubahan'];
+        }
+
+        $waliAsuh->save();
+
+        // Log activity untuk update wali asuh
+        $batchUuid = Str::uuid();
+        activity('wali_asuh_update')
+            ->performedOn($waliAsuh)
+            ->withProperties([
+                'before' => $before, 
+                'after' => $waliAsuh->getChanges()
+            ])
+            ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
+            ->event('update_wali_asuh')
+            ->log('Data wali asuh diperbarui');
+
+        return [
+            'status' => true, 
+            'data' => $waliAsuh,
+            'message' => 'Update berhasil'
+        ];
+    });
+}
 
     public function destroy($id)
     {
