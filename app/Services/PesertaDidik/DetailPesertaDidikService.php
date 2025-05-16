@@ -330,14 +330,14 @@ class DetailPesertaDidikService
         $kh = DB::table('khadam as kh')
             ->where('kh.biodata_id', $bioId)
             ->select(['kh.keterangan', 'kh.tanggal_mulai', 'kh.tanggal_akhir'])
-            ->first();
+            ->get();
 
-        $data['Khadam'] = $kh
-            ? [
+        $data['Khadam'] = $kh->isNotEmpty()
+            ? $kh->map(fn($kh) => [
                 'keterangan'    => $kh->keterangan,
                 'tanggal_mulai' => $kh->tanggal_mulai,
-                'tanggal_akhir' => $kh->tanggal_akhir,
-            ]
+                'tanggal_akhir' => $kh->tanggal_akhir ?? "-",
+            ])
             : [];
         return $data;
     }
