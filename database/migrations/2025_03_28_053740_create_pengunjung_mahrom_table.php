@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('pengunjung_mahrom', function (Blueprint $table) {
             $table->id();
+            $table->uuid('biodata_id');
             $table->unsignedBigInteger('santri_id');
-            $table->string('nama_pengunjung');
             $table->unsignedBigInteger('hubungan_id');
             $table->tinyInteger('jumlah_rombongan');
             $table->datetime('tanggal_kunjungan');
@@ -30,6 +30,7 @@ return new class extends Migration
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('hubungan_id')->references('id')->on('hubungan_keluarga')->onDelete('cascade');
             $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
         });
     }
 

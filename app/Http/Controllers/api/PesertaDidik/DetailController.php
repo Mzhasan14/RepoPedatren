@@ -17,21 +17,21 @@ class DetailController extends Controller
         $this->detail = $detail;
     }
 
-    // Detail for peserta didik all, khadam, alumni
+    // Detail all data
     public function getDetail(string $bioId)
     {
         try {
             $data = $this->detail->getDetail($bioId);
             return response()->json([
                 'status' => true,
-                'data'    => $data,
+                'data'   => $data,
             ], 200);
         } catch (\Exception $e) {
             Log::error("Error Detail : " . $e->getMessage());
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server',
-            ], 500);
+                'status'  => false,
+                'message' => 'Data tidak ditemukan atau ID tidak valid.',
+            ], 404);
         }
     }
 }

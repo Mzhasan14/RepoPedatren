@@ -233,6 +233,7 @@ class PesertaDidikService
 
                 $parent = $data[$nikKey] ? DB::table('biodata')->where('nik', $data[$nikKey])->first() : null;
                 $parentId = $parent->id ?? Str::uuid()->toString();
+                $jenisKelamin = $role === 'ayah' ? 'l' : 'p'; // Tentukan jenis kelamin
 
                 // Jika data sudah ada berdasarkan NIK, lakukan update (kecuali created_at dan created_by)
                 if ($parent) {
@@ -252,6 +253,7 @@ class PesertaDidikService
                         'id'            => $parentId,
                         'nama'          => $data[$nameKey],
                         'nik'           => $data[$nikKey] ?? null,
+                        'jenis_kelamin' => $jenisKelamin,
                         'tempat_lahir'  => $data["tempat_lahir_{$role}"] ?? null,
                         'tanggal_lahir' => $data["tanggal_lahir_{$role}"] ?? null,
                         'no_telepon'    => $data["no_telepon_{$role}"] ?? null,

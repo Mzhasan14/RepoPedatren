@@ -24,8 +24,12 @@ class PengunjungMahromRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'nik' => 'required|digits:16',
+            'nama' => 'required|string',
+            'tempat_lahir' => 'required|string|max:50',
+            'tanggal_lahir' => 'required|date',
+            'jenis_kelamin' => 'required|in:l,p',
             'santri_id' => 'required|exists:santri,id',
-            'nama_pengunjung' => 'required|string|max:255',
             'hubungan_id' => 'required|exists:hubungan_keluarga,id',
             'jumlah_rombongan' => 'required|integer|min:1',
             'tanggal_kunjungan' => 'required|date|after_or_equal:today',
