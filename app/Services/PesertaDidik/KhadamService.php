@@ -2,9 +2,16 @@
 
 namespace App\Services\PesertaDidik;
 
+use App\Models\Khadam;
+use App\Models\Santri;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class KhadamService
 {
@@ -67,8 +74,128 @@ class KhadamService
         ]);
     }
 
-    public function store(array $data)
-    {
-        
-    }
+   public function store(array $data)
+{
+    return DB::transaction(function () use ($data) {
+        $userId = Auth::id();
+        $now    = now();
+
+        // Biodata
+        $nik = $data['nik'] ?? null;
+        $existingBiodata = $nik ? DB::table('biodata')->where('nik', $nik)->first() : null;
+
+        if ($existingBiodata) {
+            // Cek apakah sudah ada khadam aktif
+            $khadamAktif = DB::table('khadam')
+                ->where('biodata_id', $existingBiodata->id)
+                ->where('status', true)
+                ->whereNull('deleted_at')
+                ->first();
+
+            if ($khadamAktif) {
+                throw ValidationException::withMessages([
+                    'khadam' => ['Biodata ini sudah memiliki status khadam yang aktif.'],
+                ]);
+            }
+        }
+
+        // Data biodata
+        $biodataData = [
+            'nama'                         => $data['nama'],
+            'negara_id'                    => $data['negara_id'],
+            'provinsi_id'                  => $data['provinsi_id'] ?? null,
+            'kabupaten_id'                 => $data['kabupaten_id'] ?? null,
+            'kecamatan_id'                 => $data['kecamatan_id'] ?? null,
+            'jalan'                        => $data['jalan'] ?? null,
+            'kode_pos'                     => $data['kode_pos'] ?? null,
+            'no_passport'                  => $data['no_passport'] ?? null,
+            'jenis_kelamin'                => $data['jenis_kelamin'],
+            'tanggal_lahir'                => $data['tanggal_lahir'],
+            'tempat_lahir'                 => $data['tempat_lahir'],
+            'nik'                          => $nik,
+            'no_telepon'                   => $data['no_telepon'],
+            'no_telepon_2'                 => $data['no_telepon_2'] ?? null,
+            'email'                        => $data['email'],
+            'jenjang_pendidikan_terakhir'  => $data['jenjang_pendidikan_terakhir'] ?? null,
+            'nama_pendidikan_terakhir'     => $data['nama_pendidikan_terakhir'] ?? null,
+            'anak_keberapa'                => $data['anak_keberapa'] ?? null,
+            'dari_saudara'                 => $data['dari_saudara'] ?? null,
+            'tinggal_bersama'              => $data['tinggal_bersama'] ?? null,
+            'updated_by'                   => $userId,
+            'updated_at'                   => $now,
+        ];
+
+        if ($existingBiodata) {
+            DB::table('biodata')->where('id', $existingBiodata->id)->update($biodataData);
+            $biodataId = $existingBiodata->id;
+        } else {
+            do {
+                $smartcard = 'SC-' . strtoupper(Str::random(10));
+            } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
+
+            do {
+                $biodataId = Str::uuid()->toString();
+            } while (DB::table('biodata')->where('id', $biodataId)->exists());
+
+            DB::table('biodata')->insert(array_merge($biodataData, [
+                'id'         => $biodataId,
+                'smartcard'  => $smartcard,
+                'status'     => true,
+                'created_by' => $userId,
+                'created_at' => $now,
+            ]));
+        }
+
+        // Insert ke tabel khadam
+        $khadamId = DB::table('khadam')->insertGetId([
+            'biodata_id'    => $biodataId,
+            'keterangan'    => $data['keterangan'],
+            'tanggal_mulai' => $data['tanggal_mulai'],
+            'tanggal_akhir' => $data['tanggal_akhir'] ?? null,
+            'status'        => true,
+            'created_by'    => $userId,
+            'created_at'    => $now,
+            'updated_at'    => $now,
+        ]);
+
+        // Upload Berkas (jika ada)
+        if (!empty($data['berkas']) && is_array($data['berkas'])) {
+            foreach ($data['berkas'] as $item) {
+                if (!($item['file_path'] instanceof UploadedFile)) {
+                    throw new \Exception('Berkas tidak valid');
+                }
+
+                $url = Storage::url($item['file_path']->store('Khadam', 'public'));
+                DB::table('berkas')->insert([
+                    'biodata_id'      => $biodataId,
+                    'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
+                    'file_path'       => $url,
+                    'status'          => true,
+                    'created_by'      => $userId,
+                    'created_at'      => $now,
+                    'updated_at'      => $now,
+                ]);
+            }
+        }
+
+        activity('khadam_registration')
+            ->causedBy(Auth::user())
+            ->performedOn(Khadam::find($khadamId))
+            ->withProperties([
+                'khadam_id'     => $khadamId,
+                'biodata_id'    => $biodataId,
+                'berkas'        => collect($data['berkas'] ?? [])->pluck('jenis_berkas_id'),
+                'ip'            => request()->ip(),
+                'user_agent'    => request()->userAgent(),
+            ])
+            ->event('create_khadam')
+            ->log('Pendaftaran khadam baru berhasil disimpan.');
+
+        return [
+            'khadam_id'     => $khadamId,
+            'biodata_id'    => $biodataId,
+        ];
+    });
+}
+
 }

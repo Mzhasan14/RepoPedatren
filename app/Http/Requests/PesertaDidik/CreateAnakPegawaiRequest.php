@@ -60,7 +60,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'pekerjaan_ayah' => 'required|string|max:100',
             'pendidikan_terakhir_ayah' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'penghasilan_ayah' => 'required|string|max:100',
-            'wafat_ayah' => 'required|boolean',
+            'wafat_ayah' => 'required|in:0,1',
 
             // Ibu
             'nama_ibu' => 'required|string|max:100',
@@ -71,7 +71,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'pekerjaan_ibu' => 'required|string|max:100',
             'pendidikan_terakhir_ibu' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'penghasilan_ibu' => 'required|string|max:100',
-            'wafat_ibu' => 'required|boolean',
+            'wafat_ibu' => 'required|in:0,1',
 
             // Wali
             'nama_wali' => 'required|string|max:100',
