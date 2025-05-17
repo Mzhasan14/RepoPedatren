@@ -111,7 +111,7 @@ class FilterSantriService
         $phrase = '"' . trim($request->nama) . '"';
     
         return $query->whereRaw(
-            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
         );
     }

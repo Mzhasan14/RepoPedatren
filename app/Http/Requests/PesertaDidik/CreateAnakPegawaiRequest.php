@@ -26,76 +26,106 @@ class CreateAnakPegawaiRequest extends FormRequest
         return [
             // Biodata Diri
             'negara_id' => 'required|exists:negara,id',
-            'provinsi_id' => 'nullable|exists:provinsi,id',
-            'kabupaten_id' => 'nullable|exists:kabupaten,id',
-            'kecamatan_id' => 'nullable|exists:kecamatan,id',
-            'jalan' => 'nullable|string',
-            'kode_pos' => 'nullable|string',
+            'provinsi_id' => 'required|exists:provinsi,id',
+            'kabupaten_id' => 'required|exists:kabupaten,id',
+            'kecamatan_id' => 'required|exists:kecamatan,id',
+            'jalan' => 'required|string|max:255',
+            'kode_pos' => 'required|string|max:10',
             'nama' => 'required|string|max:100',
 
-            'no_passport' => 'nullable|string|unique:biodata,no_passport',
-            'no_kk' => 'required|string|max:16',
+            // Salah satu: NIK atau Passport harus diisi
+            'nik' => 'nullable|required_without:passport|digits:16',
+            'passport' => 'nullable|required_without:nik|string|max:20',
+
+            'no_kk' => 'required|string|digits:16',
             'jenis_kelamin' => 'required|in:l,p',
             'tanggal_lahir' => 'required|date',
             'tempat_lahir' => 'required|string|max:50',
-            'nik' => 'nullable|digits:16|unique:biodata,nik',
             'no_telepon' => 'required|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'required|email|max:100|unique:biodata,email',
 
             'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
-            'nama_pendidikan_terakhir' => 'nullable|string',
+            'nama_pendidikan_terakhir' => 'nullable|string|max:100',
             'anak_keberapa' => 'nullable|integer|min:1',
             'dari_saudara' => 'nullable|integer|min:1',
             'tinggal_bersama' => 'nullable|string|max:40',
 
-            // Biodata Orang Tua
-            // Ayah
-            'nama_ayah' => 'nullable|string|max:100',
-            'nik_ayah' => 'nullable|digits:16',
+            // Biodata Orang Tua - Ayah
+            'nama_ayah' => 'required|string|max:100',
+            'nik_ayah' => 'required|digits:16',
             'tempat_lahir_ayah' => 'required|string|max:50',
             'tanggal_lahir_ayah' => 'required|date',
             'no_telepon_ayah' => 'required|string|max:20',
-            'pekerjaan_ayah' => 'required',
-            'pendidikan_terakhir_ayah' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
-            'penghasilan_ayah' => 'required',
+            'pekerjaan_ayah' => 'required|string|max:100',
+            'pendidikan_terakhir_ayah' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'penghasilan_ayah' => 'required|string|max:100',
+            'wafat_ayah' => 'required|boolean',
 
             // Ibu
-            'nama_ibu' => 'nullable|string|max:100',
-            'nik_ibu' => 'nullable|digits:16',
+            'nama_ibu' => 'required|string|max:100',
+            'nik_ibu' => 'required|digits:16',
             'tempat_lahir_ibu' => 'required|string|max:50',
             'tanggal_lahir_ibu' => 'required|date',
             'no_telepon_ibu' => 'required|string|max:20',
-            'pekerjaan_ibu' => 'required',
-            'pendidikan_terakhir_ibu' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
-            'penghasilan_ibu' => 'required',
+            'pekerjaan_ibu' => 'required|string|max:100',
+            'pendidikan_terakhir_ibu' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'penghasilan_ibu' => 'required|string|max:100',
+            'wafat_ibu' => 'required|boolean',
 
             // Wali
-            'nama_wali' => 'nullable|string|max:100',
-            'nik_wali' => 'nullable|digits:16',
+            'nama_wali' => 'required|string|max:100',
+            'nik_wali' => 'required|digits:16',
+            'hubungan' => 'required|in:ayah kandung,ibu kandung,kakak kandung,adik kandung,kakek kandung,nenek kandung,paman dari ayah/ibu,bibi dari ayah/ibu,ayah sambung,ibu sambung',
             'tempat_lahir_wali' => 'required|string|max:50',
             'tanggal_lahir_wali' => 'required|date',
             'no_telepon_wali' => 'required|string|max:20',
-            'pekerjaan_wali' => 'required',
-            'pendidikan_terakhir_wali' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
-            'penghasilan_wali' => 'required',
+            'pekerjaan_wali' => 'required|string|max:100',
+            'pendidikan_terakhir_wali' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'penghasilan_wali' => 'required|string|max:100',
 
-            // rencana pendidikan
-            'lembaga_id' => 'required|exists:lembaga,id',
+            // Rencana Pendidikan
+            'no_induk'  => 'nullable|string',
+            'lembaga_id' => 'nullable|exists:lembaga,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
+            'tanggal_masuk_pendidikan' => 'nullable|date',
 
-            // rencana domisili
+            // Rencana Domisili
             'wilayah_id' => 'nullable|exists:wilayah,id',
             'blok_id' => 'nullable|exists:blok,id',
             'kamar_id' => 'nullable|exists:kamar,id',
+            'tanggal_masuk_domisili' => 'nullable|date',
 
-            // berkas
-            'berkas' => 'nullable|array',
+            // Berkas
+            'berkas' => 'required|array|min:1',
             'berkas.*.jenis_berkas_id' => 'required|exists:jenis_berkas,id',
             'berkas.*.file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            // Validasi: jika lembaga diisi, maka tanggal masuk pendidikan wajib
+            if ($this->filled('lembaga_id') && !$this->filled('tanggal_masuk_pendidikan')) {
+                $validator->errors()->add('tanggal_masuk_pendidikan', 'Tanggal masuk pendidikan wajib diisi jika lembaga diisi.');
+            }
+
+            // Validasi: jika wilayah diisi, maka blok, kamar, dan tanggal masuk domisili wajib
+            if ($this->filled('wilayah_id')) {
+                if (!$this->filled('blok_id')) {
+                    $validator->errors()->add('blok_id', 'Blok wajib diisi jika wilayah diisi.');
+                }
+                if (!$this->filled('kamar_id')) {
+                    $validator->errors()->add('kamar_id', 'Kamar wajib diisi jika wilayah diisi.');
+                }
+                if (!$this->filled('tanggal_masuk_domisili')) {
+                    $validator->errors()->add('tanggal_masuk_domisili', 'Tanggal masuk domisili wajib diisi jika wilayah diisi.');
+                }
+            }
+        });
     }
 
     protected function failedValidation(Validator $validator)
