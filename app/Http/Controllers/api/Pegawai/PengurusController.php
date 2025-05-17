@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\Pegawai;
 use App\Exports\Pegawai\PengurusExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\KeluarPengurusRequest;
 use App\Http\Requests\Pegawai\PengurusRequest;
+use App\Http\Requests\Pegawai\PindahPengurusRequest;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Pengurus;
@@ -156,6 +158,57 @@ class PengurusController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+
+    public function pindahPengurus(PindahPengurusRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirPengurus->pindahPengurus($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Pengurus baru berhasil dibuat',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal pindah Pengurus: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function keluarPengurus(KeluarPengurusRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirPengurus->keluarPengurus($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal keluar Pengurus: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
          public function pengurusExport()
         {

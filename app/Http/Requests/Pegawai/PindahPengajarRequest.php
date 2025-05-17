@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PengurusRequest extends FormRequest
+class PindahPengajarRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,15 +24,19 @@ class PengurusRequest extends FormRequest
     public function rules(): array
     {
         return [
-        'golongan_jabatan_id'   => 'required|exists:golongan_jabatan,id',
-        'jabatan'               => 'nullable|string|max:255',
-        'satuan_kerja'          => 'nullable|string|max:255',
-        'keterangan_jabatan'    => 'nullable|string|max:255',
-        'tanggal_mulai'         => 'nullable|date',
-        'tanggal_akhir'         => 'nullable|date|after_or_equal:tanggal_mulai',
+            'golongan_id' => ['required', 'integer', 'exists:golongan,id'],
+            'lembaga_id'  => ['required', 'integer', 'exists:lembaga,id'],
+            'jabatan'     => ['nullable', 'string', 'max:255'],
+            'tahun_masuk' => [
+                'required',
+                'date',
+            ],
+            'materi_ajar.*.nama_materi' => ['nullable', 'string', 'max:255'], 
+            'materi_ajar.*.jumlah_menit' => ['nullable', 'integer', 'min:0'],
+
         ];
     }
-        protected function failedValidation(Validator $validator)
+    protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 

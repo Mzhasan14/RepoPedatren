@@ -669,6 +669,109 @@ class DetailService
             ])
             : [];
 
+                // --- Riwayat Karyawan ---
+        $karyawan = DB::table('pegawai')
+            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
+            ->leftJoin('karyawan', 'karyawan.pegawai_id', '=', 'pegawai.id')
+            ->where('pegawai.biodata_id', $biodataId)
+            ->select(
+                'karyawan.keterangan_jabatan',
+                DB::raw("
+                    CONCAT(
+                        'Sejak ', DATE_FORMAT(karyawan.tanggal_mulai, '%e %b %Y'),
+                        ' Sampai ',
+                        IFNULL(DATE_FORMAT(karyawan.tanggal_selesai, '%e %b %Y'), 'Sekarang')
+                    ) AS masa_jabatan
+                ")
+            )
+            ->orderBy('karyawan.tanggal_mulai', 'asc')
+            ->get();
+
+            $data['Karyawan'] = $karyawan
+            ->filter(fn($item) => $item->keterangan_jabatan !== null && $item->masa_jabatan !== null)
+            ->map(fn($item) => [
+                'keterangan_jabatan' => $item->keterangan_jabatan,
+                'masa_jabatan'       => $item->masa_jabatan,
+            ])
+            ->values(); // supaya hasilnya berupa array indeks biasa (bukan collection key-preserved)
+        
+
+        // --- Ambil data pengajar dan riwayat materi ---
+        $pengajar = DB::table('pengajar')
+            ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')  // Join dengan pegawai
+            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')  // Join dengan lembaga
+            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')  // Join dengan biodata
+            ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')  // Join dengan golongan
+            ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')  // Join dengan kategori golongan
+            ->leftJoin('materi_ajar', 'materi_ajar.pengajar_id', '=', 'pengajar.id')  // Join dengan materi ajar
+            ->where('pegawai.biodata_id', $biodataId)  // Filter berdasarkan ID pegawai
+            ->select(
+                'lembaga.nama_lembaga',
+                'pengajar.jabatan as PekerjaanKontrak',
+                'kategori_golongan.nama_kategori_golongan',
+                'golongan.nama_golongan',
+                DB::raw("
+                    CONCAT(
+                        'Sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%e %M %Y %H:%i:%s'),
+                        ' sampai ',
+                        IFNULL(DATE_FORMAT(pengajar.tahun_akhir, '%e %M %Y %H:%i:%s'), 'saat ini')
+                    ) AS keterangan
+                "),
+                DB::raw("
+                    CONCAT(
+                        FLOOR(SUM(materi_ajar.jumlah_menit) / 60), ' jam ',
+                        MOD(SUM(materi_ajar.jumlah_menit), 60), ' menit'
+                    ) AS total_waktu_materi
+                "),
+                DB::raw('COUNT(DISTINCT materi_ajar.id) as total_materi')
+            )
+            ->groupBy(
+                'lembaga.nama_lembaga',
+                'pengajar.jabatan',
+                'kategori_golongan.nama_kategori_golongan',
+                'golongan.nama_golongan',
+                'pengajar.tahun_masuk',
+                'pengajar.tahun_akhir'
+            )
+            ->get();
+
+            $data['Pengajar'] = $pengajar->isNotEmpty()
+            ? $pengajar->map(fn($item) => [
+                'lembaga'                 => $item->nama_lembaga ?? '-',
+                'pekerjaan_kontrak'      => $item->PekerjaanKontrak ?? '-',
+                'kategori_golongan'      => $item->nama_kategori_golongan ?? '-',
+                'nama_golongan'          => $item->nama_golongan ?? '-',
+                'periode_ajar'           => $item->keterangan ?? '-',
+                'total_jam_materi'       => $item->total_waktu_materi ?? '0 jam 0 menit',
+                'jumlah_materi_diajarkan'=> $item->total_materi ?? 0,
+            ])
+            : [];
+    
+    
+
+        // --- Ambil data pengurus dan riwayat jabatan ---
+        $pengurus = DB::table('pengurus')
+            ->join('pegawai', 'pegawai.id', '=', 'pengurus.pegawai_id')
+            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
+            ->where('pegawai.biodata_id', $biodataId)
+            ->select(
+                'pengurus.keterangan_jabatan',
+                DB::raw("
+                    CONCAT(
+                        'Sejak ', DATE_FORMAT(pengurus.tanggal_mulai, '%e %b %Y'),
+                        ' Sampai ',
+                        IFNULL(DATE_FORMAT(pengurus.tanggal_akhir, '%e %b %Y'), 'Sekarang')
+                    ) AS masa_jabatan
+                ")
+            )
+            ->orderBy('pengurus.tanggal_mulai', 'asc')
+            ->get();
+            $data['Pengurus'] = $pengurus->isNotEmpty()
+            ? $pengurus->map(fn($item) => [
+                'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
+                'masa_jabatan'       => $item->masa_jabatan ?? '-',
+            ])
+            : [];
         if (!isset($data['Biodata'])) {
             throw new \Exception("ID biodata tidak valid atau tidak memiliki data terkait");
         }

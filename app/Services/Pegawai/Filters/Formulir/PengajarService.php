@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
+
 
 class PengajarService
 {
@@ -71,85 +73,57 @@ class PengajarService
     }
 
 
-public function update(array $input, string $id): array
-{
-    return DB::transaction(function () use ($input, $id) {
-        $pengajar = Pengajar::with('materiAjar')->find($id);
-        if (!$pengajar) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
-        }
+    public function update(array $input, string $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $pengajar = Pengajar::with('materiAjar')->find($id);
+            if (! $pengajar) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
 
-        // Validasi tahun akhir pengajar
-        if (!empty($input['tahun_akhir'])) {
-            $tahunAkhir = Carbon::parse($input['tahun_akhir']);
-            $tahunMasuk = Carbon::parse($pengajar->tahun_masuk);
-
-            if ($tahunAkhir->lt($tahunMasuk)) {
+            // Larangan update jika tahun_akhir sudah ada
+            if (! is_null($pengajar->tahun_akhir)) {
                 return [
-                    'status' => false,
-                    'message' => 'Tahun akhir tidak boleh sebelum tahun masuk.',
+                    'status'  => false,
+                    'message' => 'Data pengajar ini telah memiliki tahun akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
-        }
 
-        // Siapkan data update pengajar
-        $updateData = [
-            'golongan_id' => $input['golongan_id'],
-            'lembaga_id' => $input['lembaga_id'],
-            'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
-            'tahun_masuk' => $input['tahun_masuk'] ?? $pengajar->tahun_masuk,
-            'updated_by' => Auth::id(),
-        ];
-
-        if (!empty($input['tahun_akhir'])) {
-            $updateData['tahun_akhir'] = $input['tahun_akhir'];
-            $updateData['status_aktif'] = 'tidak aktif';
-        } else {
-            $updateData['tahun_akhir'] = null;
-            $updateData['status_aktif'] = 'aktif';
-        }
-
-        $pengajar->update($updateData);
-
-        // Update materi ajar jika ada
-        $jumlahMateri = count($input['nama_materi'] ?? []);
-        for ($i = 0; $i < $jumlahMateri; $i++) {
-            $materi = $pengajar->materiAjar[$i] ?? null;
-            if (!$materi) {
-                continue;
-            }
-
-            $materiUpdateData = [
+            $pengajar->update([
+                'golongan_id' => $input['golongan_id'],
+                'lembaga_id' => $input['lembaga_id'],
+                'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
+                'tahun_masuk' => Carbon::parse($input['tahun_masuk']),
+                'tahun_akhir' => ! empty($input['tahun_akhir']) ? Carbon::parse($input['tahun_akhir']) : null,
                 'updated_by' => Auth::id(),
-                'nama_materi' => $input['nama_materi'][$i] ?? $materi->nama_materi,
-                'tahun_masuk' => $input['tahun_masuk_materi_ajar'][$i] ?? $materi->tahun_masuk,
-                'jumlah_menit' => $input['jumlah_menit'][$i] ?? $materi->jumlah_menit,
-            ];
+            ]);
 
-            if (!empty($input['tahun_akhir_materi_ajar'][$i])) {
-                $tahunAkhir = Carbon::parse($input['tahun_akhir_materi_ajar'][$i]);
-                $tahunMasuk = Carbon::parse($materi->tahun_masuk);
-
-                if ($tahunAkhir->lt($tahunMasuk)) {
+            foreach ($pengajar->materiAjar as $i => $materi) {
+                // Larangan update jika materi sudah ada tahun_akhir
+                if (! is_null($materi->tahun_akhir)) {
                     return [
-                        'status' => false,
-                        'message' => 'Tahun akhir materi ajar ke-' . ($i + 1) . ' tidak boleh sebelum tahun masuk.',
+                        'status'  => false,
+                        'message' => 'Materi ajar ke-' . ($i + 1) . ' telah memiliki tahun akhir dan tidak dapat diubah lagi.',
                     ];
                 }
 
-                $materiUpdateData['tahun_akhir'] = $input['tahun_akhir_materi_ajar'][$i];
-                $materiUpdateData['status_aktif'] = 'tidak aktif';
+                $materi->update([
+                    'nama_materi' => $input['nama_materi'][$i] ?? $materi->nama_materi,
+                    'tahun_masuk' => Carbon::parse($input['tahun_masuk_materi_ajar'][$i]),
+                    'tahun_akhir' => ! empty($input['tahun_akhir_materi_ajar'][$i]) ? Carbon::parse($input['tahun_akhir_materi_ajar'][$i]) : null,
+                    'jumlah_menit' => $input['jumlah_menit'][$i] ?? $materi->jumlah_menit,
+                    'updated_by' => Auth::id(),
+                ]);
             }
 
-            $materi->update($materiUpdateData);
-        }
+            return [
+                'status' => true,
+                'data' => $pengajar->fresh('materiAjar'),
+            ];
+        });
+    }
 
-        return [
-            'status' => true,
-            'data' => $pengajar->fresh('materiAjar'),
-        ];
-    });
-}
+
 
 
     public function store(array $data, string $bioId): array
@@ -225,6 +199,123 @@ public function update(array $input, string $id): array
             return [
                 'status' => true,
                 'data' => $pengajar->fresh()->load('materiAjar')
+            ];
+        });
+    }
+
+    public function pindahPengajar(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $old = Pengajar::with('materiAjar')->find($id);
+            if (! $old) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            if ($old->tahun_akhir) {
+                return [
+                    'status' => false,
+                    'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
+                ];
+            }
+
+            $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
+            $hariIni = Carbon::now();
+
+            if ($tahunMasukBaru->lt($hariIni)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
+                ];
+            }
+
+            // Nonaktifkan semua materi ajar lama
+            foreach ($old->materiAjar as $materi) {
+                $materi->update([
+                    'status_aktif' => 'tidak aktif',
+                    'tahun_akhir'  => $hariIni,
+                    'updated_by'   => Auth::id(),
+                ]);
+            }
+
+            // Tutup pengajar lama
+            $old->update([
+                'status_aktif' => 'tidak aktif',
+                'tahun_akhir'  => $hariIni,
+                'updated_by'   => Auth::id(),
+            ]);
+
+            // Buat pengajar baru
+            $new = Pengajar::create([
+                'pegawai_id'   => $old->pegawai_id,
+                'golongan_id'  => $input['golongan_id'],
+                'lembaga_id'   => $input['lembaga_id'],
+                'jabatan'      => $input['jabatan'] ?? $old->jabatan,
+                'tahun_masuk'  => $tahunMasukBaru,
+                'status_aktif' => 'aktif',
+                'created_by'   => Auth::id(),
+            ]);
+
+            // Buat materi ajar baru dari input
+            if (!empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
+                foreach ($input['materi_ajar'] as $materiBaru) {
+                    $new->materiAjar()->create([
+                        'nama_materi'  => $materiBaru['nama_materi'],
+                        'tahun_masuk'  => $tahunMasukBaru,
+                        'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
+                        'status_aktif' => 'aktif',
+                        'created_by'   => Auth::id(),
+                    ]);
+                }
+            }
+
+            return [
+                'status' => true,
+                'data'   => $new->load('materiAjar'),
+            ];
+        });
+    }
+    public function keluarPengajar(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $pengajar = Pengajar::find($id);
+            if (! $pengajar) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            if ($pengajar->tahun_akhir) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data pengajar sudah ditandai selesai/nonaktif.',
+                ];
+            }
+
+            $tahunAkhir = Carbon::parse($input['tahun_akhir'] ?? '');
+            if ($tahunAkhir->lt(Carbon::parse($pengajar->tahun_masuk))) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tahun akhir tidak boleh sebelum tahun masuk.',
+                ];
+            }
+
+            // Update status pengajar menjadi tidak aktif dan set tahun_akhir
+            $pengajar->update([
+                'status_aktif'    => 'tidak aktif',
+                'tahun_akhir'     => $tahunAkhir,
+                'updated_by'      => Auth::id(),
+            ]);
+
+            // Nonaktifkan semua materi ajar terkait pengajar ini
+            foreach ($pengajar->materiAjar as $materi) {
+                $materi->update([
+                    'status_aktif' => 'tidak aktif',
+                    'tahun_akhir'  => $tahunAkhir,
+                    'updated_by'   => Auth::id(),
+                ]);
+            }
+
+            return [
+                'status' => true,
+                'data'   => $pengajar->load('materiAjar'),
             ];
         });
     }

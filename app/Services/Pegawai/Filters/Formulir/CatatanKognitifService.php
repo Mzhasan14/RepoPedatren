@@ -91,58 +91,84 @@ class CatatanKognitifService
     public function update(array $input, string $id): array
     {
         return DB::transaction(function () use ($input, $id) {
+            // 1. Pencarian data
             $kognitif = Catatan_kognitif::find($id);
-            if (!$kognitif) {
+            if (! $kognitif) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Validasi tanggal selesai jika ada input tanggal_selesai
-            if (!empty($input['tanggal_selesai'])) {
-                $tanggalSelesai = Carbon::parse($input['tanggal_selesai']);
-                $tanggalBuat = Carbon::parse($input['tanggal_buat'] ?? $kognitif->tanggal_buat);
-
-                if ($tanggalSelesai->lt($tanggalBuat)) {
-                    return [
-                        'status' => false,
-                        'message' => 'Tanggal selesai tidak boleh lebih awal dari tanggal buat.',
-                    ];
-                }
+            // 2. Larangan update jika sudah memiliki tanggal_selesai
+            if (! is_null($kognitif->tanggal_selesai)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Catatan kognitif ini telah memiliki tanggal selesai dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                ];
             }
 
-            // Siapkan data update dengan fallback ke nilai lama jika input kosong
-            $updateData = [
-                'kebahasaan_nilai' => $input['kebahasaan_nilai'] ?? $kognitif->kebahasaan_nilai,
-                'kebahasaan_tindak_lanjut' => $input['kebahasaan_tindak_lanjut'] ?? $kognitif->kebahasaan_tindak_lanjut,
-                'baca_kitab_kuning_nilai' => $input['baca_kitab_kuning_nilai'] ?? $kognitif->baca_kitab_kuning_nilai,
-                'baca_kitab_kuning_tindak_lanjut' => $input['baca_kitab_kuning_tindak_lanjut'] ?? $kognitif->baca_kitab_kuning_tindak_lanjut,
-                'hafalan_tahfidz_nilai' => $input['hafalan_tahfidz_nilai'] ?? $kognitif->hafalan_tahfidz_nilai,
-                'hafalan_tahfidz_tindak_lanjut' => $input['hafalan_tahfidz_tindak_lanjut'] ?? $kognitif->hafalan_tahfidz_tindak_lanjut,
-                'furudul_ainiyah_nilai' => $input['furudul_ainiyah_nilai'] ?? $kognitif->furudul_ainiyah_nilai,
-                'furudul_ainiyah_tindak_lanjut' => $input['furudul_ainiyah_tindak_lanjut'] ?? $kognitif->furudul_ainiyah_tindak_lanjut,
-                'tulis_alquran_nilai' => $input['tulis_alquran_nilai'] ?? $kognitif->tulis_alquran_nilai,
-                'tulis_alquran_tindak_lanjut' => $input['tulis_alquran_tindak_lanjut'] ?? $kognitif->tulis_alquran_tindak_lanjut,
-                'baca_alquran_nilai' => $input['baca_alquran_nilai'] ?? $kognitif->baca_alquran_nilai,
-                'baca_alquran_tindak_lanjut' => $input['baca_alquran_tindak_lanjut'] ?? $kognitif->baca_alquran_tindak_lanjut,
-                'tanggal_buat' => Carbon::parse($input['tanggal_buat'] ?? $kognitif->tanggal_buat),
-                'updated_by' => Auth::id(),
-            ];
+            // 3. Update data
+            $kognitif->update([
+                'kebahasaan_nilai'                => $input['kebahasaan_nilai'],
+                'kebahasaan_tindak_lanjut'       => $input['kebahasaan_tindak_lanjut'],
+                'baca_kitab_kuning_nilai'        => $input['baca_kitab_kuning_nilai'],
+                'baca_kitab_kuning_tindak_lanjut'=> $input['baca_kitab_kuning_tindak_lanjut'],
+                'hafalan_tahfidz_nilai'          => $input['hafalan_tahfidz_nilai'],
+                'hafalan_tahfidz_tindak_lanjut'  => $input['hafalan_tahfidz_tindak_lanjut'],
+                'furudul_ainiyah_nilai'          => $input['furudul_ainiyah_nilai'],
+                'furudul_ainiyah_tindak_lanjut'  => $input['furudul_ainiyah_tindak_lanjut'],
+                'tulis_alquran_nilai'             => $input['tulis_alquran_nilai'],
+                'tulis_alquran_tindak_lanjut'     => $input['tulis_alquran_tindak_lanjut'],
+                'baca_alquran_nilai'              => $input['baca_alquran_nilai'],
+                'baca_alquran_tindak_lanjut'      => $input['baca_alquran_tindak_lanjut'],
+                'tanggal_buat'                    => Carbon::parse($input['tanggal_buat']),
+                'updated_by'                     => Auth::id(),
+            ]);
 
-            if (!empty($input['tanggal_selesai'])) {
-                $updateData['tanggal_selesai'] = Carbon::parse($input['tanggal_selesai']);
-                $updateData['status'] = 0;
-            } else {
-                $updateData['tanggal_selesai'] = null;
-                $updateData['status'] = 1;
-            }
-
-            $kognitif->update($updateData);
-
+            // 4. Return hasil
             return [
                 'status' => true,
-                'data' => $kognitif,
+                'data'   => $kognitif,
             ];
         });
     }
+
+
+    public function keluarKognitif(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $kognitif = Catatan_kognitif::find($id);
+            if (! $kognitif) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            if ($kognitif->tanggal_selesai) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data kognitif sudah ditandai selesai/nonaktif.',
+                ];
+            }
+
+            $tglSelesai = Carbon::parse($input['tanggal_selesai'] ?? '');
+
+            if ($tglSelesai->lt(Carbon::parse($kognitif->tanggal_buat))) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal selesai tidak boleh sebelum tanggal buat.',
+                ];
+            }
+
+            $kognitif->update([
+                'status'          => 0,
+                'tanggal_selesai' => $tglSelesai,
+                'updated_by'      => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'data'   => $kognitif,
+            ];
+        });
+    }
+
 
     public function store(array $data, string $bioId): array
     {

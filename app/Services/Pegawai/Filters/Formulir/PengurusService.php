@@ -63,47 +63,35 @@ class PengurusService
     {
         return DB::transaction(function () use ($input, $id) {
             $pengurus = Pengurus::find($id);
-            if (!$pengurus) {
+            if (! $pengurus) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if (!empty($input['tanggal_akhir'])) {
-                $tglSelesai = Carbon::parse($input['tanggal_akhir']);
-                $tglMulai = Carbon::parse($input['tanggal_mulai'] ?? $pengurus->tanggal_mulai);
-
-                if ($tglSelesai->lt($tglMulai)) {
-                    return [
-                        'status' => false,
-                        'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
-                    ];
-                }
+            // Larangan update jika tanggal_akhir sudah ada
+            if (! is_null($pengurus->tanggal_akhir)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data pengurus ini telah memiliki tanggal akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                ];
             }
 
-            $updateData = [
+            // Update data
+            $pengurus->update([
                 'golongan_jabatan_id' => $input['golongan_jabatan_id'],
-                'satuan_kerja' => $input['satuan_kerja'] ?? $pengurus->satuan_kerja,
-                'jabatan' => $input['jabatan'] ?? $pengurus->jabatan,
-                'keterangan_jabatan' => $input['keterangan_jabatan'] ?? $pengurus->keterangan_jabatan,
-                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
-                'updated_by' => Auth::id(),
-            ];
-
-            if (!empty($input['tanggal_akhir'])) {
-                $updateData['tanggal_akhir'] = Carbon::parse($input['tanggal_akhir']);
-                $updateData['status_aktif'] = 'tidak aktif';
-            } else {
-                $updateData['tanggal_akhir'] = null;
-                $updateData['status_aktif'] = 'aktif';
-            }
-
-            $pengurus->update($updateData);
+                'satuan_kerja'        => $input['satuan_kerja'] ?? $pengurus->satuan_kerja,
+                'jabatan'             => $input['jabatan'] ?? $pengurus->jabatan,
+                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $pengurus->keterangan_jabatan,
+                'tanggal_mulai'       => Carbon::parse($input['tanggal_mulai']),
+                'updated_by'          => Auth::id(),
+            ]);
 
             return [
                 'status' => true,
-                'data' => $pengurus,
+                'data'   => $pengurus,
             ];
         });
     }
+
     public function store(array $data, string $bioId): array
     {
         $exist = Pengurus::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
@@ -143,6 +131,91 @@ class PengurusService
             'status' => true,
             'data' => $pengurus->fresh()
         ];
+    }
+
+        public function pindahPengurus(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $old = Pengurus::find($id);
+            if (! $old) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            if ($old->tanggal_akhir) {
+                return [
+                    'status' => false,
+                    'message' => 'Data pengurus sudah memiliki tanggal akhir, tidak dapat diganti.',
+                ];
+            }
+
+            $tanggalMulaiBaru = Carbon::parse($input['tanggal_mulai'] ?? '');
+            $hariIni = Carbon::now();
+
+            if ($tanggalMulaiBaru->lt($hariIni)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal mulai baru tidak boleh sebelum hari ini.',
+                ];
+            }
+
+            $old->update([
+                'status_aktif'    => 'tidak aktif',
+                'tanggal_akhir'   => $hariIni,
+                'updated_by'      => Auth::id(),
+            ]);
+
+            $new = Pengurus::create([
+                'pegawai_id'          => $old->pegawai_id,
+                'golongan_jabatan_id' => $input['golongan_jabatan_id'],
+                'satuan_kerja'        => $input['satuan_kerja'] ?? $old->satuan_kerja,
+                'jabatan'             => $input['jabatan'] ?? $old->jabatan,
+                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
+                'tanggal_mulai'       => $tanggalMulaiBaru,
+                'status_aktif'        => 'aktif',
+                'created_by'          => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'data'   => $new,
+            ];
+        });
+    }
+
+    public function keluarPengurus(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $pengurus = Pengurus::find($id);
+            if (! $pengurus) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            if ($pengurus->tanggal_akhir) {
+                return [
+                    'status'  => false,
+                    'message' => 'Data pengurus sudah ditandai selesai/nonaktif.',
+                ];
+            }
+
+            $tglAkhir = Carbon::parse($input['tanggal_akhir'] ?? '');
+            if ($tglAkhir->lt(Carbon::parse($pengurus->tanggal_mulai))) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
+                ];
+            }
+
+            $pengurus->update([
+                'status_aktif'    => 'tidak aktif',
+                'tanggal_akhir'   => $tglAkhir,
+                'updated_by'      => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'data'   => $pengurus,
+            ];
+        });
     }
 
 }

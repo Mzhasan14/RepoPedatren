@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Api\Pegawai;
 use App\Exports\Pegawai\KaryawanExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\CreateKaryawanRequest;
 use App\Http\Requests\Pegawai\KaryawanFormulirRequest;
+use App\Http\Requests\Pegawai\KeluarKaryawanRequest;
+use App\Http\Requests\Pegawai\PindahKaryawanRequest;
+use App\Http\Requests\Pegawai\StoreKaryawanRequest;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
 use App\Models\Pegawai\Karyawan;
@@ -21,6 +25,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -167,10 +172,95 @@ class KaryawanController extends Controller
             "data"         => $formatted
         ]);
     }
+    public function pindahKaryawan(PindahKaryawanRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirKaryawanService->pindahKaryawan($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Karyawan baru berhasil dibuat',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal pindah Karyawan: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function keluarKaryawan(KeluarKaryawanRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirKaryawanService->keluarKaryawan($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal keluar Karyawan: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // public function createStore(CreateKaryawanRequest $request)
+    // {
+    //     try {
+    //         $validated = $request->validated();
+
+    //         $result = $this->karyawanService->createStore($validated);
+
+    //         return response()->json([
+    //             'status' => $result['status'],
+    //             'message' => $result['message'],
+    //             'data' => $result['data'] ?? null,
+    //         ], $result['status'] ? 201 : 409); // 201 Created / 409 Conflict
+
+    //     } catch (ValidationException $e) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Validasi gagal.',
+    //             'errors' => $e->errors(),
+    //         ], 422);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Terjadi kesalahan saat menyimpan data.',
+    //             'error' => env('APP_DEBUG') ? $e->getMessage() : null,
+    //         ], 500);
+    //     }
+
+    // }
         public function karyawanExport()
         {
             return Excel::download(new KaryawanExport, 'data_karyawan.xlsx');
         }
+
+
+
+
+    
     // public function dataKaryawan(Request $request)
     // {
     // try

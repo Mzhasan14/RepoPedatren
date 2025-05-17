@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\CatatanKognitifRequest;
+use App\Http\Requests\Administrasi\KeluarKognitifRequest;
 use App\Services\Administrasi\CatatanKognitifService;
 use App\Services\Administrasi\Filters\FilterCatatanKognitifService;
 use App\Services\Pegawai\Filters\Formulir\CatatanKognitifService as FormulirCatatanKognitifService;
@@ -70,7 +71,31 @@ class CatatanKognitifController extends Controller
             ], 500);
         }
     }
+    public function keluarKognitif(KeluarKognitifRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirCatatan->keluarKognitif($validated, $id);
 
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal me nonaktifkan catatan afektif: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function edit($id)
     {
         try {

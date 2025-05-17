@@ -154,6 +154,19 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 
+
+    Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
+    Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
+
+    Route::put('/{id}/pengajar/pindah', [PengajarController::class, 'pindahPengajar']);
+    Route::put('/{id}/pengajar/keluar', [PengajarController::class, 'keluarPengajar']);
+
+    Route::put('/{id}/pengurus/pindah', [PengurusController::class, 'pindahPengurus']);
+    Route::put('/{id}/pengurus/keluar', [PengurusController::class, 'keluarPengurus']);
+
+    Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
+    Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
+
     // Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'index']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
@@ -274,6 +287,11 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::get('{id}/golongan-jabatan/edit',[GolonganJabatanController::class,'edit']);
     Route::put('{id}/golongan-jabatan',[GolonganJabatanController::class,'update']);
     Route::delete('{id}/golongan-jabatan',[GolonganJabatanController::class,'destroy']);
+
+    // Kepegawaian
+    Route::post('karyawan',[KaryawanController::class,'createStore']);
+    Route::get('/pegawai', [PegawaiController::class, 'store']);
+
 });
 
 Route::prefix('data-pokok')->group(function () {
@@ -352,12 +370,11 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
     Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
     Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
-    Route::get('/pengurus/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::get('/pengajar/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::get('/karyawan/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
-    Route::post('pegawai', [PegawaiController::class, 'store']);
+    Route::get('/pengurus/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pengajar/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/karyawan/{id}', [DetailController::class, 'getDetail']);
+    Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 
 });
 

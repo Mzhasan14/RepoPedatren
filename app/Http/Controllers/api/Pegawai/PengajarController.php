@@ -12,7 +12,9 @@ use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\FilterController;
+use App\Http\Requests\Pegawai\KeluarPengajarRequest;
 use App\Http\Requests\Pegawai\PengajarResquest;
+use App\Http\Requests\Pegawai\PindahPengajarRequest;
 use App\Models\JenisBerkas;
 use App\Services\Pegawai\Filters\FilterPengajarService;
 use App\Services\Pegawai\Filters\Formulir\PengajarService as FormulirPengajarService;
@@ -160,6 +162,57 @@ class PengajarController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+
+    public function pindahPengajar(PindahPengajarRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirPengajarService->pindahPengajar($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Pengajar baru berhasil dibuat',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal pindah Pengajar: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function keluarPengajar(KeluarPengajarRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirPengajarService->keluarPengajar($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal keluar Pengajar: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
         public function pengajarExport()
@@ -493,7 +546,7 @@ class PengajarController extends Controller
             }
         }
 
-        // --- 5. Kewaliasuhan untuk Karyawan ---
+        // --- 5. Kewaliasuhan untuk Pengajar ---
         $kew = DB::table('pengajar as k')
             ->join('pegawai as p', 'k.pegawai_id', '=', 'p.id') 
             ->join('biodata as b', 'p.biodata_id', '=', 'b.id')

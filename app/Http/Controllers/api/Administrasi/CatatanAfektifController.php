@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\CatatanAfektifRequest;
+use App\Http\Requests\Administrasi\KeluarAfektifRequest;
 use App\Services\Administrasi\CatatanAfektifService;
 use App\Services\Administrasi\Filters\FilterCatatanAfektifService;
 use App\Services\Pegawai\Filters\Formulir\CatatanAfektifService as FormulirCatatanAfektifService;
@@ -150,5 +151,31 @@ class CatatanAfektifController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+
+    public function keluarAfektif(KeluarAfektifRequest $request, $id)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->formulirCatatan->keluarAfektif($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal me nonaktifkan catatan afektif: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

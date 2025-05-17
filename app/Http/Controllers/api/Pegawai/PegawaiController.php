@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 use App\Exports\Pegawai\PegawaiExport;
 use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pegawai\CreatePegawaiRequest;
 use App\Http\Requests\Pegawai\PegawaiRequest;
 use App\Http\Resources\PdResource;
 use App\Models\JenisBerkas;
@@ -33,35 +34,30 @@ class PegawaiController extends Controller
         $this->filterController = $filterController;
     }
 
-
     /**
      * Display a listing of the resource.
      */        
-        public function store(PegawaiRequest $request)
-        {
-            $validated = $request->validated();
-    
-            try {
-                $pegawai = $this->pegawaiService->store($validated);
-    
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Data pegawai berhasil ditambahkan',
-                    'data'    => $pegawai->load('biodata')  // Mengambil data terkait biodata jika perlu
-                ]);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Terjadi kesalahan saat menambahkan pegawai',
-                ], 500);
-            }
-        }
-        // public function show(string $id)
+        // public function store(CreatePegawaiRequest $request)
         // {
-            //     $pegawai = Pegawai::findOrFail($id);
-            //     return new PdResource(true,'Data berhasil ditampilkan',$pegawai);
-            // }
-            
+        // $validated = $request->validated();
+
+        // try {
+        //     $pegawai = $this->pegawaiService->store($validated);
+
+        //     return response()->json([
+        //         'status'  => 'success',
+        //         'message' => $pegawai['message'] ?? 'Pegawai berhasil ditambahkan.',
+        //         'data'    => $pegawai['data'] ?? $pegawai,
+        //     ]);
+        // } catch (\Exception $e) {
+        //     Log::error("[PegawaiController] Store Error: {$e->getMessage()}");
+
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => $e->getMessage() ?? 'Terjadi kesalahan pada server.',
+        //     ], 400);
+        // }
+        // }            
             public function dataPegawai(Request $request)
             {
                 try {
