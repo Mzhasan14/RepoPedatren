@@ -156,6 +156,7 @@ class PegawaiService
 
         try {
             $isExisting = false;
+            $createNewEmployee = false;
 
             // Cek apakah NIK sudah terdaftar
             $existingBiodata = Biodata::where('nik', $input['nik'])->first();
@@ -166,14 +167,18 @@ class PegawaiService
                 // Cek apakah sudah terdaftar sebagai pegawai
                 $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->first();
 
-                if ($existingPegawai) {
-                    // Aktifkan kembali jika nonaktif
-                    if ($existingPegawai->status_aktif !== 'aktif') {
-                        $existingPegawai->update(['status_aktif' => 'aktif']);
-                        if (method_exists($existingPegawai, 'restore')) {
-                            $existingPegawai->restore();
-                        }
-                    }
+            if ($existingPegawai) {
+                // Jika pegawai aktif, kembalikan error
+                if ($existingPegawai->status_aktif === 'aktif') {
+                    return [
+                        'status' => false,
+                        'message' => 'Pegawai untuk biodata ini sudah ada dengan status aktif. Silahkan cek kembali di fitur Pegawai.',
+                        'data' => ['pegawai' => $existingPegawai]
+                    ];
+                }
+                
+                // Jika pegawai nonaktif, set flag untuk buat baru
+                $createNewEmployee = true;
 
                     // Validasi untuk masing-masing role
                     if (!empty($input['karyawan']) && Karyawan::where('pegawai_id', $existingPegawai->id)
@@ -314,7 +319,12 @@ class PegawaiService
             }
 
             // Buat atau ambil pegawai
-            $pegawai = Pegawai::firstOrCreate(
+            $pegawai  = $createNewEmployee 
+            ? Pegawai::create([
+                'biodata_id' => $biodata->id,
+                'status_aktif' => 'aktif',
+                'created_by' => Auth::id()
+              ]) : Pegawai::firstOrCreate(
                 ['biodata_id' => $biodata->id],
                 ['status_aktif' => 'aktif', 'created_by' => Auth::id()]
             );
@@ -419,47 +429,6 @@ class PegawaiService
             ];
         }
     }
-
-    // public function destroy($pegawaiId)
-    // {
-    //     DB::beginTransaction();
-
-    //     try {
-    //         $pegawai = Pegawai::findOrFail($pegawaiId);
-
-    //         // Update status pegawai
-    //         $pegawai->status_aktif = 'tidak aktif';
-    //         $pegawai->deleted_at = now();
-    //         $pegawai->save();
-
-    //         // Update semua relasi karyawan aktif yang belum memiliki tanggal_selesai
-    //         $pegawai->karyawan()
-    //             ->where('status_aktif', 'aktif')
-    //             ->whereNull('tanggal_selesai')
-    //             ->update([
-    //                 'status_aktif' => 'tidak aktif',
-    //                 'tanggal_selesai' => now()
-    //             ]);
-
-    //         DB::commit();
-
-    //         return [
-    //             'status' => true,
-    //             'message' => 'Pegawai berhasil dinonaktifkan.',
-    //         ];
-
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         Log::error('Gagal menonaktifkan pegawai: ' . $e->getMessage());
-
-    //         return [
-    //             'status' => false,
-    //             'message' => 'Terjadi kesalahan saat menonaktifkan pegawai.',
-    //             'error' => $e->getMessage()
-    //         ];
-    //     }
-    // }
-
 }
     
 

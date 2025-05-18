@@ -34,14 +34,12 @@ class PengajarResquest extends FormRequest
             'jumlah_menit.*' => 'nullable|integer|min:0',
 
             'tahun_masuk' => 'nullable|date',
-            'tahun_akhir' => 'nullable|date',
 
             'tahun_masuk_materi_ajar' => 'nullable|array',
             'tahun_masuk_materi_ajar.*' => 'nullable|date',
 
 
             'tahun_akhir_materi_ajar' => 'nullable|array',
-            'tahun_akhir_materi_ajar.*' => 'nullable|date',
         ];
     }
         protected function failedValidation(Validator $validator)

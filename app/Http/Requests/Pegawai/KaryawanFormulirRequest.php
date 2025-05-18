@@ -29,7 +29,6 @@ class KaryawanFormulirRequest extends FormRequest
             'jabatan' => 'nullable|string|max:255',
             'keterangan_jabatan' => 'nullable|string|max:255',
             'tanggal_mulai' => 'nullable|date',
-            'tanggal_selesai' => 'nullable|date',
         ];
     }
 

@@ -35,10 +35,10 @@ class PegawaiController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     */        
-        public function store(CreatePegawaiRequest $request)
-        {
+     * Store a newly created resource in storage.
+     */
+    public function store(CreatePegawaiRequest $request)
+    {
         $validated = $request->validated();
 
         try {
@@ -57,44 +57,52 @@ class PegawaiController extends Controller
                 'message' => $e->getMessage() ?? 'Terjadi kesalahan pada server.',
             ], 400);
         }
-        }            
-            public function dataPegawai(Request $request)
-            {
-                try {
-                    $query = $this->pegawaiService->getAllPegawai($request);
-                    $query = $this->filterController->applyAllFilters($query, $request);
-        
-                    $perPage     = (int) $request->input('limit', 25);
-                    $currentPage = (int) $request->input('page', 1);
-                    $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
-                } catch (\Throwable $e) {
-                    Log::error("[PegawaiController] Error: {$e->getMessage()}");
-                    return response()->json([
-                        'status'  => 'error',
-                        'message' => 'Terjadi kesalahan pada server',
-                    ], 500);
-                }
-        
-                if ($results->isEmpty()) {
-                    return response()->json([
-                        'status'  => 'success',
-                        'message' => 'Data kosong',
-                        'data'    => [],
-                    ], 200);
-                }
-        
-                $formatted = $this->pegawaiService->formatData($results);
-        
-                return response()->json([
-                    "total_data"   => $results->total(),
-                    "current_page" => $results->currentPage(),
-                    "per_page"     => $results->perPage(),
-                    "total_pages"  => $results->lastPage(),
-                    "data"         => $formatted
-                ]);
-            }
-        public function pegawaiExport()
-        {
-            return Excel::download(new PegawaiExport, 'data_pegawai.xlsx');
+    }
+
+    /**
+     * Display a paginated listing of the resource with filters.
+     */
+    public function dataPegawai(Request $request)
+    {
+        try {
+            $query = $this->pegawaiService->getAllPegawai($request);
+            $query = $this->filterController->applyAllFilters($query, $request);
+
+            $perPage     = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[PegawaiController] Error: {$e->getMessage()}");
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
         }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kosong',
+                'data'    => [],
+            ], 200);
+        }
+
+        $formatted = $this->pegawaiService->formatData($results);
+
+        return response()->json([
+            "total_data"   => $results->total(),
+            "current_page" => $results->currentPage(),
+            "per_page"     => $results->perPage(),
+            "total_pages"  => $results->lastPage(),
+            "data"         => $formatted
+        ]);
+    }
+
+    /**
+     * Export Pegawai data to Excel.
+     */
+    public function pegawaiExport()
+    {
+        return Excel::download(new PegawaiExport, 'data_pegawai.xlsx');
+    }
 }

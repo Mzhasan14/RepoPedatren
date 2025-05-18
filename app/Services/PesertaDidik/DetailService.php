@@ -741,21 +741,36 @@ class DetailService
             )
             ->get();
 
-        $data['Pengajar'] = $pengajar->isNotEmpty()
-            ? $pengajar->map(fn($item) => [
-                'lembaga'             => $item->nama_lembaga ?? '-',
-                'pekerjaan_kontrak'   => $item->pekerjaan_kontrak ?? '-',
-                'kategori_golongan'   => $item->nama_kategori_golongan ?? '-',
-                'nama_golongan'       => $item->nama_golongan ?? '-',
-                'daftar_materi'       => $item->daftar_materi_dengan_waktu ?? '-',
-                'masa_kerja'          => $item->keterangan ?? '-',
-                'tahun_masuk_materi'         => $item->tanggal_masuk ?? null,
-                'tahun_akhir_materi'         => $item->tanggal_akhir ?? null,
-            ])
-            : [];
+        if ($pengajar->isNotEmpty()) {
+            $pengajarMap = $pengajar->map(function ($item) {
+                return [
+                    'pangkalan' => [
+                        'lembaga'           => $item->nama_lembaga ?? '-',
+                        'pekerjaan_kontrak' => $item->pekerjaan_kontrak ?? '-',
+                        'kategori_golongan' => $item->nama_kategori_golongan ?? '-',
+                        'nama_golongan'     => $item->nama_golongan ?? '-',
+                        'masa_kerja'        => $item->keterangan ?? '-',
+                    ],
+                    'materi' => [
+                        'lembaga'           => $item->nama_lembaga ?? '-',
+                        'daftar_materi'     => $item->daftar_materi_dengan_waktu ?? '-',
+                        'tanggal_mulai'     => $item->tanggal_masuk ?? null,
+                        'tanggal_akhir'     => $item->tanggal_akhir ?? null,
+                    ]
+                ];
+            });
 
-    
-    
+            $data['Pengajar'] = [
+                'Pangkalan'    => $pengajarMap->pluck('pangkalan')->unique()->values()->all(),
+                'Materi_Ajar'  => $pengajarMap->pluck('materi')->filter()->values()->all(),
+            ];
+        } else {
+            $data['Pengajar'] = [
+                'Pangkalan'    => [],
+                'Materi_Ajar'  => [],
+            ];
+        }
+
 
         // --- Ambil data pengurus dan riwayat jabatan ---
         $pengurus = DB::table('pengurus')

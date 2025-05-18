@@ -3,28 +3,15 @@
 namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Exports\Pegawai\KaryawanExport;
-use App\Http\Controllers\api\FilterController;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Pegawai\CreateKaryawanRequest;
 use App\Http\Requests\Pegawai\KaryawanFormulirRequest;
 use App\Http\Requests\Pegawai\KeluarKaryawanRequest;
 use App\Http\Requests\Pegawai\PindahKaryawanRequest;
-use App\Http\Resources\PdResource;
-use App\Models\JenisBerkas;
-use App\Models\Pegawai\Karyawan;
-use App\Services\FilterKaryawanService;
-use App\Services\Karyawan\KaryawanService;
 use App\Services\Pegawai\Filters\FilterKaryawanService as FiltersFilterKaryawanService;
 use App\Services\Pegawai\Filters\Formulir\KaryawanService as FormulirKaryawanService;
 use App\Services\Pegawai\KaryawanService as PegawaiKaryawanService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -35,16 +22,15 @@ class KaryawanController extends Controller
     private FiltersFilterKaryawanService $filterController;
     private FormulirKaryawanService $formulirKaryawanService;
 
-    public function __construct(FormulirKaryawanService $formulirKaryawanService,PegawaiKaryawanService $karyawanService, FiltersFilterKaryawanService $filterController,)
-    {
+    public function __construct(
+        FormulirKaryawanService $formulirKaryawanService,
+        PegawaiKaryawanService $karyawanService,
+        FiltersFilterKaryawanService $filterController
+    ) {
         $this->karyawanService = $karyawanService;
         $this->filterController = $filterController;
         $this->formulirKaryawanService = $formulirKaryawanService;
     }
-
-    /**
-     * Display a listing of the resource.
-     */
 
     public function index($id)
     {
@@ -55,6 +41,7 @@ class KaryawanController extends Controller
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
                 'data' => $result['data']
@@ -78,12 +65,14 @@ class KaryawanController extends Controller
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditambah',
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal tambah Karyawan: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage()
@@ -100,12 +89,14 @@ class KaryawanController extends Controller
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal ambil detail Karyawan: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
                 'error' => $e->getMessage()
@@ -117,18 +108,19 @@ class KaryawanController extends Controller
     {
         try {
             $result = $this->formulirKaryawanService->update($request->validated(), $id);
-
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal update Karyawan: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage()
@@ -146,7 +138,8 @@ class KaryawanController extends Controller
             $currentPage = (int) $request->input('page', 1);
             $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
-            Log::error("[PelajarController] Error: {$e->getMessage()}");
+            Log::error("[KaryawanController] Error: {$e->getMessage()}");
+
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan pada server',
@@ -164,19 +157,19 @@ class KaryawanController extends Controller
         $formatted = $this->karyawanService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data'   => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page'     => $results->perPage(),
+            'total_pages'  => $results->lastPage(),
+            'data'         => $formatted,
         ]);
     }
+
     public function pindahKaryawan(PindahKaryawanRequest $request, $id)
     {
         try {
             $validated = $request->validated();
             $result = $this->formulirKaryawanService->pindahKaryawan($validated, $id);
-
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
@@ -196,12 +189,12 @@ class KaryawanController extends Controller
             ], 500);
         }
     }
+
     public function keluarKaryawan(KeluarKaryawanRequest $request, $id)
     {
         try {
             $validated = $request->validated();
             $result = $this->formulirKaryawanService->keluarKaryawan($validated, $id);
-
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
@@ -225,5 +218,5 @@ class KaryawanController extends Controller
     public function karyawanExport()
     {
         return Excel::download(new KaryawanExport, 'data_karyawan.xlsx');
-    }     
+    }
 }

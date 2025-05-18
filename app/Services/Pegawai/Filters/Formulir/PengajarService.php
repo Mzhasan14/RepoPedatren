@@ -94,7 +94,6 @@ class PengajarService
                 'lembaga_id' => $input['lembaga_id'],
                 'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
                 'tahun_masuk' => Carbon::parse($input['tahun_masuk']),
-                'tahun_akhir' => ! empty($input['tahun_akhir']) ? Carbon::parse($input['tahun_akhir']) : null,
                 'updated_by' => Auth::id(),
             ]);
 
@@ -110,7 +109,6 @@ class PengajarService
                 $materi->update([
                     'nama_materi' => $input['nama_materi'][$i] ?? $materi->nama_materi,
                     'tahun_masuk' => Carbon::parse($input['tahun_masuk_materi_ajar'][$i]),
-                    'tahun_akhir' => ! empty($input['tahun_akhir_materi_ajar'][$i]) ? Carbon::parse($input['tahun_akhir_materi_ajar'][$i]) : null,
                     'jumlah_menit' => $input['jumlah_menit'][$i] ?? $materi->jumlah_menit,
                     'updated_by' => Auth::id(),
                 ]);

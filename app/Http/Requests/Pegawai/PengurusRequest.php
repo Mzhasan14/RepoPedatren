@@ -29,7 +29,6 @@ class PengurusRequest extends FormRequest
         'satuan_kerja'          => 'nullable|string|max:255',
         'keterangan_jabatan'    => 'nullable|string|max:255',
         'tanggal_mulai'         => 'nullable|date',
-        'tanggal_akhir'         => 'nullable|date|after_or_equal:tanggal_mulai',
         ];
     }
         protected function failedValidation(Validator $validator)

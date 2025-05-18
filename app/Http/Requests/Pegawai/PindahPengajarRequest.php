@@ -33,7 +33,6 @@ class PindahPengajarRequest extends FormRequest
             ],
             'materi_ajar.*.nama_materi' => ['nullable', 'string', 'max:255'], 
             'materi_ajar.*.jumlah_menit' => ['nullable', 'integer', 'min:0'],
-
         ];
     }
     protected function failedValidation(Validator $validator)

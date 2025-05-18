@@ -20,25 +20,30 @@ class WalikelasController extends Controller
     private FiltersFilterWaliKelasService $filterController;
     private FormulirWaliKelasService $formulirwalikelas;
 
-    public function __construct(FormulirWaliKelasService $formulirwalikelas,WaliKelasService $walikelasService, FiltersFilterWaliKelasService $filterController)
-    {
+    public function __construct(
+        FormulirWaliKelasService $formulirwalikelas,
+        WaliKelasService $walikelasService,
+        FiltersFilterWaliKelasService $filterController
+    ) {
         $this->walikelasService = $walikelasService;
         $this->filterController = $filterController;
         $this->formulirwalikelas = $formulirwalikelas;
     }
 
     /**
-     * Display a listing of the resource.
+     * Display listing data by ID.
      */
     public function index($id)
     {
         try {
             $result = $this->formulirwalikelas->index($id);
+
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message'] ?? 'Data tidak ditemukan.'
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
                 'data' => $result['data']
@@ -53,106 +58,133 @@ class WalikelasController extends Controller
         }
     }
 
-        public function edit($id)
-        {
-            try {
-                $result = $this->formulirwalikelas->show($id);
-                if (!$result['status']) {
-                    return response()->json([
-                        'message' => $result['message'] ?? 'Data tidak ditemukan.'
-                    ], 200);
-                }
-                return response()->json([
-                    'message' => 'Detail data berhasil ditampilkan',
-                    'data' => $result['data']
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Gagal ambil detail Wali Kelas: ' . $e->getMessage());
-                return response()->json([
-                    'message' => 'Terjadi kesalahan saat menampilkan data.',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-        }
+    /**
+     * Show detail data.
+     */
+    public function edit($id)
+    {
+        try {
+            $result = $this->formulirwalikelas->show($id);
 
-        public function store(WaliKelasRequest $request, $bioId)
-        {
-            try {
-                $result = $this->formulirwalikelas->store($request->validated(), $bioId);
-                if (!$result['status']) {
-                    return response()->json([
-                        'message' => $result['message']
-                    ], 200);
-                }
+            if (!$result['status']) {
                 return response()->json([
-                    'message' => 'Data berhasil ditambah',
-                    'data' => $result['data']
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Gagal tambah Wali Kelas: ' . $e->getMessage());
-                return response()->json([
-                    'message' => 'Terjadi kesalahan saat memproses data',
-                    'error' => $e->getMessage()
-                ], 500);
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
             }
-        }
-        public function update(WaliKelasRequest $request, $id)
-        {
-            try {
-                $result = $this->formulirwalikelas->update($request->validated(), $id);
 
-                if (!$result['status']) {
-                    return response()->json([
-                        'message' => $result['message']
-                    ], 200);
-                }
-                return response()->json([
-                    'message' => 'Data berhasil diperbarui',
-                    'data' => $result['data']
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Gagal update Wali Kelas: ' . $e->getMessage());
-                return response()->json([
-                    'message' => 'Terjadi kesalahan saat memproses data',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail Wali Kelas: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
+
+    /**
+     * Store new Wali Kelas.
+     */
+    public function store(WaliKelasRequest $request, $bioId)
+    {
+        try {
+            $result = $this->formulirwalikelas->store($request->validated(), $bioId);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah Wali Kelas: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update Wali Kelas data.
+     */
+    public function update(WaliKelasRequest $request, $id)
+    {
+        try {
+            $result = $this->formulirwalikelas->update($request->validated(), $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal update Wali Kelas: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get paginated and filtered list of Walikelas.
+     */
     public function getDataWalikelas(Request $request)
     {
         try {
             $query = $this->walikelasService->getAllWalikelas($request);
             $query = $this->filterController->applyAllFilters($query, $request);
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[WaliKelasController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->walikelasService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
+            "total_data" => $results->total(),
             "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            "per_page" => $results->perPage(),
+            "total_pages" => $results->lastPage(),
+            "data" => $formatted
         ]);
     }
+
+    /**
+     * Handle pindah Wali Kelas.
+     */
     public function pindahWalikelas(PindahWaliKelasRequest $request, $id)
     {
         try {
@@ -178,6 +210,10 @@ class WalikelasController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Handle keluar Wali Kelas.
+     */
     public function keluarWalikelas(KeluarWaliKelasRequest $request, $id)
     {
         try {
@@ -203,6 +239,10 @@ class WalikelasController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Export Walikelas data to Excel.
+     */
     public function waliKelasExport()
     {
         return Excel::download(new WaliKelasExport, 'data_Wali-Kelas.xlsx');
