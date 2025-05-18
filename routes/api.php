@@ -393,21 +393,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
         Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
     });
+});
 
-    Route::prefix('dropdown')->group(function () {
-        Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
-        Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
-        Route::get('/wilayah', [DropdownController::class, 'menuWilayahBlokKamar']);
-        Route::get('/negara', [DropdownController::class, 'menuNegaraProvinsiKabupatenKecamatan']);
-        Route::get('/lembaga', [DropdownController::class, 'menuLembagaJurusanKelasRombel']);
-        Route::get('/angkatan', [DropdownController::class, 'getAngkatan']);
-        Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
-        Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
-        Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
+Route::prefix('dropdown')->group(function () {
+    Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
+    Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
+    Route::get('/wilayah', [DropdownController::class, 'menuWilayahBlokKamar']);
+    Route::get('/negara', [DropdownController::class, 'menuNegaraProvinsiKabupatenKecamatan']);
+    Route::get('/lembaga', [DropdownController::class, 'menuLembagaJurusanKelasRombel']);
+    Route::get('/angkatan', [DropdownController::class, 'getAngkatan']);
+    Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
+    Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
+    Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
 
-        // kewilayahan
-        Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-        Route::get('/wilayah/{wilayah}/blok', [DropdownWilayahController::class, 'getBlok']);
-        Route::get('/blok/{blok}/kamar', [DropdownWilayahController::class, 'getKamar']);
-    });
+    // kewilayahan
+    Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
+    Route::get('/wilayah/{wilayah}/blok', [DropdownWilayahController::class, 'getBlok']);
+    Route::get('/blok/{blok}/kamar', [DropdownWilayahController::class, 'getKamar']);
 });
