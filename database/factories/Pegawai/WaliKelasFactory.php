@@ -22,6 +22,10 @@ class WaliKelasFactory extends Factory
      */
     public function definition(): array
     {
+        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
+            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
+            : null; // NULL jika masih menjabat
         return [
             'pegawai_id' => (new PegawaiFactory())->create()->id,
             'lembaga_id' =>  (new LembagaFactory())->create()->id,
@@ -29,6 +33,8 @@ class WaliKelasFactory extends Factory
             'kelas_id' =>  (new KelasFactory())->create()->id,
             'rombel_id' =>  (new RombelFactory())->create()->id,
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
+            'periode_awal' => $tanggalMulai,
+            'periode_akhir' => $tanggalSelesai,
             'created_by' => 1,
             'updated_by' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),

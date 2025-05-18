@@ -149,274 +149,275 @@ class PegawaiService
         ]);
     }
 
-    // public function store(array $input)
-    // {
-    //     DB::beginTransaction();
+    public function store(array $input)
+    {
+        DB::beginTransaction();
 
-    //     try {
-    //         $isExisting = false;
+        try {
+            $isExisting = false;
 
-    //         // Cek apakah NIK sudah terdaftar
-    //         $existingBiodata = Biodata::where('nik', $input['nik'])->first();
+            // Cek apakah NIK sudah terdaftar
+            $existingBiodata = Biodata::where('nik', $input['nik'])->first();
 
-    //         if ($existingBiodata) {
-    //             $isExisting = true;
+            if ($existingBiodata) {
+                $isExisting = true;
 
-    //             // Cek apakah sudah terdaftar sebagai pegawai
-    //             $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->first();
+                // Cek apakah sudah terdaftar sebagai pegawai
+                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->first();
 
-    //             if ($existingPegawai) {
-    //                 // Aktifkan kembali jika nonaktif
-    //                 if ($existingPegawai->status_aktif !== 'aktif') {
-    //                     $existingPegawai->update(['status_aktif' => 'aktif']);
-    //                     if (method_exists($existingPegawai, 'restore')) {
-    //                         $existingPegawai->restore();
-    //                     }
-    //                 }
+                if ($existingPegawai) {
+                    // Aktifkan kembali jika nonaktif
+                    if ($existingPegawai->status_aktif !== 'aktif') {
+                        $existingPegawai->update(['status_aktif' => 'aktif']);
+                        if (method_exists($existingPegawai, 'restore')) {
+                            $existingPegawai->restore();
+                        }
+                    }
 
-    //                 // Validasi untuk masing-masing role
-    //                 if (!empty($input['karyawan']) && Karyawan::where('pegawai_id', $existingPegawai->id)
-    //                     ->where('status_aktif', 'aktif')
-    //                     ->exists()) {
-    //                     throw ValidationException::withMessages([
-    //                         'karyawan' => ['Pegawai untuk data ini sudah ada dan masih memiliki status karyawan aktif.'],
-    //                     ]);
-    //                 }
+                    // Validasi untuk masing-masing role
+                    if (!empty($input['karyawan']) && Karyawan::where('pegawai_id', $existingPegawai->id)
+                        ->where('status_aktif', 'aktif')
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            'karyawan' => ['Pegawai untuk data ini sudah ada dan masih memiliki status karyawan aktif.'],
+                        ]);
+                    }
 
-    //                 if (!empty($input['pengajar']) && Pengajar::where('pegawai_id', $existingPegawai->id)
-    //                     ->where('status_aktif', 'aktif')
-    //                     ->exists()) {
-    //                     throw ValidationException::withMessages([
-    //                         'pengajar' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengajar aktif.'],
-    //                     ]);
-    //                 }
+                    if (!empty($input['pengajar']) && Pengajar::where('pegawai_id', $existingPegawai->id)
+                        ->where('status_aktif', 'aktif')
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            'pengajar' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengajar aktif.'],
+                        ]);
+                    }
 
-    //                 if (!empty($input['pengurus']) && Pengurus::where('pegawai_id', $existingPegawai->id)
-    //                     ->where('status_aktif', 'aktif')
-    //                     ->exists()) {
-    //                     throw ValidationException::withMessages([
-    //                         'pengurus' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengurus aktif.'],
-    //                     ]);
-    //                 }
+                    if (!empty($input['pengurus']) && Pengurus::where('pegawai_id', $existingPegawai->id)
+                        ->where('status_aktif', 'aktif')
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            'pengurus' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengurus aktif.'],
+                        ]);
+                    }
 
-    //                 if (!empty($input['wali_kelas']) && WaliKelas::where('pegawai_id', $existingPegawai->id)
-    //                     ->where('status_aktif', 'aktif')
-    //                     ->exists()) {
-    //                     throw ValidationException::withMessages([
-    //                         'wali_kelas' => ['Pegawai untuk data ini sudah ada dan masih memiliki status wali kelas aktif.'],
-    //                     ]);
-    //                 }
-    //             }
+                    if (!empty($input['wali_kelas']) && WaliKelas::where('pegawai_id', $existingPegawai->id)
+                        ->where('status_aktif', 'aktif')
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            'wali_kelas' => ['Pegawai untuk data ini sudah ada dan masih memiliki status wali kelas aktif.'],
+                        ]);
+                    }
+                }
 
-    //             // Update biodata lama
-    //             $existingBiodata->update([
-    //                 'negara_id' => $input['negara_id'],
-    //                 'provinsi_id' => $input['provinsi_id'],
-    //                 'kabupaten_id' => $input['kabupaten_id'],
-    //                 'kecamatan_id' => $input['kecamatan_id'],
-    //                 'jalan' => $input['jalan'],
-    //                 'kode_pos' => $input['kode_pos'],
-    //                 'nama' => $input['nama'],
-    //                 'no_passport' => $input['no_passport'],
-    //                 'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
-    //                 'jenis_kelamin' => $input['jenis_kelamin'],
-    //                 'tempat_lahir' => $input['tempat_lahir'],
-    //                 'nik' => $input['nik'],
-    //                 'no_telepon' => $input['no_telepon'],
-    //                 'no_telepon_2' => $input['no_telepon_2'],
-    //                 'email' => $input['email'],
-    //                 'jenjang_pendidikan_terakhir' => $input['jenjang_pendidikan_terakhir'],
-    //                 'nama_pendidikan_terakhir' => $input['nama_pendidikan_terakhir'],
-    //                 'anak_keberapa' => $input['anak_keberapa'],
-    //                 'dari_saudara' => $input['dari_saudara'],
-    //                 'tinggal_bersama' => $input['tinggal_bersama'],
-    //                 'smartcard' => $input['smartcard'],
-    //                 'status' => 1,
-    //                 'wafat' => $input['wafat'],
-    //                 'created_by' => Auth::id(),
-    //                 'created_at' => now(),
-    //             ]);
-    //             $biodata = $existingBiodata;
-    //         } else {
-    //             // Insert biodata baru
-    //             $biodata = Biodata::create([
-    //                 'id' => Str::uuid(),
-    //                 'negara_id' => $input['negara_id'],
-    //                 'provinsi_id' => $input['provinsi_id'],
-    //                 'kabupaten_id' => $input['kabupaten_id'],
-    //                 'kecamatan_id' => $input['kecamatan_id'],
-    //                 'jalan' => $input['jalan'],
-    //                 'kode_pos' => $input['kode_pos'],
-    //                 'nama' => $input['nama'],
-    //                 'no_passport' => $input['no_passport'],
-    //                 'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
-    //                 'jenis_kelamin' => $input['jenis_kelamin'],
-    //                 'tempat_lahir' => $input['tempat_lahir'],
-    //                 'nik' => $input['nik'],
-    //                 'no_telepon' => $input['no_telepon'],
-    //                 'no_telepon_2' => $input['no_telepon_2'],
-    //                 'email' => $input['email'],
-    //                 'jenjang_pendidikan_terakhir' => $input['jenjang_pendidikan_terakhir'],
-    //                 'nama_pendidikan_terakhir' => $input['nama_pendidikan_terakhir'],
-    //                 'anak_keberapa' => $input['anak_keberapa'],
-    //                 'dari_saudara' => $input['dari_saudara'],
-    //                 'tinggal_bersama' => $input['tinggal_bersama'],
-    //                 'smartcard' => $input['smartcard'],
-    //                 'status' => 1,
-    //                 'wafat' => $input['wafat'],
-    //                 'created_by' => Auth::id(),
-    //                 'created_at' => now(),
-    //             ]);
-    //         }
+                // Update biodata lama
+                $existingBiodata->update([
+                    'negara_id' => $input['negara_id'],
+                    'provinsi_id' => $input['provinsi_id'],
+                    'kabupaten_id' => $input['kabupaten_id'],
+                    'kecamatan_id' => $input['kecamatan_id'],
+                    'jalan' => $input['jalan'],
+                    'kode_pos' => $input['kode_pos'],
+                    'nama' => $input['nama'],
+                    'no_passport' => $input['no_passport'],
+                    'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
+                    'jenis_kelamin' => $input['jenis_kelamin'],
+                    'tempat_lahir' => $input['tempat_lahir'],
+                    'nik' => $input['nik'],
+                    'no_telepon' => $input['no_telepon'],
+                    'no_telepon_2' => $input['no_telepon_2'],
+                    'email' => $input['email'],
+                    'jenjang_pendidikan_terakhir' => $input['jenjang_pendidikan_terakhir'],
+                    'nama_pendidikan_terakhir' => $input['nama_pendidikan_terakhir'],
+                    'anak_keberapa' => $input['anak_keberapa'],
+                    'dari_saudara' => $input['dari_saudara'],
+                    'tinggal_bersama' => $input['tinggal_bersama'],
+                    'smartcard' => $input['smartcard'],
+                    'status' => 1,
+                    'wafat' => $input['wafat'],
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                ]);
+                $biodata = $existingBiodata;
+            } else {
+                // Insert biodata baru
+                $biodata = Biodata::create([
+                    'id' => Str::uuid(),
+                    'negara_id' => $input['negara_id'],
+                    'provinsi_id' => $input['provinsi_id'],
+                    'kabupaten_id' => $input['kabupaten_id'],
+                    'kecamatan_id' => $input['kecamatan_id'],
+                    'jalan' => $input['jalan'],
+                    'kode_pos' => $input['kode_pos'],
+                    'nama' => $input['nama'],
+                    'no_passport' => $input['no_passport'],
+                    'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
+                    'jenis_kelamin' => $input['jenis_kelamin'],
+                    'tempat_lahir' => $input['tempat_lahir'],
+                    'nik' => $input['nik'],
+                    'no_telepon' => $input['no_telepon'],
+                    'no_telepon_2' => $input['no_telepon_2'],
+                    'email' => $input['email'],
+                    'jenjang_pendidikan_terakhir' => $input['jenjang_pendidikan_terakhir'],
+                    'nama_pendidikan_terakhir' => $input['nama_pendidikan_terakhir'],
+                    'anak_keberapa' => $input['anak_keberapa'],
+                    'dari_saudara' => $input['dari_saudara'],
+                    'tinggal_bersama' => $input['tinggal_bersama'],
+                    'smartcard' => $input['smartcard'],
+                    'status' => 1,
+                    'wafat' => $input['wafat'],
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                ]);
+            }
 
-    //         // Simpan keluarga jika ada no_kk
-    //         if (!empty($input['no_kk'])) {
-    //             Keluarga::updateOrCreate(
-    //                 ['id_biodata' => $biodata->id],
-    //                 [
-    //                     'no_kk' => $input['no_kk'],
-    //                     'status' => 1,
-    //                     'created_by' => Auth::id(),
-    //                 ]
-    //             );
-    //         }
+            // Simpan keluarga jika ada no_kk
+            if (!empty($input['no_kk'])) {
+                Keluarga::updateOrCreate(
+                    ['id_biodata' => $biodata->id],
+                    [
+                        'no_kk' => $input['no_kk'],
+                        'status' => 1,
+                        'created_by' => Auth::id(),
+                    ]
+                );
+            }
 
-    //         // Simpan warga pesantren jika ada niup
-    //         if (!empty($input['niup'])) {
-    //             WargaPesantren::updateOrCreate(
-    //                 ['biodata_id' => $biodata->id],
-    //                 [
-    //                     'niup' => $input['niup'],
-    //                     'status' => 1,
-    //                     'created_by' => Auth::id(),
-    //                 ]
-    //             );
-    //         }
+            // Simpan warga pesantren jika ada niup
+            if (!empty($input['niup'])) {
+                WargaPesantren::updateOrCreate(
+                    ['biodata_id' => $biodata->id],
+                    [
+                        'niup' => $input['niup'],
+                        'status' => 1,
+                        'created_by' => Auth::id(),
+                    ]
+                );
+            }
 
-    //         // Simpan berkas
-    //         if (!empty($input['berkas']) && is_array($input['berkas'])) {
-    //             foreach ($input['berkas'] as $item) {
-    //                 if (!($item['file_path'] instanceof UploadedFile)) {
-    //                     throw new \Exception('Berkas tidak valid');
-    //                 }
+            // Simpan berkas
+            if (!empty($input['berkas']) && is_array($input['berkas'])) {
+                foreach ($input['berkas'] as $item) {
+                    if (!($item['file_path'] instanceof UploadedFile)) {
+                        throw new \Exception('Berkas tidak valid');
+                    }
 
-    //                 $path = $item['file_path']->store('berkas', 'public');
+                    $path = $item['file_path']->store('berkas', 'public');
 
-    //                 Berkas::create([
-    //                     'biodata_id' => $biodata->id,
-    //                     'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
-    //                     'file_path' => Storage::url($path),
-    //                     'status' => true,
-    //                     'created_by' => Auth::id(),
-    //                 ]);
-    //             }
-    //         }
+                    Berkas::create([
+                        'biodata_id' => $biodata->id,
+                        'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
+                        'file_path' => Storage::url($path),
+                        'status' => true,
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
 
-    //         // Buat atau ambil pegawai
-    //         $pegawai = Pegawai::firstOrCreate(
-    //             ['biodata_id' => $biodata->id],
-    //             ['status_aktif' => 'aktif', 'created_by' => Auth::id()]
-    //         );
+            // Buat atau ambil pegawai
+            $pegawai = Pegawai::firstOrCreate(
+                ['biodata_id' => $biodata->id],
+                ['status_aktif' => 'aktif', 'created_by' => Auth::id()]
+            );
 
-    //         $resultData = [];
+            $resultData = [];
 
-    //         // Simpan karyawan jika ada
-    //         if (!empty($input['karyawan'])) {
-    //             $karyawan = Karyawan::create([
-    //                 'pegawai_id' => $pegawai->id,
-    //                 'golongan_jabatan_id' => $input['golongan_jabatan_id'] ?? null,
-    //                 'lembaga_id' => $input['lembaga_id'] ?? null,
-    //                 'jabatan' => $input['jabatan'] ?? null,
-    //                 'keterangan_jabatan' => $input['keterangan_jabatan'] ?? null,
-    //                 'tanggal_mulai' => $input['tanggal_mulai'] ?? now(),
-    //                 'status_aktif' => 'aktif',
-    //                 'created_by' => Auth::id(),
-    //             ]);
-    //             $resultData['karyawan'] = $karyawan;
-    //         }
+            // Simpan karyawan jika ada
+            if (!empty($input['karyawan'])) {
+                $karyawan = Karyawan::create([
+                    'pegawai_id' => $pegawai->id,
+                    'golongan_jabatan_id' => $input['golongan_jabatan_id_karyawan'] ?? null,
+                    'lembaga_id' => $input['lembaga_id_karyawan'] ?? null,
+                    'jabatan' => $input['jabatan_karyawan'] ?? null,
+                    'keterangan_jabatan' => $input['keterangan_jabatan_karyawan'] ?? null,
+                    'tanggal_mulai' => $input['tanggal_mulai_karyawan'] ?? now(),
+                    'status_aktif' => 'aktif',
+                    'created_by' => Auth::id(),
+                ]);
+                $resultData['karyawan'] = $karyawan;
+            }
 
-    //         // Simpan pengajar jika ada
-    //         if (!empty($input['pengajar'])) {
-    //             $pengajar = Pengajar::create([
-    //                 'pegawai_id' => $pegawai->id,
-    //                 'golongan_id' => $input['golongan_id'] ?? null,
-    //                 'lembaga_id' => $input['lembaga_id'] ?? null,
-    //                 'jabatan' => $input['jabatan'] ?? null,
-    //                 'tahun_masuk' => $input['tanggal_mulai'] ?? now(),
-    //                 'status_aktif' => 'aktif',
-    //                 'created_by' => Auth::id(),
-    //             ]);
-    //             $resultData['pengajar'] = $pengajar;
+            // Simpan pengajar jika ada
+            if (!empty($input['pengajar'])) {
+                $pengajar = Pengajar::create([
+                    'pegawai_id' => $pegawai->id,
+                    'golongan_id' => $input['golongan_id_pengajar'] ?? null,
+                    'lembaga_id' => $input['lembaga_id_pengajar'] ?? null,
+                    'jabatan' => $input['jabatan_pengajar'] ?? null,
+                    'tahun_masuk' => $input['tanggal_mulai_pengajar'] ?? now(),
+                    'status_aktif' => 'aktif',
+                    'created_by' => Auth::id(),
+                ]);
+                $resultData['pengajar'] = $pengajar;
 
-    //             // Handle multiple materi ajar
-    //             if (!empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
-    //                 foreach ($input['materi_ajar'] as $materi) {
-    //                     MateriAjar::create([
-    //                         'pengajar_id' => $pengajar->id,
-    //                         'nama_materi' => $materi['nama'],
-    //                         'jumlah_menit' => $materi['menit'] ?? null,
-    //                         'tahun_masuk' => $input['tanggal_mulai'] ?? now(),
-    //                         'status_aktif' => 'aktif',
-    //                         'created_by' => Auth::id(),
-    //                     ]);
-    //                 }
-    //             }
-    //         }
+                // Handle multiple materi ajar
+                if (!empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
+                    foreach ($input['materi_ajar'] as $materi) {
+                        MateriAjar::create([
+                            'pengajar_id' => $pengajar->id,
+                            'nama_materi' => $materi['nama_materi'],
+                            'jumlah_menit' => $materi['jumlah_menit'] ?? null,
+                            'tahun_masuk' => $input['tanggal_mulai_materi'] ?? now(),
+                            'status_aktif' => 'aktif',
+                            'created_by' => Auth::id(),
+                        ]);
+                    }
+                }
+            }
 
-    //         // Simpan pengurus jika ada
-    //         if (!empty($input['pengurus'])) {
-    //             $pengurus = Pengurus::create([
-    //                 'pegawai_id' => $pegawai->id,
-    //                 'golongan_jabatan_id' => $input['golongan_jabatan_id'] ?? null,
-    //                 'jabatan' => $input['jabatan'] ?? null,
-    //                 'satuan_kerja' => $input['satuan_kerja'] ?? null,
-    //                 'keterangan_jabatan' => $input['keterangan_jabatan'] ?? null,
-    //                 'tanggal_mulai' => $input['tanggal_mulai'] ?? now(),
-    //                 'status_aktif' => 'aktif',
-    //                 'created_by' => Auth::id(),
-    //             ]);
-    //             $resultData['pengurus'] = $pengurus;
-    //         }
+            // Simpan pengurus jika ada
+            if (!empty($input['pengurus'])) {
+                $pengurus = Pengurus::create([
+                    'pegawai_id' => $pegawai->id,
+                    'golongan_jabatan_id' => $input['golongan_jabatan_id_pengurus'] ?? null,
+                    'jabatan' => $input['jabatan_pengurus'] ?? null,
+                    'satuan_kerja' => $input['satuan_kerja_pengurus'] ?? null,
+                    'keterangan_jabatan' => $input['keterangan_jabatan_pengurus'] ?? null,
+                    'tanggal_mulai' => $input['tanggal_mulai_pengurus'] ?? now(),
+                    'status_aktif' => 'aktif',
+                    'created_by' => Auth::id(),
+                ]);
+                $resultData['pengurus'] = $pengurus;
+            }
 
-    //         // Simpan wali kelas jika ada
-    //         if (!empty($input['wali_kelas'])) {
-    //             $waliKelas = WaliKelas::create([
-    //                 'pegawai_id' => $pegawai->id,
-    //                 'lembaga_id' => $input['lembaga_id'] ?? null,
-    //                 'jurusan_id' => $input['jurusan_id'] ?? null,
-    //                 'kelas_id' => $input['kelas_id'] ?? null,
-    //                 'rombel_id' => $input['rombel_id'] ?? null,
-    //                 'jumlah_murid' => $input['jumlah_murid'] ?? null,
-    //                 'status_aktif' => 'aktif',
-    //                 'created_by' => Auth::id(),
-    //             ]);
-    //             $resultData['wali_kelas'] = $waliKelas;
-    //         }
+            // Simpan wali kelas jika ada
+            if (!empty($input['wali_kelas'])) {
+                $waliKelas = WaliKelas::create([
+                    'pegawai_id' => $pegawai->id,
+                    'lembaga_id' => $input['lembaga_id_wali'] ?? null,
+                    'jurusan_id' => $input['jurusan_id_wali'] ?? null,
+                    'kelas_id' => $input['kelas_id_wali'] ?? null,
+                    'rombel_id' => $input['rombel_id_wali'] ?? null,
+                    'jumlah_murid' => $input['jumlah_murid_wali'] ?? null,
+                    'periode_awal' => $input['periode_awal_wali'] ?? now(),
+                    'status_aktif' => 'aktif',
+                    'created_by' => Auth::id(),
+                ]);
+                $resultData['wali_kelas'] = $waliKelas;
+            }
 
-    //         DB::commit();
+            DB::commit();
 
-    //         return [
-    //             'status' => true,
-    //             'message' => $isExisting
-    //                 ? 'NIK sudah terdaftar, data biodata diperbarui dan data pegawai berhasil ditambahkan/diperbarui.'
-    //                 : 'Pegawai baru berhasil ditambahkan.',
-    //             'data' => array_merge(['pegawai' => $pegawai], $resultData),
-    //         ];
+            return [
+                'status' => true,
+                'message' => $isExisting
+                    ? 'NIK sudah terdaftar, Silahkan anda cek kembali di fitur Pegawai.'
+                    : 'Pegawai baru berhasil ditambahkan.',
+                'data' => array_merge(['pegawai' => $pegawai], $resultData),
+            ];
 
-    //     } catch (ValidationException $e) {
-    //         DB::rollBack();
-    //         throw $e;
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         Log::error('Error Membuat Data pegawai: ' . $e->getMessage());
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error Membuat Data pegawai: ' . $e->getMessage());
 
-    //         return [
-    //             'status' => false,
-    //             'message' => 'Gagal menyimpan data pegawai.',
-    //             'error' => env('APP_DEBUG') ? $e->getMessage() : null,
-    //         ];
-    //     }
-    // }
+            return [
+                'status' => false,
+                'message' => 'Gagal menyimpan data pegawai.',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null,
+            ];
+        }
+    }
 
     // public function destroy($pegawaiId)
     // {

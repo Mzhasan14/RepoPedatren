@@ -133,7 +133,7 @@ class PengurusService
         ];
     }
 
-        public function pindahPengurus(array $input, int $id): array
+    public function pindahPengurus(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
             $old = Pengurus::find($id);

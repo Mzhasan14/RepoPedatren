@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Administrasi;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\CatatanKognitifRequest;
+use App\Http\Requests\Administrasi\CreateCatatanKognitifRequest;
 use App\Http\Requests\Administrasi\KeluarKognitifRequest;
 use App\Services\Administrasi\CatatanKognitifService;
 use App\Services\Administrasi\Filters\FilterCatatanKognitifService;
@@ -175,5 +176,26 @@ class CatatanKognitifController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+    public function storeCatatanKognitif(CreateCatatanKognitifRequest $request)
+    {
+        try {
+            $result = $this->catatanService->storeCatatanKognitif($request->validated());
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah catatan-afektif: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

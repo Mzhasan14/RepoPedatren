@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreKaryawanRequest extends FormRequest
+class WaliKelasRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +24,12 @@ class StoreKaryawanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pegawai_id' => 'required|exists:pegawai,id',
-            'golongan_jabatan_id' => 'nullable|exists:golongan_jabatan,id',
-            'lembaga_id' => 'nullable|exists:lembaga,id',
-            'jabatan' => 'nullable|string|max:255',
-            'keterangan_jabatan' => 'nullable|string|max:255',
-            'tanggal_mulai' => 'nullable|date',
+        'lembaga_id'      => ['nullable', 'exists:lembaga,id'],
+        'jurusan_id'      => ['nullable', 'exists:jurusan,id'],
+        'kelas_id'        => ['nullable', 'exists:kelas,id'],
+        'rombel_id'       => ['nullable', 'exists:rombel,id'],
+        'jumlah_murid'    => ['required', 'numeric', 'min:1'],
+        'periode_awal'    => ['nullable', 'date'],
         ];
     }
     protected function failedValidation(Validator $validator)

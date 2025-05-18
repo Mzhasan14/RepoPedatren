@@ -2,6 +2,10 @@
 
 namespace App\Models\Pegawai;
 
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Lembaga;
+use App\Models\Pendidikan\Rombel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -44,9 +48,30 @@ class WaliKelas extends Model
             $model->save();
         });
     }
-    public function WaliKelasPengajar()
+
+    public function pegawai()
     {
-        return $this->belongsTo(Pengajar::class,'id_pengajar','id');
+        return $this->belongsTo(Pegawai::class);
+    }
+
+    public function lembaga()
+    {
+        return $this->belongsTo(Lembaga::class);
+    }
+
+    public function jurusan()
+    {
+        return $this->belongsTo(Jurusan::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function rombel()
+    {
+        return $this->belongsTo(Rombel::class);
     }
 
     public function ScopeActive($query)

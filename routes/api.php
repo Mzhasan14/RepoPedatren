@@ -142,18 +142,24 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Kepegawaian
     Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
-    Route::get('/{id}/karyawan/edit', [KaryawanController::class, 'edit']);
+    Route::get('/{id}/karyawan/show', [KaryawanController::class, 'edit']);
     Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
     Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
+
     Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
-    Route::get('/{id}/pengajar/edit', [PengajarController::class, 'edit']);
+    Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
     Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
     Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+
     Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
-    Route::get('/{id}/pengurus/edit', [PengurusController::class, 'edit']);
+    Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
     Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 
+    Route::get('/{id}/walikelas', [WalikelasController::class, 'index']);
+    Route::get('/{id}/walikelas/show', [WalikelasController::class, 'edit']);
+    Route::put('/{id}/walikelas', [WalikelasController::class, 'update']);
+    Route::post('/{id}/walikelas', [WalikelasController::class, 'store']);
 
     Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
     Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
@@ -167,6 +173,9 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
     Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
 
+    Route::put('/{id}/walikelas/pindah', [WalikelasController::class, 'pindahWalikelas']);
+    Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
+
     // Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'index']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
@@ -176,11 +185,12 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Catatan Santri
     Route::get('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'index']);
-    Route::get('/{id}/catatan-afektif/edit',[AdministrasiCatatanAfektifController::class,'edit']);
+    Route::get('/{id}/catatan-afektif/show',[AdministrasiCatatanAfektifController::class,'edit']);
     Route::put('/{id}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'update']);
     Route::post('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'store']);
+
     Route::get('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'index']);
-    Route::get('/{id}/catatan-kognitif/edit',[CatatanKognitifController::class,'edit']);
+    Route::get('/{id}/catatan-kognitif/show',[CatatanKognitifController::class,'edit']);
     Route::put('/{id}/catatan-kognitif',[CatatanKognitifController::class,'update']);
     Route::post('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'store']);
 
@@ -288,9 +298,10 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::put('{id}/golongan-jabatan',[GolonganJabatanController::class,'update']);
     Route::delete('{id}/golongan-jabatan',[GolonganJabatanController::class,'destroy']);
 
-    // Kepegawaian
-    Route::post('karyawan',[KaryawanController::class,'createStore']);
-    Route::get('/pegawai', [PegawaiController::class, 'store']);
+    // Kepegawaian 
+    Route::post('/pegawai', [PegawaiController::class, 'store']);
+    Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
+    Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 
 });
 
