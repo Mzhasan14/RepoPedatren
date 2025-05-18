@@ -40,7 +40,7 @@ class KaryawanService
                 ->where('status', true)
                 ->groupBy('biodata_id');
         // 4) Query utama
-        return Karyawan::Active()
+        return DB::table('karyawan')
                         // join pegawai yang hanya berstatus true atau akif
                         ->join('pegawai',function ($join){
                             $join->on('pegawai.id','=','karyawan.pegawai_id')
@@ -61,6 +61,7 @@ class KaryawanService
                         ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                         ->leftJoin('lembaga as l','l.id','=','karyawan.lembaga_id')
                         ->whereNull('karyawan.deleted_at')
+                        ->where('karyawan.status_aktif','aktif')
                         ->select(
                             'pegawai.biodata_id as biodata_uuid', 
                             'karyawan.id as id',

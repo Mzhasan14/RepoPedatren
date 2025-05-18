@@ -58,7 +58,7 @@ class PegawaiService
                         ->groupBy('biodata_id');
         
             // 4) Query utama
-            return Pegawai::Active()
+            return DB::table('pegawai')
                             ->join('biodata as b','b.id','pegawai.biodata_id')
                             // join warga pesantren terakhir true (NIUP)
                             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
@@ -93,6 +93,7 @@ class PegawaiService
                             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                             ->whereNull('pegawai.deleted_at')
+                            ->where('pegawai.status_aktif','aktif')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
                                 'pegawai.id as id',

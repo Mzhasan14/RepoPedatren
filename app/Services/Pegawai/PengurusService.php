@@ -31,7 +31,7 @@ class PengurusService
                 ->where('status', true)
                 ->groupBy('biodata_id');
         // 4) Query utama
-       return Pengurus::Active()
+       return DB::table('pengurus')
                             // relasi ke golongan jabatan yang hanya berstatus true
                             ->leftJoin('golongan_jabatan as g',function ($join) {
                                 $join->on('pengurus.golongan_jabatan_id', '=', 'g.id')
@@ -51,6 +51,7 @@ class PengurusService
                             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
                             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
                             ->whereNull('pengurus.deleted_at')
+                            ->where('pengurus.status_aktif','aktif')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
                                 'pengurus.id as id',

@@ -3,7 +3,7 @@
 namespace App\Services\Pegawai\Filters;
 
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

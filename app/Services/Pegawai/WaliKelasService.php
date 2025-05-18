@@ -32,7 +32,7 @@ class WaliKelasService
                 ->where('status', true)
                 ->groupBy('biodata_id');
         // 4) Query utama
-        return WaliKelas::Active()
+        return DB::table('wali_kelas')
                             // Join Pegawai yang Berstatus Aktif
                             ->join('pegawai', function ($join) {
                                     $join->on('wali_kelas.pegawai_id', '=', 'pegawai.id')
@@ -51,6 +51,7 @@ class WaliKelasService
                             ->leftJoin('jurusan as j','j.id','=','wali_kelas.jurusan_id')
                             ->leftJoin('lembaga as l','l.id','=','wali_kelas.lembaga_id')
                             ->whereNull('wali_kelas.deleted_at')
+                            ->where('wali_kelas.status_aktif','aktif')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
                                 'wali_kelas.id as id',

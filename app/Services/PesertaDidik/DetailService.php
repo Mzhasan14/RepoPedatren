@@ -670,46 +670,48 @@ class DetailService
             : [];
 
                 // --- Riwayat Karyawan ---
-        $karyawan = DB::table('pegawai')
+        $karyawan = DB::table('karyawan')
+            ->join('pegawai', 'pegawai.id', '=', 'karyawan.pegawai_id')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
-            ->leftJoin('karyawan', 'karyawan.pegawai_id', '=', 'pegawai.id')
+            ->leftJoin('lembaga', 'karyawan.lembaga_id', '=', 'lembaga.id')
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
+                'lembaga.nama_lembaga',
                 'karyawan.keterangan_jabatan',
-                DB::raw("
-                    CONCAT(
-                        'Sejak ', DATE_FORMAT(karyawan.tanggal_mulai, '%e %b %Y'),
-                        ' Sampai ',
-                        IFNULL(DATE_FORMAT(karyawan.tanggal_selesai, '%e %b %Y'), 'Sekarang')
-                    ) AS masa_jabatan
-                ")
+                'karyawan.tanggal_mulai',
+                'karyawan.tanggal_selesai'
             )
             ->orderBy('karyawan.tanggal_mulai', 'asc')
             ->get();
 
-            $data['Karyawan'] = $karyawan
-            ->filter(fn($item) => $item->keterangan_jabatan !== null && $item->masa_jabatan !== null)
-            ->map(fn($item) => [
-                'keterangan_jabatan' => $item->keterangan_jabatan,
-                'masa_jabatan'       => $item->masa_jabatan,
+        $data['Karyawan'] = $karyawan->isNotEmpty()
+            ? $karyawan->map(fn($item) => [
+                'lembaga'            => $item->nama_lembaga ?? '-',
+                'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
+                'tanggal_mulai'      => $item->tanggal_mulai ? date('d-m-Y', strtotime($item->tanggal_mulai)) : '-',
+                'tanggal_selesai'    => $item->tanggal_selesai ? date('d-m-Y', strtotime($item->tanggal_selesai)) : '-',
             ])
-            ->values(); // supaya hasilnya berupa array indeks biasa (bukan collection key-preserved)
-        
+            : [];
+
 
         // --- Ambil data pengajar dan riwayat materi ---
         $pengajar = DB::table('pengajar')
-            ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')  // Join dengan pegawai
-            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')  // Join dengan lembaga
-            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')  // Join dengan biodata
-            ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')  // Join dengan golongan
-            ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')  // Join dengan kategori golongan
-            ->leftJoin('materi_ajar', 'materi_ajar.pengajar_id', '=', 'pengajar.id')  // Join dengan materi ajar
-            ->where('pegawai.biodata_id', $biodataId)  // Filter berdasarkan ID pegawai
+            ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')
+            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')
+            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
+            ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')
+            ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
+            ->leftJoin('materi_ajar', 'materi_ajar.pengajar_id', '=', 'pengajar.id')
+            ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 'lembaga.nama_lembaga',
-                'pengajar.jabatan as PekerjaanKontrak',
+                'pengajar.jabatan as pekerjaan_kontrak',  // gunakan snake_case agar konsisten
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',
+                'pengajar.tahun_masuk',
+                'pengajar.tahun_akhir',
+                'materi_ajar.tahun_masuk as tanggal_masuk',
+                'materi_ajar.tahun_akhir as tanggal_akhir',
                 DB::raw("
                     CONCAT(
                         'Sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%e %M %Y %H:%i:%s'),
@@ -718,12 +720,12 @@ class DetailService
                     ) AS keterangan
                 "),
                 DB::raw("
-                    GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', ') AS daftar_materi"),
-                DB::raw("
                     CONCAT(
+                        GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', '),
+                        ' (',
                         FLOOR(SUM(materi_ajar.jumlah_menit) / 60), ' jam ',
-                        MOD(SUM(materi_ajar.jumlah_menit), 60), ' menit'
-                    ) AS total_waktu_materi
+                        MOD(SUM(materi_ajar.jumlah_menit), 60), ' menit setiap pertemuan)'
+                    ) AS daftar_materi_dengan_waktu
                 "),
                 DB::raw('COUNT(DISTINCT materi_ajar.id) as total_materi')
             )
@@ -733,22 +735,25 @@ class DetailService
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',
                 'pengajar.tahun_masuk',
-                'pengajar.tahun_akhir'
+                'pengajar.tahun_akhir',
+                'materi_ajar.tahun_masuk',
+                'materi_ajar.tahun_akhir',
             )
             ->get();
 
-            $data['Pengajar'] = $pengajar->isNotEmpty()
+        $data['Pengajar'] = $pengajar->isNotEmpty()
             ? $pengajar->map(fn($item) => [
-                'lembaga'                 => $item->nama_lembaga ?? '-',
-                'pekerjaan_kontrak'      => $item->PekerjaanKontrak ?? '-',
-                'kategori_golongan'      => $item->nama_kategori_golongan ?? '-',
-                'nama_golongan'          => $item->nama_golongan ?? '-',
-                'daftar_materi'           => $item->daftar_materi ?? '-',
-                'periode_ajar'           => $item->keterangan ?? '-',
-                'total_jam_materi'       => $item->total_waktu_materi ?? '0 jam 0 menit',
-                'jumlah_materi_diajarkan'=> $item->total_materi ?? 0,
+                'lembaga'             => $item->nama_lembaga ?? '-',
+                'pekerjaan_kontrak'   => $item->pekerjaan_kontrak ?? '-',
+                'kategori_golongan'   => $item->nama_kategori_golongan ?? '-',
+                'nama_golongan'       => $item->nama_golongan ?? '-',
+                'daftar_materi'       => $item->daftar_materi_dengan_waktu ?? '-',
+                'masa_kerja'          => $item->keterangan ?? '-',
+                'tahun_masuk_materi'         => $item->tanggal_masuk ?? null,
+                'tahun_akhir_materi'         => $item->tanggal_akhir ?? null,
             ])
             : [];
+
     
     
 
@@ -759,20 +764,16 @@ class DetailService
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 'pengurus.keterangan_jabatan',
-                DB::raw("
-                    CONCAT(
-                        'Sejak ', DATE_FORMAT(pengurus.tanggal_mulai, '%e %b %Y'),
-                        ' Sampai ',
-                        IFNULL(DATE_FORMAT(pengurus.tanggal_akhir, '%e %b %Y'), 'Sekarang')
-                    ) AS masa_jabatan
-                ")
+                'pengurus.tanggal_mulai',
+                'pengurus.tanggal_akhir',
             )
             ->orderBy('pengurus.tanggal_mulai', 'asc')
             ->get();
             $data['Pengurus'] = $pengurus->isNotEmpty()
             ? $pengurus->map(fn($item) => [
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
-                'masa_jabatan'       => $item->masa_jabatan ?? '-',
+                'tanggal_mulai'       => $item->tanggal_mulai ?? '-',
+                'tanggal_akhir'       => $item->tanggal_akhir ?? '-',
             ])
             : [];
             // ambil data wali kelas dan riwayatnya

@@ -29,7 +29,7 @@ class PengajarService
                     ->where('status', true)
                     ->groupBy('biodata_id');
             // 4) Query utama
-            return Pengajar::Active()
+            return DB::table('pengajar')
                 // join pegawai yang hanya berstatus true atau akif
                 ->join('pegawai',function ($join){
                     $join->on('pegawai.id','=','pengajar.pegawai_id')
@@ -57,6 +57,7 @@ class PengajarService
 
                 })
                 ->whereNull('pengajar.deleted_at')
+                ->where('pengajar.status_aktif','aktif')
                 ->select(
                     'pegawai.biodata_id as biodata_uuid',
                     'pengajar.id as id',
@@ -133,7 +134,7 @@ class PengajarService
             "total_waktu_materi" => $item->total_waktu_materi ?? "-",
             "masa_kerja" => $item->masa_kerja ?? "-",
             "golongan" => $item->nama_golongan,
-            "pendidikan_terakhir" => $item->pendidikan_terakhir,
+            "pendidikan_terakhir" => $item->nama_pendidikan_terakhir,
             "tgl_update" => Carbon::parse($item->tgl_update)->translatedFormat('d F Y H:i:s'),
             "tgl_input" => Carbon::parse($item->tgl_input)->translatedFormat('d F Y H:i:s'),
             "lembaga" => $item->nama_lembaga,
