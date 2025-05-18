@@ -207,192 +207,192 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+});
 
-    // Biometric
-    Route::prefix('biometric')->group(function () {
-        Route::post('/register', [BiometricScanController::class, 'register']);
-        Route::post('/scan', [BiometricScanController::class, 'scan']);
-    });
+// Biometric
+Route::prefix('biometric')->group(function () {
+    Route::post('/register', [BiometricScanController::class, 'register']);
+    Route::post('/scan', [BiometricScanController::class, 'scan']);
+});
 
-    // Export
-    Route::prefix('export')->group(function () {
-        Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
-        Route::get('/alumni', [AlumniController::class, 'alumniExport'])->name('alumni.export');
-        Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
+// Export
+Route::prefix('export')->group(function () {
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
+    Route::get('/alumni', [AlumniController::class, 'alumniExport'])->name('alumni.export');
+    Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 
-        // Kepegawaian
-        Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');
-        Route::get('/karyawan', [KaryawanController::class, 'karyawanExport'])->name('karyawan.export');
-        Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
-        Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
-        Route::get('/walikelas', [WalikelasController::class, 'waliKelasExport'])->name('walikelas.export');
-    });
+    // Kepegawaian
+    Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');
+    Route::get('/karyawan', [KaryawanController::class, 'karyawanExport'])->name('karyawan.export');
+    Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
+    Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
+    Route::get('/walikelas', [WalikelasController::class, 'waliKelasExport'])->name('walikelas.export');
+});
 
-    Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
-        Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
-        Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
+    Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
+    Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
 
-        // Create Anak Pegawai
-        Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
+    // Create Anak Pegawai
+    Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
 
-        // Create Khadam
-        Route::post('/khadam', [KhadamController::class, 'store']);
+    // Create Khadam
+    Route::post('/khadam', [KhadamController::class, 'store']);
 
-        Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
-        Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
+    Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
+    Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
 
-        //perizinan
-        Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
-        Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
-        Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
-        Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+    //perizinan
+    Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
+    Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
+    Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
+    Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
 
-        //pelanggaran
-        Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
-        Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
-        Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
-        Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+    //pelanggaran
+    Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
+    Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
+    Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
+    Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
 
-        //pelanggaran
-        Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
-        Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
-        Route::post('/{id}/pengunjung', [PengunjungMahromController::class, 'store']);
-        Route::put('/{id}/pengunjung', [PengunjungMahromController::class, 'update']);
+    //pelanggaran
+    Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
+    Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+    Route::post('/{id}/pengunjung', [PengunjungMahromController::class, 'store']);
+    Route::put('/{id}/pengunjung', [PengunjungMahromController::class, 'update']);
 
-        //Kewaliasuhan
-        Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
-        Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
-        Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-        Route::post('/waliasuh', [WaliasuhController::class, 'store']);
-        Route::put('/waliasuh/{id}', [WaliasuhController::class, 'update']);
-        Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy']);
-        Route::post('/anakasuh', [AnakasuhController::class, 'store']);
-        Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
+    //Kewaliasuhan
+    Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
+    Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
+    Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
+    Route::post('/waliasuh', [WaliasuhController::class, 'store']);
+    Route::put('/waliasuh/{id}', [WaliasuhController::class, 'update']);
+    Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy']);
+    Route::post('/anakasuh', [AnakasuhController::class, 'store']);
+    Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
 
-        // lembaga
-        Route::get('lembaga', [LembagaController::class, 'index']);
-        Route::post('lembaga', [LembagaController::class, 'store']);
-        Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
-        Route::put('{id}/lembaga', [LembagaController::class, 'update']);
-        Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
+    // lembaga
+    Route::get('lembaga', [LembagaController::class, 'index']);
+    Route::post('lembaga', [LembagaController::class, 'store']);
+    Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
+    Route::put('{id}/lembaga', [LembagaController::class, 'update']);
+    Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
 
-        //golongan
-        Route::get('golongan', [GolonganController::class, 'index']);
-        Route::post('golongan', [GolonganController::class, 'store']);
-        Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
-        Route::put('{id}/golongan', [GolonganController::class, 'update']);
-        Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
+    //golongan
+    Route::get('golongan', [GolonganController::class, 'index']);
+    Route::post('golongan', [GolonganController::class, 'store']);
+    Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
+    Route::put('{id}/golongan', [GolonganController::class, 'update']);
+    Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
 
-        //kategori golongan
-        Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
-        Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
-        Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
-        Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
-        Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
+    //kategori golongan
+    Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
+    Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
+    Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
+    Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
+    Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
 
-        //golongan Jabatan
-        Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
-        Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
-        Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
-        Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
+    //golongan Jabatan
+    Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
+    Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
+    Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
+    Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
 
-        Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
-        Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
-        Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
-        Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
-        Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
+    Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
+    Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
+    Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
+    Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
+    Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
 
-        // Kepegawaian 
-        Route::post('/pegawai', [PegawaiController::class, 'store']);
-        Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
-        Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
-    });
+    // Kepegawaian 
+    Route::post('/pegawai', [PegawaiController::class, 'store']);
+    Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
+    Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
+});
 
-    Route::prefix('data-pokok')->group(function () {
+Route::prefix('data-pokok')->group(function () {
 
-        // 🏫 Santri & Peserta Didik
-        Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
-        Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
-        Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/santri', [SantriController::class, 'getAllSantri']);
-        Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
-        Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
-        Route::get('/pelajar/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/alumni', [AlumniController::class, 'alumni']);
-        Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
-        Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
+    // 🏫 Santri & Peserta Didik
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
+    Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
+    Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/santri', [SantriController::class, 'getAllSantri']);
+    Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
+    Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
+    Route::get('/pelajar/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/alumni', [AlumniController::class, 'alumni']);
+    Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
+    Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
 
-        // Khadam
-        Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
-        Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
+    // Khadam
+    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
+    Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
 
-        // 🚨 Administrasi
-        Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
-        Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
-        Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
-        Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
+    // 🚨 Administrasi
+    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
+    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
+    Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-        Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
-        Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
+    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
+    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
-        // 🏫 Keluarga
-        Route::get('/keluarga/{id_biodata}', [KeluargaController::class, 'getKeluargaByIdBio']);
-        Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
-        Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
-        Route::get('/wali', [WaliController::class, 'getAllWali']);
-        Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
+    // 🏫 Keluarga
+    Route::get('/keluarga/{id_biodata}', [KeluargaController::class, 'getKeluargaByIdBio']);
+    Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
+    Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
+    Route::get('/wali', [WaliController::class, 'getAllWali']);
+    Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
 
-        // 📍 Alamat
-        Route::apiResource('/provinsi', ProvinsiController::class);
-        Route::apiResource('/kabupaten', KabupatenController::class);
-        Route::apiResource('/kecamatan', KecamatanController::class);
+    // 📍 Alamat
+    Route::apiResource('/provinsi', ProvinsiController::class);
+    Route::apiResource('/kabupaten', KabupatenController::class);
+    Route::apiResource('/kecamatan', KecamatanController::class);
 
-        // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
-        Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
-        Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
-        Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
-        Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
-        Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
+    // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
+    Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
+    Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
+    Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
+    Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
+    Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
 
-        // 🏠 Wilayah (Blok, Kamar, Domisili)
-        Route::apiResource('/wilayah', WilayahController::class);
-        Route::apiResource('/blok', BlokController::class);
-        Route::apiResource('/kamar', KamarController::class);
-        Route::apiResource('/domisili', DomisiliController::class);
+    // 🏠 Wilayah (Blok, Kamar, Domisili)
+    Route::apiResource('/wilayah', WilayahController::class);
+    Route::apiResource('/blok', BlokController::class);
+    Route::apiResource('/kamar', KamarController::class);
+    Route::apiResource('/domisili', DomisiliController::class);
 
-        // 🎓 Pendidikan
-        Route::apiResource('/lembaga', LembagaController::class);
-        Route::apiResource('/jurusan', JurusanController::class);
-        Route::apiResource('/kelas', KelasController::class);
-        Route::apiResource('/rombel', RombelController::class);
+    // 🎓 Pendidikan
+    Route::apiResource('/lembaga', LembagaController::class);
+    Route::apiResource('/jurusan', JurusanController::class);
+    Route::apiResource('/kelas', KelasController::class);
+    Route::apiResource('/rombel', RombelController::class);
 
-        // 👨‍🏫 Pegawai & Guru
-        Route::apiResource('/crud/pegawai', PegawaiController::class);
-        Route::apiResource('/crud/pengajar', PengajarController::class);
-        Route::apiResource('/crud/walikelas', WalikelasController::class);
-        Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
-        Route::apiResource('/crud/golongan', GolonganController::class);
-        Route::apiResource('/crud/pengurus', PengurusController::class);
-        Route::apiResource('/crud/karyawan', KaryawanController::class);
-        Route::apiResource('/crud/materiAjar', MateriAjarController::class);
-        Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
-        Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
-        Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
-        Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
-        Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
-        Route::post('pegawai', [PegawaiController::class, 'store']);
+    // 👨‍🏫 Pegawai & Guru
+    Route::apiResource('/crud/pegawai', PegawaiController::class);
+    Route::apiResource('/crud/pengajar', PengajarController::class);
+    Route::apiResource('/crud/walikelas', WalikelasController::class);
+    Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
+    Route::apiResource('/crud/golongan', GolonganController::class);
+    Route::apiResource('/crud/pengurus', PengurusController::class);
+    Route::apiResource('/crud/karyawan', KaryawanController::class);
+    Route::apiResource('/crud/materiAjar', MateriAjarController::class);
+    Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
+    Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
+    Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
+    Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
+    Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
+    Route::post('pegawai', [PegawaiController::class, 'store']);
 
-        Route::get('/pengurus/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/pengajar/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/karyawan/{id}', [DetailController::class, 'getDetail']);
-        Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
-        Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
-    });
+    Route::get('/pengurus/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pengajar/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/karyawan/{id}', [DetailController::class, 'getDetail']);
+    Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
 Route::prefix('dropdown')->group(function () {
