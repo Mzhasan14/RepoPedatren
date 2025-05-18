@@ -1,11 +1,22 @@
 <?php
 namespace App\Services\Pegawai;
 
+use App\Models\Berkas;
+use App\Models\Biodata;
+use App\Models\JenisBerkas;
+use Illuminate\Http\UploadedFile;
+use App\Models\Keluarga;
 use App\Models\Pegawai\Karyawan;
+use App\Models\Pegawai\Pegawai;
+use App\Models\WargaPesantren;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class KaryawanService
 {
@@ -107,6 +118,7 @@ class KaryawanService
             "tgl_update" => $item->tgl_update,
             "tgl_input" => $item->tgl_input,
             "foto_profil" => url($item->foto_profil)
-        ]) ;
+        ]);
     }
+
 }

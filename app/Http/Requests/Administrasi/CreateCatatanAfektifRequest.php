@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Pegawai;
+namespace App\Http\Requests\Administrasi;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PengurusRequest extends FormRequest
+class CreateCatatanAfektifRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,15 +24,18 @@ class PengurusRequest extends FormRequest
     public function rules(): array
     {
         return [
-        'golongan_jabatan_id'   => 'required|exists:golongan_jabatan,id',
-        'jabatan'               => 'nullable|string|max:255',
-        'satuan_kerja'          => 'nullable|string|max:255',
-        'keterangan_jabatan'    => 'nullable|string|max:255',
-        'tanggal_mulai'         => 'nullable|date',
-        'tanggal_akhir'         => 'nullable|date|after_or_equal:tanggal_mulai',
+            'id_santri' => 'required|exists:santri,id',
+            'id_wali_asuh' => 'required|exists:wali_asuh,id',
+            'kepedulian_nilai' => 'required|in:A,B,C,D,E',
+            'kepedulian_tindak_lanjut' => 'required|string',
+            'kebersihan_nilai' => 'required|in:A,B,C,D,E',
+            'kebersihan_tindak_lanjut' => 'required|string',
+            'akhlak_nilai' => 'required|in:A,B,C,D,E',
+            'akhlak_tindak_lanjut' => 'required|string',
+            'tanggal_buat' => 'nullable|date',
         ];
     }
-        protected function failedValidation(Validator $validator)
+    protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 

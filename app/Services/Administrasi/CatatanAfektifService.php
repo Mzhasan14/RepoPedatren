@@ -3,10 +3,12 @@
 namespace App\Services\Administrasi;
 
 use App\Models\Catatan_afektif;
+use App\Models\Santri;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 
 class CatatanAfektifService
@@ -155,5 +157,55 @@ class CatatanAfektifService
             ],
         ]);
         
+    }
+
+    public function store(array $input)
+    {
+        $santri = Santri::find($input['id_santri']);
+
+    // Cek apakah santri ada dan status aktif = 'aktif'
+    if (!$santri || $santri->status !== 'aktif') {
+        return [
+            'status' => false,
+            'message' => 'Santri tidak aktif. Tidak bisa menambahkan catatan afektif.',
+            'data' => null
+        ];
+    }
+
+        // Cek jika masih ada catatan aktif yang belum selesai
+        $adaCatatanAktif = Catatan_afektif::where('id_santri', $input['id_santri'])
+            ->where('status', 1)
+            ->whereNull('tanggal_selesai')
+            ->exists();
+
+        if ($adaCatatanAktif) {
+            return [
+                'status' => false,
+                'message' => 'Masih ada catatan afektif aktif yang belum diselesaikan.',
+                'data' => null
+            ];
+        }
+
+        // Simpan catatan baru
+        $catatan = Catatan_afektif::create([
+            'id_santri' => $input['id_santri'],
+            'id_wali_asuh' => $input['id_wali_asuh'],
+            'kepedulian_nilai' => $input['kepedulian_nilai'],
+            'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'],
+            'kebersihan_nilai' => $input['kebersihan_nilai'],
+            'kebersihan_tindak_lanjut' => $input['kebersihan_tindak_lanjut'],
+            'akhlak_nilai' => $input['akhlak_nilai'],
+            'akhlak_tindak_lanjut' => $input['akhlak_tindak_lanjut'],
+            'tanggal_buat' => $input['tanggal_buat'] ?? now(),
+            'status' => true,
+            'created_by' => Auth::id(),
+            'created_at' => now()
+        ]);
+
+        return [
+            'status' => true,
+            'message' => 'Catatan afektif berhasil ditambahkan.',
+            'data' => $catatan
+        ];
     }
 }

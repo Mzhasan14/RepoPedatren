@@ -4,10 +4,12 @@ namespace App\Services\Administrasi;
 
 use App\Models\Catatan_afektif;
 use App\Models\Catatan_kognitif;
+use App\Models\Santri;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 
 class CatatanKognitifService
@@ -218,4 +220,60 @@ class CatatanKognitifService
             ],
         ]);
     }
+    public function storeCatatanKognitif(array $input)
+    {
+        $santri = Santri::find($input['id_santri']);
+
+        // Cek apakah santri ada dan status aktif = 'aktif'
+        if (!$santri || $santri->status !== 'aktif') {
+            return [
+                'status' => false,
+                'message' => 'Santri tidak aktif. Tidak bisa menambahkan catatan kognitif.',
+                'data' => null
+            ];
+        }
+
+        // Cek jika masih ada catatan kognitif aktif yang belum selesai
+        $adaCatatanAktif = Catatan_kognitif::where('id_santri', $input['id_santri'])
+            ->where('status', 1)
+            ->whereNull('tanggal_selesai')
+            ->exists();
+
+        if ($adaCatatanAktif) {
+            return [
+                'status' => false,
+                'message' => 'Masih ada catatan kognitif aktif yang belum diselesaikan.',
+                'data' => null
+            ];
+        }
+
+        // Simpan catatan baru
+        $catatan = Catatan_kognitif::create([
+            'id_santri' => $input['id_santri'],
+            'id_wali_asuh' => $input['id_wali_asuh'],
+            'kebahasaan_nilai' => $input['kebahasaan_nilai'],
+            'kebahasaan_tindak_lanjut' => $input['kebahasaan_tindak_lanjut'],
+            'baca_kitab_kuning_nilai' => $input['baca_kitab_kuning_nilai'],
+            'baca_kitab_kuning_tindak_lanjut' => $input['baca_kitab_kuning_tindak_lanjut'],
+            'hafalan_tahfidz_nilai' => $input['hafalan_tahfidz_nilai'],
+            'hafalan_tahfidz_tindak_lanjut' => $input['hafalan_tahfidz_tindak_lanjut'],
+            'furudul_ainiyah_nilai' => $input['furudul_ainiyah_nilai'],
+            'furudul_ainiyah_tindak_lanjut' => $input['furudul_ainiyah_tindak_lanjut'],
+            'tulis_alquran_nilai' => $input['tulis_alquran_nilai'],
+            'tulis_alquran_tindak_lanjut' => $input['tulis_alquran_tindak_lanjut'],
+            'baca_alquran_nilai' => $input['baca_alquran_nilai'],
+            'baca_alquran_tindak_lanjut' => $input['baca_alquran_tindak_lanjut'],
+            'tanggal_buat' => $input['tanggal_buat'] ?? now(),
+            'status' => true,
+            'created_by' => Auth::id(),
+            'created_at' => now(),
+        ]);
+
+        return [
+            'status' => true,
+            'message' => 'Catatan kognitif berhasil ditambahkan.',
+            'data' => $catatan
+        ];
+    }
+
 }

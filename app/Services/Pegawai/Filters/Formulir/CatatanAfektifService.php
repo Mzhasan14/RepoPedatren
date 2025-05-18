@@ -78,52 +78,41 @@ class CatatanAfektifService
         public function update(array $input, string $id): array
         {
             return DB::transaction(function () use ($input, $id) {
+                // 1. Pencarian data
                 $afektif = Catatan_afektif::find($id);
-                if (!$afektif) {
+                if (! $afektif) {
                     return ['status' => false, 'message' => 'Data tidak ditemukan.'];
                 }
 
-                // Validasi tanggal selesai jika ada
-                if (!empty($input['tanggal_selesai'])) {
-                    $tanggalSelesai = Carbon::parse($input['tanggal_selesai']);
-                    $tanggalBuat = Carbon::parse($input['tanggal_buat'] ?? $afektif->tanggal_buat);
-
-                    if ($tanggalSelesai->lt($tanggalBuat)) {
-                        return [
-                            'status' => false,
-                            'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk.',
-                        ];
-                    }
+                // 2. Larangan update jika sudah memiliki tanggal_selesai
+                if (! is_null($afektif->tanggal_selesai)) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Catatan afektif ini telah memiliki tanggal selesai dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                    ];
                 }
 
-                // Siapkan data update
-                $updateData = [
-                    'kepedulian_nilai' => $input['kepedulian_nilai'] ?? $afektif->kepedulian_nilai,
-                    'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'] ?? $afektif->kepedulian_tindak_lanjut,
-                    'kebersihan_nilai' => $input['kebersihan_nilai'] ?? $afektif->kebersihan_nilai,
-                    'kebersihan_tindak_lanjut' => $input['kebersihan_tindak_lanjut'] ?? $afektif->kebersihan_tindak_lanjut,
-                    'akhlak_nilai' => $input['akhlak_nilai'] ?? $afektif->akhlak_nilai,
-                    'akhlak_tindak_lanjut' => $input['akhlak_tindak_lanjut'] ?? $afektif->akhlak_tindak_lanjut,
-                    'tanggal_buat' => Carbon::parse($input['tanggal_buat'] ?? $afektif->tanggal_buat),
-                    'updated_by' => Auth::id(),
-                ];
+                // 3. Update data
+                $afektif->update([
+                    'kepedulian_nilai'         => $input['kepedulian_nilai'],
+                    'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'],
+                    'kebersihan_nilai'         => $input['kebersihan_nilai'],
+                    'kebersihan_tindak_lanjut' => $input['kebersihan_tindak_lanjut'],
+                    'akhlak_nilai'             => $input['akhlak_nilai'],
+                    'akhlak_tindak_lanjut'     => $input['akhlak_tindak_lanjut'],
+                    'tanggal_buat'             => Carbon::parse($input['tanggal_buat']),
+                    'updated_by'               => Auth::id(),
+                ]);
 
-                if (!empty($input['tanggal_selesai'])) {
-                    $updateData['tanggal_selesai'] = Carbon::parse($input['tanggal_selesai']);
-                    $updateData['status'] = 0;
-                } else {
-                    $updateData['tanggal_selesai'] = null;
-                    $updateData['status'] = 1;
-                }
-
-                $afektif->update($updateData);
-
+                // 4. Return hasil
                 return [
                     'status' => true,
-                    'data' => $afektif,
+                    'data'   => $afektif,
                 ];
             });
         }
+
+
         
         public function store(array $data, string $bioId): array
         {
@@ -175,6 +164,43 @@ class CatatanAfektifService
                 return [
                     'status' => true,
                     'data' => $afektif->fresh()
+                ];
+            });
+        }
+
+        public function keluarAfektif(array $input, int $id): array
+        {
+            return DB::transaction(function () use ($input, $id) {
+                $afektif = Catatan_afektif::find($id);
+                if (! $afektif) {
+                    return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+                }
+
+                if ($afektif->tanggal_selesai) {
+                    return [
+                        'status' => false,
+                        'message' => 'Data afektif sudah ditandai selesai/nonaktif.',
+                    ];
+                }
+
+                $tglSelesai = Carbon::parse($input['tanggal_selesai'] ?? '');
+
+                if ($tglSelesai->lt(Carbon::parse($afektif->tanggal_buat))) {
+                    return [
+                        'status' => false,
+                        'message' => 'Tanggal selesai tidak boleh sebelum tanggal buat.',
+                    ];
+                }
+
+                $afektif->update([
+                    'status'          => 0,
+                    'tanggal_selesai' => $tglSelesai,
+                    'updated_by'      => Auth::id(),
+                ]);
+
+                return [
+                    'status' => true,
+                    'data'   => $afektif,
                 ];
             });
         }
