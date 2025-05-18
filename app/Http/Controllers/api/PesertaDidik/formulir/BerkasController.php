@@ -6,7 +6,7 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\BerkasRequest;
+use App\Http\Requests\PesertaDidik\formulir\BerkasRequest;
 use App\Services\PesertaDidik\Formulir\BerkasService;
 
 class BerkasController extends Controller

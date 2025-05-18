@@ -6,10 +6,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Formulir\KhadamFormService;
-use App\Http\Requests\PesertaDidik\CreateKhadamRequest;
-use App\Http\Requests\PesertaDidik\KeluarKhadamRequest;
-use App\Http\Requests\PesertaDidik\PindahKhadamRequest;
-use App\Http\Requests\PesertaDidik\UpdateKhadamRequest;
+use App\Http\Requests\PesertaDidik\formulir\CreateKhadamRequest;
+use App\Http\Requests\PesertaDidik\formulir\KeluarKhadamRequest;
+use App\Http\Requests\PesertaDidik\formulir\PindahKhadamRequest;
+use App\Http\Requests\PesertaDidik\formulir\UpdateKhadamRequest;
 
 class KhadamFormController extends Controller
 {

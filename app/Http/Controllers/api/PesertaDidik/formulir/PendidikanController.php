@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\PendidikanRequest;
 use App\Services\PesertaDidik\Formulir\PendidikanService;
-use App\Http\Requests\PesertaDidik\CreatePendidikanRequest;
-use App\Http\Requests\PesertaDidik\KeluarPendidikanRequest;
-use App\Http\Requests\PesertaDidik\PindahPendidikanRequest;
-use App\Http\Requests\PesertaDidik\UpdatePendidikanRequest;
+use App\Http\Requests\PesertaDidik\formulir\CreatePendidikanRequest;
+use App\Http\Requests\PesertaDidik\formulir\KeluarPendidikanRequest;
+use App\Http\Requests\PesertaDidik\formulir\PindahPendidikanRequest;
+use App\Http\Requests\PesertaDidik\formulir\UpdatePendidikanRequest;
 
 class PendidikanController extends Controller
 {

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UpdatePendidikanRequest extends FormRequest
+class WargaPesantrenRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,16 +26,12 @@ class UpdatePendidikanRequest extends FormRequest
     {
         $id = $this->route('id');
         return [
-            'no_induk' => [
-                'nullable',
+            'niup' => [
+                'required',
                 'string',
-                Rule::unique('riwayat_pendidikan', 'no_induk')->ignore($id)
+                Rule::unique('warga_pesantren', 'niup')->ignore($id),  // Mengabaikan ID yang sedang diedit
             ],
-            'lembaga_id' => 'required|exists:lembaga,id',
-            'jurusan_id' => 'nullable|exists:jurusan,id',
-            'kelas_id' => 'nullable|exists:kelas,id',
-            'rombel_id' => 'nullable|exists:rombel,id',
-            'tanggal_masuk' => 'required|date',
+            'status' => 'required|boolean',
         ];
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;

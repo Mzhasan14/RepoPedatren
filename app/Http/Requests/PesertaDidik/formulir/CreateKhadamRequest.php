@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class WargaPesantrenRequest extends FormRequest
+class CreateKhadamRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,14 +23,9 @@ class WargaPesantrenRequest extends FormRequest
      */
     public function rules(): array
     {
-        $id = $this->route('id');
         return [
-            'niup' => [
-                'required',
-                'string',
-                Rule::unique('warga_pesantren', 'niup')->ignore($id),  // Mengabaikan ID yang sedang diedit
-            ],
-            'status' => 'required|boolean',
+            'keterangan'     => 'required|string|max:255',
+            'tanggal_mulai'  => 'required|date',
         ];
     }
 

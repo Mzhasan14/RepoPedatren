@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PindahPendidikanRequest extends FormRequest
+class CreateDomisiliRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,11 +24,10 @@ class PindahPendidikanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id' => 'required|exists:lembaga,id',
-            'jurusan_id' => 'nullable|exists:jurusan,id',
-            'kelas_id' => 'nullable|exists:kelas,id',
-            'rombel_id' => 'nullable|exists:rombel,id',
-            'tanggal_masuk' => 'required|date'
+            'wilayah_id' => 'required|exists:wilayah,id',
+            'blok_id' => 'required|exists:blok,id',
+            'kamar_id' => 'required|exists:kamar,id',
+            'tanggal_masuk' => 'required|date',
         ];
     }
 

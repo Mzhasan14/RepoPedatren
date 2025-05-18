@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\PesertaDidik;
 
 use Illuminate\Http\Request;
-use App\Exports\PesertaDidik\KhadamExport;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PesertaDidik\KhadamExport;
 use App\Services\PesertaDidik\KhadamService;
+use App\Http\Requests\PesertaDidik\CreateKhadamRequest;
 use App\Services\PesertaDidik\Filters\FilterKhadamService;
 
 class KhadamController extends Controller
@@ -55,6 +57,26 @@ class KhadamController extends Controller
             'total_pages'  => $results->lastPage(),
             'data'         => $formatted,
         ]);
+    }
+
+    public function store(CreateKhadamRequest $request)
+    {
+        try {
+            // Simpan peserta didik dengan menggunakan service
+            $khadamService = $this->khadamService->store($request->validated());
+
+            // Response sukses dengan status 201
+            return response()->json([
+                'message' => 'Khadam berhasil disimpan.',
+                'data' => $khadamService
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Tangani error umum (misalnya database, validasi, dll)
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menyimpan data.',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function khadamExport()

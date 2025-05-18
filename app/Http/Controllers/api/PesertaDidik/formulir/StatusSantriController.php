@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\StatusSantriRequest;
+use App\Http\Requests\PesertaDidik\formulir\StatusSantriRequest;
 use App\Services\PesertaDidik\Formulir\StatusSantriService;
 
 class StatusSantriController extends Controller

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\api\PesertaDidik\formulir;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\WargaPesantrenRequest;
+use App\Http\Requests\PesertaDidik\formulir\WargaPesantrenRequest;
 use App\Services\PesertaDidik\Formulir\WargaPesantrenService;
 
 class WargaPesantrenController extends Controller

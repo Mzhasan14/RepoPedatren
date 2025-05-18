@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PindahDomisiliRequest extends FormRequest
+class UpdatePendidikanRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +24,18 @@ class PindahDomisiliRequest extends FormRequest
      */
     public function rules(): array
     {
+        $id = $this->route('id');
         return [
-            'wilayah_id' => 'required|exists:wilayah,id',
-            'blok_id' => 'required|exists:blok,id',
-            'kamar_id' => 'required|exists:kamar,id',
-            'tanggal_masuk' => 'required|date'
+            'no_induk' => [
+                'nullable',
+                'string',
+                Rule::unique('riwayat_pendidikan', 'no_induk')->ignore($id)
+            ],
+            'lembaga_id' => 'required|exists:lembaga,id',
+            'jurusan_id' => 'nullable|exists:jurusan,id',
+            'kelas_id' => 'nullable|exists:kelas,id',
+            'rombel_id' => 'nullable|exists:rombel,id',
+            'tanggal_masuk' => 'required|date',
         ];
     }
 

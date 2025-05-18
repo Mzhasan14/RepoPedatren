@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class BerkasRequest extends FormRequest
+class KeluarKhadamRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,11 +21,10 @@ class BerkasRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules()
+    public function rules(): array
     {
         return [
-            'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
-            'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'tanggal_akhir'  => 'nullable|date|after_or_equal:tanggal_mulai',
         ];
     }
 

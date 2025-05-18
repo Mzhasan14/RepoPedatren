@@ -6,12 +6,11 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\DomisiliRequest;
 use App\Services\PesertaDidik\Formulir\DomisiliService;
-use App\Http\Requests\PesertaDidik\CreateDomisiliRequest;
-use App\Http\Requests\PesertaDidik\KeluarDomisiliRequest;
-use App\Http\Requests\PesertaDidik\PindahDomisiliRequest;
-use App\Http\Requests\PesertaDidik\UpdateDomisiliRequest;
+use App\Http\Requests\PesertaDidik\formulir\CreateDomisiliRequest;
+use App\Http\Requests\PesertaDidik\formulir\KeluarDomisiliRequest;
+use App\Http\Requests\PesertaDidik\formulir\PindahDomisiliRequest;
+use App\Http\Requests\PesertaDidik\formulir\UpdateDomisiliRequest;
 
 class DomisiliController extends Controller
 {

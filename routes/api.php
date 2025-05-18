@@ -92,7 +92,6 @@ Route::middleware(['auth:sanctum', 'role:admin', 'log.activity'])
 Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Biodata
     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
-    Route::post('/biodata', [BiodataController::class, 'store']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
 
     // Santri
@@ -162,16 +161,14 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy']);
 
     // Catatan Santri
-    Route::get('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'index']);
-    Route::get('/{id}/catatan-afektif/edit',[AdministrasiCatatanAfektifController::class,'edit']);
-    Route::put('/{id}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'update']);
-    Route::post('/{BioId}/catatan-afektif',[AdministrasiCatatanAfektifController::class,'store']);
-    Route::get('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'index']);
-    Route::get('/{id}/catatan-kognitif/edit',[CatatanKognitifController::class,'edit']);
-    Route::put('/{id}/catatan-kognitif',[CatatanKognitifController::class,'update']);
-    Route::post('/{BioId}/catatan-kognitif',[CatatanKognitifController::class,'store']);
-
-
+    Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);
+    Route::get('/{id}/catatan-afektif/edit', [AdministrasiCatatanAfektifController::class, 'edit']);
+    Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
+    Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
+    Route::get('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'index']);
+    Route::get('/{id}/catatan-kognitif/edit', [CatatanKognitifController::class, 'edit']);
+    Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
+    Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
 });
 
 Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum', 'role:admin|superadmin');
@@ -215,6 +212,9 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     // Create Anak Pegawai
     Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
 
+    // Create Khadam
+    Route::post('/khadam', [KhadamController::class, 'store']);
+
     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
 
@@ -246,34 +246,34 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
     Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
-    
+
     // lembaga
-    Route::get('lembaga',[LembagaController::class,'index']);
-    Route::post('lembaga',[LembagaController::class,'store']);
-    Route::get('{id}/lembaga/edit',[LembagaController::class,'edit']);
-    Route::put('{id}/lembaga',[LembagaController::class,'update']);
-    Route::delete('{id}/lembaga',[LembagaController::class,'destroy']);
+    Route::get('lembaga', [LembagaController::class, 'index']);
+    Route::post('lembaga', [LembagaController::class, 'store']);
+    Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
+    Route::put('{id}/lembaga', [LembagaController::class, 'update']);
+    Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
 
     //golongan
-    Route::get('golongan',[GolonganController::class,'index']);
-    Route::post('golongan',[GolonganController::class,'store']);
-    Route::get('{id}/golongan/edit',[GolonganController::class,'edit']);
-    Route::put('{id}/golongan',[GolonganController::class,'update']);
-    Route::delete('{id}/golongan',[GolonganController::class,'destroy']);
+    Route::get('golongan', [GolonganController::class, 'index']);
+    Route::post('golongan', [GolonganController::class, 'store']);
+    Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
+    Route::put('{id}/golongan', [GolonganController::class, 'update']);
+    Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
 
     //kategori golongan
-    Route::get('kategori-golongan',[KategoriGolonganController::class,'index']);
-    Route::post('kategori-golongan',[KategoriGolonganController::class,'store']);
-    Route::get('{id}/kategori-golongan/edit',[KategoriGolonganController::class,'edit']);
-    Route::put('{id}/kategori-golongan',[KategoriGolonganController::class,'update']);
-    Route::delete('{id}/kategori-golongan',[KategoriGolonganController::class,'destroy']);
+    Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
+    Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
+    Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
+    Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
+    Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
 
     //golongan Jabatan
-    Route::get('golongan-jabatan',[GolonganJabatanController::class,'index']);
-    Route::post('golongan-jabatan',[GolonganJabatanController::class,'store']);
-    Route::get('{id}/golongan-jabatan/edit',[GolonganJabatanController::class,'edit']);
-    Route::put('{id}/golongan-jabatan',[GolonganJabatanController::class,'update']);
-    Route::delete('{id}/golongan-jabatan',[GolonganJabatanController::class,'destroy']);
+    Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
+    Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
+    Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
+    Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
+    Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
 });
 
 Route::prefix('data-pokok')->group(function () {
@@ -358,7 +358,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('pegawai/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::get('/walikelas/{id}', [DetailKepegawaianController::class, 'getAllKepegawaian']);
     Route::post('pegawai', [PegawaiController::class, 'store']);
-
 });
 
 Route::prefix('dropdown')->group(function () {

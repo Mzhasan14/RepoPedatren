@@ -10,51 +10,51 @@ use Illuminate\Support\Facades\Auth;
 class BiodataService
 {
 
-    public function store(array $input): array
-    {
-        $userId = Auth::id();
-        if (! $userId) {
-            return [
-                'status'  => false,
-                'message' => 'Pengguna tidak terautentikasi.',
-            ];
-        }
+    // public function store(array $input): array
+    // {
+    //     $userId = Auth::id();
+    //     if (! $userId) {
+    //         return [
+    //             'status'  => false,
+    //             'message' => 'Pengguna tidak terautentikasi.',
+    //         ];
+    //     }
 
-        return DB::transaction(function () use ($input, $userId) {
-            $biodata = Biodata::create([
-                'no_passport'                  => $input['no_passport']                  ?? null,
-                'nik'                          => $input['nik']                          ?? null,
-                'nama'                         => $input['nama'],
-                'jenis_kelamin'                => $input['jenis_kelamin']               ?? null,
-                'tanggal_lahir'                => isset($input['tanggal_lahir'])
-                    ? Carbon::parse($input['tanggal_lahir'])
-                    : null,
-                'tempat_lahir'                 => $input['tempat_lahir']                ?? null,
-                'anak_keberapa'                => $input['anak_keberapa']               ?? null,
-                'dari_saudara'                 => $input['dari_saudara']                ?? null,
-                'tinggal_bersama'              => $input['tinggal_bersama']             ?? null,
-                'jenjang_pendidikan_terakhir'  => $input['jenjang_pendidikan_terakhir'] ?? null,
-                'nama_pendidikan_terakhir'     => $input['nama_pendidikan_terakhir']    ?? null,
-                'no_telepon'                   => $input['no_telepon'],
-                'no_telepon_2'                 => $input['no_telepon_2']                ?? null,
-                'email'                        => $input['email'],
-                'negara_id'                    => $input['negara_id']                   ?? null,
-                'provinsi_id'                  => $input['provinsi_id']                 ?? null,
-                'kabupaten_id'                 => $input['kabupaten_id']                ?? null,
-                'kecamatan_id'                 => $input['kecamatan_id']                ?? null,
-                'jalan'                        => $input['jalan']                       ?? null,
-                'kode_pos'                     => $input['kode_pos']                    ?? null,
-                'wafat'                        => $input['wafat']                       ?? false,
-                'status'                       => true,
-                'created_by'                   => $userId,
-            ]);
+    //     return DB::transaction(function () use ($input, $userId) {
+    //         $biodata = Biodata::create([
+    //             'no_passport'                  => $input['no_passport']                  ?? null,
+    //             'nik'                          => $input['nik']                          ?? null,
+    //             'nama'                         => $input['nama'],
+    //             'jenis_kelamin'                => $input['jenis_kelamin']               ?? null,
+    //             'tanggal_lahir'                => isset($input['tanggal_lahir'])
+    //                 ? Carbon::parse($input['tanggal_lahir'])
+    //                 : null,
+    //             'tempat_lahir'                 => $input['tempat_lahir']                ?? null,
+    //             'anak_keberapa'                => $input['anak_keberapa']               ?? null,
+    //             'dari_saudara'                 => $input['dari_saudara']                ?? null,
+    //             'tinggal_bersama'              => $input['tinggal_bersama']             ?? null,
+    //             'jenjang_pendidikan_terakhir'  => $input['jenjang_pendidikan_terakhir'] ?? null,
+    //             'nama_pendidikan_terakhir'     => $input['nama_pendidikan_terakhir']    ?? null,
+    //             'no_telepon'                   => $input['no_telepon'],
+    //             'no_telepon_2'                 => $input['no_telepon_2']                ?? null,
+    //             'email'                        => $input['email'],
+    //             'negara_id'                    => $input['negara_id']                   ?? null,
+    //             'provinsi_id'                  => $input['provinsi_id']                 ?? null,
+    //             'kabupaten_id'                 => $input['kabupaten_id']                ?? null,
+    //             'kecamatan_id'                 => $input['kecamatan_id']                ?? null,
+    //             'jalan'                        => $input['jalan']                       ?? null,
+    //             'kode_pos'                     => $input['kode_pos']                    ?? null,
+    //             'wafat'                        => $input['wafat']                       ?? false,
+    //             'status'                       => true,
+    //             'created_by'                   => $userId,
+    //         ]);
 
-            return [
-                'status' => true,
-                'data'   => $biodata,
-            ];
-        });
-    }
+    //         return [
+    //             'status' => true,
+    //             'data'   => $biodata,
+    //         ];
+    //     });
+    // }
 
     public function show(string $bioId): array
     {

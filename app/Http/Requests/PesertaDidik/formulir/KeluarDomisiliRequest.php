@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UpdateKhadamRequest extends FormRequest
+class KeluarDomisiliRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +24,11 @@ class UpdateKhadamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'keterangan'     => 'required|string|max:255',
-            'tanggal_mulai'  => 'required|date',
+            'tanggal_keluar' => 'required|date',
         ];
     }
 
-    protected function failedValidation(Validator $validator)
+      protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 

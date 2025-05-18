@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class KeluarKhadamRequest extends FormRequest
+class KeluarPendidikanRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,7 +24,8 @@ class KeluarKhadamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal_akhir'  => 'nullable|date|after_or_equal:tanggal_mulai',
+            'status' => 'required|in:do,berhenti,cuti,alumni,nonaktif',
+            'tanggal_keluar' => 'required|date',
         ];
     }
 

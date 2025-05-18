@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class KeluarDomisiliRequest extends FormRequest
+class UpdateDomisiliRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,11 +24,14 @@ class KeluarDomisiliRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal_keluar' => 'required|date',
+            'wilayah_id' => 'required|exists:wilayah,id',
+            'blok_id' => 'required|exists:blok,id',
+            'kamar_id' => 'required|exists:kamar,id',
+            'tanggal_masuk' => 'required|date',
         ];
     }
 
-      protected function failedValidation(Validator $validator)
+    protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 

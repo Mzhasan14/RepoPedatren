@@ -1,14 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StatusSantriRequest extends FormRequest
+class BerkasRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,19 +21,11 @@ class StatusSantriRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
-        $id = $this->route('id');
-        $biodataId = DB::table('santri')->where('id', $id)->value('id');
         return [
-            'nis' => [
-                'required',
-                'string',
-                Rule::unique('santri', 'nis')->ignore($biodataId),
-            ],
-            'tanggal_masuk' => 'required|date',
-            'tanggal_keluar' => 'nullable|date',
-            'status' => 'nullable'
+            'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
+            'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
     }
 

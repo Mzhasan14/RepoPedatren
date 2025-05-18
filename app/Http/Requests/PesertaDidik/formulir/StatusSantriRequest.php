@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik;
+namespace App\Http\Requests\PesertaDidik\formulir;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class CreateDomisiliRequest extends FormRequest
+class StatusSantriRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +25,17 @@ class CreateDomisiliRequest extends FormRequest
      */
     public function rules(): array
     {
+        $id = $this->route('id');
+        $biodataId = DB::table('santri')->where('id', $id)->value('id');
         return [
-            'wilayah_id' => 'required|exists:wilayah,id',
-            'blok_id' => 'required|exists:blok,id',
-            'kamar_id' => 'required|exists:kamar,id',
+            'nis' => [
+                'required',
+                'string',
+                Rule::unique('santri', 'nis')->ignore($biodataId),
+            ],
             'tanggal_masuk' => 'required|date',
+            'tanggal_keluar' => 'nullable|date',
+            'status' => 'nullable'
         ];
     }
 
