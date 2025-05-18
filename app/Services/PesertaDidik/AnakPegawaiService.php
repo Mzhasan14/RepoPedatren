@@ -88,6 +88,7 @@ class AnakPegawaiService
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->groupBy([
+                'b.id',
                 's.id',
                 DB::raw("COALESCE(b.nik, b.no_passport)"),
                 's.nis',
