@@ -60,6 +60,7 @@ use App\Http\Controllers\Api\Wilayah\{
     DropdownWilayahController
 };
 use App\Http\Controllers\Api\Pendidikan\{
+    DropdownPendidikanController,
     LembagaController,
     JurusanController,
     KelasController,
@@ -408,6 +409,12 @@ Route::prefix('dropdown')->group(function () {
 
     // kewilayahan
     Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-    Route::get('/wilayah/{wilayah}/blok', [DropdownWilayahController::class, 'getBlok']);
-    Route::get('/blok/{blok}/kamar', [DropdownWilayahController::class, 'getKamar']);
+    Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
+    Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
+
+    // Pendidikan
+    Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
+    Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
+    Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
+    Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
 });
