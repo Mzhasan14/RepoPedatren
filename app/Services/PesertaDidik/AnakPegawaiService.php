@@ -108,105 +108,6 @@ class AnakPegawaiService
             ->distinct()
             ->latest();
     }
-    // public function getAllAnakPegawai(Request $request)
-    // {
-    //     // 1) Ambil ID untuk jenis berkas "Pas foto"
-    //     $pasFotoId = DB::table('jenis_berkas')
-    //         ->where('nama_jenis_berkas', 'Pas foto')
-    //         ->value('id');
-
-    //     // 2) Subquery: foto terakhir per biodata
-    //     $fotoLast = DB::table('berkas')
-    //         ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-    //         ->where('jenis_berkas_id', $pasFotoId)
-    //         ->groupBy('biodata_id');
-
-    //     // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
-    //     $wpLast = DB::table('warga_pesantren')
-    //         ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-    //         ->where('status', true)
-    //         ->groupBy('biodata_id');
-
-    //     return DB::table('santri AS s')
-    //         ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-    //         ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
-    //         ->join('keluarga AS parent_k', function ($j) {
-    //             $j->on('parent_k.no_kk', '=', 'k.no_kk')
-    //                 ->whereColumn('parent_k.id_biodata', '!=', 'k.id_biodata');
-    //         })
-    //         ->join('orang_tua_wali AS otw', 'otw.id_biodata', '=', 'parent_k.id_biodata')
-    //         ->join('pegawai AS p', function ($j) {
-    //             $j->on('p.biodata_id', '=', 'otw.id_biodata')
-    //                 ->where('p.status_aktif', 'aktif');
-    //         })
-    //         ->join('biodata AS bp', 'bp.id', '=', 'p.biodata_id')
-    //         ->leftJoin('riwayat_pendidikan AS rp', function ($j) {
-    //             $j->on('s.id', '=', 'rp.santri_id')
-    //                 ->where('rp.status', 'aktif');
-    //         })
-    //         ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-    //         ->leftJoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
-    //         ->leftJoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
-    //         ->leftJoin('riwayat_domisili AS rd', function ($j) {
-    //             $j->on('s.id', '=', 'rd.santri_id')
-    //                 ->where('rd.status', 'aktif');
-    //         })
-    //         ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-    //         ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-    //         ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-    //         ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-    //         ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-    //         ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-    //         ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-    //         ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-    //         ->where(function ($q) {
-    //             $q->where('s.status', 'aktif')
-    //                 ->orWhere('rp.status', 'aktif');
-    //         })
-    //         ->where(fn($q) => $q->whereNull('b.deleted_at')
-    //             ->whereNull('s.deleted_at'))
-    //         ->select([
-    //             'b.id as biodata_id',
-    //             's.id',
-    //             DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
-    //             's.nis',
-    //             'b.nama',
-    //             'wp.niup',
-    //             'l.nama_lembaga',
-    //             'j.nama_jurusan',
-    //             'kls.nama_kelas',
-    //             'w.nama_wilayah',
-    //             'km.nama_kamar',
-    //             'bl.nama_blok',
-    //             DB::raw("GROUP_CONCAT(DISTINCT bp.nama SEPARATOR '/ ') AS nama_ortu"),
-    //             'kb.nama_kabupaten AS kota_asal',
-    //             's.created_at',
-    //             DB::raw("GREATEST(
-    //                 s.updated_at,
-    //                 COALESCE(rp.updated_at, s.updated_at),
-    //                 COALESCE(rd.updated_at, s.updated_at)
-    //             ) AS updated_at"),
-    //             DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-    //         ])
-    //         ->groupBy([
-    //             's.id',
-    //             DB::raw("COALESCE(b.nik, b.no_passport)"),
-    //             's.nis',
-    //             'b.nama',
-    //             'wp.niup',
-    //             'l.nama_lembaga',
-    //             'j.nama_jurusan',
-    //             'kls.nama_kelas',
-    //             'w.nama_wilayah',
-    //             'km.nama_kamar',
-    //             'bl.nama_blok',
-    //             'kb.nama_kabupaten',
-    //             's.created_at',
-    //             DB::raw("GREATEST(s.updated_at, COALESCE(rp.updated_at, s.updated_at), COALESCE(rd.updated_at, s.updated_at))"),
-    //             DB::raw("COALESCE(br.file_path, 'default.jpg')"),
-    //         ])
-    //         ->latest();
-    // }
 
     public function formatData($results)
     {
@@ -257,7 +158,7 @@ class AnakPegawaiService
             $nik = $data['nik'] ?? null;
             $existingBiodata = $nik ? DB::table('biodata')->where('nik', $nik)->first() : null;
 
-            // Validasi: jika sudah ada biodata, cek relasi aktif
+            // Validasi: jika sudah ada biodata, cek santri aktif
             if ($existingBiodata) {
                 $santriAktif = DB::table('santri')
                     ->where('biodata_id', $existingBiodata->id)
@@ -265,12 +166,7 @@ class AnakPegawaiService
                     ->first();
 
                 if ($santriAktif) {
-                    throw ValidationException::withMessages([
-                        'santri' => ['Santri ini masih memiliki status aktif. Tidak dapat menambahkan santri baru.'],
-                    ]);
-                }
-
-                if ($santriAktif) {
+                    // Cek pendidikan aktif
                     $hasActivePendidikan = DB::table('riwayat_pendidikan')
                         ->where('santri_id', $santriAktif->id)
                         ->where('status', 'aktif')
@@ -282,6 +178,7 @@ class AnakPegawaiService
                         ]);
                     }
 
+                    // Cek domisili aktif
                     $hasActiveDomisili = DB::table('riwayat_domisili')
                         ->where('santri_id', $santriAktif->id)
                         ->where('status', 'aktif')
@@ -292,8 +189,14 @@ class AnakPegawaiService
                             'riwayat_domisili' => ['Santri ini masih memiliki riwayat domisili yang aktif.'],
                         ]);
                     }
+
+                    // Jika santri aktif tapi tidak ada riwayat aktif, tetap tolak pendaftaran baru
+                    throw ValidationException::withMessages([
+                        'santri' => ['Santri ini masih memiliki status aktif. Tidak dapat menambahkan santri baru.'],
+                    ]);
                 }
             }
+
 
             $biodataData = [
                 'nama'                         => $data['nama'],
@@ -518,6 +421,7 @@ class AnakPegawaiService
                             'tanggal_lahir' => $data['tanggal_lahir_wali'] ?? null,
                             'no_telepon'    => $data['no_telepon_wali'] ?? null,
                             'status'        => true,
+                            'updated_by'    => $userId,
                             'updated_at'    => $now,
                         ]);
                     } else {
