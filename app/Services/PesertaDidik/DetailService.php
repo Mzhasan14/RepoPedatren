@@ -712,12 +712,12 @@ class DetailService
                 'pengajar.tahun_akhir',
                 'materi_ajar.tahun_masuk as tanggal_masuk',
                 'materi_ajar.tahun_akhir as tanggal_akhir',
+                DB::raw("DATE_FORMAT(pengajar.tahun_masuk, '%e %M %Y') AS sejak"),
                 DB::raw("
                     CONCAT(
-                        'Sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%e %M %Y %H:%i:%s'),
-                        ' sampai ',
-                        IFNULL(DATE_FORMAT(pengajar.tahun_akhir, '%e %M %Y %H:%i:%s'), 'saat ini')
-                    ) AS keterangan
+                        TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, IFNULL(pengajar.tahun_akhir, NOW())),
+                        ' Tahun'
+                    ) AS masa_kerja
                 "),
                 DB::raw("
                     CONCAT(
@@ -749,7 +749,8 @@ class DetailService
                         'pekerjaan_kontrak' => $item->pekerjaan_kontrak ?? '-',
                         'kategori_golongan' => $item->nama_kategori_golongan ?? '-',
                         'nama_golongan'     => $item->nama_golongan ?? '-',
-                        'masa_kerja'        => $item->keterangan ?? '-',
+                        'sejak'             => $item->sejak ?? '-',
+                        'masa_kerja'        => $item->masa_kerja ?? '-',
                     ],
                     'materi' => [
                         'lembaga'           => $item->nama_lembaga ?? '-',
