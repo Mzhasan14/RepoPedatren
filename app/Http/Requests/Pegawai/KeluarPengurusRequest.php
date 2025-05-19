@@ -24,7 +24,7 @@ class KeluarPengurusRequest extends FormRequest
     public function rules(): array
     {
         return [
-                        'tanggal_akhir' => 'required|date',
+            'tanggal_akhir' => 'required|date',
         ];
     }
     protected function failedValidation(Validator $validator)

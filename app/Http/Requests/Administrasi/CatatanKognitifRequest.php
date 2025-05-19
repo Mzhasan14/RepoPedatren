@@ -24,30 +24,22 @@ class CatatanKognitifRequest extends FormRequest
      */
     public function rules(): array
     {
-        $nilaiRules = ['nullable', Rule::in(['A', 'B', 'C', 'D', 'E'])];
+
 
         return [
-            'id_wali_asuh' => 'nullable|exists:wali_asuh,id',
-            
-            // Validasi nilai
-            'kebahasaan_nilai' => $nilaiRules,
-            'baca_kitab_kuning_nilai' => $nilaiRules,
-            'hafalan_tahfidz_nilai' => $nilaiRules,
-            'furudul_ainiyah_nilai' => $nilaiRules,
-            'tulis_alquran_nilai' => $nilaiRules,
-            'baca_alquran_nilai' => $nilaiRules,
-            
-            // Validasi tindak lanjut
-            'kebahasaan_tindak_lanjut' => 'nullable|string|max:500',
-            'baca_kitab_kuning_tindak_lanjut' => 'nullable|string|max:500',
-            'hafalan_tahfidz_tindak_lanjut' => 'nullable|string|max:500',
-            'furudul_ainiyah_tindak_lanjut' => 'nullable|string|max:500',
-            'tulis_alquran_tindak_lanjut' => 'nullable|string|max:500',
-            'baca_alquran_tindak_lanjut' => 'nullable|string|max:500',
-            
-            // Validasi tanggal
-            'tanggal_buat' => 'nullable|date|before_or_equal:today',
-            'tanggal_selesai' => 'nullable|date|after:tanggal_buat',
+            'kebahasaan_nilai'                 => 'required|string|max:255',
+            'kebahasaan_tindak_lanjut'         => 'nullable|string|max:1000',
+            'baca_kitab_kuning_nilai'          => 'required|string|max:255',
+            'baca_kitab_kuning_tindak_lanjut'  => 'nullable|string|max:1000',
+            'hafalan_tahfidz_nilai'            => 'required|string|max:255',
+            'hafalan_tahfidz_tindak_lanjut'    => 'nullable|string|max:1000',
+            'furudul_ainiyah_nilai'            => 'required|string|max:255',
+            'furudul_ainiyah_tindak_lanjut'    => 'nullable|string|max:1000',
+            'tulis_alquran_nilai'              => 'required|string|max:255',
+            'tulis_alquran_tindak_lanjut'      => 'nullable|string|max:1000',
+            'baca_alquran_nilai'               => 'required|string|max:255',
+            'baca_alquran_tindak_lanjut'       => 'nullable|string|max:1000',
+            'tanggal_buat'                     => 'nullable|date',
         ];
     }
     protected function failedValidation(Validator $validator)
