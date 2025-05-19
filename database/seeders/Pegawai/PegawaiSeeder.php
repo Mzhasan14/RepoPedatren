@@ -14,7 +14,7 @@ class PegawaiSeeder extends Seeder
     public function run(): void
     {
 
-        (new PegawaiFactory())->count(25)->create();
+        (new PegawaiFactory())->count(250)->create();
         
     }
 }

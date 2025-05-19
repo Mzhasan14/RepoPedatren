@@ -8,6 +8,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class AuthService
@@ -49,12 +50,27 @@ class AuthService
         return $user;
     }
 
-    public function login(string $email, string $password): User
+    public function login(string $email, string $password): array
     {
-        $user = User::where('email', $email)->firstOrFail();
+
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            return [
+                'success' => false,
+                'message' => 'User not found.',
+                'data' => null,
+                'status' => 200,
+            ];
+        }
 
         if (! Hash::check($password, $user->password)) {
-            abort(422, 'Credentials mismatch.');
+            return [
+                'success' => false,
+                'message' => 'Incorrect password.',
+                'data' => null,
+                'status' => 200,
+            ];
         }
 
         activity('auth')
@@ -69,7 +85,12 @@ class AuthService
             ])
             ->log("Pengguna '{$user->email}' berhasil login");
 
-        return $user;
+        return [
+            'success' => true,
+            'message' => 'Login successful.',
+            'data'    => $user, // <-- ini harus instance of User
+            'status'  => 200,
+        ];
     }
 
     public function logout($token)
