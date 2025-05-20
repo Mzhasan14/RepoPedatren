@@ -146,7 +146,11 @@ class PegawaiService
             "pengurus" => $item->pengurus ? true : false,
             "karyawan" => $item->karyawan ? true : false,
             "pengajar" => $item->pengajar ? true : false,
-            "foto_profil" => $item->foto_profil ? asset('storage/' . $item->foto_profil) : null,
+            'foto_profil' => $item->foto_profil 
+            ? asset($item->foto_profil) 
+            : null,
+
+            // "foto_profil" => $item->foto_profil ? asset('storage/' . $item->foto_profil) : null,
         ]);
     }
 
