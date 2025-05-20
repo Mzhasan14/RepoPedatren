@@ -47,7 +47,7 @@ use App\Http\Controllers\Api\Alamat\{
     KabupatenController,
     KecamatanController
 };
-use App\Http\Controllers\api\Biometric\BiometricScanController;
+use App\Http\Controllers\api\Biometric\BiometricRegistrationController;
 use App\Http\Controllers\Api\Kewaliasuhan\{
     GrupWaliAsuhController,
     WaliasuhController,
@@ -81,7 +81,7 @@ use App\Http\Controllers\Api\Pegawai\{
 };
 
 // Endpoint menampilkan log
-Route::middleware(['auth:sanctum', 'role:admin', 'log.activity'])
+Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
     ->get('activity-logs', function () {
         return \Spatie\Activitylog\Models\Activity::with('causer', 'subject')
             ->where('log_name', 'api')
@@ -212,8 +212,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Biometric
 Route::prefix('biometric')->group(function () {
-    Route::post('/register', [BiometricScanController::class, 'register']);
-    Route::post('/scan', [BiometricScanController::class, 'scan']);
+    Route::post('register-profile', [BiometricRegistrationController::class, 'registerProfile']);
+    Route::post('add-finger', [BiometricRegistrationController::class, 'addFingerPosition']);
+    Route::post('store-templates', [BiometricRegistrationController::class, 'storeFingerprintTemplates']);
+    Route::get('santri/{santri_id}/templates', [BiometricRegistrationController::class, 'getTemplatesBySantri']);
 });
 
 // Export

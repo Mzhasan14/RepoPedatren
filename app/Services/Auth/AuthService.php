@@ -88,7 +88,7 @@ class AuthService
         return [
             'success' => true,
             'message' => 'Login successful.',
-            'data'    => $user, // <-- ini harus instance of User
+            'data'    => $user,
             'status'  => 200,
         ];
     }
