@@ -15,6 +15,7 @@ class PengunjungMahromService
     public function getAllPengunjung(Request $request)
     {
         return DB::table('pengunjung_mahrom as pm')
+            ->join('hubungan_keluarga as hk', 'pm.hubungan_id', 'hk.id')
             ->join('biodata as bp', 'pm.biodata_id', 'bp.id')
             ->join('santri as s', 'pm.santri_id', 's.id')
             ->join('biodata as bs', 's.biodata_id', 'bs.id')
@@ -29,6 +30,7 @@ class PengunjungMahromService
                 'pm.id',
                 'w.nama_wilayah',
                 'bp.nama as nama_pengunjung',
+                'hk.nama_status',
                 'bs.nama as nama_santri',
                 'bl.nama_blok',
                 'km.nama_kamar',
@@ -46,6 +48,7 @@ class PengunjungMahromService
             'id'                => $item->id,
             'wilayah'       => $item->nama_wilayah,
             'nama_pengunjung'     => $item->nama_pengunjung,
+            'status'     => $item->nama_status,
             'santri_dikunjungi'           => $item->nama_santri,
             'blok'         => $item->nama_blok ?? '-',
             'kamar'        => $item->nama_kamar ?? '-',
