@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Administrasi\{
     PerizinanController,
     PelanggaranController,
     DetailPerizinanController,
+    DetailPengunjungController,
     PengunjungMahromController,
 };
 use App\Http\Controllers\Api\PesertaDidik\{
@@ -337,6 +338,7 @@ Route::prefix('data-pokok')->group(function () {
 
     // Pengunjung mahrom
     Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
+    Route::get('/pengunjung/{id}', [DetailPengunjungController::class, 'getDetailPengunjung']);
 
 
     // 🚨 Administrasi
