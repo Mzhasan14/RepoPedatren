@@ -335,6 +335,10 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
     Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
 
+    // Pengunjung mahrom
+    Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
+
+
     // 🚨 Administrasi
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
     Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
