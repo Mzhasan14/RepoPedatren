@@ -90,6 +90,7 @@ class BiodataService
         // Update hanya data yang dikirimkan
         $biodata->no_passport                 = $input['no_passport'] ?? $biodata->no_passport;
         $biodata->nik                         = $input['nik'] ?? $biodata->nik;
+        $biodata->no_kk                         = $input['no_kk'] ?? $biodata->no_kk;
         $biodata->nama                        = $input['nama'] ?? $biodata->nama;
         $biodata->jenis_kelamin               = $input['jenis_kelamin'] ?? $biodata->jenis_kelamin;
         $biodata->tanggal_lahir               = isset($input['tanggal_lahir']) ? \Carbon\Carbon::parse($input['tanggal_lahir']) : $biodata->tanggal_lahir;

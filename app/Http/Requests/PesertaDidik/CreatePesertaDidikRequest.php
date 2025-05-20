@@ -33,9 +33,10 @@ class CreatePesertaDidikRequest extends FormRequest
             'kode_pos' => 'required|string|max:10',
             'nama' => 'required|string|max:100',
 
-            // Salah satu: NIK atau Passport harus diisi
-            'nik' => 'nullable|required_without:passport|digits:16',
-            'passport' => 'nullable|required_without:nik|string|max:20',
+            // Aturan fleksibel antara nik/no_kk dan passport
+            'nik' => 'nullable|required_without_all:passport|digits:16',
+            'no_kk' => 'nullable|required_without_all:passport|digits:16',
+            'passport' => 'nullable|required_without_all:nik,no_kk|string|max:20',
 
             'no_kk' => 'required|string|digits:16',
             'jenis_kelamin' => 'required|in:l,p',

@@ -33,6 +33,7 @@ class BiodataRequest extends FormRequest
                 'string',
                 Rule::unique('biodata', 'no_passport')->ignore($biodataId),
             ],
+            'no_kk' => 'required|string|digits:16',
             'nik' => [
                 'nullable',
                 'digits:16',
