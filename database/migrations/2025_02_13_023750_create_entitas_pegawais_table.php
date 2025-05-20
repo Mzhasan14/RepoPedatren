@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
+            $table->softDeletes();
             $table->timestamps();
         });
         Schema::create('golongan', function (Blueprint $table) {
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->boolean('status');
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('kategori_golongan_id')->references('id')->on('kategori_golongan')->onDelete('cascade');

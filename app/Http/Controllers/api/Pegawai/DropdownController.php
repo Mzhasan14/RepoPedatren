@@ -373,7 +373,7 @@ public function menuLembagaJurusanKelasRombel()
 
         public function menuKategoriGolonganAndGolongan()
         {
-            $query = KategoriGolongan::leftJoin('golongan','kategori_golongan.id','golongan.kategori_golongan_id')
+            $query = KategoriGolongan::leftJoin('golongan','kategori_golongan.id','=','golongan.kategori_golongan_id')
                                     ->select(
                                         'kategori_golongan.id as kategoriGolongan_id',
                                         'kategori_golongan.nama_kategori_golongan as kategoriGolongan_nama',
