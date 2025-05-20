@@ -7,21 +7,23 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\Administrasi\PengunjungMahromService;
 use App\Http\Requests\Administrasi\PengunjungMahromRequest;
+use App\Services\Administrasi\Filters\FilterPengunjungMahromService;
 
 class PengunjungMahromController extends Controller
 {
     private PengunjungMahromService $pengunjung;
-
-    public function __construct(PengunjungMahromService $pengunjung)
+    private FilterPengunjungMahromService $filter;
+    public function __construct(PengunjungMahromService $pengunjung, FilterPengunjungMahromService $filter)
     {
         $this->pengunjung = $pengunjung;
+        $this->filter = $filter;
     }
 
     public function getAllPengunjung(Request $request)
     {
         try {
             $query = $this->pengunjung->getAllPengunjung($request);
-            // $query = $this->filter->perizinanFilters($query, $request);
+            $query = $this->filter->pengunjungFilters($query, $request);
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
