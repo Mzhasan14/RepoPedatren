@@ -48,7 +48,10 @@ use App\Http\Controllers\Api\Alamat\{
     KabupatenController,
     KecamatanController
 };
-use App\Http\Controllers\api\Biometric\BiometricRegistrationController;
+use App\Http\Controllers\api\Biometric\{
+    BiometricRegistrationController,
+    BiometricScanController
+};
 use App\Http\Controllers\Api\Kewaliasuhan\{
     GrupWaliAsuhController,
     WaliasuhController,
@@ -217,6 +220,8 @@ Route::prefix('biometric')->group(function () {
     Route::post('add-finger', [BiometricRegistrationController::class, 'addFingerPosition']);
     Route::post('store-templates', [BiometricRegistrationController::class, 'storeFingerprintTemplates']);
     Route::get('santri/{santri_id}/templates', [BiometricRegistrationController::class, 'getTemplatesBySantri']);
+
+    Route::post('/scan', [BiometricScanController::class, 'scan']);
 });
 
 // Export
