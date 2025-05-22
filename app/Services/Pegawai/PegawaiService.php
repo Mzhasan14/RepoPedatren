@@ -160,7 +160,7 @@ class PegawaiService
 
         try {
             $isExisting = false;
-            $createNewEmployee = false;
+            $resultData = [];
 
             // Cek apakah NIK sudah terdaftar
             $existingBiodata = Biodata::where('nik', $input['nik'])->first();
@@ -168,85 +168,69 @@ class PegawaiService
             if ($existingBiodata) {
                 $isExisting = true;
 
-                // Cek apakah sudah terdaftar sebagai pegawai
-                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->first();
+                // Cek apakah sudah ada pegawai aktif
+                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->where('status_aktif', 'aktif')->first();
 
-            if ($existingPegawai) {
-                // Jika pegawai aktif, kembalikan error
-                if ($existingPegawai->status_aktif === 'aktif') {
+                if ($existingPegawai) {
                     return [
                         'status' => false,
                         'message' => 'Pegawai untuk biodata ini sudah ada dengan status aktif. Silahkan cek kembali di fitur Pegawai.',
                         'data' => ['pegawai' => $existingPegawai]
                     ];
                 }
-                
-                // Jika pegawai nonaktif, set flag untuk buat baru
-                $createNewEmployee = true;
 
-                    // Validasi untuk masing-masing role
-                    if (!empty($input['karyawan']) && Karyawan::where('pegawai_id', $existingPegawai->id)
-                        ->where('status_aktif', 'aktif')
-                        ->exists()) {
-                        throw ValidationException::withMessages([
-                            'karyawan' => ['Pegawai untuk data ini sudah ada dan masih memiliki status karyawan aktif.'],
-                        ]);
-                    }
+                $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)->latest()->first();
 
-                    if (!empty($input['pengajar']) && Pengajar::where('pegawai_id', $existingPegawai->id)
-                        ->where('status_aktif', 'aktif')
-                        ->exists()) {
-                        throw ValidationException::withMessages([
-                            'pengajar' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengajar aktif.'],
-                        ]);
-                    }
+                // Otomatis nonaktifkan role jika masih aktif
+if ($pegawaiNonaktif) {
+    $roleTables = [
+        'karyawan' => Karyawan::class,
+        'pengajar' => Pengajar::class,
+        'pengurus' => Pengurus::class,
+        'wali_kelas' => WaliKelas::class,
+    ];
 
-                    if (!empty($input['pengurus']) && Pengurus::where('pegawai_id', $existingPegawai->id)
-                        ->where('status_aktif', 'aktif')
-                        ->exists()) {
-                        throw ValidationException::withMessages([
-                            'pengurus' => ['Pegawai untuk data ini sudah ada dan masih memiliki status pengurus aktif.'],
-                        ]);
-                    }
+    foreach ($roleTables as $key => $model) {
+        if (!empty($input[$key])) {
+            $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
+                ->where('status_aktif', 'aktif')
+                ->first();
 
-                    if (!empty($input['wali_kelas']) && WaliKelas::where('pegawai_id', $existingPegawai->id)
-                        ->where('status_aktif', 'aktif')
-                        ->exists()) {
-                        throw ValidationException::withMessages([
-                            'wali_kelas' => ['Pegawai untuk data ini sudah ada dan masih memiliki status wali kelas aktif.'],
-                        ]);
+                    if ($role) {
+                        $dataUpdate = ['status_aktif' => 'tidak aktif'];
+                        
+                        // Tambah tanggal selesai / akhir sesuai role
+                        switch ($key) {
+                            case 'karyawan':
+                                $dataUpdate['tanggal_selesai'] = now();
+                                break;
+                            case 'pengajar':
+                                $dataUpdate['tahun_akhir'] = now();
+                                // Materi ajar juga harus diupdate
+                                MateriAjar::where('pengajar_id', $role->id)
+                                    ->where('status_aktif', 'aktif')
+                                    ->update([
+                                        'status_aktif' => 'tidak aktif',
+                                        'tahun_akhir' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                break;
+                            case 'pengurus':
+                                $dataUpdate['tanggal_akhir'] = now();
+                                break;
+                            case 'wali_kelas':
+                                $dataUpdate['periode_akhir'] = now();
+                                break;
+                        }
+
+                        $role->update($dataUpdate);
                     }
                 }
+            }
+        }
 
-                // Update biodata lama
-                $existingBiodata->update([
-                    'negara_id' => $input['negara_id'],
-                    'provinsi_id' => $input['provinsi_id'],
-                    'kabupaten_id' => $input['kabupaten_id'],
-                    'kecamatan_id' => $input['kecamatan_id'],
-                    'jalan' => $input['jalan'],
-                    'kode_pos' => $input['kode_pos'],
-                    'nama' => $input['nama'],
-                    'no_passport' => $input['no_passport'],
-                    'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
-                    'jenis_kelamin' => $input['jenis_kelamin'],
-                    'tempat_lahir' => $input['tempat_lahir'],
-                    'nik' => $input['nik'],
-                    'no_telepon' => $input['no_telepon'],
-                    'no_telepon_2' => $input['no_telepon_2'],
-                    'email' => $input['email'],
-                    'jenjang_pendidikan_terakhir' => $input['jenjang_pendidikan_terakhir'],
-                    'nama_pendidikan_terakhir' => $input['nama_pendidikan_terakhir'],
-                    'anak_keberapa' => $input['anak_keberapa'],
-                    'dari_saudara' => $input['dari_saudara'],
-                    'tinggal_bersama' => $input['tinggal_bersama'],
-                    'smartcard' => $input['smartcard'],
-                    'status' => 1,
-                    'wafat' => $input['wafat'],
-                    'created_by' => Auth::id(),
-                    'created_at' => now(),
-                ]);
                 $biodata = $existingBiodata;
+
             } else {
                 // Insert biodata baru
                 $biodata = Biodata::create([
@@ -279,27 +263,19 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan keluarga jika ada no_kk
+            // Simpan keluarga jika ada
             if (!empty($input['no_kk'])) {
                 Keluarga::updateOrCreate(
                     ['id_biodata' => $biodata->id],
-                    [
-                        'no_kk' => $input['no_kk'],
-                        'status' => 1,
-                        'created_by' => Auth::id(),
-                    ]
+                    ['no_kk' => $input['no_kk'], 'status' => 1, 'created_by' => Auth::id()]
                 );
             }
 
-            // Simpan warga pesantren jika ada niup
+            // Simpan warga pesantren jika ada
             if (!empty($input['niup'])) {
                 WargaPesantren::updateOrCreate(
                     ['biodata_id' => $biodata->id],
-                    [
-                        'niup' => $input['niup'],
-                        'status' => 1,
-                        'created_by' => Auth::id(),
-                    ]
+                    ['niup' => $input['niup'], 'status' => 1, 'created_by' => Auth::id()]
                 );
             }
 
@@ -322,22 +298,16 @@ class PegawaiService
                 }
             }
 
-            // Buat atau ambil pegawai
-            $pegawai  = $createNewEmployee 
-            ? Pegawai::create([
+            // Buat pegawai baru
+            $pegawai = Pegawai::create([
                 'biodata_id' => $biodata->id,
                 'status_aktif' => 'aktif',
                 'created_by' => Auth::id()
-              ]) : Pegawai::firstOrCreate(
-                ['biodata_id' => $biodata->id],
-                ['status_aktif' => 'aktif', 'created_by' => Auth::id()]
-            );
+            ]);
 
-            $resultData = [];
-
-            // Simpan karyawan jika ada
+            // Simpan karyawan
             if (!empty($input['karyawan'])) {
-                $karyawan = Karyawan::create([
+                $resultData['karyawan'] = Karyawan::create([
                     'pegawai_id' => $pegawai->id,
                     'golongan_jabatan_id' => $input['golongan_jabatan_id_karyawan'] ?? null,
                     'lembaga_id' => $input['lembaga_id_karyawan'] ?? null,
@@ -347,10 +317,9 @@ class PegawaiService
                     'status_aktif' => 'aktif',
                     'created_by' => Auth::id(),
                 ]);
-                $resultData['karyawan'] = $karyawan;
             }
 
-            // Simpan pengajar jika ada
+            // Simpan pengajar dan materi ajar
             if (!empty($input['pengajar'])) {
                 $pengajar = Pengajar::create([
                     'pegawai_id' => $pegawai->id,
@@ -363,7 +332,6 @@ class PegawaiService
                 ]);
                 $resultData['pengajar'] = $pengajar;
 
-                // Handle multiple materi ajar
                 if (!empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
                     foreach ($input['materi_ajar'] as $materi) {
                         MateriAjar::create([
@@ -378,9 +346,9 @@ class PegawaiService
                 }
             }
 
-            // Simpan pengurus jika ada
+            // Simpan pengurus
             if (!empty($input['pengurus'])) {
-                $pengurus = Pengurus::create([
+                $resultData['pengurus'] = Pengurus::create([
                     'pegawai_id' => $pegawai->id,
                     'golongan_jabatan_id' => $input['golongan_jabatan_id_pengurus'] ?? null,
                     'jabatan' => $input['jabatan_pengurus'] ?? null,
@@ -390,12 +358,11 @@ class PegawaiService
                     'status_aktif' => 'aktif',
                     'created_by' => Auth::id(),
                 ]);
-                $resultData['pengurus'] = $pengurus;
             }
 
-            // Simpan wali kelas jika ada
+            // Simpan wali kelas
             if (!empty($input['wali_kelas'])) {
-                $waliKelas = WaliKelas::create([
+                $resultData['wali_kelas'] = WaliKelas::create([
                     'pegawai_id' => $pegawai->id,
                     'lembaga_id' => $input['lembaga_id_wali'] ?? null,
                     'jurusan_id' => $input['jurusan_id_wali'] ?? null,
@@ -406,7 +373,6 @@ class PegawaiService
                     'status_aktif' => 'aktif',
                     'created_by' => Auth::id(),
                 ]);
-                $resultData['wali_kelas'] = $waliKelas;
             }
 
             DB::commit();
@@ -414,7 +380,7 @@ class PegawaiService
             return [
                 'status' => true,
                 'message' => $isExisting
-                    ? 'NIK sudah terdaftar, Silahkan anda cek kembali di fitur Pegawai.'
+                    ? 'Pegawai baru berhasil ditambahkan untuk biodata yang sudah terdaftar.'
                     : 'Pegawai baru berhasil ditambahkan.',
                 'data' => array_merge(['pegawai' => $pegawai], $resultData),
             ];
@@ -433,6 +399,7 @@ class PegawaiService
             ];
         }
     }
+
 }
     
 
