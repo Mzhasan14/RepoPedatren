@@ -183,7 +183,10 @@ Route::prefix('formulir')->group(function () {
 
     // Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'index']);
+    // update hanya 1 data keluarga saja 
     Route::put('/keluarga/{id}', [KeluargaController::class, 'update']);
+    // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
+    Route::put('/keluarga/pindah/{biodata_id}', [KeluargaController::class, 'pindahkanSeluruhKk']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
