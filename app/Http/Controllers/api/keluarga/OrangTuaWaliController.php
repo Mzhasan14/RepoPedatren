@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Services\Keluarga\OrangtuaWaliService;
 use App\Services\Keluarga\DetailOrangtuaService;
 use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
+use App\Models\Biodata;
 use App\Services\Keluarga\FIlters\FilterOrangtuaService;
 
 class OrangTuaWaliController extends Controller
@@ -68,9 +69,9 @@ class OrangTuaWaliController extends Controller
         ]);
     }
 
-    public function getDetailOrangtua(string $OrangtuaId)
+    public function getDetailOrangtua(string $bioId)
     {
-        $ortu = OrangTuaWali::find($OrangtuaId);
+        $ortu = Biodata::find($bioId);
         if (!$ortu) {
             return response()->json([
                 'status' => 'error',
@@ -79,7 +80,7 @@ class OrangTuaWaliController extends Controller
             ], 404);
         }
 
-        $data = $this->detailOrangtuaService->getDetailOrangtua($OrangtuaId);
+        $data = $this->detailOrangtuaService->getDetailOrangtua($bioId);
 
         return response()->json([
             'status' => true,

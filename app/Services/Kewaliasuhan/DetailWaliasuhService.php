@@ -7,14 +7,14 @@ use Illuminate\Support\Facades\URL;
 
 class DetailWaliasuhService
 {
-    public function getDetailWaliasuh(string $WaliasuhId): array
+    public function getDetailWaliasuh(string $bioId): array
     {
         // --- 1. Ambil basic wali asuh santri + biodata_id + no_kk sekaligus ---
         $base = DB::table('wali_asuh as ws')
             ->join('santri as s', 'ws.id_santri', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('ws.id', $WaliasuhId)
+            ->where('s.biodata_id', $bioId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',
@@ -129,7 +129,7 @@ class DetailWaliasuhService
                 'nama'   => $i->nama,
                 'nik'    => $i->nik,
                 'status' => $i->status,
-                'wali'   => $i->wali,
+                'sebagai_wali'   => $i->wali,
             ]);
         }
 
@@ -179,7 +179,7 @@ class DetailWaliasuhService
         JOIN santri s3 ON bio.id = s3.biodata_id
         JOIN wali_asuh wa3 ON wa3.id_santri = s3.id
         JOIN kewaliasuhan kw3 ON kw3.id_wali_asuh = wa3.id
-        WHERE kw3.id_anak_asuh = aa.id) as wali_asuh_names")
+        WHERE kw3.id_anak_asuh = aa.id) as wali_asuh_names"),
             ])
             ->groupBy('g.nama_grup', 'wa.id', 'aa.id')
             ->get();
@@ -332,13 +332,21 @@ class DetailWaliasuhService
 
         // --- 10. Kunjungan Mahrom ---
         $kun = DB::table('pengunjung_mahrom as pm')
+            ->join('santri as s','s.id','=','pm.santri_id')
+            ->join('biodata as b','b.id','=','pm.biodata_id')
+            ->leftjoin('orang_tua_wali as ow','ow.id_biodata','=','b.id')
+            ->join('hubungan_keluarga as hk','pm.hubungan_id','=','hk.id')
             ->where('pm.santri_id', $santriId)
-            ->select(['pm.nama_pengunjung', 'pm.tanggal_kunjungan'])
+            ->select([
+                'b.nama', 
+                'hk.nama_status as hubungan',
+                'pm.tanggal_kunjungan'])
             ->get();
 
         if ($kun->isNotEmpty()) {
             $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
-                'nama'    => $k->nama_pengunjung,
+                'nama_pengunjung'    => $k->nama,
+                'hubungan' => $k->hubungan,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ]);
         }

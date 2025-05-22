@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\URL;
 class DetailOrangtuaService
 {
 
-    public function getDetailOrangtua(string $OrangtuaId): array
+    public function getDetailOrangtua(string $bioId): array
     {
         // --- 1. Ambil basic ortu + biodata_id + no_kk sekaligus ---
         $base = DB::table('orang_tua_wali as ot')
             ->join('biodata as b', 'ot.id_biodata', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('ot.id', $OrangtuaId)
+            ->where('ot.id_biodata', $bioId)
             ->select([
                 'ot.id as ortu_id',
                 'b.id as biodata_id',

@@ -15,6 +15,7 @@ use App\Models\Kewaliasuhan\Kewaliasuhan;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\WaliasuhService;
 use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
+use App\Models\Biodata;
 use App\Services\Kewaliasuhan\DetailWaliasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
@@ -58,9 +59,9 @@ class WaliasuhController extends Controller
         ]);
     }
 
-    public function getDetailWaliasuh(string $WaliasuhId)
+    public function getDetailWaliasuh(string $bioId)
     {
-        $waliasuh = Wali_asuh::find($WaliasuhId);
+        $waliasuh = Biodata::find($bioId);
         if (!$waliasuh) {
             return response()->json([
                 'status' => 'error',
@@ -69,7 +70,7 @@ class WaliasuhController extends Controller
             ], 404);
         }
 
-        $data = $this->detailWaliasuhService->getDetailWaliasuh($WaliasuhId);
+        $data = $this->detailWaliasuhService->getDetailWaliasuh($bioId);
 
         return response()->json([
             'status' => true,
