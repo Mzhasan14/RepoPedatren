@@ -132,6 +132,29 @@ class DetailOrangtuaService
                 'sebagai_wali'   => $i->wali,
             ]);
         }
+
+        $kun = DB::table('pengunjung_mahrom as pm')
+            ->where('pm.biodata_id', $bioId)
+            ->join('santri as s', 'pm.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->join('hubungan_keluarga as hk','pm.hubungan_id','=','hk.id')
+            ->select([
+                's.id as santri_id',
+                'b.nama as nama_santri',
+                'hk.nama_status as hubungan',
+                'pm.tanggal_kunjungan'
+            ])
+            ->orderBy('pm.tanggal_kunjungan', 'desc')
+            ->get();
+
+            if ($kun->isNotEmpty()) {
+                $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
+                    'nama'    => $k->nama,
+                    'hubungan' => $k->hubungan,
+                    'tanggal_kunjungan' => $k->tanggal_kunjungan,
+                ]);
+            }
+
         return $data;
     }
 }
