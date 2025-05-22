@@ -25,7 +25,7 @@ return new class extends Migration
             $table->date('tanggal_lahir');
             $table->string('tempat_lahir', 50);
             $table->char('nik', 16)->nullable();
-            $table->string('no_telepon', 20);
+            $table->string('no_telepon', 20)->nullable();
             $table->string('no_telepon_2', 20)->nullable();
             $table->string('email', 100)->unique('bd_email_unique')->nullable();
             $table->enum(
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->tinyInteger('dari_saudara')->nullable();
             $table->string('tinggal_bersama', 40)->nullable();
             $table->string('smartcard')->nullable();
-            $table->boolean('status');
+            $table->boolean('status')->default(true);
             $table->boolean('wafat')->default(false);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

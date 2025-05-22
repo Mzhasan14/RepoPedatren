@@ -14,6 +14,102 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Maatwebsite\Excel\Events\AfterSheet;
 
+// class PesertaDidikExport implements
+//     WithHeadings,
+//     WithStyles,
+//     WithEvents,
+//     ShouldAutoSize
+// {
+//     protected array $data;
+
+//     public function __construct(array $data)
+//     {
+//         $this->data = $data;
+//     }
+
+//     public function array(): array
+//     {
+//         return $this->data;
+//     }
+
+//     public function headings(): array
+//     {
+//         return [
+//             'No',
+//             'Nama Lengkap',
+//             'NIK / Passport',
+//             'NIS',
+//             'NIUP',
+//             'Jenis Kelamin',
+//             'Alamat Lengkap',
+//             'Tempat, Tanggal Lahir',
+//             'Domisili',
+//             'Lembaga Pendidikan',
+//             'Angkatan Santri',
+//             'Angkatan Pelajar',
+//         ];
+//     }
+
+//     public function styles(Worksheet $sheet)
+//     {
+//         return [
+//             1 => [
+//                 'font' => ['bold' => true],
+//                 'alignment' => ['horizontal' => 'center'],
+//                 'fill' => [
+//                     'fillType' => Fill::FILL_SOLID,
+//                     'startColor' => ['argb' => 'FFD9D9D9'],
+//                 ],
+//             ],
+//         ];
+//     }
+
+//     public function registerEvents(): array
+//     {
+//         return [
+//             AfterSheet::class => function (AfterSheet $event) {
+//                 $sheet = $event->sheet->getDelegate();
+//                 $highestRow = $sheet->getHighestRow();
+//                 $highestColumn = $sheet->getHighestColumn();
+
+//                 // 1. Format kolom NIK dan NIUP sebagai teks agar tidak E+
+//                 foreach (range(2, $highestRow) as $row) {
+//                     // NIK (kolom C)
+//                     $nik = $sheet->getCell("C{$row}")->getValue();
+//                     $sheet->setCellValueExplicit("C{$row}", $nik, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+
+//                     // NIUP (kolom E)
+//                     $niup = $sheet->getCell("E{$row}")->getValue();
+//                     $sheet->setCellValueExplicit("E{$row}", $niup, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+//                 }
+
+//                 // 2. Rata kiri semua isi data (baris 2 ke bawah)
+//                 $sheet->getStyle("A2:{$highestColumn}{$highestRow}")
+//                     ->getAlignment()
+//                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+
+//                 // 3. Header bold, tengah, abu-abu
+//                 $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+//                     'font' => ['bold' => true],
+//                     'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+//                     'fill' => [
+//                         'fillType' => Fill::FILL_SOLID,
+//                         'startColor' => ['argb' => 'FFD9D9D9'],
+//                     ],
+//                 ]);
+
+//                 // 4. Border kotak semua
+//                 $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+//                     ->getBorders()
+//                     ->getAllBorders()
+//                     ->setBorderStyle(Border::BORDER_THIN);
+
+//                 // 5. Freeze header
+//                 $sheet->freezePane('A2');
+//             },
+//         ];
+//     }
+// }
 class PesertaDidikExport implements
     FromCollection,
     WithHeadings,

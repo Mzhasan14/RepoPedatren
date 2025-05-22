@@ -15,6 +15,7 @@ class PengunjungMahrom extends Model
 
     protected $table = 'pengunjung_mahrom';
     protected $fillable = [
+        'biodata_id',
         'santri_id',
         'nama_pengunjung',
         'hubungan_id',

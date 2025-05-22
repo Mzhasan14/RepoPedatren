@@ -55,10 +55,10 @@ class PengunjungMahromController extends Controller
         ]);
     }
 
-    public function store(PengunjungMahromRequest $request, $bioId)
+    public function store(PengunjungMahromRequest $request)
     {
         try {
-            $result = $this->pengunjung->store($request->validated(), $bioId);
+            $result = $this->pengunjung->store($request->validated());
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']

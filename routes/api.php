@@ -95,7 +95,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
 
 
 // Formulir Peserta Didik
-Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
+Route::prefix('formulir')->group(function () {
     // Biodata
     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
@@ -263,11 +263,11 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
 
-    //pelanggaran
-    Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
-    Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
-    Route::post('/{id}/pengunjung', [PengunjungMahromController::class, 'store']);
-    Route::put('/{id}/pengunjung', [PengunjungMahromController::class, 'update']);
+    // //pengunjung mahrom
+    // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
+    // Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+    Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
+    Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
 
     //Kewaliasuhan
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);

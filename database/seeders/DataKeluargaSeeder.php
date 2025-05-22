@@ -13,24 +13,25 @@ class DataKeluargaSeeder extends Seeder
     {
         $faker = Factory::create('id_ID');
 
-        $negaraIds    = DB::table('negara')->pluck('id')->toArray();
-        $provinsiIds  = DB::table('provinsi')->pluck('id')->toArray();
-        $kabupatenIds = DB::table('kabupaten')->pluck('id')->toArray();
-        $kecamatanIds = DB::table('kecamatan')->pluck('id')->toArray();
+        // Ambil semua data wilayah dalam collection keyed by id dan indexed by parent key untuk filter mudah
+        $negaraList = DB::table('negara')->get();
+        $provinsiList = DB::table('provinsi')->get();
+        $kabupatenList = DB::table('kabupaten')->get();
+        $kecamatanList = DB::table('kecamatan')->get();
 
-        $hk         = DB::table('hubungan_keluarga')->get();
+        $hk = DB::table('hubungan_keluarga')->get();
         $ayahStatus = $hk->firstWhere('nama_status', 'ayah kandung')->id;
-        $ibuStatus  = $hk->firstWhere('nama_status', 'ibu kandung')->id;
+        $ibuStatus = $hk->firstWhere('nama_status', 'ibu kandung')->id;
 
         $pegawaiBiodataIds = DB::table('pegawai')->pluck('biodata_id')->toArray();
 
         $lembagaIds = DB::table('lembaga')->pluck('id')->toArray();
         $jurusanIds = DB::table('jurusan')->pluck('id')->toArray();
-        $kelasIds   = DB::table('kelas')->pluck('id')->toArray();
-        $rombelIds  = DB::table('rombel')->pluck('id')->toArray();
+        $kelasIds = DB::table('kelas')->pluck('id')->toArray();
+        $rombelIds = DB::table('rombel')->pluck('id')->toArray();
         $wilayahIds = DB::table('wilayah')->pluck('id')->toArray();
-        $blokIds    = DB::table('blok')->pluck('id')->toArray();
-        $kamarIds   = DB::table('kamar')->pluck('id')->toArray();
+        $blokIds = DB::table('blok')->pluck('id')->toArray();
+        $kamarIds = DB::table('kamar')->pluck('id')->toArray();
 
         $scenarios = [
             'active_both'                     => [true,  'aktif',  true,  'aktif', 40],
@@ -53,15 +54,51 @@ class DataKeluargaSeeder extends Seeder
         $keluargaTersimpan = [];
 
         for ($i = 1; $i <= 200; $i++) {
-            $gunakanKeluargaLama = $faker->boolean(15); // 15% kemungkinan bersaudara
+            $gunakanKeluargaLama = $faker->boolean(15);
 
             if ($gunakanKeluargaLama && count($keluargaTersimpan) > 0) {
-                // Ambil salah satu keluarga lama
+                // Ambil keluarga lama
                 $keluarga = $faker->randomElement($keluargaTersimpan);
-                $currentNoKK   = $keluarga['no_kk'];
+                $currentNoKK = $keluarga['no_kk'];
                 $currentAyahId = $keluarga['ayah_id'];
-                $currentIbuId  = $keluarga['ibu_id'];
+                $currentIbuId = $keluarga['ibu_id'];
+
+                // Ambil wilayah dari ayah (atau ibu) yang sudah tersimpan
+                $ayahBiodata = DB::table('biodata')->where('id', $currentAyahId)->first();
+                $negaraId = $ayahBiodata->negara_id;
+                $provinsiId = $ayahBiodata->provinsi_id;
+                $kabupatenId = $ayahBiodata->kabupaten_id;
+                $kecamatanId = $ayahBiodata->kecamatan_id;
+
+                $provinsi = $provinsiList->firstWhere('id', $provinsiId);
+                $kabupaten = $kabupatenList->firstWhere('id', $kabupatenId);
+                $kecamatan = $kecamatanList->firstWhere('id', $kecamatanId);
             } else {
+                // PILIH NEGARA dulu
+                $negara = $faker->randomElement($negaraList);
+                $negaraId = $negara->id;
+
+                // Filter provinsi yang negara_id-nya sama dengan negara terpilih
+                $provinsiFiltered = $provinsiList->where('negara_id', $negaraId)->values();
+                if ($provinsiFiltered->isEmpty()) {
+                    // Jika negara terpilih tidak punya provinsi (misal Vietnam), skip ke Indonesia saja
+                    $negara = $negaraList->firstWhere('nama', 'Indonesia') ?? $negaraList->first();
+                    $negaraId = $negara->id;
+                    $provinsiFiltered = $provinsiList->where('negara_id', $negaraId)->values();
+                }
+                $provinsi = $faker->randomElement($provinsiFiltered);
+                $provinsiId = $provinsi->id;
+
+                // Filter kabupaten sesuai provinsi
+                $kabupatenFiltered = $kabupatenList->where('provinsi_id', $provinsiId)->values();
+                $kabupaten = $faker->randomElement($kabupatenFiltered);
+                $kabupatenId = $kabupaten->id;
+
+                // Filter kecamatan sesuai kabupaten
+                $kecamatanFiltered = $kecamatanList->where('kabupaten_id', $kabupatenId)->values();
+                $kecamatan = $faker->randomElement($kecamatanFiltered);
+                $kecamatanId = $kecamatan->id;
+
                 $currentNoKK = $faker->numerify('###############');
 
                 // Buat Ayah
@@ -69,10 +106,10 @@ class DataKeluargaSeeder extends Seeder
                 $currentAyahId = (string) Str::uuid();
                 DB::table('biodata')->insert([
                     'id' => $currentAyahId,
-                    'negara_id' => $faker->randomElement($negaraIds),
-                    'provinsi_id' => $faker->randomElement($provinsiIds),
-                    'kabupaten_id' => $faker->randomElement($kabupatenIds),
-                    'kecamatan_id' => $faker->randomElement($kecamatanIds),
+                    'negara_id' => $negaraId,
+                    'provinsi_id' => $provinsiId,
+                    'kabupaten_id' => $kabupatenId,
+                    'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
                     'nama' => $faker->name('male'),
@@ -99,10 +136,10 @@ class DataKeluargaSeeder extends Seeder
                 $currentIbuId = (string) Str::uuid();
                 DB::table('biodata')->insert([
                     'id' => $currentIbuId,
-                    'negara_id' => $faker->randomElement($negaraIds),
-                    'provinsi_id' => $faker->randomElement($provinsiIds),
-                    'kabupaten_id' => $faker->randomElement($kabupatenIds),
-                    'kecamatan_id' => $faker->randomElement($kecamatanIds),
+                    'negara_id' => $negaraId,
+                    'provinsi_id' => $provinsiId,
+                    'kabupaten_id' => $kabupatenId,
+                    'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
                     'nama' => $faker->name('female'),
@@ -124,7 +161,6 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Simpan keluarga baru ke array
                 $keluargaTersimpan[] = [
                     'no_kk' => $currentNoKK,
                     'ayah_id' => $currentAyahId,
@@ -158,14 +194,14 @@ class DataKeluargaSeeder extends Seeder
                 ]);
             }
 
-            // Anak
+            // Anak (biodata), ikut wilayah orang tua
             $childId = (string) Str::uuid();
             DB::table('biodata')->insert([
                 'id' => $childId,
-                'negara_id' => $faker->randomElement($negaraIds),
-                'provinsi_id' => $faker->randomElement($provinsiIds),
-                'kabupaten_id' => $faker->randomElement($kabupatenIds),
-                'kecamatan_id' => $faker->randomElement($kecamatanIds),
+                'negara_id' => $negaraId,
+                'provinsi_id' => $provinsiId,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan_id' => $kecamatanId,
                 'jalan' => $faker->streetAddress,
                 'kode_pos' => $faker->postcode,
                 'nama' => $faker->name($faker->randomElement(['male', 'female'])),
@@ -205,7 +241,6 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // 85% kemungkinan santri punya domisili
                 if ($faker->boolean(85)) {
                     DB::table('riwayat_domisili')->insert([
                         'santri_id' => $santriId,
@@ -238,9 +273,42 @@ class DataKeluargaSeeder extends Seeder
                     ]);
                 }
             }
+
+            if ($doPendidikan && !$doSantri) {
+                // Hanya riwayat pendidikan tapi tanpa santri (tidak masuk ke tabel santri)
+                DB::table('riwayat_pendidikan')->insert([
+                    'santri_id' => $santriId,
+                    'no_induk' => $faker->unique()->numerify('###########'),
+                    'lembaga_id' => $faker->randomElement($lembagaIds),
+                    'jurusan_id' => $faker->randomElement($jurusanIds),
+                    'kelas_id' => $faker->randomElement($kelasIds),
+                    'rombel_id' => $faker->randomElement($rombelIds),
+                    'tanggal_masuk' => $faker->date(),
+                    'tanggal_keluar' => $stPendidikan === 'alumni' ? $faker->date() : null,
+                    'status' => $stPendidikan,
+                    'created_by' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // Jika ayah adalah pegawai, simpan ke anak_pegawai
+            if (in_array($currentAyahId, $pegawaiBiodataIds)) {
+                DB::table('anak_pegawai')->insert([
+                    'id_biodata' => $childId,
+                    'id_pegawai' => DB::table('pegawai')->where('biodata_id', $currentAyahId)->value('id'),
+                    'status' => true,
+                    'created_by' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
     }
 }
+
+
+
 
 
 // {

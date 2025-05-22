@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('provinsi_id');
             $table->string('nama_kabupaten');
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by')->nullable();
             $table->softDeletes();
             $table->boolean('status')->nullable()->default(true);
             $table->timestamps();

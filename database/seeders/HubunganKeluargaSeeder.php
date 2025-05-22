@@ -21,16 +21,10 @@ class HubunganKeluargaSeeder extends Seeder
             ['nama_status' => 'adik kandung', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['nama_status' => 'kakek kandung', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['nama_status' => 'nenek kandung', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'paman dari ayah/ibu', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'bibi dari ayah/ibu', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_status' => 'paman', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_status' => 'bibi', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['nama_status' => 'ayah sambung', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['nama_status' => 'ibu sambung', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'istri', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'suami', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'ayah mertua', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'ibu mertua', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'ayah', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['nama_status' => 'ibu', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
             ['nama_status' => 'wali', 'created_by' => 1, 'updated_by' => null, 'deleted_by' => null, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }

@@ -66,10 +66,8 @@ class PesertaDidikController extends Controller
     public function store(CreatePesertaDidikRequest $request)
     {
         try {
-            // Simpan peserta didik dengan menggunakan service
             $pesertaDidik = $this->pesertaDidik->store($request->validated());
 
-            // Response sukses dengan status 201
             return response()->json([
                 'message' => 'Peserta Didik berhasil disimpan.',
                 'data' => $pesertaDidik

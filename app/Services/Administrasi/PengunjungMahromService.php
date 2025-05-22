@@ -4,7 +4,10 @@ namespace App\Services\Administrasi;
 
 use App\Models\Santri;
 use App\Models\Biodata;
+use App\Models\Keluarga;
+use App\Models\OrangTuaWali;
 use Illuminate\Http\Request;
+use App\Models\HubunganKeluarga;
 use App\Models\PengunjungMahrom;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +42,7 @@ class PengunjungMahromService
                 'pm.jumlah_rombongan',
                 'pm.tanggal_kunjungan'
             )
-            ->orderBy('pm.created_at');
+            ->orderBy('pm.created_at', 'desc');
     }
 
     public function formatData($results)
@@ -63,18 +66,42 @@ class PengunjungMahromService
     public function store(array $data): array
     {
         return DB::transaction(function () use ($data) {
-            // Ambil santri berdasarkan ID
             $santri = Santri::find($data['santri_id']);
 
             if (!$santri) {
                 return ['status' => false, 'message' => 'Santri tidak ditemukan'];
             }
 
-            // Cek apakah pengunjung sudah memiliki biodata
+            // Ambil biodata pengunjung
             $biodata = Biodata::where('nik', $data['nik'])->first();
 
-            if (!$biodata) {
-                // Jika belum ada, buat biodata baru
+            if ($biodata) {
+                // Ambil no_kk pengunjung
+                $kkPengunjung = Keluarga::where('biodata_id', $biodata->id)->value('no_kk');
+
+                if ($kkPengunjung) {
+                    // Cek apakah santri berada dalam KK yang sama
+                    $kkSantri = Keluarga::where('biodata_id', $santri->biodata_id)
+                        ->where('no_kk', $kkPengunjung)
+                        ->exists();
+
+                    if ($kkSantri) {
+                        // Ambil hubungan_id dan nama hubungan dari orang_tua_wali
+                        $orangTuaWali = OrangTuaWali::where('biodata_id', $biodata->id)->first();
+
+                        if ($orangTuaWali && $orangTuaWali->hubungan_id != $data['hubungan_id']) {
+                            // Ambil nama hubungan yang tercatat
+                            $hubunganTercatat = HubunganKeluarga::find($orangTuaWali->id_hubungan_keluarga)?->nama ?? 'tidak diketahui';
+
+                            return [
+                                'status' => false,
+                                'message' => 'Hubungan tidak sesuai. Di sistem tercatat sebagai: ' . $hubunganTercatat
+                            ];
+                        }
+                    }
+                }
+            } else {
+                // Jika belum ada biodata, buat
                 $biodata = Biodata::create([
                     'nik' => $data['nik'],
                     'nama' => $data['nama'],
@@ -101,6 +128,7 @@ class PengunjungMahromService
             return ['status' => true, 'data' => $kunjungan];
         });
     }
+
 
     public function update(array $data, string $id): array
     {
@@ -145,44 +173,4 @@ class PengunjungMahromService
             return ['status' => true, 'data' => $kunjungan];
         });
     }
-    //  public function show($id): array
-    // {
-    //     $kunjungan = PengunjungMahrom::with('biodata')->find($id);
-
-    //     if (!$kunjungan) {
-    //         return ['status' => false, 'message' => 'Data tidak ditemukan'];
-    //     }
-
-    //     return [
-    //         'status' => true,
-    //         'data' => [
-    //             'id' => $kunjungan->id,
-    //             'biodata_id' => $kunjungan->biodata_id,
-    //             'nama_pengunjung' => $kunjungan->biodata->nama ?? null,
-    //             'santri_id' => $kunjungan->santri_id,
-    //             'hubungan_id' => $kunjungan->hubungan_id,
-    //             'jumlah_rombongan' => $kunjungan->jumlah_rombongan,
-    //             'tanggal_kunjungan' => $kunjungan->tanggal_kunjungan,
-    //             'status' => $kunjungan->status,
-    //         ],
-    //     ];
-    // }
-    //  public function index(string $bioId): array
-    // {
-    //     $kunjungan = PengunjungMahrom::with(['biodata', 'santri.biodata'])
-    //         ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
-    //         ->latest()
-    //         ->get()
-    //         ->map(fn($item) => [
-    //             'id' => $item->id,
-    //             'nama_pengunjung' => $item->biodata->nama ?? null,
-    //             'santri_id' => $item->santri_id,
-    //             'hubungan_id' => $item->hubungan_id,
-    //             'jumlah_rombongan' => $item->jumlah_rombongan,
-    //             'tanggal_kunjungan' => $item->tanggal_kunjungan,
-    //             'status' => $item->status,
-    //         ]);
-
-    //     return ['status' => true, 'data' => $kunjungan];
-    // }
 }

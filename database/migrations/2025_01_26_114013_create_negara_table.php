@@ -14,9 +14,6 @@ return new class extends Migration
         Schema::create('negara', function (Blueprint $table) {
             $table->id();
             $table->string('nama_negara');
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->boolean('status');
             $table->timestamps();
         });

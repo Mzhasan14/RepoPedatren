@@ -18,7 +18,7 @@ class FilterPengunjungMahromService
 
         return $query;
     }
-    
+
 
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
@@ -38,6 +38,7 @@ class FilterPengunjungMahromService
                 if ($request->filled('kabupaten')) {
                     // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
                     $query
+                        ->leftJoin('kabupaten', 'bs.kabupaten_id', '=', 'kabupaten.id')
                         ->where('kb.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
@@ -59,10 +60,10 @@ class FilterPengunjungMahromService
         if (! $request->filled('nama')) {
             return $query;
         }
-    
+
         // tambahkan tanda kutip ganda di awal‑akhir
         $phrase = '"' . trim($request->nama) . '"';
-    
+
         return $query->whereRaw(
             "MATCH(bp.nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
