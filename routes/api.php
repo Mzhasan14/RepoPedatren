@@ -183,6 +183,7 @@ Route::prefix('formulir')->group(function () {
 
     // Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'index']);
+    Route::put('/keluarga/{id}', [KeluargaController::class, 'update']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);

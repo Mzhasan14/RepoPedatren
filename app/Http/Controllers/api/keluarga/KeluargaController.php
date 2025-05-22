@@ -10,12 +10,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Keluarga\KeluargaService;
 
 class KeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    private KeluargaService $service;
+
+    public function __construct(KeluargaService $service)
+    {
+        $this->service = $service;
+    }
     public function getKeluargaByIdBio($idBio)
     {
         // 1. Cari no_kk berdasarkan id_biodata yang dipilih
@@ -38,6 +45,7 @@ class KeluargaController extends Controller
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
             ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
             ->select([
+                'k.id',
                 'bo.nama',
                 'bo.nik',
                 DB::raw("hk.nama_status as status"),
@@ -55,6 +63,7 @@ class KeluargaController extends Controller
             ->whereNotIn('k.id_biodata', $excluded)
             ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
             ->select([
+                'k.id',
                 'bs.nama',
                 'bs.nik',
                 DB::raw("'Anak Kandung' as status"),
@@ -84,6 +93,7 @@ class KeluargaController extends Controller
             'data' => [
                 'no_kk' => $noKk,
                 'relasi_keluarga' => $anggota->map(fn($i) => [
+                    'id_keluarga' => $i->id,
                     'nik' => $i->nik,
                     'nama' => $i->nama,
                     'status_keluarga' => $i->status,
@@ -139,6 +149,7 @@ class KeluargaController extends Controller
                     ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
                     ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
                     ->select([
+                        'k.id',
                         'bo.nama',
                         'bo.nik',
                         DB::raw("hk.nama_status as status"),
@@ -155,6 +166,7 @@ class KeluargaController extends Controller
                     ->whereNotIn('k.id_biodata', $excluded)
                     ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
                     ->select([
+                        'k.id',
                         'bs.nama',
                         'bs.nik',
                         DB::raw("'Anak Kandung' as status"),
@@ -175,6 +187,7 @@ class KeluargaController extends Controller
                 return [
                     'no_kk' => $noKk,
                     'relasi_keluarga' => $anggota->map(fn($i) => [
+                        'id_keluarga' => $i->id,
                         'nik' => $i->nik,
                         'nama' => $i->nama,
                         'status_keluarga' => $i->status,
@@ -229,25 +242,16 @@ class KeluargaController extends Controller
     // /**
     //  * Update the specified resource in storage.
     //  */
-    // public function update(Request $request, string $id)
-    // {
-    //     $keluarga = Keluarga::findOrFail($id);
+     public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'no_kk' => 'nullable|string|max:16',
+        ]);
 
-    //     $validator = Validator::make($request->all(), [
-    //         'no_kk' => 'required|max:16',
-    //         'status_wali' => 'nullable',
-    //         'id_status_keluarga' => 'required',
-    //         'updated_by' => 'nullable',
-    //         'status' => 'nullable'
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json($validator->errors(), 422);
-    //     }
-
-    //     $keluarga->update($validator->validated());
-    //     return new PdResource(true, 'data berhasil diubah', $keluarga);
-    // }
+        return response()->json(
+            $this->service->update($validated, $id)
+        );
+    }
 
     // /**
     //  * Remove the specified resource from storage.
