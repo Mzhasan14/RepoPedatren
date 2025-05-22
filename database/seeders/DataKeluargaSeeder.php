@@ -274,24 +274,7 @@ class DataKeluargaSeeder extends Seeder
                 }
             }
 
-            if ($doPendidikan && !$doSantri) {
-                // Hanya riwayat pendidikan tapi tanpa santri (tidak masuk ke tabel santri)
-                DB::table('riwayat_pendidikan')->insert([
-                    'santri_id' => $santriId,
-                    'no_induk' => $faker->unique()->numerify('###########'),
-                    'lembaga_id' => $faker->randomElement($lembagaIds),
-                    'jurusan_id' => $faker->randomElement($jurusanIds),
-                    'kelas_id' => $faker->randomElement($kelasIds),
-                    'rombel_id' => $faker->randomElement($rombelIds),
-                    'tanggal_masuk' => $faker->date(),
-                    'tanggal_keluar' => $stPendidikan === 'alumni' ? $faker->date() : null,
-                    'status' => $stPendidikan,
-                    'created_by' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
+        
             // Jika ayah adalah pegawai, simpan ke anak_pegawai
             if (in_array($currentAyahId, $pegawaiBiodataIds)) {
                 DB::table('anak_pegawai')->insert([
