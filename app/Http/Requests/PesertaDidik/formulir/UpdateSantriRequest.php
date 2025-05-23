@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StatusSantriRequest extends FormRequest
+class UpdateSantriRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,17 +25,10 @@ class StatusSantriRequest extends FormRequest
      */
     public function rules(): array
     {
-        $id = $this->route('id');
-        $biodataId = DB::table('santri')->where('id', $id)->value('id');
         return [
-            'nis' => [
-                'required',
-                'string',
-                Rule::unique('santri', 'nis')->ignore($biodataId),
-            ],
             'tanggal_masuk' => 'required|date',
             'tanggal_keluar' => 'nullable|date',
-            'status' => 'nullable'
+            'status' => 'required'
         ];
     }
 

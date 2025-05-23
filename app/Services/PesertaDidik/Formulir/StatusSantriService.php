@@ -50,17 +50,20 @@ class StatusSantriService
                 ];
             }
 
+            // Generate NIS unik 10 digit
+            do {
+                $nis = str_pad(mt_rand(0, 9999999999), 10, '0', STR_PAD_LEFT);
+            } while (Santri::where('nis', $nis)->exists());
+
             $santri = Santri::create([
-                'biodata_id'    => $bioId,
-                'nis'           => $input['nis'],
-                'tanggal_masuk' => isset($input['tanggal_masuk'])
+                'biodata_id'     => $bioId,
+                'nis'            => $nis,
+                'tanggal_masuk'  => isset($input['tanggal_masuk'])
                     ? Carbon::parse($input['tanggal_masuk'])
                     : Carbon::now(),
-                'tanggal_keluar' => $input['tanggal_keluar']
-                    ? Carbon::parse($input['tanggal_keluar'])
-                    : null,
-                'status'        => 'aktif',
-                'created_by'    => Auth::id(),
+                'tanggal_keluar' => null,
+                'status'         => 'aktif',
+                'created_by'     => Auth::id(),
             ]);
 
             return [
@@ -106,15 +109,16 @@ class StatusSantriService
             }
 
             // Assign only provided fields
-            $santri->nis            = $input['nis'] ?? $santri->nis;
-            $santri->tanggal_masuk  = isset($input['tanggal_masuk'])
+            $santri->tanggal_masuk = isset($input['tanggal_masuk'])
                 ? Carbon::parse($input['tanggal_masuk'])
                 : $santri->tanggal_masuk;
+
             $santri->tanggal_keluar = isset($input['tanggal_keluar'])
                 ? Carbon::parse($input['tanggal_keluar'])
                 : $santri->tanggal_keluar;
-            $santri->status         = $input['status'] ?? $santri->status;
-            $santri->updated_by     = Auth::id();
+
+            $santri->status = $input['status'] ?? $santri->status;
+            $santri->updated_by = Auth::id();
 
             // Check if any change
             if (! $santri->isDirty()) {

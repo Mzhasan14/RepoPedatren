@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\formulir\StatusSantriRequest;
 use App\Services\PesertaDidik\Formulir\StatusSantriService;
+use App\Http\Requests\PesertaDidik\formulir\CreateSantriRequest;
+use App\Http\Requests\PesertaDidik\formulir\StatusSantriRequest;
+use App\Http\Requests\PesertaDidik\formulir\UpdateSantriRequest;
 
 class StatusSantriController extends Controller
 {
@@ -49,7 +51,7 @@ class StatusSantriController extends Controller
     /**
      * Simpan status santri baru untuk ID bio.
      */
-    public function store(StatusSantriRequest $request, $bioId): JsonResponse
+    public function store(CreateSantriRequest $request, $bioId): JsonResponse
     {
         try {
             $data   = $request->validated();
@@ -106,7 +108,7 @@ class StatusSantriController extends Controller
     /**
      * Perbarui status santri berdasarkan ID.
      */
-    public function update(StatusSantriRequest $request, $id): JsonResponse
+    public function update(UpdateSantriRequest $request, $id): JsonResponse
     {
         try {
             $data   = $request->validated();
