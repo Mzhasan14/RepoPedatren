@@ -13,6 +13,5 @@ class LembagaSeeder extends Seeder
      */
     public function run(): void
     {
-        (new LembagaFactory())->count(5)->create();
     }
 }

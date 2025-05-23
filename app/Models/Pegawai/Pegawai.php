@@ -79,9 +79,13 @@ class Pegawai extends Model
     {
         return $this->belongsTo(Biodata::class);
     }
-        public function pengurus()
+    public function pengurus()
     {
         return $this->hasMany(Pengurus::class);
+    }
+    public function wali_kelas()
+    {
+        return $this->hasMany(WaliKelas::class); // atau ->hasOne() jika satu-satu
     }
 
 

@@ -3,6 +3,7 @@
 namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Golongan;
+use App\Models\Pegawai\KategoriGolongan;
 use Database\Factories\KategoriGolonganFactory;
 use Database\Factories\Pegawai\KategoriGolonganFactory as PegawaiKategoriGolonganFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,9 @@ class GolonganFactory extends Factory
     {
         return [
             'nama_golongan' => $this->faker->randomElement(['Golongan I', 'Golongan II', 'Golongan III']),
-            'kategori_golongan_id' => (new PegawaiKategoriGolonganFactory())->create()->id,
+            'kategori_golongan_id' => function () {
+                return KategoriGolongan::inRandomOrder()->first()->id;
+            },
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

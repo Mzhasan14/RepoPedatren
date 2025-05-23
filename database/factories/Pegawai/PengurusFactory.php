@@ -1,6 +1,8 @@
 <?php
 
 namespace Database\Factories\Pegawai;
+
+use App\Models\Pegawai\Pegawai;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Pengurus;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,10 +25,26 @@ class PengurusFactory extends Factory
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
         return [
-            'pegawai_id' =>(new PegawaiFactory())->create()->id,
+            'pegawai_id' => function () {
+                return Pegawai::inRandomOrder()->first()->id;
+            },
             'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
-            'satuan_kerja' => $this->faker->company,
+            'satuan_kerja' => $this->faker->randomElement([
+                'Madrasah Tsanawiyah Al-Hikmah',
+                'Madrasah Aliyah Negeri 1 Jakarta',
+                'Pesantren Darussalam',
+                'SMA Islam Terpadu Al-Furqan',
+                'SD Negeri 01 Menteng',
+                'Kementerian Agama Kabupaten Bandung',
+                'Dinas Pendidikan Kota Surabaya',
+                'Universitas Islam Negeri Maulana Malik Ibrahim',
+                'Pondok Pesantren Nurul Huda',
+                'Yayasan Pendidikan Islam Al-Azhar',
+                'Balai Diklat Keagamaan Semarang',
+                'Kantor Kementerian Agama Provinsi Jawa Timur',
+                'MTs Negeri 3 Sleman',
+            ]),
             'keterangan_jabatan' => $this->faker->randomElement([
                 'Pengasuh',
                 'Ketua Dewan Pengasuh',

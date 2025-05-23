@@ -27,10 +27,9 @@ class PegawaiFactory extends Factory
     public function definition(): array
     {
         return [
-            'biodata_id' => \App\Models\Biodata::factory()->create()->id,
+            'biodata_id' => null, // wajib diisi manual dari Seeder
             'created_by' => 1,
-            'updated_by' => null,
-            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
+            'status_aktif' => 'tidak aktif', // default nonaktif
         ];
     }
 }

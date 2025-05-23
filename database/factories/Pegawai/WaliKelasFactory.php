@@ -1,8 +1,14 @@
 <?php
 
 namespace Database\Factories\Pegawai;
+
+use App\Models\Pegawai\Pegawai;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\WaliKelas;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Lembaga;
+use App\Models\Pendidikan\Rombel;
 use Database\Factories\Pendidikan\JurusanFactory;
 use Database\Factories\Pendidikan\KelasFactory;
 use Database\Factories\Pendidikan\LembagaFactory;
@@ -27,11 +33,21 @@ class WaliKelasFactory extends Factory
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
         return [
-            'pegawai_id' => (new PegawaiFactory())->create()->id,
-            'lembaga_id' =>  (new LembagaFactory())->create()->id,
-            'jurusan_id' =>  (new JurusanFactory())->create()->id,
-            'kelas_id' =>  (new KelasFactory())->create()->id,
-            'rombel_id' =>  (new RombelFactory())->create()->id,
+            'pegawai_id' => function () {
+                return Pegawai::inRandomOrder()->first()->id;
+            },
+            'lembaga_id'  => function () {
+                return Lembaga::inRandomOrder()->first()->id;
+            },
+            'jurusan_id'  => function () {
+                return Jurusan::inRandomOrder()->first()->id;
+            },
+            'kelas_id'  => function () {
+                return Kelas::inRandomOrder()->first()->id;
+            },
+            'rombel_id'  => function () {
+                return Rombel::inRandomOrder()->first()->id;
+            },
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
             'periode_awal' => $tanggalMulai,
             'periode_akhir' => $tanggalSelesai,

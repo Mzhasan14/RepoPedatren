@@ -1,8 +1,11 @@
 <?php
 
 namespace Database\Factories\Pegawai;
+
+use App\Models\Pegawai\Pegawai;
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Pengajar;
+use App\Models\Pendidikan\Lembaga;
 use Database\Factories\Pendidikan\JurusanFactory;
 use Database\Factories\Pendidikan\KelasFactory;
 use Database\Factories\Pendidikan\LembagaFactory;
@@ -24,9 +27,13 @@ class PengajarFactory extends Factory
     public function definition(): array
     {
         return [
-            'pegawai_id' => (new PegawaiFactory())->create()->id,
+            'pegawai_id' => function () {
+                return Pegawai::inRandomOrder()->first()->id;
+            },
             'golongan_id' => (new GolonganFactory())->create()->id,
-            'lembaga_id' =>  (new LembagaFactory())->create()->id,
+            'lembaga_id'  => function () {
+                return Lembaga::inRandomOrder()->first()->id;
+            },
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
             'tahun_akhir' => $this->faker->boolean(70) 

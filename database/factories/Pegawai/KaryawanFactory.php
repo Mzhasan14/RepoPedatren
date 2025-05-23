@@ -4,6 +4,8 @@ namespace Database\Factories\Pegawai;
 
 use Illuminate\Support\Str;
 use App\Models\Pegawai\Karyawan;
+use App\Models\Pegawai\Pegawai;
+use App\Models\Pendidikan\Lembaga;
 use Database\Factories\Pendidikan\LembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,9 +27,13 @@ class KaryawanFactory extends Factory
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
         return [
-            'pegawai_id' => (new PegawaiFactory())->create()->id,
+            'pegawai_id' => function () {
+                return Pegawai::inRandomOrder()->first()->id;
+            },
             'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
-            'lembaga_id' => (new LembagaFactory())->create()->id,
+            'lembaga_id' => function () {
+                return Lembaga::inRandomOrder()->first()->id;
+            },
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'keterangan_jabatan' => $this->faker->randomElement([
                 'Kepala Tata Usaha',

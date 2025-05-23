@@ -7,6 +7,7 @@ use App\Models\Alamat\Negara;
 use App\Models\Alamat\Provinsi;
 use App\Models\Alamat\Kabupaten;
 use App\Models\Alamat\Kecamatan;
+use App\Models\Pegawai\Pegawai;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
@@ -114,5 +115,9 @@ class Biodata extends Model
     public function berkas()
     {
         return $this->hasMany(Berkas::class);
+    }
+    public function pegawai()
+    {
+        return $this->hasMany(Pegawai::class);
     }
 }

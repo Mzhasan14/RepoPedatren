@@ -56,32 +56,42 @@ class PegawaiService
                         ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
                         ->where('status', true)
                         ->groupBy('biodata_id');
-        
-            // 4) Query utama
+            // 4) Subquery: Ambil 1 pengajar aktif terakhir per pegawai
+            $pengajarAktif = DB::table('pengajar')
+                ->select('pegawai_id', DB::raw('MAX(id) as id'))
+                ->where('status_aktif', 'aktif')
+                ->whereNull('deleted_at')
+                ->groupBy('pegawai_id');
+
+            // 5) Subquery: Ambil 1 karyawan aktif terakhir per pegawai
+            $karyawanAktif = DB::table('karyawan')
+                ->select('pegawai_id', DB::raw('MAX(id) as id'))
+                ->where('status_aktif', 'aktif')
+                ->whereNull('deleted_at')
+                ->groupBy('pegawai_id');
+
+            // 6) Subquery: Ambil 1 pengurus aktif terakhir per pegawai
+            $pengurusAktif = DB::table('pengurus')
+                ->select('pegawai_id', DB::raw('MAX(id) as id'))
+                ->where('status_aktif', 'aktif')
+                ->whereNull('deleted_at')
+                ->groupBy('pegawai_id');
+
+            // 7) Query utama
             return DB::table('pegawai')
                             ->join('biodata as b','b.id','pegawai.biodata_id')
                             // join warga pesantren terakhir true (NIUP)
                             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
                             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id') 
-                            // join pengajar yang hanya berstatus aktif                    
-                            ->leftJoin('pengajar', function($join) {
-                                $join->on('pengajar.pegawai_id', '=', 'pegawai.id')
-                                     ->where('pengajar.status_aktif', 'aktif')
-                                     ->whereNull('pengajar.deleted_at');
-                            })
-                            // join pengurus yang hanya berstatus aktif
-                            ->leftJoin('pengurus', function($join) {
-                                $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
-                                     ->where('pengurus.status_aktif', 'aktif')
-                                     ->whereNull('pengurus.deleted_at');
-                            })
-                            // join karyawan yang hanya berstatus aktif
-                            ->leftJoin('karyawan', function($join) {
-                                $join->on('karyawan.pegawai_id', '=', 'pegawai.id')
-                                     ->where('karyawan.status_aktif', 'aktif')
-                                     ->whereNull('karyawan.deleted_at');
-
-                            })
+                            // Join ke pengajar terakhir aktif
+                            ->leftJoinSub($pengajarAktif, 'pa', fn($join) => $join->on('pegawai.id', '=', 'pa.pegawai_id'))
+                            ->leftJoin('pengajar', 'pengajar.id', '=', 'pa.id')
+                            // Join ke karyawan terakhir aktif
+                            ->leftJoinSub($karyawanAktif, 'ka', fn($join) => $join->on('pegawai.id', '=', 'ka.pegawai_id'))
+                            ->leftJoin('karyawan', 'karyawan.id', '=', 'ka.id')
+                            // Join ke pengurus terakhir aktif
+                            ->leftJoinSub($pengurusAktif, 'pg', fn($join) => $join->on('pegawai.id', '=', 'pg.pegawai_id'))
+                            ->leftJoin('pengurus', 'pengurus.id', '=', 'pg.id')
                             // join wali kelas yang hanya berstatus aktif
                             ->leftJoin('wali_kelas', function($join) {
                                 $join->on('pegawai.id', '=', 'wali_kelas.pegawai_id')
@@ -120,7 +130,8 @@ class PegawaiService
                                     'pengajar.id',
                                     'b.tanggal_lahir',
                                     'b.nama_pendidikan_terakhir'
-                                );                                
+                                )
+                                ->distinct();                                
     }
         catch (\Exception $e) {
             Log::error('Error fetching data pegawai: ' . $e->getMessage());

@@ -13,7 +13,6 @@ class KelasSeeder extends Seeder
      */
     public function run(): void
     {
-        (new KelasFactory())->count(5)->create();
         
     }
 }

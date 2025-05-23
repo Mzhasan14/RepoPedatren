@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
+use App\Models\Pegawai\Pengajar;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,8 +18,35 @@ class MateriAjarFactory extends Factory
     public function definition(): array
     {
         return [
-            'pengajar_id' => (new PengajarFactory())->create()->id,
-            'nama_materi' => $this->faker->sentence(3),
+            'pengajar_id' => function () {
+                return Pengajar::inRandomOrder()->first()->id;
+            },
+            'nama_materi' => $this->faker->randomElement([
+            // Pelajaran Umum
+            'Matematika',
+            'Bahasa Indonesia',
+            'Bahasa Inggris',
+            'IPA',
+            'IPS',
+            'Pendidikan Pancasila',
+            'Ilmu Pengetahuan Alam',
+            'Ilmu Pengetahuan Sosial',
+            'Teknologi Informasi',
+            'Penjaskes',
+            'Seni Budaya',
+
+            // Pelajaran Keagamaan / Pesantren
+            'Tauhid',
+            'Aqidah Akhlak',
+            'Fiqih',
+            'Al-Qur\'an Hadits',
+            'Bahasa Arab',
+            'Nahwu',
+            'Shorof',
+            'Tafsir',
+            'Ilmu Tajwid',
+            'Sejarah Kebudayaan Islam',
+        ]),
             'jumlah_menit' => $this->faker->numberBetween(30, 180), // Antara 30 - 180 menit
             'created_by' => 1,
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),

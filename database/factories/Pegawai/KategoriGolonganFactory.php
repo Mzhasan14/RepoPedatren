@@ -20,7 +20,12 @@ class KategoriGolonganFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama_kategori_golongan' => $this->faker->randomElement(['Kategori A', 'Kategori B', 'Kategori C']),
+            'nama_kategori_golongan' => $this->faker->randomElement([
+                'Guru Pertama',
+                'Guru Muda',
+                'Guru Madya',
+                'Guru Utama',
+            ]),
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

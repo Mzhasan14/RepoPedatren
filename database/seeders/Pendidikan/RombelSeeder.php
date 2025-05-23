@@ -12,6 +12,5 @@ class RombelSeeder extends Seeder
      */
     public function run(): void
     {
-        
     }
 }
