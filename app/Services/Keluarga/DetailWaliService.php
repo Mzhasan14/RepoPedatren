@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\URL;
 class DetailWaliService
 {
 
-    public function getDetailWali(string $WaliId): array
+    public function getDetailWali(string $bioId): array
     {
         // --- 1. Ambil basic ortu + biodata_id + no_kk sekaligus ---
         $base = DB::table('orang_tua_wali as ot')
             ->join('biodata as b', 'ot.id_biodata', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('ot.id', $WaliId)
+            ->where('ot.id_biodata', $bioId)
             ->select([
                 'ot.id as ortu_id',
                 'b.id as biodata_id',
@@ -128,6 +128,28 @@ class DetailWaliService
                 'nik'    => $i->nik,
                 'status' => $i->status,
                 'sebagai wali'   => $i->wali,
+            ]);
+        }
+
+        $kun = DB::table('pengunjung_mahrom as pm')
+            ->where('pm.biodata_id', $bioId)
+            ->join('santri as s', 'pm.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->join('hubungan_keluarga as hk', 'pm.hubungan_id', '=', 'hk.id')
+            ->select([
+                's.id as santri_id',
+                'b.nama as nama_santri',
+                'hk.nama_status as hubungan',
+                'pm.tanggal_kunjungan'
+            ])
+            ->orderBy('pm.tanggal_kunjungan', 'desc')
+            ->get();
+
+        if ($kun->isNotEmpty()) {
+            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
+                'nama'    => $k->nama,
+                'hubungan' => $k->hubungan,
+                'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ]);
         }
 

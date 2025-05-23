@@ -14,6 +14,7 @@ use App\Models\Kewaliasuhan\Kewaliasuhan;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\AnakasuhService;
 use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
+use App\Models\Biodata;
 use App\Services\Kewaliasuhan\DetailAnakasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
 
@@ -56,8 +57,8 @@ class AnakasuhController extends Controller
         ]);
     }
 
-    public function getDetailAnakasuh(string $AnakasuhId) {
-        $Anakasuh = Anak_asuh::find($AnakasuhId);
+    public function getDetailAnakasuh(string $bioId) {
+        $Anakasuh = Biodata::find($bioId);
         if (!$Anakasuh) {
             return response()->json([
                 'status' => 'error',
@@ -66,7 +67,7 @@ class AnakasuhController extends Controller
             ], 404);
         }
 
-        $data = $this->detailAnakasuhService->getDetailAnakasuh($AnakasuhId);
+        $data = $this->detailAnakasuhService->getDetailAnakasuh($bioId);
 
         return response()->json([
             'status' => true,

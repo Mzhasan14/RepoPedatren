@@ -25,7 +25,7 @@ class CreatePegawaiRequest extends FormRequest
     {
         return [
             // ===== Biodata =====
-            'nik' => 'required|digits:16',
+            'nik' => 'nullable|digits:16',
             'nama' => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:l,p',
             'tempat_lahir' => 'required|string|max:255',
@@ -37,9 +37,9 @@ class CreatePegawaiRequest extends FormRequest
             'jalan' => 'nullable|string|max:255',
             'kode_pos' => 'nullable|string|max:10',
             'negara_id' => 'required|exists:negara,id',
-            'provinsi_id' => 'required|exists:provinsi,id',
-            'kabupaten_id' => 'required|exists:kabupaten,id',
-            'kecamatan_id' => 'required|exists:kecamatan,id',
+            'provinsi_id' => 'nullable|exists:provinsi,id',
+            'kabupaten_id' => 'nullable|exists:kabupaten,id',
+            'kecamatan_id' => 'nullable|exists:kecamatan,id',
             'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'nama_pendidikan_terakhir' => 'nullable|string|max:100',
             'anak_keberapa' => 'nullable|integer|min:1',

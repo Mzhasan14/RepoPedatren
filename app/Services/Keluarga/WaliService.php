@@ -47,6 +47,7 @@ class WaliService
             ->where(fn($q) => $q->where('o.status', true))
             ->where(fn($q) => $q->where('o.wali', true))
             ->select([
+                'o.id_biodata AS biodata_id',
                 'o.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
                 'b.nama',
@@ -65,6 +66,7 @@ class WaliService
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->groupBy([
+                'o.id_biodata',
                 'o.id',
                 'b.nik',
                 'b.no_passport',
@@ -84,6 +86,7 @@ class WaliService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id" => $item->id,
             "nik" => $item->identitas,
             "nama" => $item->nama,

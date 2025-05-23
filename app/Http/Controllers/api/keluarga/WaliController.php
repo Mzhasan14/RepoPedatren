@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\Biodata;
 use App\Services\Keluarga\DetailWaliService;
 use App\Services\Keluarga\Filters\FilterWaliService;
 use App\Services\Keluarga\WaliService;
@@ -59,9 +60,9 @@ class WaliController extends Controller
         ]);
      }
 
-    public function getDetailWali(string $WaliId)
+    public function getDetailWali(string $bioId)
     {
-        $wali = OrangTuaWali::find($WaliId);
+        $wali = Biodata::find($bioId);
         if (!$wali) {
             return response()->json([
                 'status' => 'error',
@@ -70,7 +71,7 @@ class WaliController extends Controller
             ], 404);
         }
 
-        $data = $this->detailWaliService->getDetailWali($WaliId);
+        $data = $this->detailWaliService->getDetailWali($bioId);
 
         return response()->json([
             'status' => true,

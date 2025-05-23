@@ -7,14 +7,14 @@ use Illuminate\Support\Facades\URL;
 
 class DetailAnakasuhService
 {
-    public function getDetailAnakasuh(string $AnakasuhId): array
+    public function getDetailAnakasuh(string $bioId): array
     {
         // --- 1. Ambil basic wali asuh santri + biodata_id + no_kk sekaligus ---
         $base = DB::table('anak_asuh as as')
             ->join('santri as s', 'as.id_santri', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->where('as.id', $AnakasuhId)
+            ->where('s.biodata_id', $bioId)
             ->select([
                 's.id as santri_id',
                 'b.id as biodata_id',
@@ -129,7 +129,7 @@ class DetailAnakasuhService
                 'nama'   => $i->nama,
                 'nik'    => $i->nik,
                 'status' => $i->status,
-                'wali'   => $i->wali,
+                'sebagai_wali'   => $i->wali,
             ]);
         }
 
@@ -315,6 +315,28 @@ class DetailAnakasuhService
                 'baca_alquran'                    => $kg->baca_alquran_nilai ?? '-',
                 'tindak_lanjut_baca_alquran'      => $kg->baca_alquran_tindak_lanjut ?? '-',
             ];
+        }
+
+        // --- 10. Kunjungan Mahrom ---
+        $kun = DB::table('pengunjung_mahrom as pm')
+            ->join('santri as s', 's.id', '=', 'pm.santri_id')
+            ->join('biodata as b', 'b.id', '=', 'pm.biodata_id')
+            ->leftjoin('orang_tua_wali as ow', 'ow.id_biodata', '=', 'b.id')
+            ->join('hubungan_keluarga as hk', 'pm.hubungan_id', '=', 'hk.id')
+            ->where('pm.santri_id', $santriId)
+            ->select([
+                'b.nama',
+                'hk.nama_status as hubungan',
+                'pm.tanggal_kunjungan'
+            ])
+            ->get();
+
+        if ($kun->isNotEmpty()) {
+            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
+                'nama_pengunjung'    => $k->nama,
+                'hubungan' => $k->hubungan,
+                'tanggal_kunjungan' => $k->tanggal_kunjungan,
+            ]);
         }
 
         return $data;

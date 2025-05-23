@@ -48,6 +48,7 @@ class WaliasuhService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ws.status', true)
             ->select([
+                's.biodata_id',
                 'ws.id',
                 's.nis',
                 'b.nama',
@@ -73,6 +74,7 @@ class WaliasuhService
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
+            "biodata_id" => $item->biodata_id,
             "id" => $item->id,
             "nis" => $item->nis,
             "nama" => $item->nama,

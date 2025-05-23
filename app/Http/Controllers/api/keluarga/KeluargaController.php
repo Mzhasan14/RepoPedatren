@@ -9,13 +9,21 @@ use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Keluarga\KeluargaService;
 
 class KeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    private KeluargaService $service;
+
+    public function __construct(KeluargaService $service)
+    {
+        $this->service = $service;
+    }
     public function getKeluargaByIdBio($idBio)
     {
         // 1. Cari no_kk berdasarkan id_biodata yang dipilih
@@ -38,6 +46,7 @@ class KeluargaController extends Controller
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
             ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
             ->select([
+                'k.id',
                 'bo.nama',
                 'bo.nik',
                 DB::raw("hk.nama_status as status"),
@@ -55,6 +64,7 @@ class KeluargaController extends Controller
             ->whereNotIn('k.id_biodata', $excluded)
             ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
             ->select([
+                'k.id',
                 'bs.nama',
                 'bs.nik',
                 DB::raw("'Anak Kandung' as status"),
@@ -84,6 +94,7 @@ class KeluargaController extends Controller
             'data' => [
                 'no_kk' => $noKk,
                 'relasi_keluarga' => $anggota->map(fn($i) => [
+                    'id_keluarga' => $i->id,
                     'nik' => $i->nik,
                     'nama' => $i->nama,
                     'status_keluarga' => $i->status,
@@ -139,6 +150,7 @@ class KeluargaController extends Controller
                     ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
                     ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
                     ->select([
+                        'k.id',
                         'bo.nama',
                         'bo.nik',
                         DB::raw("hk.nama_status as status"),
@@ -155,6 +167,7 @@ class KeluargaController extends Controller
                     ->whereNotIn('k.id_biodata', $excluded)
                     ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
                     ->select([
+                        'k.id',
                         'bs.nama',
                         'bs.nik',
                         DB::raw("'Anak Kandung' as status"),
@@ -175,6 +188,7 @@ class KeluargaController extends Controller
                 return [
                     'no_kk' => $noKk,
                     'relasi_keluarga' => $anggota->map(fn($i) => [
+                        'id_keluarga' => $i->id,
                         'nik' => $i->nik,
                         'nama' => $i->nama,
                         'status_keluarga' => $i->status,
@@ -229,25 +243,87 @@ class KeluargaController extends Controller
     // /**
     //  * Update the specified resource in storage.
     //  */
-    // public function update(Request $request, string $id)
-    // {
-    //     $keluarga = Keluarga::findOrFail($id);
+     public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'no_kk' => 'nullable|string|max:16',
+        ]);
 
-    //     $validator = Validator::make($request->all(), [
-    //         'no_kk' => 'required|max:16',
-    //         'status_wali' => 'nullable',
-    //         'id_status_keluarga' => 'required',
-    //         'updated_by' => 'nullable',
-    //         'status' => 'nullable'
-    //     ]);
+        return response()->json(
+            $this->service->update($validated, $id)
+        );
+    }
 
-    //     if ($validator->fails()) {
-    //         return response()->json($validator->errors(), 422);
-    //     }
+    public function pindahAnggotaKeKkBaru(Request $request, $biodata_id)
+    {
+        $request->validate([
+            'no_kk_baru' => 'required|string',
+        ]);
 
-    //     $keluarga->update($validator->validated());
-    //     return new PdResource(true, 'data berhasil diubah', $keluarga);
-    // }
+        // Pastikan data keluarga dengan id_biodata tersebut ada
+        $keluarga = Keluarga::where('id_biodata', $biodata_id)->first();
+
+        if (!$keluarga) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data anggota keluarga tidak ditemukan.',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($request, $biodata_id) {
+            Keluarga::where('id_biodata', $biodata_id)
+                ->update([
+                    'no_kk' => $request->no_kk_baru,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Anggota keluarga berhasil dipindahkan ke KK baru.',
+        ]);
+    }
+
+    public function pindahkanSeluruhKk(Request $request, $biodata_id)
+    {
+        try {
+        $request->validate([
+            'no_kk' => 'required|digits:16',
+        ]);
+
+        $keluarga = Keluarga::where('id_biodata', $biodata_id)->first();
+
+        if (!$keluarga) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data anggota keluarga tidak ditemukan.',
+            ], 404);
+        }
+
+        $noKkLama = $keluarga->no_kk;
+
+        DB::transaction(function () use ($noKkLama, $request) {
+            Keluarga::where('no_kk', $noKkLama)
+                ->update([
+                    'no_kk' => $request->no_kk,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Seluruh anggota keluarga berhasil dipindahkan ke KK baru.',
+        ]);
+            }
+            catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     // /**
     //  * Remove the specified resource from storage.

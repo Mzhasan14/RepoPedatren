@@ -158,74 +158,151 @@ class DropdownController extends Controller
 
 //     return response()->json($result);
 // }
+// public function menuNegaraProvinsiKabupatenKecamatan()
+// {
+//     $data = DB::table('negara as n')
+//         ->leftJoin('provinsi as p', 'n.id', '=', 'p.negara_id')
+//         ->leftJoin('kabupaten as kb', 'p.id', '=', 'kb.provinsi_id')
+//         ->leftJoin('kecamatan as kc', 'kb.id', '=', 'kc.kabupaten_id')
+//         ->select(
+//             'n.id as negara_id', 'n.nama_negara',
+//             'p.id as provinsi_id', 'p.negara_id', 'p.nama_provinsi',
+//             'kb.id as kabupaten_id', 'kb.provinsi_id', 'kb.nama_kabupaten',
+//             'kc.id as kecamatan_id', 'kc.kabupaten_id', 'kc.nama_kecamatan'
+//         )
+//         ->orderBy('n.id')
+//         ->get();
+
+//     $negara = [];
+
+//     foreach ($data as $row) {
+//         if (!isset($negara[$row->negara_id])) {
+//             $negara[$row->negara_id] = [
+//                 'id' => $row->negara_id,
+//                 'nama_negara' => $row->nama_negara,
+//                 'provinsi' => [],
+//             ];
+//         }
+
+//         if (!is_null($row->provinsi_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id])) {
+//             $negara[$row->negara_id]['provinsi'][$row->provinsi_id] = [
+//                 'id' => $row->provinsi_id,
+//                 'negara_id' => $row->negara_id,
+//                 'nama_provinsi' => $row->nama_provinsi,
+//                 'kabupaten' => [],
+//             ];
+//         }
+
+//         if (!is_null($row->kabupaten_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id])) {
+//             $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id] = [
+//                 'id' => $row->kabupaten_id,
+//                 'provinsi_id' => $row->provinsi_id,
+//                 'nama_kabupaten' => $row->nama_kabupaten,
+//                 'kecamatan' => [],
+//             ];
+//         }
+
+//         if (!is_null($row->kecamatan_id)) {
+//             $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id]['kecamatan'][] = [
+//                 'id' => $row->kecamatan_id,
+//                 'kabupaten_id' => $row->kabupaten_id,
+//                 'nama_kecamatan' => $row->nama_kecamatan,
+//             ];
+//         }
+//     }
+
+//     $result = [
+//         'negara' => array_values(array_map(function ($negaraItem) {
+//             $negaraItem['provinsi'] = array_values(array_map(function ($provinsi) {
+//                 $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
+//                     $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
+//                     return $kabupaten;
+//                 }, $provinsi['kabupaten']));
+//                 return $provinsi;
+//             }, $negaraItem['provinsi']));
+//             return $negaraItem;
+//         }, $negara)),
+//     ];
+
+//     return response()->json($result);
+// }
+
 public function menuNegaraProvinsiKabupatenKecamatan()
 {
-    $data = DB::table('negara as n')
+    $rows = DB::table('negara as n')
         ->leftJoin('provinsi as p', 'n.id', '=', 'p.negara_id')
         ->leftJoin('kabupaten as kb', 'p.id', '=', 'kb.provinsi_id')
         ->leftJoin('kecamatan as kc', 'kb.id', '=', 'kc.kabupaten_id')
         ->select(
             'n.id as negara_id', 'n.nama_negara',
-            'p.id as provinsi_id', 'p.negara_id', 'p.nama_provinsi',
-            'kb.id as kabupaten_id', 'kb.provinsi_id', 'kb.nama_kabupaten',
-            'kc.id as kecamatan_id', 'kc.kabupaten_id', 'kc.nama_kecamatan'
+            'p.id as provinsi_id', 'p.nama_provinsi',
+            'kb.id as kabupaten_id', 'kb.nama_kabupaten',
+            'kc.id as kecamatan_id', 'kc.nama_kecamatan'
         )
         ->orderBy('n.id')
         ->get();
 
-    $negara = [];
+    $result = [];
 
-    foreach ($data as $row) {
-        if (!isset($negara[$row->negara_id])) {
-            $negara[$row->negara_id] = [
+    foreach ($rows as $row) {
+        // Negara
+        $negara = &$result[$row->negara_id];
+        if (!isset($negara)) {
+            $negara = [
                 'id' => $row->negara_id,
                 'nama_negara' => $row->nama_negara,
                 'provinsi' => [],
             ];
         }
 
-        if (!is_null($row->provinsi_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id])) {
-            $negara[$row->negara_id]['provinsi'][$row->provinsi_id] = [
-                'id' => $row->provinsi_id,
-                'negara_id' => $row->negara_id,
-                'nama_provinsi' => $row->nama_provinsi,
-                'kabupaten' => [],
-            ];
-        }
+        // Provinsi
+        if ($row->provinsi_id) {
+            $provinsi = &$negara['provinsi'][$row->provinsi_id];
+            if (!isset($provinsi)) {
+                $provinsi = [
+                    'id' => $row->provinsi_id,
+                    'nama_provinsi' => $row->nama_provinsi,
+                    'kabupaten' => [],
+                ];
+            }
 
-        if (!is_null($row->kabupaten_id) && !isset($negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id])) {
-            $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id] = [
-                'id' => $row->kabupaten_id,
-                'provinsi_id' => $row->provinsi_id,
-                'nama_kabupaten' => $row->nama_kabupaten,
-                'kecamatan' => [],
-            ];
-        }
+            // Kabupaten
+            if ($row->kabupaten_id) {
+                $kabupaten = &$provinsi['kabupaten'][$row->kabupaten_id];
+                if (!isset($kabupaten)) {
+                    $kabupaten = [
+                        'id' => $row->kabupaten_id,
+                        'nama_kabupaten' => $row->nama_kabupaten,
+                        'kecamatan' => [],
+                    ];
+                }
 
-        if (!is_null($row->kecamatan_id)) {
-            $negara[$row->negara_id]['provinsi'][$row->provinsi_id]['kabupaten'][$row->kabupaten_id]['kecamatan'][] = [
-                'id' => $row->kecamatan_id,
-                'kabupaten_id' => $row->kabupaten_id,
-                'nama_kecamatan' => $row->nama_kecamatan,
-            ];
+                // Kecamatan
+                if ($row->kecamatan_id) {
+                    $kabupaten['kecamatan'][] = [
+                        'id' => $row->kecamatan_id,
+                        'nama_kecamatan' => $row->nama_kecamatan,
+                    ];
+                }
+            }
         }
     }
 
-    $result = [
-        'negara' => array_values(array_map(function ($negaraItem) {
-            $negaraItem['provinsi'] = array_values(array_map(function ($provinsi) {
-                $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
-                    $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
-                    return $kabupaten;
-                }, $provinsi['kabupaten']));
-                return $provinsi;
-            }, $negaraItem['provinsi']));
-            return $negaraItem;
-        }, $negara)),
-    ];
+    // Ubah semua map (associative) menjadi array biasa
+    $final = array_values(array_map(function ($negara) {
+        $negara['provinsi'] = array_values(array_map(function ($provinsi) {
+            $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
+                $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
+                return $kabupaten;
+            }, $provinsi['kabupaten']));
+            return $provinsi;
+        }, $negara['provinsi']));
+        return $negara;
+    }, $result));
 
-    return response()->json($result);
+    return response()->json(['negara' => $final]);
 }
+
 public function menuLembagaJurusanKelasRombel()
 {
     $data = DB::table('lembaga as l')
