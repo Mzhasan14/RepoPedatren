@@ -95,7 +95,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
 
 
 // Formulir Peserta Didik
-Route::prefix('formulir')->group(function () {
+Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Biodata
     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
