@@ -29,6 +29,7 @@ class PengajarService
                 'status' => $p->status_aktif,
                 'nama_materi' => $p->materiAjar->pluck('nama_materi')->join(', '),
                 'jumlah_menit' => $p->materiAjar->sum('jumlah_menit'),
+                'status_aktif' => $p->status_aktif
             ]);
 
         return [

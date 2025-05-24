@@ -113,10 +113,26 @@ class CatatanKognitifService
                 }
     }
 
-    public function formatData($results)
-    {
-        return collect($results->items())->flatMap(fn($item) => [
-            [
+public function formatData($results, $kategoriFilter = null)
+{
+    $kategoriMap = [
+        'kebahasaan' => ['field' => 'kebahasaan_nilai', 'tindak' => 'kebahasaan_tindak_lanjut'],
+        'baca kitab kuning' => ['field' => 'baca_kitab_kuning_nilai', 'tindak' => 'baca_kitab_kuning_tindak_lanjut'],
+        'hafalan tahfidz' => ['field' => 'hafalan_tahfidz_nilai', 'tindak' => 'hafalan_tahfidz_tindak_lanjut'],
+        'furudul ainiyah' => ['field' => 'furudul_ainiyah_nilai', 'tindak' => 'furudul_ainiyah_tindak_lanjut'],
+        'tulis al-quran' => ['field' => 'tulis_alquran_nilai', 'tindak' => 'tulis_alquran_tindak_lanjut'],
+        'baca al-quran' => ['field' => 'baca_alquran_nilai', 'tindak' => 'baca_alquran_tindak_lanjut'],
+    ];
+
+    return collect($results->items())->flatMap(function ($item) use ($kategoriMap, $kategoriFilter) {
+        $entries = [];
+
+        foreach ($kategoriMap as $kategori => $fields) {
+            if ($kategoriFilter && strtolower($kategoriFilter) !== strtolower($kategori)) {
+                continue;
+            }
+
+            $entries[] = [
                 'Biodata_uuid' => $item->Biodata_uuid,
                 'id_santri' => $item->id,
                 'nama_santri' => $item->nama,
@@ -124,102 +140,21 @@ class CatatanKognitifService
                 'wilayah' => $item->wilayah,
                 'pendidikan' => $item->jurusan,
                 'lembaga' => $item->lembaga,
-                'kategori' => 'kebahasaan',
-                'nilai' => $item->kebahasaan_nilai,
-                'tindak_lanjut' => $item->kebahasaan_tindak_lanjut,
+                'kategori' => $kategori,
+                'nilai' => $item->{$fields['field']},
+                'tindak_lanjut' => $item->{$fields['tindak']},
                 'pencatat' => $item->pencatat,
                 'jabatanPencatat' => $item->wali_asuh,
                 'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
                 'foto_catatan' => url($item->foto_catatan),
                 'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'baca kitab kuning',
-                'nilai' => $item->baca_kitab_kuning_nilai,
-                'tindak_lanjut' => $item->baca_kitab_kuning_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'hafalan tahfidz',
-                'nilai' => $item->hafalan_tahfidz_nilai,
-                'tindak_lanjut' => $item->hafalan_tahfidz_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'furudul ainiyah',
-                'nilai' => $item->furudul_ainiyah_nilai,
-                'tindak_lanjut' => $item->furudul_ainiyah_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'tulis al-quran',
-                'nilai' => $item->tulis_alquran_nilai,
-                'tindak_lanjut' => $item->tulis_alquran_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'baca al-quran',
-                'nilai' => $item->baca_alquran_nilai,
-                'tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-        ]);
-    }
+            ];
+        }
+
+        return $entries;
+    });
+}
+
     public function storeCatatanKognitif(array $input)
     {
         $santri = Santri::find($input['id_santri']);

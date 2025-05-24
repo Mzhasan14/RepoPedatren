@@ -101,64 +101,137 @@ class CatatanAfektifService
         }
     }
 
-    public function formatData($results)
-    {
-        return collect($results->items())->flatMap(fn($item) => [
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'Kepedulian',
-                'nilai' => $item->kepedulian_nilai,
-                'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'Akhlak',
-                'nilai' => $item->akhlak_nilai,
-                'tindak_lanjut' => $item->akhlak_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-            [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => 'Kebersihan',
-                'nilai' => $item->kebersihan_nilai,
-                'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ],
-        ]);
-        
-    }
+public function formatData($results, $kategori = null)
+{
+    $kategori = strtolower($kategori);
 
+    return collect($results->items())->flatMap(function ($item) use ($kategori) {
+        $data = [];
+
+        if ($kategori === 'akhlak') {
+            if ($item->akhlak_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Akhlak',
+                    'nilai' => $item->akhlak_nilai,
+                    'tindak_lanjut' => $item->akhlak_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+        } elseif ($kategori === 'kepedulian') {
+            if ($item->kepedulian_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Kepedulian',
+                    'nilai' => $item->kepedulian_nilai,
+                    'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+        } elseif ($kategori === 'kebersihan') {
+            if ($item->kebersihan_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Kebersihan',
+                    'nilai' => $item->kebersihan_nilai,
+                    'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+        } else {
+            // Kalau kategori null / tidak dipilih, munculkan semua kategori yang ada nilai
+            if ($item->akhlak_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Akhlak',
+                    'nilai' => $item->akhlak_nilai,
+                    'tindak_lanjut' => $item->akhlak_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+            if ($item->kepedulian_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Kepedulian',
+                    'nilai' => $item->kepedulian_nilai,
+                    'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+            if ($item->kebersihan_nilai !== null) {
+                $data[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => 'Kebersihan',
+                    'nilai' => $item->kebersihan_nilai,
+                    'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
+            }
+        }
+
+        return $data;
+    });
+}
     public function store(array $input)
     {
         $santri = Santri::find($input['id_santri']);

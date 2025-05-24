@@ -143,7 +143,7 @@ class CatatanAfektifController extends Controller
             ], 200);
         }
 
-        $formatted = $this->catatanService->formatData($results);
+        $formatted = $this->catatanService->formatData($results,$request->kategori ?? null);
 
         return response()->json([
             "total_data"   => $results->total(),
