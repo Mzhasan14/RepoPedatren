@@ -26,7 +26,7 @@ class BerkasService
 
         $data = $br->map(fn(Berkas $br) => [
             'id'                 => $br->id,
-            'file_path'          => $br->file_path,
+            'file_path'          => url($br->file_path),
             'jenis_berkas_id'    => $br->jenis_berkas_id,
             'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // null-safe
         ])->toArray();
@@ -52,7 +52,7 @@ class BerkasService
             'status' => true,
             'data'   => [
                 'id'                 => $br->id,
-                'file_path'          => $br->file_path,
+                'file_path'          =>  url($br->file_path),
                 'jenis_berkas_id'    => $br->jenis_berkas_id,
                 'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // aman dari null
             ],
