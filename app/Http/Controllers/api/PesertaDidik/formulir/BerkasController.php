@@ -21,7 +21,7 @@ class BerkasController extends Controller
     /**
      * Tampilkan semua berkas berdasarkan ID bio.
      */
-    public function index(int $bioId): JsonResponse
+    public function index(string $bioId): JsonResponse
     {
         try {
             $result = $this->berkas->index($bioId);
@@ -49,7 +49,7 @@ class BerkasController extends Controller
     /**
      * Simpan berkas baru untuk ID bio.
      */
-    public function store(BerkasRequest $request, int $bioId): JsonResponse
+    public function store(BerkasRequest $request, string $bioId): JsonResponse
     {
         try {
             $data   = $request->validated();

@@ -28,7 +28,7 @@ class BerkasService
             'id'                 => $br->id,
             'file_path'          => $br->file_path,
             'jenis_berkas_id'    => $br->jenis_berkas_id,
-            'nama_jenis_berkas'  => $br->jenisBerkas->nama_jenis_berkas,
+            'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // null-safe
         ])->toArray();
 
         return [
@@ -54,7 +54,7 @@ class BerkasService
                 'id'                 => $br->id,
                 'file_path'          => $br->file_path,
                 'jenis_berkas_id'    => $br->jenis_berkas_id,
-                'nama_jenis_berkas'  => $br->jenisBerkas->nama_jenis_berkas,
+                'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // aman dari null
             ],
         ];
     }
