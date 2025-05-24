@@ -60,7 +60,6 @@ class PengajarService
                 ->where('pengajar.status_aktif','aktif')
                 ->select(
                     'pegawai.biodata_id as biodata_uuid',
-                    'pengajar.id as id',
                     'b.nama',
                     'wp.niup',
                     DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
@@ -98,7 +97,6 @@ class PengajarService
                     )   
                      ->groupBy(
                         'pegawai.biodata_id',
-                        'pengajar.id',
                         'b.nama',
                         'wp.niup',
                         'b.tanggal_lahir',
@@ -125,7 +123,6 @@ class PengajarService
     {
         return collect($results->items())->map(fn($item) => [
             "biodata_id" => $item->biodata_uuid,
-            "id" => $item->id,
             "nama" => $item->nama,
             "niup" => $item->niup ?? "-",
             "umur" => $item->umur,

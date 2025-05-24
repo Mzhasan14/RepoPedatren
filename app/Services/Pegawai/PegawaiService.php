@@ -106,7 +106,6 @@ class PegawaiService
                             ->where('pegawai.status_aktif','aktif')
                             ->select(
                                 'pegawai.biodata_id as biodata_uuid',
-                                'pegawai.id as id',
                                 'b.nama as nama',
                                 'wp.niup',
                                 'pengurus.id as pengurus',
@@ -122,7 +121,6 @@ class PegawaiService
                                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
                                 )->groupBy(
                                     'pegawai.biodata_id', 
-                                    'pegawai.id',
                                     'b.nama',
                                     'wp.niup',
                                     'pengurus.id',
@@ -148,7 +146,6 @@ class PegawaiService
     {
         return collect($results->items())->map(fn($item) => [
             "biodata_id" => $item->biodata_uuid,
-            "id" => $item->id,
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
             "umur" => $item->umur,
