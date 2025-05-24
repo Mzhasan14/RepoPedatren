@@ -52,7 +52,7 @@ class Pengajar extends Model
     
     public function lembaga()
     {
-        return $this->belongsTo(Lembaga::class, 'id_lembaga','id');
+        return $this->belongsTo(Lembaga::class,'lembaga_id');
     }
 
     public function waliKelas()
@@ -62,7 +62,7 @@ class Pengajar extends Model
 
     public function golongan()
     {
-        return $this->belongsTo(Golongan::class,'id_golongan','id');
+        return $this->belongsTo(Golongan::class,'golongan_id');
     }
     public function ScopeActive($query)
     {
@@ -77,6 +77,5 @@ class Pengajar extends Model
     {
         return $this->belongsTo(Pegawai::class);
     }
-
 
 }

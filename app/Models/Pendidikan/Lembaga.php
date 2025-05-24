@@ -42,5 +42,8 @@ class Lembaga extends Model
     // {
     //     return $this->hasMany(Pengajar::class, 'id_lembaga','id');
     // }
-    
+    public function pengajar()
+    {
+        return $this->hasMany(Pengajar::class);
+    }
 }

@@ -17,12 +17,12 @@ class PengajarService
     public function index(string $bioId): array
     {
         $pengajar = Pengajar::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
-            ->with(['materiAjar'])
+            ->with(['materiAjar','lembaga','golongan'])
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,
-                'lembaga_id' => $p->lembaga_id,
-                'golongan_id' => $p->golongan_id,
+                'nama_lembaga' => optional($p->lembaga)->nama_lembaga,
+                'nama_golongan' => optional($p->golongan)->nama_golongan,
                 'jabatan_kontrak' => $p->jabatan,
                 'tanggal_masuk' => $p->tahun_masuk,
                 'tanggal_keluar' => $p->tahun_akhir,

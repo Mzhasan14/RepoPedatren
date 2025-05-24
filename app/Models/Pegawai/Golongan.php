@@ -26,9 +26,9 @@ class Golongan extends Model
     {
         return $this->belongsTo(Golongan::class,'id_kategori_golongan','id');
     }
-    public function golongan()
+    public function pengajar()
     {
-        return $this->hasMany(Golongan::class,'id_golongan','id');
+        return $this->hasMany(Pengajar::class,'golongan_id');
     }
         public function getActivitylogOptions(): LogOptions
     {
