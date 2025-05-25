@@ -151,7 +151,7 @@ class FilterPerizinanService
             return $query;
         }
 
-        $query->where('pr.status_izin', $request->status_izin);
+        $query->where('pr.status', $request->status_izin);
 
         return $query;
     }
