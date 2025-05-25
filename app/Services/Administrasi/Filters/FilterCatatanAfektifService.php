@@ -2,6 +2,7 @@
 
 namespace App\Services\Administrasi\Filters;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -18,8 +19,8 @@ class FilterCatatanAfektifService
         $query = $this->applyNegaraFilter($query, $request);
         $query = $this->applyLembagaFilter($query, $request);
         $query = $this->applyPhoneNumberFilter($query, $request);
-        $query = $this->applyPeroideFilter($query, $request);
-        $query = $this->applyMateriFilter($query, $request);
+        $query = $this->applyPeriodeFilter($query, $request);
+        $query = $this->applyKategoriFilter($query, $request);
         $query = $this->applyScoreFilter($query, $request);
         return $query;
     }
@@ -122,45 +123,45 @@ private function applyPhoneNumberFilter(Builder $query, Request $request): Build
         return $query;
 
 }
-private function applyPeroideFilter(Builder $query, Request $request): Builder  
-{            if ($request->filled('periode')) {
-                [$year, $month] = explode('-', $request->periode);
-                $query->whereYear('catatan_afektif.created_at', $year)
-                      ->whereMonth('catatan_afektif.created_at',$month);
-                }
-        return $query;
-
-}
-private function applyMateriFilter(Builder $query, Request $request): Builder  
+private function applyPeriodeFilter(Builder $query, Request $request): Builder
 {
-            if ($request->filled('materi')) {
-                    $materi = strtolower($request->materi);
-                
-                    if (in_array($materi, ['akhlak', 'kebersihan', 'kepedulian'])) {
-                        if ($materi === 'akhlak') {
-                            $query->whereNotNull('catatan_afektif.akhlak_nilai');
-                        } elseif ($materi === 'kebersihan') {
-                            $query->whereNotNull('catatan_afektif.kebersihan_nilai');
-                        } elseif ($materi === 'kepedulian') {
-                            $query->whereNotNull('catatan_afektif.kepedulian_nilai');
-                        }
-                    }
-            }
-        return $query;
-
+    if ($request->filled('periode')) {
+        try {
+            $date = Carbon::parse($request->periode);
+            $query->whereYear('catatan_sfektif.tanggal_buat', $date->year)
+                  ->whereMonth('catatan_sfektif.tanggal_buat', $date->month);
+        } catch (\Exception $e) {
+            // Handle error jika format tanggal salah, misal ignore filter atau log error
+        }
+    }
+    return $query;
 }
-private function applyScoreFilter(Builder $query, Request $request): Builder                
-{            // Filter berdasarkan score (cek apakah field materi == A/B/C/D/E)
-            if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 'E'])) {
-                $score = $request->score;
-    
-                $query->where(function ($q) use ($score) {
-                    $q->where('catatan_afektif.akhlak_nilai', $score)
-                    ->orWhere('catatan_afektif.kebersihan_nilai', $score)
-                    ->orWhere('catatan_afektif.kepedulian_nilai', $score);
-                });
-            }
-        return $query;
+private function applyKategoriFilter(Builder $query, Request $request): Builder  
+{
+    if ($request->filled('kategori')) {
+        $kategori = strtolower($request->kategori);
 
+        if (in_array($kategori, ['akhlak', 'kebersihan', 'kepedulian'])) {
+            // Ganti whereNotNull jadi where nilai kategori != null
+            $column = "catatan_afektif.{$kategori}_nilai";
+            $query->whereNotNull($column);
+        }
+    }
+
+    return $query;
+}
+private function applyScoreFilter(Builder $query, Request $request): Builder
+{
+    if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 'E']) && $request->filled('kategori')) {
+        $score = $request->score;
+        $kategori = strtolower($request->kategori); // konsisten lowercase
+
+        if (in_array($kategori, ['akhlak', 'kebersihan', 'kepedulian'])) {
+            $column = "catatan_afektif.{$kategori}_nilai";
+            $query->where($column, $score);
+        }
+    }
+
+    return $query;
 }
 }

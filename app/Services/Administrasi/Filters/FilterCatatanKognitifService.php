@@ -2,6 +2,7 @@
 
 namespace App\Services\Administrasi\Filters;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -123,53 +124,66 @@ class FilterCatatanKognitifService
             }
         return $query;
     }
-    private function applyPeriodeFilter(Builder $query, Request $request): Builder
-{            // Filter Periode
-            if ($request->filled('periode')) {
-                [$year, $month] = explode('-', $request->periode);
-                $query->whereYear('catatan_kognitif.created_at', $year)
-                      ->whereMonth('catatan_kognitif.created_at', $month);
-            }
-        return $query;
+private function applyPeriodeFilter(Builder $query, Request $request): Builder
+{
+    if ($request->filled('periode')) {
+        try {
+            $date = Carbon::parse($request->periode);
+            $query->whereYear('catatan_kognitif.tanggal_buat', $date->year)
+                  ->whereMonth('catatan_kognitif.tanggal_buat', $date->month);
+        } catch (\Exception $e) {
+            // Handle error jika format tanggal salah, misal ignore filter atau log error
+        }
     }
-    private function applyMateriFilter(Builder $query, Request $request): Builder
-{            // Filter berdasarkan kategori catatan kognitif
-            if ($request->filled('materi')) {
-                $materiMap = [
-                    'Kebahasaan' => 'kebahasaan_nilai',
-                    'Baca Kitab Kuning' => 'baca_kitab_kuning_nilai',
-                    'Hafalan Tahfidz' => 'hafalan_tahfidz_nilai',
-                    'Furudul Ainiyah' => 'furudul_ainiyah_nilai',
-                    'Tulis Al-Quran' => 'tulis_alquran_nilai',
-                    'Baca Al-Quran' => 'baca_alquran_nilai',
-                ];
-    
-                $kategori = $request->materi;
-    
-                if (array_key_exists($kategori, $materiMap)) {
-                    $query->whereNotNull($materiMap[$kategori]);
-                }
-            }
-        return $query;
+    return $query;
+}
+private function applyMateriFilter(Builder $query, Request $request): Builder
+{
+    if ($request->filled('kategori')) {
+        $kategori = strtolower($request->kategori);
+
+        $materiMap = [
+            'kebahasaan' => 'catatan_kognitif.kebahasaan_nilai',
+            'baca kitab kuning' => 'catatan_kognitif.baca_kitab_kuning_nilai',
+            'hafalan tahfidz' => 'catatan_kognitif.hafalan_tahfidz_nilai',
+            'furudul ainiyah' => 'catatan_kognitif.furudul_ainiyah_nilai',
+            'tulis al-quran' => 'catatan_kognitif.tulis_alquran_nilai',
+            'baca al-quran' => 'catatan_kognitif.baca_alquran_nilai',
+        ];
+
+        if (array_key_exists($kategori, $materiMap)) {
+            $query->whereNotNull($materiMap[$kategori]);
+        }
     }
-    private function applyScoreFilter(Builder $query, Request $request): Builder
-{            // Filter berdasarkan skor nilai dari semua kategori penilaian kognitif
-            if ($request->filled('score') && in_array($request->score, ['A', 'B', 'C', 'D', 'E'])) {
-                $materiFields = [
-                    'catatan_kognitif.kebahasaan_nilai',
-                    'catatan_kognitif.baca_kitab_kuning_nilai',
-                    'catatan_kognitif.hafalan_tahfidz_nilai',
-                    'catatan_kognitif.furudul_ainiyah_nilai',
-                    'catatan_kognitif.tulis_alquran_nilai',
-                    'catatan_kognitif.baca_alquran_nilai',
-                ];
-    
-                $query->where(function ($q) use ($materiFields, $request) {
-                    foreach ($materiFields as $field) {
-                        $q->orWhere($field, $request->score);
-                    }
-                });
-            }
-        return $query;
+
+    return $query;
+}
+private function applyScoreFilter(Builder $query, Request $request): Builder
+{
+    if (
+        $request->filled('score') &&
+        in_array($request->score, ['A', 'B', 'C', 'D', 'E']) &&
+        $request->filled('kategori')
+    ) {
+        $score = $request->score;
+        $kategori = strtolower($request->kategori); // ubah ke lowercase
+
+        $materiMap = [
+            'kebahasaan' => 'catatan_kognitif.kebahasaan_nilai',
+            'baca kitab kuning' => 'catatan_kognitif.baca_kitab_kuning_nilai',
+            'hafalan tahfidz' => 'catatan_kognitif.hafalan_tahfidz_nilai',
+            'furudul ainiyah' => 'catatan_kognitif.furudul_ainiyah_nilai',
+            'tulis al-quran' => 'catatan_kognitif.tulis_alquran_nilai',
+            'baca al-quran' => 'catatan_kognitif.baca_alquran_nilai',
+        ];
+
+        if (array_key_exists($kategori, $materiMap)) {
+            $query->where($materiMap[$kategori], $score);
+        }
     }
+
+    return $query;
+}
+
+
 }

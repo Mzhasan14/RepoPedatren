@@ -21,6 +21,8 @@ class WaliKelasService
                 'Jurusan' => $item->jurusan->nama_jurusan ?? null,
                 'Kelas' => $item->kelas->nama_kelas ?? null,
                 'Rombel' => $item->rombel->nama_rombel ?? null,
+                'jumlah_murid' =>$item->jumlah_murid,
+                'status_aktif' =>$item->status_aktif,
                 'Periode_awal' => $item->periode_awal,
                 'Periode_akhir' => $item->periode_akhir,
             ]);
@@ -38,6 +40,8 @@ class WaliKelasService
             'jurusan_id',
             'kelas_id',
             'rombel_id',
+            'jumlah_murid',
+            'status_aktif',
             'periode_awal',
             'periode_akhir',
         ])      
