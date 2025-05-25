@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FilterController;
 use App\Http\Requests\Pegawai\KeluarPengajarRequest;
 use App\Http\Requests\Pegawai\PengajarResquest;
 use App\Http\Requests\Pegawai\PindahPengajarRequest;
+use App\Http\Requests\Pegawai\UpdatePengajarRequest;
 use App\Models\JenisBerkas;
 use App\Services\Pegawai\Filters\FilterPengajarService;
 use App\Services\Pegawai\Filters\Formulir\PengajarService as FormulirPengajarService;
@@ -116,7 +117,7 @@ class PengajarController extends Controller
         }
     }
 
-    public function update(PengajarResquest $request, string $id)
+    public function update(UpdatePengajarRequest $request, string $id)
     {
         try {
             $result = $this->formulirPengajarService->update($request->validated(), $id);

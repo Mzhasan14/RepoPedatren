@@ -78,41 +78,59 @@ class PengajarService
     {
         return DB::transaction(function () use ($input, $id) {
             $pengajar = Pengajar::with('materiAjar')->find($id);
-            if (! $pengajar) {
+            if (!$pengajar) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Larangan update jika tahun_akhir sudah ada
-            if (! is_null($pengajar->tahun_akhir) && $pengajar->status_aktif === 'tidak aktif') {
+            // Larangan update jika tahun_akhir sudah ada dan status aktif 'tidak aktif'
+            if (!is_null($pengajar->tahun_akhir) && $pengajar->status_aktif === 'tidak aktif') {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data pengajar ini telah memiliki tahun akhir dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
 
+            // Update data pengajar biasa
             $pengajar->update([
                 'golongan_id' => $input['golongan_id'],
                 'lembaga_id' => $input['lembaga_id'],
                 'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
-                'tahun_masuk' => Carbon::parse($input['tahun_masuk']),
+                'tahun_masuk' => Carbon::parse($input['tahun_masuk']) ?? now(),
                 'updated_by' => Auth::id(),
             ]);
 
-            foreach ($pengajar->materiAjar as $i => $materi) {
-                // Larangan update jika materi sudah ada tahun_akhir
-                if (! is_null($materi->tahun_akhir)) {
-                    return [
-                        'status'  => false,
-                        'message' => 'Materi ajar ke-' . ($i + 1) . ' telah memiliki tahun akhir dan tidak dapat diubah lagi.',
-                    ];
-                }
+            $existingMateri = $pengajar->materiAjar->keyBy('id');
 
-                $materi->update([
-                    'nama_materi' => $input['nama_materi'][$i] ?? $materi->nama_materi,
-                    'tahun_masuk' => Carbon::parse($input['tahun_masuk_materi_ajar'][$i]),
-                    'jumlah_menit' => $input['jumlah_menit'][$i] ?? $materi->jumlah_menit,
-                    'updated_by' => Auth::id(),
-                ]);
+            $materiInputs = $input['materi_ajar'] ?? [];
+            foreach ($materiInputs as $materiInput) {
+                // Materi sudah ada, update hanya tahun_akhir dan status_aktif hardcoded
+                if (isset($materiInput['id']) && $existingMateri->has($materiInput['id'])) {
+                    $materi = $existingMateri->get($materiInput['id']);
+
+                    // Jika materi sudah punya tahun_akhir dan status_aktif 'tidak aktif', tidak boleh diubah lagi
+                    if (!is_null($materi->tahun_akhir) && $materi->status_aktif === 'tidak aktif') {
+                        continue; // Lewati update materi ini
+                    }
+
+                    $materi->update([
+                        'tahun_akhir' => $materiInput['tahun_akhir_materi_ajar'] ?? now(),
+                        'status_aktif' => 'tidak aktif',
+                        'updated_by' => Auth::id(),
+                    ]);
+                } else {
+                    // Materi baru, buat data baru (insert)
+                    $pengajar->materiAjar()->create([
+                        'nama_materi' => $materiInput['nama_materi'],
+                        'tahun_masuk' => !empty($materiInput['tahun_masuk'])
+                                        ? Carbon::parse($materiInput['tahun_masuk'])
+                                        : now(),
+                        'jumlah_menit' => $materiInput['jumlah_menit'],
+                        'status_aktif' => 'aktif',
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                        'created_at' => now()
+                    ]);
+                }
             }
 
             return [
@@ -121,10 +139,6 @@ class PengajarService
             ];
         });
     }
-
-
-
-
     public function store(array $data, string $bioId): array
     {
         // 1. Periksa apakah Pegawai sudah memiliki pengajar aktif
