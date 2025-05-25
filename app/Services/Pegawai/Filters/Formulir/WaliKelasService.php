@@ -111,10 +111,10 @@ class WaliKelasService
             }
 
             // Tidak boleh update jika sudah ada tanggal akhir
-            if (! is_null($wali->periode_akhir)) {
+            if (! is_null($wali->periode_akhir) && $wali->status_aktif === 'tidak aktif') {
                 return [
                     'status' => false,
-                    'message' => 'Data Wali Kelas ini sudah berakhir dan tidak dapat diubah lagi untuk menjaga keakuratan histori.',
+                    'message' => 'Data Wali Kelas ini sudah berakhir dan statusnya tidak aktif, tidak dapat diubah lagi untuk menjaga keakuratan histori.',
                 ];
             }
 

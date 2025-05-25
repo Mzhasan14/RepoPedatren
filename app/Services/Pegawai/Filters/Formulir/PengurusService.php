@@ -68,10 +68,10 @@ class PengurusService
             }
 
             // Larangan update jika tanggal_akhir sudah ada
-            if (! is_null($pengurus->tanggal_akhir)) {
+            if (! is_null($pengurus->tanggal_akhir) && $pengurus->status_aktif === 'tidak aktif') {
                 return [
                     'status'  => false,
-                    'message' => 'Data pengurus ini telah memiliki tanggal akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                    'message' => 'Data pengurus ini telah memiliki tanggal akhir dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
 

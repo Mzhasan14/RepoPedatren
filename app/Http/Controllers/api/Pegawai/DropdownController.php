@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Pegawai;
 use App\Http\Controllers\Controller;
 use App\Models\Alamat\Kecamatan;
 use App\Models\Catatan_afektif;
+use App\Models\Catatan_kognitif;
 use App\Models\Kewilayahan\Kamar;
 use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
@@ -488,19 +489,27 @@ public function menuLembagaJurusanKelasRombel()
     }
 
 
-    public function getPeriodeOptions()
+public function getPeriodeOptions()
 {
-    $periodes = Catatan_afektif::Active()
+    $periodeAfektif = Catatan_afektif::Active()
         ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
         ->groupBy('periode')
         ->orderBy('periode', 'desc')
         ->get()
         ->pluck('periode');
 
-    // Tambahkan opsi "Semua"
-    $result = collect(['Semua'])->merge($periodes);
+    
+    $periodeKognitif = Catatan_kognitif::Active()
+        ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
+        ->groupBy('periode')
+        ->orderBy('periode', 'desc')
+        ->get()
+        ->pluck('periode');
 
-    return response()->json($result);
+    return response()->json([
+        'afektif' => $periodeAfektif,
+        'kognitif' => $periodeKognitif,
+    ]);
 }
 public function getSatuanKerja()
 {

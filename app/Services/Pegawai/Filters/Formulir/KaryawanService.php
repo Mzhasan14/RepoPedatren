@@ -114,11 +114,11 @@ class KaryawanService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // 2. Jika sudah ada tanggal_selesai, larang update
-            if (! is_null($karyawan->tanggal_selesai)) {
+            // 2. Jika sudah ada tanggal_selesai dan statusnya tidak aktif, larang update
+            if (! is_null($karyawan->tanggal_selesai) && $karyawan->status_aktif === 'tidak aktif') {
                 return [
                     'status'  => false,
-                    'message' => 'Data karyawan ini telah memiliki tanggal selesai dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                    'message' => 'Data karyawan ini telah memiliki tanggal selesai dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
 

@@ -128,8 +128,8 @@ private function applyPeriodeFilter(Builder $query, Request $request): Builder
     if ($request->filled('periode')) {
         try {
             $date = Carbon::parse($request->periode);
-            $query->whereYear('catatan_sfektif.tanggal_buat', $date->year)
-                  ->whereMonth('catatan_sfektif.tanggal_buat', $date->month);
+            $query->whereYear('catatan_afektif.tanggal_buat', $date->year)
+                  ->whereMonth('catatan_afektif.tanggal_buat', $date->month);
         } catch (\Exception $e) {
             // Handle error jika format tanggal salah, misal ignore filter atau log error
         }

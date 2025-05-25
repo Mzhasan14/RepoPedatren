@@ -83,10 +83,10 @@ class PengajarService
             }
 
             // Larangan update jika tahun_akhir sudah ada
-            if (! is_null($pengajar->tahun_akhir)) {
+            if (! is_null($pengajar->tahun_akhir) && $pengajar->status_aktif === 'tidak aktif') {
                 return [
                     'status'  => false,
-                    'message' => 'Data pengajar ini telah memiliki tahun akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
+                    'message' => 'Data pengajar ini telah memiliki tahun akhir dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
 
