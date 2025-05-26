@@ -56,6 +56,7 @@ class PengajarService
             'jumlah_menit' => $m->jumlah_menit,
             'tahun_masuk' => $m->tahun_masuk,
             'tahun_akhir' => $m->tahun_akhir,
+            'status_aktif' => $m->status_aktif,
         ]);
 
         return [
@@ -98,44 +99,9 @@ class PengajarService
                 'tahun_masuk' => Carbon::parse($input['tahun_masuk']) ?? now(),
                 'updated_by' => Auth::id(),
             ]);
-
-            $existingMateri = $pengajar->materiAjar->keyBy('id');
-
-            $materiInputs = $input['materi_ajar'] ?? [];
-            foreach ($materiInputs as $materiInput) {
-                // Materi sudah ada, update hanya tahun_akhir dan status_aktif hardcoded
-                if (isset($materiInput['id']) && $existingMateri->has($materiInput['id'])) {
-                    $materi = $existingMateri->get($materiInput['id']);
-
-                    // Jika materi sudah punya tahun_akhir dan status_aktif 'tidak aktif', tidak boleh diubah lagi
-                    if (!is_null($materi->tahun_akhir) && $materi->status_aktif === 'tidak aktif') {
-                        continue; // Lewati update materi ini
-                    }
-
-                    $materi->update([
-                        'tahun_akhir' => $materiInput['tahun_akhir_materi_ajar'] ?? now(),
-                        'status_aktif' => 'tidak aktif',
-                        'updated_by' => Auth::id(),
-                    ]);
-                } else {
-                    // Materi baru, buat data baru (insert)
-                    $pengajar->materiAjar()->create([
-                        'nama_materi' => $materiInput['nama_materi'],
-                        'tahun_masuk' => !empty($materiInput['tahun_masuk'])
-                                        ? Carbon::parse($materiInput['tahun_masuk'])
-                                        : now(),
-                        'jumlah_menit' => $materiInput['jumlah_menit'],
-                        'status_aktif' => 'aktif',
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                        'created_at' => now()
-                    ]);
-                }
-            }
-
             return [
                 'status' => true,
-                'data' => $pengajar->fresh('materiAjar'),
+                'data' => $pengajar
             ];
         });
     }
@@ -333,5 +299,52 @@ class PengajarService
         });
     }
 
+    public function nonaktifkan(string $pengajarId, string $materiId): array
+    {
+        $materi = MateriAjar::where('pengajar_id', $pengajarId)
+                            ->where('id', $materiId)
+                            ->first();
 
+        if (!$materi) {
+            return ['status' => false, 'message' => 'Materi tidak ditemukan.'];
+        }
+
+        if (!is_null($materi->tahun_akhir) && $materi->status_aktif === 'tidak aktif') {
+            return ['status' => false, 'message' => 'Materi sudah nonaktif dan tidak bisa diubah.'];
+        }
+
+        $materi->update([
+            'tahun_akhir' => now(),
+            'status_aktif' => 'tidak aktif',
+            'updated_by' => Auth::id(),
+        ]);
+
+        return ['status' => true, 'message' => 'Materi berhasil dinonaktifkan.', 'data' => $materi];
+    }
+    public function tambahMateri(string $pengajarId, array $input): array
+    {
+        $pengajar = Pengajar::find($pengajarId);
+
+        if (!$pengajar) {
+            return ['status' => false, 'message' => 'Pengajar tidak ditemukan.'];
+        }
+
+        if (empty($input['materi_ajar']) || !is_array($input['materi_ajar'])) {
+            return ['status' => false, 'message' => 'Data materi ajar tidak valid.'];
+        }
+
+        $tahunMasuk = $input['tahun_masuk'] ?? now();
+
+        foreach ($input['materi_ajar'] as $materiBaru) {
+            $pengajar->materiAjar()->create([
+                'nama_materi'  => $materiBaru['nama_materi'],
+                'tahun_masuk'  => $tahunMasuk,
+                'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
+                'status_aktif' => 'aktif',
+                'created_by'   => Auth::id(),
+            ]);
+        }
+
+        return ['status' => true, 'message' => 'Materi ajar berhasil ditambahkan.', 'data' => $pengajar->load('materiAjar')];
+    }
 }

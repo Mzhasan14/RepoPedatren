@@ -155,6 +155,8 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
     Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
     Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+    Route::put('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
+    Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
 
     Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
     Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);

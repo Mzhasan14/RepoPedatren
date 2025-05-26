@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UpdatePengajarRequest extends FormRequest
+class TambahMateriAjarRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +24,20 @@ class UpdatePengajarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id'   => 'nullable|exists:lembaga,id',
-            'golongan_id'  => 'nullable|exists:golongan,id',
-            'jabatan'      => 'nullable|string|max:255',
-            'tahun_masuk'  => 'nullable|date',
+            'tahun_masuk' => 'nullable|date',
+            'materi_ajar' => 'required|array|min:1',
+            'materi_ajar.*.nama_materi'  => 'required|string|max:255',
+            'materi_ajar.*.jumlah_menit' => 'nullable|integer|min:0',
         ];
+    }
 
+    public function messages(): array
+    {
+        return [
+            'materi_ajar.required' => 'Data materi ajar wajib diisi.',
+            'materi_ajar.*.nama_materi.required' => 'Nama materi wajib diisi.',
+            'materi_ajar.*.jumlah_menit.integer' => 'Jumlah menit harus berupa angka.',
+        ];
     }
     protected function failedValidation(Validator $validator)
     {

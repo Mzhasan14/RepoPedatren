@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FilterController;
 use App\Http\Requests\Pegawai\KeluarPengajarRequest;
 use App\Http\Requests\Pegawai\PengajarResquest;
 use App\Http\Requests\Pegawai\PindahPengajarRequest;
+use App\Http\Requests\Pegawai\TambahMateriAjarRequest;
 use App\Http\Requests\Pegawai\UpdatePengajarRequest;
 use App\Models\JenisBerkas;
 use App\Services\Pegawai\Filters\FilterPengajarService;
@@ -230,7 +231,54 @@ class PengajarController extends Controller
             ], 500);
         }
     }
+    public function nonaktifkan(string $pengajarId, string $materiId)
+    {
+        try {
+            $result = $this->formulirPengajarService->nonaktifkan($pengajarId, $materiId);
 
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Gagal menonaktifkan materi.'
+                ], 200); // masih 200 seperti di contohmu
+            }
+
+            return response()->json([
+                'message' => 'Materi berhasil dinonaktifkan.',
+                'data' => $result['data'] ?? null
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal nonaktifkan materi ajar: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menonaktifkan materi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function tambahMateri(TambahMateriAjarRequest $request, string $pengajarId)
+    {
+        try {
+            $result = $this->formulirPengajarService->tambahMateri($pengajarId, $request->validated());
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Gagal menambahkan materi ajar.'
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Materi ajar berhasil ditambahkan.',
+                'data' => $result['data'] ?? null
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal menambahkan materi ajar: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menambahkan materi ajar.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function pengajarExport()
     {
         return Excel::download(new PengajarExport, 'data_pengajar.xlsx');
