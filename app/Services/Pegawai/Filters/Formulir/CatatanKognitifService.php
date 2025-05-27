@@ -51,7 +51,7 @@ class CatatanKognitifService
                     'baca_alquran_tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
                     'tanggal_buat' => $item->tanggal_buat,
                     'tanggal_selesai' => $item->tanggal_selesai,
-                    'foto_pencatat' => $fotoPath,
+                    'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
                     'status' => 'Wali Asuh', 
                 ];
