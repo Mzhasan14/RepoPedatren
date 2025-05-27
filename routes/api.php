@@ -418,6 +418,7 @@ Route::prefix('data-pokok')->group(function () {
 Route::prefix('dropdown')->group(function () {
     Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
     Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
+    Route::get('/wali-asuh', [DropdownController::class, 'nameWaliasuh']);
     Route::get('/wilayah', [DropdownController::class, 'menuWilayahBlokKamar']);
     Route::get('/negara', [DropdownController::class, 'menuNegaraProvinsiKabupatenKecamatan']);
     Route::get('/lembaga', [DropdownController::class, 'menuLembagaJurusanKelasRombel']);

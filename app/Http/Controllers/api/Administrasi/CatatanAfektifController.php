@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Administrasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\CatatanAfektifRequest;
 use App\Http\Requests\Administrasi\CreateCatatanAfektifRequest;
+use App\Http\Requests\Administrasi\Formulir\Catatan\UpdateAfektifRequest;
 use App\Http\Requests\Administrasi\KeluarAfektifRequest;
 use App\Services\Administrasi\CatatanAfektifService;
 use App\Services\Administrasi\Filters\FilterCatatanAfektifService;
@@ -95,7 +96,7 @@ class CatatanAfektifController extends Controller
         }
     }
 
-    public function update(CatatanAfektifRequest $request, $id)
+    public function update(UpdateAfektifRequest $request, $id)
     {
         try {
             $result = $this->formulirCatatan->update($request->validated(), $id);

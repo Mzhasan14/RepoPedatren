@@ -188,17 +188,24 @@ class CatatanKognitifService
                 ];
             }
 
-            // 2. Cari Santri berdasarkan biodata_id
-            $santri = Santri::where('biodata_id', $bioId)
-                ->latest()
-                ->first();
+                // 2. Cari santri berdasarkan biodata_id (tanpa cek status dulu)
+                $santri = Santri::where('biodata_id', $bioId)
+                    ->latest()
+                    ->first();
 
-            if (!$santri) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri tidak ditemukan untuk biodata ini'
-                ];
-            }
+                if (!$santri) {
+                    return [
+                        'status' => false,
+                        'message' => 'Santri tidak ditemukan.'
+                    ];
+                }
+
+                if ($santri->status !== 'aktif') {
+                    return [
+                        'status' => false,
+                        'message' => 'Santri tersebut sudah tidak aktif lagi.'
+                    ];
+                }
 
             // 3. Buat Catatan Kognitif baru
             $kognitif = Catatan_kognitif::create([

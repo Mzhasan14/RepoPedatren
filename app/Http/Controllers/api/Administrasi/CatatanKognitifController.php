@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Administrasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administrasi\CatatanKognitifRequest;
 use App\Http\Requests\Administrasi\CreateCatatanKognitifRequest;
+use App\Http\Requests\Administrasi\Formulir\Catatan\UpdateKognitifRequest;
 use App\Http\Requests\Administrasi\KeluarKognitifRequest;
 use App\Services\Administrasi\CatatanKognitifService;
 use App\Services\Administrasi\Filters\FilterCatatanKognitifService;
@@ -119,7 +120,7 @@ class CatatanKognitifController extends Controller
         }
     }
 
-    public function update(CatatanKognitifRequest $request, $id)
+    public function update(UpdateKognitifRequest $request, $id)
     {
         try {
             $result = $this->formulirCatatan->update($request->validated(), $id);
