@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Alamat\Kecamatan;
 use App\Models\Catatan_afektif;
 use App\Models\Catatan_kognitif;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewilayahan\Kamar;
 use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
@@ -549,4 +550,22 @@ public function getGolonganJabatan()
 
     return response()->json($result);
 }
+public function nameWaliasuh()
+{
+    $wali = Wali_asuh::join('santri', 'santri.id', '=', 'wali_asuh.id_santri')
+        ->join('biodata', 'biodata.id', '=', 'santri.biodata_id')
+        ->where('wali_asuh.status', 1)
+        ->select([
+            'wali_asuh.id',
+            'biodata.nama',
+        ])
+        ->distinct()
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'data' => $wali
+    ]);
+}
+
 }

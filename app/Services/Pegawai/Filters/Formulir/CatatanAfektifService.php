@@ -45,8 +45,8 @@ class CatatanAfektifService
                     'akhlak_tindak_lanjut' => $item->akhlak_tindak_lanjut,
                     'tanggal_buat' => $item->tanggal_buat,
                     'tanggal_selesai' => $item->tanggal_selesai,
-                    'foto_pencatat' => $fotoPath,
-                    'nama_pencatat' => $namaPencatat,
+                    'foto_pencatat' => url($fotoPath),
+                    'nama_pencatat' =>$namaPencatat,
                     'status' => 'Wali Asuh', 
                 ];
             });
@@ -132,7 +132,7 @@ class CatatanAfektifService
                     ];
                 }
 
-                // 2. Cari Santri berdasarkan biodata_id
+                // 2. Cari santri berdasarkan biodata_id (tanpa cek status dulu)
                 $santri = Santri::where('biodata_id', $bioId)
                     ->latest()
                     ->first();
@@ -140,7 +140,14 @@ class CatatanAfektifService
                 if (!$santri) {
                     return [
                         'status' => false,
-                        'message' => 'Santri tidak ditemukan untuk biodata ini'
+                        'message' => 'Santri tidak ditemukan.'
+                    ];
+                }
+
+                if ($santri->status !== 'aktif') {
+                    return [
+                        'status' => false,
+                        'message' => 'Santri tersebut sudah tidak aktif lagi.'
                     ];
                 }
 

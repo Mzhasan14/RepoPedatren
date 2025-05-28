@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Administrasi;
+namespace App\Http\Requests\Administrasi\Formulir\Catatan;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class CatatanKognitifRequest extends FormRequest
+class UpdateKognitifRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +23,7 @@ class CatatanKognitifRequest extends FormRequest
      */
     public function rules(): array
     {
-
-
         return [
-            'id_wali_asuh' => 'required|exists:wali_asuh,id',
             'kebahasaan_nilai'                 => 'required|string|max:255',
             'kebahasaan_tindak_lanjut'         => 'nullable|string|max:1000',
             'baca_kitab_kuning_nilai'          => 'required|string|max:255',
