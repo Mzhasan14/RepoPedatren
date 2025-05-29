@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\Administrasi\PelanggaranService;
 use App\Http\Requests\Administrasi\PelanggaranRequest;
+use App\Http\Requests\Administrasi\BerkasPelanggaranRequest;
 use App\Services\Administrasi\Filters\FilterPelanggaranService;
 
 class PelanggaranController extends Controller
@@ -144,6 +145,30 @@ class PelanggaranController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal update pelanggaran: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addBerkasPelanggaran(BerkasPelanggaranRequest $request, $id)
+    {
+        try {
+            $result = $this->pelanggaran->addBerkasPelanggaran($request->validated(), $id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berkas berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah berkas pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',

@@ -123,39 +123,39 @@ class DetailPerizinanService
     ];
 
     // Data Pengantar / Penjemput
-    $pengantar = DB::table('perizinan as pr')
-      ->join('santri as s', 'pr.santri_id', '=', 's.id')
-      ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-      ->leftjoin('orang_tua_wali as otw', 'pr.pengantar_id', '=', 'otw.id')
-      ->leftjoin('biodata as b_ortu', 'otw.id_biodata', '=', 'b_ortu.id')
-      ->leftJoin('hubungan_keluarga as hk', 'otw.id_hubungan_keluarga', '=', 'hk.id')
-      ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
-      ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
-      ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
-      ->join('users as creator', 'pr.created_by', '=', 'creator.id')
-      ->select([
-        'b_ortu.nama',
-        DB::raw("TIMESTAMPDIFF(YEAR, b_ortu.tanggal_lahir, CURDATE()) as usia"),
-        DB::raw("COALESCE(hk.nama_status, '-') as status"),
-        'creator.name as pembuat',
-        'pengasuh.name as nama_pengasuh',
-        'biktren.name as nama_biktren',
-        'kamtib.name as nama_kamtib',
-      ])
-      ->where('pr.id', $perizinanId)
-      ->first();
+    // $pengantar = DB::table('perizinan as pr')
+    //   ->join('santri as s', 'pr.santri_id', '=', 's.id')
+    //   ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+    //   ->leftjoin('orang_tua_wali as otw', 'pr.pengantar_id', '=', 'otw.id')
+    //   ->leftjoin('biodata as b_ortu', 'otw.id_biodata', '=', 'b_ortu.id')
+    //   ->leftJoin('hubungan_keluarga as hk', 'otw.id_hubungan_keluarga', '=', 'hk.id')
+    //   ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
+    //   ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
+    //   ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
+    //   ->join('users as creator', 'pr.created_by', '=', 'creator.id')
+    //   ->select([
+    //     'b_ortu.nama',
+    //     DB::raw("TIMESTAMPDIFF(YEAR, b_ortu.tanggal_lahir, CURDATE()) as usia"),
+    //     DB::raw("COALESCE(hk.nama_status, '-') as status"),
+    //     'creator.name as pembuat',
+    //     'pengasuh.name as nama_pengasuh',
+    //     'biktren.name as nama_biktren',
+    //     'kamtib.name as nama_kamtib',
+    //   ])
+    //   ->where('pr.id', $perizinanId)
+    //   ->first();
 
-    if ($pengantar) {
-      $data['Pengantar'] = [
-        'nama'   => $pengantar->nama ?? '-',
-        'usia'   => $pengantar->usia ?? '-',
-        'status' => $pengantar->status ?? '-',
-        'pembuat'            => $biodata->pembuat ?? '-',
-        'pengasuh'           => $biodata->nama_pengasuh ?? '-',
-        'biktren'            => $biodata->nama_biktren ?? '-',
-        'kamtib'             => $biodata->nama_kamtib ?? '-',
-      ];
-    }
+    // if ($pengantar) {
+    //   $data['Pengantar'] = [
+    //     'nama'   => $pengantar->nama ?? '-',
+    //     'usia'   => $pengantar->usia ?? '-',
+    //     'status' => $pengantar->status ?? '-',
+    //     'pembuat'            => $biodata->pembuat ?? '-',
+    //     'pengasuh'           => $biodata->nama_pengasuh ?? '-',
+    //     'biktren'            => $biodata->nama_biktren ?? '-',
+    //     'kamtib'             => $biodata->nama_kamtib ?? '-',
+    //   ];
+    // }
 
     // Berkas Perizinan
     $berkas = DB::table('perizinan as pr')

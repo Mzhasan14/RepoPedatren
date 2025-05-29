@@ -270,11 +270,16 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
     Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
 
+    Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
+
     //pelanggaran
     Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
     Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+
+    Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
+
 
     // //pengunjung mahrom
     // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);

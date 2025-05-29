@@ -17,7 +17,6 @@ return new class extends Migration
             $table->unsignedBigInteger('pengasuh_id')->nullable();
             $table->unsignedBigInteger('biktren_id')->nullable();
             $table->unsignedBigInteger('kamtib_id')->nullable();
-            $table->unsignedBigInteger('pengantar_id')->nullable();
             $table->boolean('approved_by_biktren')->default(false);
             $table->boolean('approved_by_kamtib')->default(false);
             $table->boolean('approved_by_pengasuh')->default(false);

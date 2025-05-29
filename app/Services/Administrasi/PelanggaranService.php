@@ -6,8 +6,10 @@ use App\Models\Santri;
 use App\Models\Pelanggaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Models\BerkasPelanggaran;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PelanggaranService
 {
@@ -171,5 +173,32 @@ class PelanggaranService
 
             return ['status' => true, 'data' => $pelanggaran];
         });
+    }
+
+    public function addBerkasPelanggaran(array $data, int $id)
+    {
+        $pelanggaran = Pelanggaran::find($id);
+        if (!$pelanggaran) {
+            return [
+                'status' => false,
+                'message' => 'Pelanggaran tidak ditemukan'
+            ];
+        }
+
+        $url = Storage::url($data['file_path']->store('berkas_pelanggaran', 'public'));
+
+        $berkas = BerkasPelanggaran::create([
+            'pelanggaran_id' => $id,
+            'santri_id' => $pelanggaran->santri_id,
+            'file_path' => $url,
+            'created_by' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return [
+            'status' => true,
+            'data' => $berkas
+        ];
     }
 }
