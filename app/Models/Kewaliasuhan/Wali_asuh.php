@@ -30,6 +30,8 @@ class Wali_asuh extends Model
     protected $fillable = [
         'id_santri',
         'id_grup_wali_asuh',
+        'tanggal_mulai',
+        'tanggal_berakhir',
         'created_by',
         'updated_by',
         'status'

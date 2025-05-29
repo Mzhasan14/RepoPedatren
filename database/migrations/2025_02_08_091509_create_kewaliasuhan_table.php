@@ -34,6 +34,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('id_santri');
             $table->unsignedBigInteger('id_grup_wali_asuh')->nullable();
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

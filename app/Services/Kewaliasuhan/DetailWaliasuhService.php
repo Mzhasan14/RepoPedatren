@@ -247,11 +247,10 @@ class DetailWaliasuhService
             ]);
         }
 
-        //Wali asuh
-        $ks = DB::table('kewaliasuhan as ks')
-            ->join('wali_asuh as ws', 'ks.id_wali_asuh', '=', 'ws.id')
+        // Wali asuh
+        $ks = DB::table('wali_asuh as ws')
             ->where('ws.id_santri', $santriId)
-            ->select(['ks.tanggal_mulai', 'ks.tanggal_berakhir'])
+            ->select(['ws.tanggal_mulai', 'ws.tanggal_berakhir'])
             ->get();
 
         if ($ks->isNotEmpty()) {

@@ -126,7 +126,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Kewaliasuhan
     Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
-    Route::get('{id}/waliasuh', [WaliasuhController::class, 'show']);
+    Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy'])->middleware('role:superadmin|admin');
