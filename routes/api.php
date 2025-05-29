@@ -191,7 +191,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
 
     // Keluarga
-    Route::get('/keluarga', [KeluargaController::class, 'index']);
+    Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
     // update hanya 1 data keluarga saja 
     Route::put('/keluarga/{id}', [KeluargaController::class, 'update']);
     // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru

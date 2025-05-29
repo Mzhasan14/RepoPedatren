@@ -67,8 +67,8 @@ return new class extends Migration
 
         Schema::create('kewaliasuhan', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_wali_asuh');
-            $table->unsignedBigInteger('id_anak_asuh');
+            $table->unsignedBigInteger('id_wali_asuh')->nullable();
+            $table->unsignedBigInteger('id_anak_asuh')->nullable();
             $table->date('tanggal_mulai');
             $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
             $table->unsignedBigInteger('created_by');
