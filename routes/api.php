@@ -124,6 +124,13 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
     Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
 
+    // Kewaliasuhan
+    Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
+    Route::get('{id}/waliasuh', [WaliasuhController::class, 'show']);
+    Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
+    Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
+    Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy'])->middleware('role:superadmin|admin');
+
     // Khadam
     Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
     Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
@@ -279,11 +286,9 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-    Route::post('/waliasuh', [WaliasuhController::class, 'store']);
-    Route::put('/waliasuh/{id}', [WaliasuhController::class, 'update']);
-    Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy']);
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
     Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
+
 
 
     // lembaga
