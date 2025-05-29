@@ -25,6 +25,8 @@ class PerizinanFactory extends Factory
      */
     public function definition(): array
     {
+        $now = Carbon::now();
+
         // 1. Generate tanggal_mulai acak antara 1 bulan lalu sampai hari ini
         $mulai = Carbon::instance(
             $this->faker->dateTimeBetween('-1 month', 'now')
@@ -33,9 +35,7 @@ class PerizinanFactory extends Factory
         // 2. tanggal_akhir antara 1–14 hari setelah tanggal_mulai
         $akhir = $mulai->copy()->addDays(rand(1, 14));
 
-        // 4. Tentukan tanggal_kembali:
-        //    – 70% on time: kembali antara tanggal_mulai dan tanggal_akhir
-        //    – 30% late: kembali 1–7 hari setelah tanggal_akhir
+        // 3. Tentukan tanggal_kembali
         if ($this->faker->boolean(70)) {
             $diffDays = $akhir->diffInDays($mulai);
             $kembali  = $mulai->copy()->addDays(rand(0, $diffDays));
@@ -43,20 +43,14 @@ class PerizinanFactory extends Factory
             $kembali = $akhir->copy()->addDays(rand(1, 7));
         }
 
-        // 5. Tentukan status gabungan sesuai enum di table 'status':
-        //    ['sedang proses izin', 'perizinan diterima', 'sudah berada diluar pondok',
-        //     'perizinan ditolak', 'dibatalkan',
-        //     'telat', 'telat(sudah kembali)', 'telat(belum kembali)', 'kembali tepat waktu']
-        $now = Carbon::now();
+        // 4. Tentukan status awal
+        $status = 'sedang proses izin';
 
-        // Pilih status izin dasar (termasuk kemungkinan ditolak atau dibatalkan)
         if ($now->lt($mulai)) {
             $status = 'sedang proses izin';
         } elseif ($this->faker->boolean(5)) {
-            // 5% kemungkinan izin ditolak
             $status = 'perizinan ditolak';
         } elseif ($this->faker->boolean(5)) {
-            // 5% kemungkinan izin dibatalkan
             $status = 'dibatalkan';
         } elseif ($now->lte($akhir)) {
             $status = 'sudah berada diluar pondok';
@@ -64,7 +58,7 @@ class PerizinanFactory extends Factory
             $status = 'perizinan diterima';
         }
 
-        // Jika sudah melewati tanggal kembali, override dengan status kembali
+        // 5. Override status jika sudah kembali
         if ($now->gte($kembali)) {
             if ($kembali->lte($akhir)) {
                 $status = 'kembali tepat waktu';
@@ -72,27 +66,54 @@ class PerizinanFactory extends Factory
                 $status = 'telat(sudah kembali)';
             }
         } elseif ($now->gt($akhir)) {
-            // Sudah lewat akhir tapi belum kembali
             $status = 'telat(belum kembali)';
         }
 
+        // 6. Tentukan approval flags berdasarkan status
+        $approved_by_biktren   = false;
+        $approved_by_kamtib    = false;
+        $approved_by_pengasuh  = false;
+
+        $approvedStatuses = [
+            'perizinan diterima',
+            'sudah berada diluar pondok',
+            'telat(sudah kembali)',
+            'telat(belum kembali)',
+            'kembali tepat waktu'
+        ];
+
+        if (in_array($status, $approvedStatuses)) {
+            $approved_by_biktren  = true;
+            $approved_by_kamtib   = true;
+            $approved_by_pengasuh = true;
+        }
+
+        // Jika status masih "sedang proses", random siapa saja yang sudah approve
+        if ($status === 'sedang proses izin') {
+            $approved_by_biktren  = $this->faker->boolean(50);
+            $approved_by_kamtib   = $this->faker->boolean(50);
+            $approved_by_pengasuh = $this->faker->boolean(50);
+        }
+
         return [
-            'santri_id'       => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'biktren_id'      => optional(User::role('biktren')->inRandomOrder()->first())->id,
-            'pengasuh_id'     => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
-            'kamtib_id'       => optional(User::role('kamtib')->inRandomOrder()->first())->id,
-            'pengantar_id'    => optional(OrangTuaWali::inRandomOrder()->first())->id,
-            'alasan_izin'     => $this->faker->sentence,
-            'alamat_tujuan'   => $this->faker->address,
-            'tanggal_mulai'   => $mulai,
-            'tanggal_akhir'   => $akhir,
-            'tanggal_kembali' => $kembali,
-            'jenis_izin'      => $this->faker->randomElement(['Personal', 'Rombongan']),
-            'status'          => $status,
-            'keterangan'      => $this->faker->sentence,
-            'created_by'      => optional(User::role('admin')->inRandomOrder()->first())->id,
-            'updated_by'      => null,
+            'santri_id'            => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
+            'biktren_id'           => optional(User::role('biktren')->inRandomOrder()->first())->id,
+            'pengasuh_id'          => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
+            'kamtib_id'            => optional(User::role('kamtib')->inRandomOrder()->first())->id,
+            'pengantar_id'         => optional(OrangTuaWali::inRandomOrder()->first())->id,
+            'alasan_izin'          => $this->faker->sentence,
+            'alamat_tujuan'        => $this->faker->address,
+            'tanggal_mulai'        => $mulai,
+            'tanggal_akhir'        => $akhir,
+            'tanggal_kembali'      => $kembali,
+            'jenis_izin'           => $this->faker->randomElement(['Personal', 'Rombongan']),
+            'status'               => $status,
+            'approved_by_biktren'  => $approved_by_biktren,
+            'approved_by_kamtib'   => $approved_by_kamtib,
+            'approved_by_pengasuh' => $approved_by_pengasuh,
+            'keterangan'           => $this->faker->sentence,
+            'created_by'           => optional(User::role('admin')->inRandomOrder()->first())->id,
+            'updated_by'           => null,
         ];
     }
 }
-

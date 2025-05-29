@@ -325,6 +325,13 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 });
 
+Route::prefix('approve')->middleware('auth:sanctum')->group(function () {
+    // Perizinan
+    Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
+    Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
+    Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
+});
+
 Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Pindah Naik Jenjang
     Route::post('/pindah-naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);

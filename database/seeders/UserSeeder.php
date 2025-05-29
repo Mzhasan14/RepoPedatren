@@ -16,22 +16,31 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Pastikan role sudah ada sebelum menetapkan ke user
-        $roles = ['superadmin','supervisor', 'admin', 'staff', 'santri'];
+        // Tambah semua role
+        $roles = [
+            'superadmin',
+            'supervisor',
+            'admin',
+            'staff',
+            'santri',
+            'kamtib',
+            'biktren',
+            'pengasuh'
+        ];
 
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
         }
 
-        // Buat Superadmin
+        // Superadmin
         $superadmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin@example.com',
             'password' => Hash::make('password'),
         ]);
         $superadmin->assignRole('superadmin');
-        
-        // Buat Supervisor
+
+        // Supervisor
         $supervisor = User::create([
             'name' => 'Super Visor',
             'email' => 'supervisor@example.com',
@@ -39,7 +48,7 @@ class UserSeeder extends Seeder
         ]);
         $supervisor->assignRole('supervisor');
 
-        // Buat Admin
+        // Admin
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
@@ -47,7 +56,7 @@ class UserSeeder extends Seeder
         ]);
         $admin->assignRole('admin');
 
-        // Buat Staff
+        // Staff
         $staff = User::create([
             'name' => 'Staff User',
             'email' => 'staff@example.com',
@@ -55,7 +64,7 @@ class UserSeeder extends Seeder
         ]);
         $staff->assignRole('staff');
 
-        // Buat Santri
+        // Santri
         $santri = User::create([
             'name' => 'Santri User',
             'email' => 'santri@example.com',
@@ -63,31 +72,28 @@ class UserSeeder extends Seeder
         ]);
         $santri->assignRole('santri');
 
-        // Buat Kamtib
         $kamtib = User::create([
-            'name' => 'Kamtib User',
-            'email' => 'kamtib@example.com',
+            'name' => "Kamtib",
+            'email' => "kamtib@example.com",
             'password' => Hash::make('password'),
         ]);
         $kamtib->assignRole('kamtib');
 
-        // Buat biktren
         $biktren = User::create([
-            'name' => 'Biktren User',
-            'email' => 'biktren@example.com',
+            'name' => "Biktren",
+            'email' => "biktren@example.com",
             'password' => Hash::make('password'),
         ]);
         $biktren->assignRole('biktren');
 
-        // Buat pengasuh
         $pengasuh = User::create([
-            'name' => 'Pengasuh User',
-            'email' => 'pengasuh@example.com',
+            'name' => "Pengasuh",
+            'email' => "pengasuh@example.com",
             'password' => Hash::make('password'),
         ]);
         $pengasuh->assignRole('pengasuh');
 
-        // Buat creator
+        // Creator tambahan
         $creator = User::create([
             'name' => 'Orang Dalam',
             'email' => 'pedatrennurja@gmail.com',

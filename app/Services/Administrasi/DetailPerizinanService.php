@@ -28,7 +28,6 @@ class DetailPerizinanService
       ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
       ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
       ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
-      ->join('users as creator', 'pr.created_by', '=', 'creator.id')
       ->leftJoin('berkas as br', function ($j) {
         $j->on('b.id', 'br.biodata_id')
           ->where('br.jenis_berkas_id', function ($q) {
@@ -81,10 +80,13 @@ class DetailPerizinanService
         'pr.tanggal_kembali',
         'pr.jenis_izin',
         'pr.status',
-        'creator.name as pembuat',
+        'pr.created_by as pembuat',
         'pengasuh.name as nama_pengasuh',
         'biktren.name as nama_biktren',
         'kamtib.name as nama_kamtib',
+        'pr.approved_by_biktren',
+        'pr.approved_by_kamtib',
+        'pr.approved_by_pengasuh',
         'pr.keterangan',
         DB::raw("COALESCE(br.file_path,'default.jpg') as foto"),
       ])
@@ -113,6 +115,9 @@ class DetailPerizinanService
       'pengasuh'           => $biodata->nama_pengasuh ?? '-',
       'biktren'            => $biodata->nama_biktren ?? '-',
       'kamtib'             => $biodata->nama_kamtib ?? '-',
+      'approved_by_biktren' => (bool) $biodata->approved_by_biktren,
+      'approved_by_kamtib'  => (bool) $biodata->approved_by_kamtib,
+      'approved_by_pengasuh' => (bool) $biodata->approved_by_pengasuh,
       'keterangan'         => $biodata->keterangan ?? '-',
       'foto_profil'        => URL::to($biodata->foto),
     ];

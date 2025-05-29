@@ -23,15 +23,7 @@ class PerizinanService
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        $perizinanLast = DB::table('perizinan')
-            ->select('santri_id', DB::raw('MAX(id) AS last_pr_id'))
-            ->groupBy('santri_id');
-
         return DB::table('perizinan as pr')
-            ->joinSub($perizinanLast, 'pl', function ($join) {
-                $join->on('pr.santri_id', '=', 'pl.santri_id')
-                    ->on('pr.id', '=', 'pl.last_pr_id');
-            })
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
@@ -49,7 +41,6 @@ class PerizinanService
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
             ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
             ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
-            ->join('users as creator', 'pr.created_by', '=', 'creator.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->select([
@@ -94,10 +85,13 @@ class PerizinanService
                 'pr.tanggal_kembali',
                 'pr.jenis_izin',
                 'pr.status',
-                'creator.name as pembuat',
+                'pr.created_by as pembuat',
                 'pengasuh.name as nama_pengasuh',
                 'biktren.name as nama_biktren',
                 'kamtib.name as nama_kamtib',
+                'pr.approved_by_biktren',
+                'pr.approved_by_kamtib',
+                'pr.approved_by_pengasuh',
                 'pr.keterangan',
                 'pr.created_at',
                 'pr.updated_at',
@@ -138,6 +132,9 @@ class PerizinanService
             'nama_pengasuh'    => $item->nama_pengasuh ?? '-',
             'nama_biktren'      => $item->nama_biktren ?? '-',
             'nama_kamtib'       => $item->nama_kamtib ?? '-',
+            'approved_by_biktren' => (bool) $item->approved_by_biktren,
+            'approved_by_kamtib' => (bool) $item->approved_by_kamtib,
+            'approved_by_pengasuh' => (bool) $item->approved_by_pengasuh,
             'keterangan'        => $item->keterangan ?? '-',
             'tgl_input'         => Carbon::parse($item->created_at)
                 ->translatedFormat('d F Y H:i:s'),

@@ -22,16 +22,8 @@ class PelanggaranService
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        $pelanggaranLast = DB::table('pelanggaran')
-            ->select('santri_id', DB::raw('MAX(id) AS last_pl_id'))
-            ->groupBy('santri_id');
-
         return DB::table('pelanggaran as pl')
-            ->joinSub($pelanggaranLast, 'plt', function ($join) {
-                $join->on('pl.santri_id', '=', 'plt.santri_id')
-                    ->on('pl.id', '=', 'plt.last_pl_id');
-            })
-            ->join('santri as s', 'pl.santri_id', '=', 's.id')
+            ->leftjoin('santri as s', 'pl.santri_id', '=', 's.id')
             ->leftjoin('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
