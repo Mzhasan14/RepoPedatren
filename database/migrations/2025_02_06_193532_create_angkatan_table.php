@@ -1,26 +1,41 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+use Faker\Factory as Faker;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function run()
     {
-        Schema::create('angkatan', function (Blueprint $table) {
-            $table->id();
-            $table->string('angkatan')->unique();
-            $table->enum('kategori', ['santri', 'pelajar']);
-            $table->unsignedBigInteger('tahun_ajaran_id');
-            $table->boolean('status')->default(true);
-            $table->timestamps();
+        $faker = Faker::create();
 
-            $table->foreign('tahun_ajaran_id')->references('id')->on('tahun_ajaran')->onDelete('cascade');
-        });
+        // Ambil data tahun ajaran sebagai referensi
+        $tahunAjaranMap = DB::table('tahun_ajaran')
+            ->get()
+            ->keyBy(function ($item) {
+                return substr($item->tahun_ajaran, 0, 4); // ambil tahun awal misal 2023 dari '2023/2024'
+            });
+
+        $angkatanData = [];
+
+        foreach ($tahunAjaranMap as $year => $tahunAjaran) {
+            $angkatanData[] = [
+                'angkatan' => 'Angkatan ' . $year,
+                'kategori' => $faker->randomElement(['santri', 'pelajar']),
+                'tahun_ajaran_id' => $tahunAjaran->id,
+                'status' => $faker->boolean(90),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('angkatan')->insert($angkatanData);
     }
 
     /**

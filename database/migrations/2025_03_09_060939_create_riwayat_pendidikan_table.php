@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('jurusan_id')->nullable();
             $table->unsignedBigInteger('kelas_id')->nullable();
             $table->unsignedBigInteger('rombel_id')->nullable();
+            $table->unsignedBigInteger('angkatan_id')->nullable();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
             $table->enum('status', ['aktif', 'do', 'berhenti', 'alumni', 'pindah', 'cuti', 'nonaktif'])->default('aktif');
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
+            $table->foreign('angkatan_id')->references('id')->on('angkatan')->onDelete('set null');
             $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
