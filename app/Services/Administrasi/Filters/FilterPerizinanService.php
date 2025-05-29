@@ -147,11 +147,11 @@ class FilterPerizinanService
 
     public function applyStatusIzin(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('status_izin')) {
+        if (! $request->filled('status')) {
             return $query;
         }
 
-        $query->where('pr.status', $request->status_izin);
+        $query->where('pr.status', $request->status);
 
         return $query;
     }

@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Biodata;
+use App\Models\Keluarga;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -87,10 +88,30 @@ class BiodataService
             ];
         }
 
+        $noKK = Keluarga::where('id_biodata', $bioId)->value('no_kk');
+
+        if (!$noKK && !empty($input['no_kk'])) {
+            // Belum ada, maka buat baru
+            Keluarga::create([
+                'no_kk' => $input['no_kk'],
+                'id_biodata' => $bioId,
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+                'status' => true,
+            ]);
+        } elseif (!empty($input['no_kk']) && $input['no_kk'] !== $noKK) {
+            // Sudah ada, tapi nilainya berbeda → update
+            Keluarga::where('id_biodata', $bioId)->update([
+                'no_kk' => $input['no_kk'],
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
+            ]);
+        }
+
         // Update hanya data yang dikirimkan
         $biodata->no_passport                 = $input['no_passport'] ?? $biodata->no_passport;
         $biodata->nik                         = $input['nik'] ?? $biodata->nik;
-        $biodata->no_kk                         = $input['no_kk'] ?? $biodata->no_kk;
         $biodata->nama                        = $input['nama'] ?? $biodata->nama;
         $biodata->jenis_kelamin               = $input['jenis_kelamin'] ?? $biodata->jenis_kelamin;
         $biodata->tanggal_lahir               = isset($input['tanggal_lahir']) ? \Carbon\Carbon::parse($input['tanggal_lahir']) : $biodata->tanggal_lahir;
