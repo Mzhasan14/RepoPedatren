@@ -90,6 +90,33 @@ class AnakasuhService
         ]);
     }
 
+    public function index(string $bioId): array
+    {
+        $list = DB::table('anak_asuh as a')
+            ->join('santri as s', 'w.id_santri', '=', 's.id')
+            ->join('kewaliasuhan as ks', 'id_wali_asuh', '=', 'w.id')
+            ->where('s.biodata_id', $bioId)
+            ->select([
+                'a.id',
+                's.nis',
+                'ks.tanggal_mulai',
+                'ks.tanggal_berakhir',
+                'a.status'
+            ])
+            ->get();
+
+        return [
+            'status' => true,
+            'data'   => $list->map(fn($item) => [
+                'id'            => $item->id,
+                'nis'           => $item->nis,
+                'tanggal_mulai' => $item->tanggal_mulai,
+                'tanggal_akhir' => $item->tanggal_berakhir,
+                'status'        => $item->status,
+            ]),
+        ];
+    }
+
     public function store(array $data)
     {
         return DB::transaction(function () use ($data) {

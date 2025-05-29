@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\api\kewaliasuhan;
 
 use App\Models\Santri;
+use App\Models\Biodata;
 use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
+use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Wali_asuh;
@@ -15,7 +18,6 @@ use App\Models\Kewaliasuhan\Kewaliasuhan;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\WaliasuhService;
 use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
-use App\Models\Biodata;
 use App\Services\Kewaliasuhan\DetailWaliasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
@@ -78,23 +80,77 @@ class WaliasuhController extends Controller
         ], 200);
     }
 
-    public function store(waliAsuhRequest $request)
+    public function index($id): JsonResponse
+    {
+        try {
+            $result = $this->waliasuhService->index($id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data khadam: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function store(waliAsuhRequest $request, $bioId): JsonResponse
     {
         try {
             $validated = $request->validated();
-            $result = $this->waliasuhService->store($validated);
+            $result = $this->waliasuhService->store($validated, $bioId);
+
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditambah',
                 'data' => $result['data']
             ]);
         } catch (\Exception $e) {
+            Log::error('Gagal tambah khadam: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id): JsonResponse
+    {
+        try {
+            $result = $this->waliasuhService->show($id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail khadam: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
                 'error' => $e->getMessage()
             ], 500);
         }

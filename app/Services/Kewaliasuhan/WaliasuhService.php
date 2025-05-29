@@ -3,6 +3,7 @@
 namespace App\Services\Kewaliasuhan;
 
 use App\Models\Santri;
+use App\Models\Biodata;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -89,60 +90,91 @@ class WaliasuhService
         ]);
     }
 
-    public function store(array $data)
+    public function index(string $bioId) :array {
+         $list = DB::table('wali_asuh as w')
+            ->join('santri as s', 'w.id_santri', '=', 's.id')
+            ->join('kewaliasuhan as ks','id_wali_asuh','=','w.id')
+            ->where('s.biodata_id', $bioId)
+            ->select([
+                'w.id',
+                's.nis',
+                'ks.tanggal_mulai',
+                'ks.tanggal_berakhir',
+                'w.status'
+            ])
+            ->get();
+
+        return [
+            'status' => true,
+            'data'   => $list->map(fn($item) => [
+                'id'            => $item->id,
+                'nis'           => $item->nis,
+                'tanggal_mulai' => $item->tanggal_mulai,
+                'tanggal_akhir' => $item->tanggal_berakhir,
+                'status'        => $item->status,
+            ]),
+        ];
+    }
+
+    public function store(array $input, string $bioId): array
     {
-        return DB::transaction(function () use ($data) {
-            if (!Auth::id()) {
-                return [
-                    'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi',
-                    'data' => null
-                ];
+        return DB::transaction(function () use ($input, $bioId) {
+            // 1. Validasi biodata
+            $biodata = Biodata::find($bioId);
+            if (!$biodata) {
+                return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
             }
 
-
-            // Cek apakah santri sudah menjadi wali atau anak asuh
-            if (
-                Wali_asuh::where('id_santri', $data['id_santri'])->exists() ||
-                Anak_asuh::where('id_santri', $data['id_santri'])->exists()
-            ) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri sudah terdaftar sebagai wali asuh atau anak asuh',
-                    'data' => null
-                ];
+            // 2. Cek apakah santri sudah ada
+            $santri = Santri::where('biodata_id', $bioId)->first();
+            if (!$santri) {
+                return ['status' => false, 'message' => 'Data santri tidak ditemukan.'];
             }
 
-            // Buat wali asuh baru
+            // 3. Cek apakah sudah menjadi wali asuh aktif
+            $activeWaliExists = Wali_asuh::where('id_santri', $santri->id)
+                ->where('status', true)
+                ->exists();
+
+            if ($activeWaliExists) {
+                return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai wali asuh aktif.'];
+            }
+
+            // 4. Buat data wali asuh
             $waliAsuh = Wali_asuh::create([
-                'id_santri' => $data['id_santri'],
-                'id_grup_wali_asuh' => $data['id_grup_wali_asuh'],
-                'created_by' => Auth::id(),
+                'id_santri' => $santri->id,
+                'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? null,
                 'status' => true,
-                'created_at' => now(),
-                'updated_at' => now()
+                'created_by' => Auth::id(),
             ]);
 
-            // Update status santri
-            Santri::where('id', $data['id_santri'])->update(['status_wali_asuh' => true]);
-
-            // Log activity
+            // 5. Activity log
             activity('wali_asuh_create')
                 ->performedOn($waliAsuh)
                 ->withProperties([
-                    'new_attributes' => $waliAsuh->getAttributes(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
+                    'biodata_id' => $bioId,
+                    'santri_id' => $santri->id,
+                    'input' => $input
                 ])
-                ->event('create_wali_asuh')
-                ->log('Wali asuh baru berhasil dibuat');
+                ->log('Wali asuh baru ditambahkan');
 
             return [
                 'status' => true,
-                'message' => 'Wali asuh berhasil dibuat',
-                'data' => $waliAsuh
+                'data' => $waliAsuh,
+                'message' => 'Wali asuh berhasil didaftarkan'
             ];
         });
+    }
+
+    public function show(int $id): array
+    {
+        $wa = Wali_asuh::find($id);
+
+        if (!$wa) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+        }
+
+        return ['status' => true, 'data' => $wa];
     }
 
     public function update(array $data, string $id)
