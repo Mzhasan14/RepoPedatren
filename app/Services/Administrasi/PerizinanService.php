@@ -6,8 +6,10 @@ use App\Models\Santri;
 use App\Models\Perizinan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Models\BerkasPerizinan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Administrasi\PerizinanRequest;
 
 class PerizinanService
@@ -254,5 +256,32 @@ class PerizinanService
 
             return ['status' => true, 'data' => $izin];
         });
+    }
+
+    public function addBerkasPerizinan(array $data,int $id)
+    {
+        $perizinan = Perizinan::find($id);
+        if (!$perizinan) {
+            return [
+                'status' => false,
+                'message' => 'Perizinan tidak ditemukan'
+            ];
+        }
+
+        $url = Storage::url($data['file_path']->store('berkas_perizinan', 'public'));
+
+        $berkas = BerkasPerizinan::create([
+            'perizinan_id' => $id,
+            'santri_id' => $perizinan->santri_id,
+            'file_path' => $url, 
+            'created_by' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return [
+            'status' => true,
+            'data' => $berkas
+        ];
     }
 }

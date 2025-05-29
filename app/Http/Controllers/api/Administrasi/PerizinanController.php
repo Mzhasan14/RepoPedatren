@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\Administrasi\PerizinanService;
 use App\Http\Requests\Administrasi\PerizinanRequest;
+use App\Http\Requests\Administrasi\BerkasPerizinanRequest;
 use App\Services\Administrasi\Filters\FilterPerizinanService;
 
 class PerizinanController extends Controller
@@ -48,7 +49,7 @@ class PerizinanController extends Controller
         }
 
         $formatted = $this->perizinan->formatData($results);
-        
+
         return response()->json([
             'total_data'   => $results->total(),
             'current_page' => $results->currentPage(),
@@ -58,7 +59,7 @@ class PerizinanController extends Controller
         ]);
     }
 
-     public function index($bioId)
+    public function index($bioId)
     {
         try {
             $result = $this->perizinan->index($bioId);
@@ -146,6 +147,30 @@ class PerizinanController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal update perizinan: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addBerkasPerizinan(BerkasPerizinanRequest $request, $id)
+    {
+        try {
+            $result = $this->perizinan->addBerkasPerizinan($request->validated(), $id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berkas berhasil ditambah',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah berkas perizinan: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
