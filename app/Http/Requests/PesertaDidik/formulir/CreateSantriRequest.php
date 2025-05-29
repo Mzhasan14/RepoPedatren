@@ -24,6 +24,7 @@ class CreateSantriRequest extends FormRequest
     public function rules(): array
     {
          return [
+            'angkatan_id' => 'required|exists:angkatan,id',
             'tanggal_masuk' => 'required|date'
         ];
     }

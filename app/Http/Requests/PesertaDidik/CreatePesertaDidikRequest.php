@@ -91,6 +91,7 @@ class CreatePesertaDidikRequest extends FormRequest
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
+            'angkatan_id' => 'nullable|exists:angkatan,id',
             'tanggal_masuk_pendidikan' => 'nullable|date',
 
             // Rencana Domisili

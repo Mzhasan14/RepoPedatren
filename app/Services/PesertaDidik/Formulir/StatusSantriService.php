@@ -24,6 +24,7 @@ class StatusSantriService
         $data = $santri->map(fn(Santri $santri) => [
             'id'             => $santri->id,
             'nis'            => $santri->nis,
+            'angkatan_id'  => $santri->angkatan_id,
             'tanggal_masuk'  => $santri->tanggal_masuk,
             'tanggal_keluar' => $santri->tanggal_keluar,
             'status'         => $santri->status,
@@ -61,6 +62,7 @@ class StatusSantriService
                 'tanggal_masuk'  => isset($input['tanggal_masuk'])
                     ? Carbon::parse($input['tanggal_masuk'])
                     : Carbon::now(),
+                'angkatan_id'  => $input['angkatan_id'] ?? null,
                 'tanggal_keluar' => null,
                 'status'         => 'aktif',
                 'created_by'     => Auth::id(),
@@ -89,6 +91,7 @@ class StatusSantriService
             'data'   => [
                 'id'             => $santri->id,
                 'nis'            => $santri->nis,
+                'angkatan_id'  => $santri->angkatan_id,
                 'tanggal_masuk'  => $santri->tanggal_masuk,
                 'tanggal_keluar' => $santri->tanggal_keluar,
                 'status'         => $santri->status,
@@ -117,6 +120,7 @@ class StatusSantriService
                 ? Carbon::parse($input['tanggal_keluar'])
                 : $santri->tanggal_keluar;
 
+            $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
             $santri->status = $input['status'] ?? $santri->status;
             $santri->updated_by = Auth::id();
 

@@ -29,6 +29,7 @@ class CreatePendidikanRequest extends FormRequest
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
+            'angkatan_id' => 'required|exists:angkatan,id',
             'tanggal_masuk' => 'required|date',
         ];
     }

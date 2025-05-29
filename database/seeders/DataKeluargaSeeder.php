@@ -27,6 +27,7 @@ class DataKeluargaSeeder extends Seeder
 
         $lembagaIds = DB::table('lembaga')->pluck('id')->toArray();
         $jurusanIds = DB::table('jurusan')->pluck('id')->toArray();
+        $angkatanList = DB::table('angkatan')->get(); // ambil seluruh angkatan
         $kelasIds = DB::table('kelas')->pluck('id')->toArray();
         $rombelIds = DB::table('rombel')->pluck('id')->toArray();
         $wilayahIds = DB::table('wilayah')->pluck('id')->toArray();
@@ -230,11 +231,20 @@ class DataKeluargaSeeder extends Seeder
             [$doSantri, $stSantri, $doPendidikan, $stPendidikan] = $scenarios[$pick];
 
             if ($doSantri) {
+                $angkatan = $faker->randomElement($angkatanList);
+                $angkatanId = $angkatan->id;
+
+                // Tanggal masuk sesuai awal tahun ajaran angkatan
+                $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
+                $tanggalMasuk = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
+                $tanggalKeluar = $stSantri === 'alumni' ? $faker->dateTimeBetween($tanggalMasuk, '+2 years')->format('Y-m-d') : null;
+
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $childId,
+                    'angkatan_id' => $angkatanId,
                     'nis' => $faker->unique()->numerify('###########'),
-                    'tanggal_masuk' => $faker->date(),
-                    'tanggal_keluar' => $stSantri === 'alumni' ? $faker->date() : null,
+                    'tanggal_masuk' => $tanggalMasuk,
+                    'tanggal_keluar' => $tanggalKeluar,
                     'status' => $stSantri,
                     'created_by' => 1,
                     'created_at' => now(),
@@ -247,8 +257,8 @@ class DataKeluargaSeeder extends Seeder
                         'wilayah_id' => $faker->randomElement($wilayahIds),
                         'blok_id' => $faker->randomElement($blokIds),
                         'kamar_id' => $faker->randomElement($kamarIds),
-                        'tanggal_masuk' => $faker->dateTime(),
-                        'tanggal_keluar' => $stSantri === 'alumni' ? $faker->dateTime() : null,
+                        'tanggal_masuk' => $tanggalMasuk,
+                        'tanggal_keluar' => $tanggalKeluar,
                         'status' => $stSantri === 'alumni' ? 'keluar' : $stSantri,
                         'created_by' => 1,
                         'created_at' => now(),
@@ -257,15 +267,19 @@ class DataKeluargaSeeder extends Seeder
                 }
 
                 if ($doPendidikan) {
+                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
+                    $tanggalKeluarPendidikan = $stPendidikan === 'alumni' ? $faker->dateTimeBetween($tanggalMasukPendidikan, '+2 years')->format('Y-m-d') : null;
+
                     DB::table('riwayat_pendidikan')->insert([
                         'santri_id' => $santriId,
+                        'angkatan_id' => $angkatanId,
                         'no_induk' => $faker->unique()->numerify('###########'),
                         'lembaga_id' => $faker->randomElement($lembagaIds),
                         'jurusan_id' => $faker->randomElement($jurusanIds),
                         'kelas_id' => $faker->randomElement($kelasIds),
                         'rombel_id' => $faker->randomElement($rombelIds),
-                        'tanggal_masuk' => $faker->date(),
-                        'tanggal_keluar' => $stPendidikan === 'alumni' ? $faker->date() : null,
+                        'tanggal_masuk' => $tanggalMasukPendidikan,
+                        'tanggal_keluar' => $tanggalKeluarPendidikan,
                         'status' => $stPendidikan,
                         'created_by' => 1,
                         'created_at' => now(),
@@ -274,7 +288,8 @@ class DataKeluargaSeeder extends Seeder
                 }
             }
 
-        
+
+
             // Jika ayah adalah pegawai, simpan ke anak_pegawai
             if (in_array($currentAyahId, $pegawaiBiodataIds)) {
                 DB::table('anak_pegawai')->insert([

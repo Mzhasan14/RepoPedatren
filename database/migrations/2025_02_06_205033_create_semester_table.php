@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tahun_ajaran_id');
             $table->enum('semester', ['ganjil', 'genap']);
+            $table->boolean('status')->default(true);
             $table->timestamps();
 
             $table->unique(['tahun_ajaran_id', 'semester']);

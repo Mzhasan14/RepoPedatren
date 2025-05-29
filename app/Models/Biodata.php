@@ -120,4 +120,9 @@ class Biodata extends Model
     {
         return $this->hasMany(Pegawai::class);
     }
+
+    public function keluarga()
+    {
+        return $this->hasMany(Keluarga::class, 'id_biodata', 'id');
+    }
 }

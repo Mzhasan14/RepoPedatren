@@ -59,7 +59,7 @@ class BiodataService
 
     public function show(string $bioId): array
     {
-        $biodata = Biodata::find($bioId);
+        $biodata = Biodata::with('keluarga')->find($bioId);
 
         if (! $biodata) {
             return [
@@ -70,7 +70,33 @@ class BiodataService
 
         return [
             'status' => true,
-            'data'   => $biodata,
+            'data'   => [
+                'id'                           => $biodata->id,
+                'no_passport'                 => $biodata->no_passport,
+                'no_kk'                       => optional($biodata->keluarga->sortByDesc('created_at')->first())->no_kk,
+                'nik'                         => $biodata->nik,
+                'nama'                        => $biodata->nama,
+                'jenis_kelamin'               => $biodata->jenis_kelamin,
+                'tanggal_lahir'              => $biodata->tanggal_lahir
+                    ? Carbon::parse($biodata->tanggal_lahir)->format('Y-m-d')
+                    : null,
+                'tempat_lahir'               => $biodata->tempat_lahir,
+                'anak_keberapa'              => $biodata->anak_keberapa,
+                'dari_saudara'               => $biodata->dari_saudara,
+                'tinggal_bersama'            => $biodata->tinggal_bersama,
+                'jenjang_pendidikan_terakhir' => $biodata->jenjang_pendidikan_terakhir,
+                'nama_pendidikan_terakhir'   => $biodata->nama_pendidikan_terakhir,
+                'no_telepon'                 => $biodata->no_telepon,
+                'no_telepon_2'               => $biodata->no_telepon_2,
+                'email'                      => $biodata->email,
+                'negara_id'                  => $biodata->negara_id,
+                'provinsi_id'                => $biodata->provinsi_id,
+                'kabupaten_id'               => $biodata->kabupaten_id,
+                'kecamatan_id'               => $biodata->kecamatan_id,
+                'jalan'                      => $biodata->jalan,
+                'kode_pos'                   => $biodata->kode_pos,
+                'wafat'                      => (bool) $biodata->wafat,
+            ],
         ];
     }
 

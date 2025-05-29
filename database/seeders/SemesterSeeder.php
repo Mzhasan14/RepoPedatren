@@ -13,24 +13,23 @@ class SemesterSeeder extends Seeder
      */
     public function run(): void
     {
-        $tahunAjaranIds = DB::table('tahun_ajaran')->pluck('id');
+        $activeTahunAjaran = DB::table('tahun_ajaran')->where('status', true)->first();
 
-        $data = [];
-        foreach ($tahunAjaranIds as $id) {
-            $data[] = [
-                'tahun_ajaran_id' => $id,
-                'semester' => 'ganjil',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            $data[] = [
-                'tahun_ajaran_id' => $id,
-                'semester' => 'genap',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        if ($activeTahunAjaran) {
+            DB::table('semester')->insert([
+                [
+                    'tahun_ajaran_id' => $activeTahunAjaran->id,
+                    'semester' => 'ganjil',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'tahun_ajaran_id' => $activeTahunAjaran->id,
+                    'semester' => 'genap',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
         }
-
-        DB::table('semester')->insert($data);
     }
 }

@@ -12,24 +12,30 @@ class AngkatanSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run()
     {
         $faker = Faker::create();
-        $tahunAjaranIds = DB::table('tahun_ajaran')->pluck('id')->toArray();
 
-        $angkatanSet = [];
-        for ($i = 0; $i < 20; $i++) {
-            $angkatan = 'ANGK-' . strtoupper($faker->unique()->bothify('??##'));
-            $angkatanSet[] = [
-                'angkatan' => $angkatan,
+        // Ambil data tahun ajaran sebagai referensi
+        $tahunAjaranMap = DB::table('tahun_ajaran')
+            ->get()
+            ->keyBy(function ($item) {
+                return substr($item->tahun_ajaran, 0, 4); // ambil tahun awal misal 2023 dari '2023/2024'
+            });
+
+        $angkatanData = [];
+
+        foreach ($tahunAjaranMap as $year => $tahunAjaran) {
+            $angkatanData[] = [
+                'angkatan' => 'Angkatan ' . $year,
                 'kategori' => $faker->randomElement(['santri', 'pelajar']),
-                'tahun_ajaran_id' => $faker->randomElement($tahunAjaranIds),
-                'status' => $faker->boolean(90), // 90% aktif
+                'tahun_ajaran_id' => $tahunAjaran->id,
+                'status' => $faker->boolean(90),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
 
-        DB::table('angkatan')->insert($angkatanSet);
+        DB::table('angkatan')->insert($angkatanData);
     }
 }

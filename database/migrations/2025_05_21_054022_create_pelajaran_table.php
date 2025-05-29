@@ -64,7 +64,6 @@ return new class extends Migration
             $table->foreign('semester_id')->references('id')->on('semester')->onDelete('cascade');
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
             $table->foreign('rombel_id')->references('id')->on('rombel')->onDelete('cascade');
-            $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');
             $table->foreign('mata_pelajaran_id')->references('id')->on('mata_pelajaran')->onDelete('cascade');
             $table->foreign('jam_pelajaran_id')->references('id')->on('jam_pelajaran')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

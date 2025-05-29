@@ -33,6 +33,7 @@ class PendidikanService
             'nama_jurusan'   => $rp->jurusan->nama_jurusan,
             'nama_kelas'     => $rp->kelas->nama_kelas,
             'nama_rombel'    => $rp->rombel->nama_rombel,
+            'angkatan_id'  => $rp->angkatan_id,
             'tanggal_masuk'  => $rp->tanggal_masuk,
             'tanggal_keluar' => $rp->tanggal_keluar,
             'status'         => $rp->status,
@@ -64,9 +65,11 @@ class PendidikanService
                 'jurusan_id'     => $input['jurusan_id'],
                 'kelas_id'       => $input['kelas_id'],
                 'rombel_id'      => $input['rombel_id'],
+                'angkatan_id'   => $input['angkatan_id'] ?? null,
                 'tanggal_masuk'  => isset($input['tanggal_masuk'])
                     ? Carbon::parse($input['tanggal_masuk'])
                     : Carbon::now(),
+                'angkatan_id'    => $input['angkatan_id'] ?? null,
                 'status'         => 'aktif',
                 'created_by'     => Auth::id(),
             ]);
@@ -77,7 +80,7 @@ class PendidikanService
 
     public function show(int $id): array
     {
-        $rp = RiwayatPendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel'])->find($id);
+        $rp = RiwayatPendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel', 'angkatan'])->find($id);
         if (! $rp) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
@@ -91,6 +94,7 @@ class PendidikanService
                 'nama_jurusan'   => $rp->jurusan->nama_jurusan,
                 'nama_kelas'     => $rp->kelas->nama_kelas,
                 'nama_rombel'    => $rp->rombel->nama_rombel,
+                'nama_angkatan'  => $rp->angkatan ? $rp->angkatan->nama_angkatan : null,
                 'tanggal_masuk'  => $rp->tanggal_masuk,
                 'tanggal_keluar' => $rp->tanggal_keluar,
                 'status'         => $rp->status,
@@ -196,6 +200,7 @@ class PendidikanService
                 'kelas_id'       => $input['kelas_id'],
                 'rombel_id'      => $input['rombel_id'],
                 'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
+                'angkatan_id'    => $input['angkatan_id'] ?? null,
                 'updated_by'     => Auth::id(),
             ]);
 

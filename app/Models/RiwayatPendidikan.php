@@ -26,6 +26,7 @@ class RiwayatPendidikan extends Model
         'jurusan_id',
         'kelas_id',
         'rombel_id',
+        'angkatan_id',
         'tanggal_masuk',
         'tanggal_keluar',
         'status',
@@ -87,5 +88,10 @@ class RiwayatPendidikan extends Model
     public function santri(): BelongsTo
     {
         return $this->belongsTo(Santri::class, 'santri_id');
+    }
+
+    public function angkatan(): BelongsTo
+    {
+        return $this->belongsTo(Angkatan::class, 'angkatan_id');
     }
 }

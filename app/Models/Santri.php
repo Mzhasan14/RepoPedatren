@@ -29,6 +29,7 @@ class Santri extends Model
     protected $fillable = [
         'biodata_id',
         'nis',
+        'angkatan_id',
         'tanggal_masuk',
         'tanggal_keluar',
         'status',
@@ -103,5 +104,9 @@ class Santri extends Model
     public function catatankognitif()
     {
         return $this->hasMany(Catatan_kognitif::class, 'id_santri');
+    }
+    public function angkatan()
+    {
+        return $this->belongsTo(Angkatan::class, 'angkatan_id', 'id');
     }
 }
