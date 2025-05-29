@@ -164,7 +164,7 @@ class PendidikanService
             }
 
             $rp->update([
-                'status'         => 'keluar',
+                'status'         => $input['status'] ?? 'nonaktif',
                 'tanggal_keluar' => $tglKeluar,
                 'updated_by'     => Auth::id(),
             ]);

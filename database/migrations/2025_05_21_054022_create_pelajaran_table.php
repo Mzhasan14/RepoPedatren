@@ -49,9 +49,9 @@ return new class extends Migration
         Schema::create('jadwal_pelajaran', function (Blueprint $table) {
             $table->id();
             $table->enum('hari', ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']);
+            $table->unsignedBigInteger('semester_id');
             $table->unsignedBigInteger('kelas_id');
             $table->unsignedBigInteger('rombel_id')->nullable();
-            $table->unsignedBigInteger('pengajar_id');
             $table->unsignedBigInteger('mata_pelajaran_id');
             $table->unsignedBigInteger('jam_pelajaran_id');
             $table->unsignedBigInteger('created_by');
@@ -61,6 +61,7 @@ return new class extends Migration
 
             // Relasi foreign key
             $table->unique(['hari', 'kelas_id', 'jam_pelajaran_id'], 'jadwal_unik_kelas_jam');
+            $table->foreign('semester_id')->references('id')->on('semester')->onDelete('cascade');
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
             $table->foreign('rombel_id')->references('id')->on('rombel')->onDelete('cascade');
             $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');

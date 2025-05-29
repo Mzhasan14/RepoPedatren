@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('angkatan', function (Blueprint $table) {
             $table->id();
             $table->string('angkatan')->unique();
+            $table->enum('kategori', ['santri', 'pelajar']);
             $table->unsignedBigInteger('tahun_ajaran_id');
             $table->boolean('status')->default(true);
             $table->timestamps();
