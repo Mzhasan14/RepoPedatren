@@ -63,7 +63,7 @@ class BerkasService
     {
         return DB::transaction(function () use ($input, $biodataId) {
             // Validasi berkas
-            if (empty($input['file']) || ! $input['file'] instanceof UploadedFile) {
+            if (empty($input['file_path']) || !$input['file_path'] instanceof UploadedFile) {
                 return [
                     'status'  => false,
                     'message' => 'File tidak valid.',
@@ -80,7 +80,7 @@ class BerkasService
             }
 
             // Simpan file
-            $uploadedFile = $input['file'];
+            $uploadedFile = $input['file_path'];
             $path = $uploadedFile->store('formulir', 'public');
 
             // Buat record
@@ -111,7 +111,7 @@ class BerkasService
             }
 
             // Validasi berkas baru
-            if (empty($input['file']) || ! $input['file'] instanceof UploadedFile) {
+            if (empty($input['file_path']) || ! $input['file_path'] instanceof UploadedFile) {
                 return [
                     'status'  => false,
                     'message' => 'File tidak valid.',
@@ -134,7 +134,7 @@ class BerkasService
             }
 
             // Simpan file baru
-            $uploadedFile = $input['file'];
+            $uploadedFile = $input['file_path'];
             $path = $uploadedFile->store('formulir', 'public');
 
             // Update record

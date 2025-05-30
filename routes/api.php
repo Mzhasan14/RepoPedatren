@@ -294,8 +294,6 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
     Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
-
-
     // lembaga
     Route::get('lembaga', [LembagaController::class, 'index']);
     Route::post('lembaga', [LembagaController::class, 'store']);
