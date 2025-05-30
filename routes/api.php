@@ -448,13 +448,13 @@ Route::prefix('dropdown')->group(function () {
     Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
 
     // kewilayahan
-    // Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-    // Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
-    // Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
+    Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
+    Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
+    Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
 
     // Pendidikan
-    // Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
-    // Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
-    // Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
-    // Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
+    Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
+    Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
+    Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
+    Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
 });

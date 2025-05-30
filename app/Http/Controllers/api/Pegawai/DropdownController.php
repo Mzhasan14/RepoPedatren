@@ -383,72 +383,43 @@ public function menuLembagaJurusanKelasRombel()
 
      
         public function getAngkatan()
-        {
-            // Ambil angkatan masuk pelajar
-            $angkatanMasukPelajar = RiwayatPendidikan::selectRaw('YEAR(tanggal_masuk) as tahun')
-                ->groupBy('tahun')
-                ->orderBy('tahun')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'tahun' => $item->tahun,
-                        'label' => 'Masuk Tahun ' . $item->tahun
-                    ];
-                });
-    
-            // Ambil angkatan masuk santri
-            $angkatanMasukSantri = Santri::selectRaw('YEAR(tanggal_masuk) as tahun')
-                ->groupBy('tahun')
-                ->orderBy('tahun')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'tahun' => $item->tahun,
-                        'label' => 'Masuk Tahun ' . $item->tahun
-                    ];
-                });
-    
-            // Ambil angkatan keluar pelajar
-            $angkatanKeluarPelajar = RiwayatPendidikan::selectRaw('YEAR(tanggal_keluar) as tahun')
-                ->whereNotNull('tanggal_keluar')
-                ->groupBy('tahun')
-                ->orderBy('tahun')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'tahun' => $item->tahun,
-                        'label' => 'Keluar Tahun ' . $item->tahun
-                    ];
-                });
-    
-            // Ambil angkatan keluar santri
-            $angkatanKeluarSantri =Santri::selectRaw('YEAR(tanggal_keluar) as tahun')
-                ->whereNotNull('tanggal_keluar')
-                ->groupBy('tahun')
-                ->orderBy('tahun')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'tahun' => $item->tahun,
-                        'label' => 'Keluar Tahun ' . $item->tahun
-                    ];
-                });
-    
-            // Format response JSON
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'angkatan_masuk' => [
-                        'pelajar' => $angkatanMasukPelajar,
-                        'santri' => $angkatanMasukSantri
-                    ],
-                    'angkatan_keluar' => [
-                        'pelajar' => $angkatanKeluarPelajar,
-                        'santri' => $angkatanKeluarSantri
+            {
+                // Ambil angkatan pelajar
+                $angkatanPelajar = DB::table('angkatan')
+                    ->select('id', 'angkatan')
+                    ->where('kategori', 'pelajar')
+                    ->where('status', 1)
+                    ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'label' => $item->angkatan,
+                        ];
+                    });
+
+                // Ambil angkatan santri
+                $angkatanSantri = DB::table('angkatan')
+                    ->select('id', 'angkatan')
+                    ->where('kategori', 'santri')
+                    ->where('status', 1)
+                    ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'label' => $item->angkatan,
+                        ];
+                    });
+
+                return response()->json([
+                    'status' => 'success',
+                    'data' => [
+                        'pelajar' => $angkatanPelajar,
+                        'santri' => $angkatanSantri,
                     ]
-                ]
-            ]);
-        }
+                ]);
+            }
 
         public function menuKategoriGolonganAndGolongan()
         {

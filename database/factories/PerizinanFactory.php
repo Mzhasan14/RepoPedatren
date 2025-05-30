@@ -100,7 +100,6 @@ class PerizinanFactory extends Factory
             'biktren_id'           => optional(User::role('biktren')->inRandomOrder()->first())->id,
             'pengasuh_id'          => optional(User::role('pengasuh')->inRandomOrder()->first())->id,
             'kamtib_id'            => optional(User::role('kamtib')->inRandomOrder()->first())->id,
-            'pengantar_id'         => optional(OrangTuaWali::inRandomOrder()->first())->id,
             'alasan_izin'          => $this->faker->sentence,
             'alamat_tujuan'        => $this->faker->address,
             'tanggal_mulai'        => $mulai,
