@@ -129,6 +129,8 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
+    
+    Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy'])->middleware('role:superadmin|admin');
 
     // Khadam

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Services\Kewaliasuhan\WaliasuhService;
 use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
 use App\Services\Kewaliasuhan\DetailWaliasuhService;
+use App\Http\Requests\Kewaliasuhan\KeluarWaliasuhRequest;
 use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
 class WaliasuhController extends Controller
@@ -168,6 +169,32 @@ class WaliasuhController extends Controller
             'message' => 'waliasuh berhasil diperbarui',
             'data' => $result['data']
         ]);
+    }
+
+    public function keluarWaliasuh(KeluarWaliasuhRequest $request, $id): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->waliasuhService->keluarWaliasuh($validated, $id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal keluar khadam: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy($id) {

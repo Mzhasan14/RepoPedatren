@@ -253,6 +253,29 @@ class WaliasuhService
         });
     }
 
+    public function keluarWaliasuh(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $kh = Wali_asuh::find($id);
+            if (!$kh) {
+                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+            }
+
+            $tglKeluar = Carbon::parse($input['tanggal_berakhir'] ?? '');
+
+            if ($tglKeluar->lt(Carbon::parse($kh->tanggal_mulai))) {
+                return ['status' => false, 'message' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.'];
+            }
+
+            $kh->update([
+                'tanggal_berakhir'  => $tglKeluar,
+                'status'         => false,
+                'updated_by'     => Auth::id(),
+            ]);
+
+            return ['status' => true, 'data' => $kh];
+        });
+    }
 
 
     public function destroy($id)
