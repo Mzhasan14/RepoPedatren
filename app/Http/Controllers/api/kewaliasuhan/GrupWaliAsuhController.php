@@ -95,6 +95,13 @@ class GrupWaliAsuhController extends Controller
         ]);
     }
 
+    public function getGrup()
+    {
+        return response()->json(
+            Grup_WaliAsuh::select('id', 'nama_grup')->get()
+        );
+    }
+
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {

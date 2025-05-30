@@ -97,152 +97,157 @@ class OrangtuaWaliService
             "foto_profil" => url($item->foto_profil)
         ]);
     }
-    
-    public function index(?string $idBiodata = null)
+
+    public function index(string $bioId): array
     {
-        $query = OrangTuaWali::with(['hubunganKeluarga', 'biodata']);
-
-        if ($idBiodata) {
-            $query->where('id_biodata', $idBiodata);
-        }
-
-        $data = $query->orderBy('created_at', 'desc')->get();
+        $list = OrangTuaWali::with('biodata', 'keluarga')
+            ->where('id_biodata', $bioId)
+            ->get();
 
         return [
             'status' => true,
-            'data' => $data
+            'data'   => $list->map(fn($item) => [
+                'id'              => $item->id,
+                'id_biodata'      => $item->id_biodata,
+                'no_passport'     => $item->biodata->no_passport,
+                'no_kk'     => optional($item->keluarga)->first()->no_kk,
+                'nik'       => $item->biodata->nik,
+                'nama'            => $item->biodata->nama,
+                'jenis_kelamin'   => $item->biodata->jenis_kelamin ?? null,
+                'tanggal_lahir'              => $item->biodata->tanggal_lahir
+                    ? Carbon::parse($item->biodata->tanggal_lahir)->format('Y-m-d')
+                    : null,
+                'tempat_lahir'               => $item->biodata->tempat_lahir,
+                'anak_keberapa'              => $item->biodata->anak_keberapa,
+                'dari_saudara'               => $item->biodata->dari_saudara,
+                'tinggal_bersama'            => $item->biodata->tinggal_bersama,
+                'jenjang_pendidikan_terakhir' => $item->biodata->jenjang_pendidikan_terakhir,
+                'nama_pendidikan_terakhir'   => $item->biodata->nama_pendidikan_terakhir,
+                'no_telepon'                 => $item->biodata->no_telepon,
+                'no_telepon_2'               => $item->biodata->no_telepon_2,
+                'email'                      => $item->biodata->email,
+                'pekerjaan'     =>$item->pekerjaan,
+                'penghasilan'       =>$item->penghasilan,
+                'negara_id'                  => $item->biodata->negara_id,
+                'provinsi_id'                => $item->biodata->provinsi_id,
+                'kabupaten_id'               => $item->biodata->kabupaten_id,
+                'kecamatan_id'               => $item->biodata->kecamatan_id,
+                'jalan'                      => $item->biodata->jalan,
+                'kode_pos'                   => $item->biodata->kode_pos,
+                'wafat'                      => (bool) $item->biodata->wafat,
+            ]),
         ];
     }
 
-    // public function store(array $data)
-    // {
-    //     return DB::transaction(function () use ($data) {
-    //         if (!isset($data['id_biodata'], $data['id_hubungan_keluarga']) || !Auth::id()) {
-    //             return [
-    //                 'status' => false,
-    //                 'message' => 'Data tidak lengkap atau pengguna tidak terautentikasi',
-    //                 'data' => null
-    //             ];
-    //         }
-
-    //         $ortu = OrangTuaWali::create([
-    //             'id_biodata' => $data['id_biodata'],
-    //             'id_hubungan_keluarga' => $data['id_hubungan_keluarga'],
-    //             'wali' => $data['wali'] ?? false,
-    //             'pekerjaan' => $data['pekerjaan'] ?? null,
-    //             'penghasilan' => $data['penghasilan'] ?? null,
-    //             'wafat' => $data['wafat'] ?? false,
-    //             'status' => true,
-    //             'created_by' => Auth::id(),
-    //             'created_at' => now(),
-    //             'updated_at' => now(),
-    //         ]);
-
-    //         activity('ortu_create')
-    //             ->performedOn($ortu)
-    //             ->withProperties(['new' => $ortu->getAttributes()])
-    //             ->event('create_ortu')
-    //             ->log('Data orang tua baru disimpan');
-
-    //         return ['status' => true, 'data' => $ortu];
-    //     });
-    // }
-
-    public function store(array $data)
+    public function store(array $data, string $bioId)
     {
-        DB::beginTransaction();
-        try {
-            $negara = Negara::create([
-                'nama_negara' => $data['negara'],
-                'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                'status' => true,
-                'created_at' => Carbon::now(),
-            ]);
-            $provinsi = Provinsi::create([
-                'negara_id' => $negara->id,
-                'nama_provinsi' => $data['provinsi'],
-                'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                'status' => true,
-                'created_at' => Carbon::now(),
-            ]);
-            $kabupaten = Kabupaten::create([
-                'provinsi_id' => $provinsi->id,
-                'nama_kabupaten' => $data['kabupaten'],
-                'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                'status' => true,
-                'created_at' => Carbon::now(),
-            ]);
-            $kecamatan = Kecamatan::create([
-                'kabupaten_id' => $kabupaten->id,
-                'nama_kecamatan' => $data['kecamatan'],
-                'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                'status' => true,
-                'created_at' => Carbon::now(),
-            ]);
-            //  Biodata
-            $biodata = Biodata::create([
-                'id' => Str::uuid(),
-                'negara_id' => $negara->id,
-                'provinsi_id' => $provinsi->id,
-                'kabupaten_id' => $kabupaten->id,
-                'kecamatan_id' => $kecamatan->id,
-                'jalan' => $data['jalan'],
-                'kode_pos' => $data['kode_pos'],
-                'nama' => $data['nama'],
-                'no_passport' => $data['no_passport'], // diperbaiki
-                'tanggal_lahir' => Carbon::parse($data['tanggal_lahir']),
-                'jenis_kelamin' => $data['jenis_kelamin'],
-                'tempat_lahir' => $data['tempat_lahir'],
-                'nik' => $data['nik'],
-                'no_telepon' => $data['no_telepon'],
-                'no_telepon_2' => $data['no_telepon_2'],
-                'email' => $data['email'],
-                'jenjang_pendidikan_terakhir' => $data['jenjang_pendidikan_terakhir'],
-                'nama_pendidikan_terakhir' => $data['nama_pendidikan_terakhir'],
-                'anak_keberapa' => $data['anak_keberapa'],
-                'dari_saudara' => $data['dari_saudara'],
-                'status' => true,
-                'wafat' => $data['wafat'],
-                'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                'created_at' => Carbon::now(),
-            ]);
-
-            if (!empty($data['no_kk'])) {
-                Keluarga::create([
-                    'id_biodata' => $biodata->id,
-                    'no_kk' => $data['no_kk'],
-                    'created_by' => Auth::id(), // Ganti dengan ID pengguna yang sesuai login
-                    'status' => true,
-                    'created_at' => now(),
-                ]);
+        return DB::transaction(function () use ($data, $bioId) {
+            if (!Biodata::find($bioId)) {
+                return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
             }
-            $ortu = OrangTuaWali::create([
-                'id_biodata' => $biodata->id,
-                'id_hubungan_keluarga' => $data['id_hubungan_keluarga'],
-                'wali' => $data['wali'] ?? false,
-                'pekerjaan' => $data['pekerjaan'] ?? null,
-                'penghasilan' => $data['penghasilan'] ?? null,
-                'wafat' => $data['wafat'] ?? false,
-                'status' => true,
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
 
-            activity('ortu_create')
-                ->performedOn($ortu)
-                ->withProperties(['new' => $ortu->getAttributes()])
-                ->event('create_ortu')
-                ->log('Data orang tua baru disimpan');
+            try {
+                // Buat Negara
+                $negara = Negara::create([
+                    'nama_negara' => $data['negara'],
+                    'created_by'  => Auth::id(),
+                    'status'      => true,
+                    'created_at'  => Carbon::now(),
+                ]);
 
-            DB::commit();
+                // Buat Provinsi
+                $provinsi = Provinsi::create([
+                    'negara_id'     => $negara->id,
+                    'nama_provinsi' => $data['provinsi'],
+                    'created_by'    => Auth::id(),
+                    'status'        => true,
+                    'created_at'    => Carbon::now(),
+                ]);
 
-            return ['status' => true, 'data' => $ortu];
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error creating orangtua: ' . $e->getMessage());
-            throw $e;  // Melemparkan exception agar ditangani di controller
-        }
+                // Buat Kabupaten
+                $kabupaten = Kabupaten::create([
+                    'provinsi_id'    => $provinsi->id,
+                    'nama_kabupaten' => $data['kabupaten'],
+                    'created_by'     => Auth::id(),
+                    'status'         => true,
+                    'created_at'     => Carbon::now(),
+                ]);
+
+                // Buat Kecamatan
+                $kecamatan = Kecamatan::create([
+                    'kabupaten_id'    => $kabupaten->id,
+                    'nama_kecamatan'  => $data['kecamatan'],
+                    'created_by'      => Auth::id(),
+                    'status'          => true,
+                    'created_at'      => Carbon::now(),
+                ]);
+
+                // Buat Biodata
+                $biodata = Biodata::create([
+                    'id'                            => Str::uuid(),
+                    'negara_id'                     => $negara->id,
+                    'provinsi_id'                   => $provinsi->id,
+                    'kabupaten_id'                  => $kabupaten->id,
+                    'kecamatan_id'                  => $kecamatan->id,
+                    'jalan'                         => $data['jalan'],
+                    'kode_pos'                      => $data['kode_pos'],
+                    'nama'                          => $data['nama'],
+                    'no_passport'                   => $data['no_passport'],
+                    'tanggal_lahir'                 => Carbon::parse($data['tanggal_lahir']),
+                    'jenis_kelamin'                 => $data['jenis_kelamin'],
+                    'tempat_lahir'                  => $data['tempat_lahir'],
+                    'nik'                           => $data['nik'],
+                    'no_telepon'                    => $data['no_telepon'],
+                    'no_telepon_2'                  => $data['no_telepon_2'],
+                    'email'                         => $data['email'],
+                    'jenjang_pendidikan_terakhir'   => $data['jenjang_pendidikan_terakhir'],
+                    'nama_pendidikan_terakhir'      => $data['nama_pendidikan_terakhir'],
+                    'anak_keberapa'                 => $data['anak_keberapa'],
+                    'dari_saudara'                  => $data['dari_saudara'],
+                    'status'                        => true,
+                    'wafat'                         => $data['wafat'],
+                    'created_by'                    => Auth::id(),
+                    'created_at'                    => Carbon::now(),
+                ]);
+
+                // Jika ada KK, buat data keluarga
+                if (!empty($data['no_kk'])) {
+                    Keluarga::create([
+                        'id_biodata' => $biodata->id,
+                        'no_kk'      => $data['no_kk'],
+                        'created_by' => Auth::id(),
+                        'status'     => true,
+                        'created_at' => now(),
+                    ]);
+                }
+
+                // Buat Data Orang Tua
+                $ortu = OrangTuaWali::create([
+                    'id_biodata'            => $biodata->id,
+                    'id_hubungan_keluarga'  => $data['id_hubungan_keluarga'],
+                    'wali'                  => $data['wali'] ?? false,
+                    'pekerjaan'             => $data['pekerjaan'] ?? null,
+                    'penghasilan'           => $data['penghasilan'] ?? null,
+                    'wafat'                 => $data['wafat'] ?? false,
+                    'status'                => true,
+                    'created_by'            => Auth::id(),
+                    'created_at'            => now(),
+                    'updated_at'            => now(),
+                ]);
+
+                // Logging aktivitas
+                activity('ortu_create')
+                    ->performedOn($ortu)
+                    ->withProperties(['new' => $ortu->getAttributes()])
+                    ->event('create_ortu')
+                    ->log('Data orang tua baru disimpan');
+
+                return ['status' => true, 'data' => $ortu];
+            } catch (\Exception $e) {
+                Log::error('Error creating orangtua: ' . $e->getMessage());
+                throw $e;
+            }
+        });
     }
 
     public function edit(string $id)

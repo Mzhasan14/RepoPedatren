@@ -89,20 +89,39 @@ class OrangTuaWaliController extends Controller
     }
 
 
-    // public function index()
-    // {
-    //     $ortu = OrangTuaWali::Active()->latest()->paginate(5);
-    //     return new PdResource(true, 'List Orang Tua', $ortu);
-    // }
+    public function index($id): JsonResponse
+    {
+        try {
+            $result = $this->orangtuaWaliService->index($id);
+
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data khadam: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(OrangtuaWaliRequest $request)
+    public function store(OrangtuaWaliRequest $request, $bioId)
     {
         try {
             $validated = $request->validated();
-            $result = $this->orangtuaWaliService->store($validated);
+            $result = $this->orangtuaWaliService->store($validated, $bioId);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']

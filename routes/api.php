@@ -194,8 +194,9 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
     Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
     Route::put('{id}/keluarga', [KeluargaController::class, 'update']);// update hanya 1 data keluarga saja
-    Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']);// jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
+    Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']); // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
 
+    Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
@@ -457,4 +458,7 @@ Route::prefix('dropdown')->group(function () {
     Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
     Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
     Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
+
+    // Kewaliasuhan
+    Route::get('grup/kewaliasuhan', [GrupWaliasuhController::class, 'getGrup']);
 });
