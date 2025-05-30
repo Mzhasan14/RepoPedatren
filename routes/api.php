@@ -126,7 +126,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Kewaliasuhan
     Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
-    Route::get('{id}/waliasuh', [WaliasuhController::class, 'show']);
+    Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy'])->middleware('role:superadmin|admin');
@@ -191,7 +191,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
 
     // Keluarga
-    Route::get('/keluarga', [KeluargaController::class, 'index']);
+    Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
     // update hanya 1 data keluarga saja 
     Route::put('/keluarga/{id}', [KeluargaController::class, 'update']);
     // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru

@@ -26,6 +26,7 @@ class waliAsuhRequest extends FormRequest
         return [
             'id_santri' => 'required|exists:santri,id',
             'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
+            'tanggal_mulai' => 'required|date'
         ];
     }
 
