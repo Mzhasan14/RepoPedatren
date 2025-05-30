@@ -50,6 +50,11 @@ public function biodataDetail()
         return $this->belongsTo(HubunganKeluarga::class, 'id_hubungan_keluarga', 'id');
     }
 
+    public function orangTua()
+    {
+        return $this->belongsTo(OrangTuaWali::class, 'id_biodata', 'id_biodata');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('keluarga.status', true);

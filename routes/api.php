@@ -192,10 +192,10 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     // Keluarga
     Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
-    // update hanya 1 data keluarga saja 
-    Route::put('/keluarga/{id}', [KeluargaController::class, 'update']);
-    // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
-    Route::put('/keluarga/pindah/{biodata_id}', [KeluargaController::class, 'pindahkanSeluruhKk']);
+    Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
+    Route::put('{id}/keluarga', [KeluargaController::class, 'update']);// update hanya 1 data keluarga saja
+    Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']);// jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
+
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
     Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
@@ -382,7 +382,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
 
     // 🏫 Keluarga
-    Route::get('/keluarga/{id_biodata}', [KeluargaController::class, 'getKeluargaByIdBio']);
+    Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
     Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
