@@ -3,100 +3,92 @@
 namespace App\Http\Controllers\Api\Pegawai;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alamat\Kecamatan;
 use App\Models\Catatan_afektif;
 use App\Models\Catatan_kognitif;
 use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Kewilayahan\Kamar;
 use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
-use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
-use App\Models\Pelajar;
-use App\Models\Pendidikan\Rombel;
-use App\Models\RiwayatPendidikan;
-use App\Models\Santri;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DropdownController extends Controller
 {
     public function menuWilayahBlokKamar()
-{
-    $query = DB::table('wilayah as w')
-        ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
-        ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
-        ->select(
-            'w.id as wilayah_id',
-            'w.nama_wilayah',
-            'b.id as blok_id',
-            'b.wilayah_id',
-            'b.nama_blok',
-            'k.id as kamar_id',
-            'k.blok_id',
-            'k.nama_kamar'
-        )
-        ->orderBy('w.id')
-        ->get();
+    {
+        $query = DB::table('wilayah as w')
+            ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
+            ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
+            ->select(
+                'w.id as wilayah_id',
+                'w.nama_wilayah',
+                'b.id as blok_id',
+                'b.wilayah_id',
+                'b.nama_blok',
+                'k.id as kamar_id',
+                'k.blok_id',
+                'k.nama_kamar'
+            )
+            ->orderBy('w.id')
+            ->get();
 
-    $wilayahs = [];
+        $wilayahs = [];
 
-    foreach ($query as $row) {
-        // Inisialisasi wilayah
-        if (!isset($wilayahs[$row->wilayah_id])) {
-            $wilayahs[$row->wilayah_id] = [
-                'id' => $row->wilayah_id,
-                'nama_wilayah' => $row->nama_wilayah,
-                'blok' => [],
-            ];
-        }
-
-        // Inisialisasi blok
-        if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
-            $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
-                'id' => $row->blok_id,
-                'wilayah_id' => $row->wilayah_id,
-                'nama_blok' => $row->nama_blok,
-                'kamar' => [],
-            ];
-        }
-
-        // Tambahkan kamar jika ada
-        if (!is_null($row->kamar_id)) {
-            $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
-                'id' => $row->kamar_id,
-                'id_blok' => $row->blok_id,
-                'nama_kamar' => $row->nama_kamar,
-            ];
-        }
-    }
-
-    // Konversi dan urutkan berdasarkan abjad
-    $result = [
-        'wilayah' => array_values(array_map(function ($wilayah) {
-            // Urutkan kamar berdasarkan nama_kamar
-            foreach ($wilayah['blok'] as &$blok) {
-                usort($blok['kamar'], function ($a, $b) {
-                    return strcmp($a['nama_kamar'], $b['nama_kamar']);
-                });
+        foreach ($query as $row) {
+            // Inisialisasi wilayah
+            if (!isset($wilayahs[$row->wilayah_id])) {
+                $wilayahs[$row->wilayah_id] = [
+                    'id' => $row->wilayah_id,
+                    'nama_wilayah' => $row->nama_wilayah,
+                    'blok' => [],
+                ];
             }
 
-            // Urutkan blok berdasarkan nama_blok
-            usort($wilayah['blok'], function ($a, $b) {
-                return strcmp($a['nama_blok'], $b['nama_blok']);
-            });
+            // Inisialisasi blok
+            if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
+                $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
+                    'id' => $row->blok_id,
+                    'wilayah_id' => $row->wilayah_id,
+                    'nama_blok' => $row->nama_blok,
+                    'kamar' => [],
+                ];
+            }
 
-            return $wilayah;
-        }, $wilayahs)),
-    ];
+            // Tambahkan kamar jika ada
+            if (!is_null($row->kamar_id)) {
+                $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
+                    'id' => $row->kamar_id,
+                    'id_blok' => $row->blok_id,
+                    'nama_kamar' => $row->nama_kamar,
+                ];
+            }
+        }
 
-    // Urutkan wilayah berdasarkan nama_wilayah
-    usort($result['wilayah'], function ($a, $b) {
-        return strcmp($a['nama_wilayah'], $b['nama_wilayah']);
-    });
+        // Konversi dan urutkan berdasarkan abjad
+        $result = [
+            'wilayah' => array_values(array_map(function ($wilayah) {
+                // Urutkan kamar berdasarkan nama_kamar
+                foreach ($wilayah['blok'] as &$blok) {
+                    usort($blok['kamar'], function ($a, $b) {
+                        return strcmp($a['nama_kamar'], $b['nama_kamar']);
+                    });
+                }
 
-    return response()->json($result);
-}
+                // Urutkan blok berdasarkan nama_blok
+                usort($wilayah['blok'], function ($a, $b) {
+                    return strcmp($a['nama_blok'], $b['nama_blok']);
+                });
+
+                return $wilayah;
+            }, $wilayahs)),
+        ];
+
+        // Urutkan wilayah berdasarkan nama_wilayah
+        usort($result['wilayah'], function ($a, $b) {
+            return strcmp($a['nama_wilayah'], $b['nama_wilayah']);
+        });
+
+        return response()->json($result);
+    }
 //     public function menuWilayahBlokKamar()
 //     {
 //     $query = DB::table('wilayah as w')
@@ -229,188 +221,188 @@ class DropdownController extends Controller
 //     return response()->json($result);
 // }
 
-public function menuNegaraProvinsiKabupatenKecamatan()
-{
-    $rows = DB::table('negara as n')
-        ->leftJoin('provinsi as p', 'n.id', '=', 'p.negara_id')
-        ->leftJoin('kabupaten as kb', 'p.id', '=', 'kb.provinsi_id')
-        ->leftJoin('kecamatan as kc', 'kb.id', '=', 'kc.kabupaten_id')
-        ->select(
-            'n.id as negara_id', 'n.nama_negara',
-            'p.id as provinsi_id', 'p.nama_provinsi',
-            'kb.id as kabupaten_id', 'kb.nama_kabupaten',
-            'kc.id as kecamatan_id', 'kc.nama_kecamatan'
-        )
-        ->orderBy('n.id')
-        ->get();
+        public function menuNegaraProvinsiKabupatenKecamatan()
+        {
+            $rows = DB::table('negara as n')
+                ->leftJoin('provinsi as p', 'n.id', '=', 'p.negara_id')
+                ->leftJoin('kabupaten as kb', 'p.id', '=', 'kb.provinsi_id')
+                ->leftJoin('kecamatan as kc', 'kb.id', '=', 'kc.kabupaten_id')
+                ->select(
+                    'n.id as negara_id', 'n.nama_negara',
+                    'p.id as provinsi_id', 'p.nama_provinsi',
+                    'kb.id as kabupaten_id', 'kb.nama_kabupaten',
+                    'kc.id as kecamatan_id', 'kc.nama_kecamatan'
+                )
+                ->orderBy('n.id')
+                ->get();
 
-    $result = [];
+            $result = [];
 
-    foreach ($rows as $row) {
-        // Negara
-        $negara = &$result[$row->negara_id];
-        if (!isset($negara)) {
-            $negara = [
-                'id' => $row->negara_id,
-                'nama_negara' => $row->nama_negara,
-                'provinsi' => [],
-            ];
-        }
-
-        // Provinsi
-        if ($row->provinsi_id) {
-            $provinsi = &$negara['provinsi'][$row->provinsi_id];
-            if (!isset($provinsi)) {
-                $provinsi = [
-                    'id' => $row->provinsi_id,
-                    'nama_provinsi' => $row->nama_provinsi,
-                    'kabupaten' => [],
-                ];
-            }
-
-            // Kabupaten
-            if ($row->kabupaten_id) {
-                $kabupaten = &$provinsi['kabupaten'][$row->kabupaten_id];
-                if (!isset($kabupaten)) {
-                    $kabupaten = [
-                        'id' => $row->kabupaten_id,
-                        'nama_kabupaten' => $row->nama_kabupaten,
-                        'kecamatan' => [],
+            foreach ($rows as $row) {
+                // Negara
+                $negara = &$result[$row->negara_id];
+                if (!isset($negara)) {
+                    $negara = [
+                        'id' => $row->negara_id,
+                        'nama_negara' => $row->nama_negara,
+                        'provinsi' => [],
                     ];
                 }
 
-                // Kecamatan
-                if ($row->kecamatan_id) {
-                    $kabupaten['kecamatan'][] = [
-                        'id' => $row->kecamatan_id,
-                        'nama_kecamatan' => $row->nama_kecamatan,
+                // Provinsi
+                if ($row->provinsi_id) {
+                    $provinsi = &$negara['provinsi'][$row->provinsi_id];
+                    if (!isset($provinsi)) {
+                        $provinsi = [
+                            'id' => $row->provinsi_id,
+                            'nama_provinsi' => $row->nama_provinsi,
+                            'kabupaten' => [],
+                        ];
+                    }
+
+                    // Kabupaten
+                    if ($row->kabupaten_id) {
+                        $kabupaten = &$provinsi['kabupaten'][$row->kabupaten_id];
+                        if (!isset($kabupaten)) {
+                            $kabupaten = [
+                                'id' => $row->kabupaten_id,
+                                'nama_kabupaten' => $row->nama_kabupaten,
+                                'kecamatan' => [],
+                            ];
+                        }
+
+                        // Kecamatan
+                        if ($row->kecamatan_id) {
+                            $kabupaten['kecamatan'][] = [
+                                'id' => $row->kecamatan_id,
+                                'nama_kecamatan' => $row->nama_kecamatan,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Ubah semua map (associative) menjadi array biasa
+            $final = array_values(array_map(function ($negara) {
+                $negara['provinsi'] = array_values(array_map(function ($provinsi) {
+                    $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
+                        $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
+                        return $kabupaten;
+                    }, $provinsi['kabupaten']));
+                    return $provinsi;
+                }, $negara['provinsi']));
+                return $negara;
+            }, $result));
+
+            return response()->json(['negara' => $final]);
+        }
+
+        public function menuLembagaJurusanKelasRombel()
+        {
+            $data = DB::table('lembaga as l')
+                ->leftJoin('jurusan as j', 'l.id', '=', 'j.lembaga_id')
+                ->leftJoin('kelas as k', 'j.id', '=', 'k.jurusan_id')
+                ->leftJoin('rombel as r', 'k.id', '=', 'r.kelas_id')
+                ->select(
+                    'l.id as lembaga_id',
+                    'l.nama_lembaga',
+                    'j.id as jurusan_id',
+                    'j.lembaga_id',
+                    'j.nama_jurusan',
+                    'k.id as kelas_id',
+                    'k.jurusan_id',
+                    'k.nama_kelas',
+                    'r.id as rombel_id',
+                    'r.kelas_id',
+                    'r.nama_rombel'
+                )
+                ->orderBy('l.id') // Urutkan berdasarkan lembaga.id
+                ->get();
+
+            $lembaga = [];
+
+            foreach ($data as $row) {
+                if (!isset($lembaga[$row->lembaga_id])) {
+                    $lembaga[$row->lembaga_id] = [
+                        'id' => $row->lembaga_id,
+                        'nama_lembaga' => $row->nama_lembaga,
+                        'jurusan' => [],
+                    ];
+                }
+
+                if (!is_null($row->jurusan_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id])) {
+                    $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id] = [
+                        'id' => $row->jurusan_id,
+                        'lembaga_id' => $row->lembaga_id,
+                        'nama_jurusan' => $row->nama_jurusan,
+                        'kelas' => [],
+                    ];
+                }
+
+                if (!is_null($row->kelas_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id])) {
+                    $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id] = [
+                        'id' => $row->kelas_id,
+                        'jurusan_id' => $row->jurusan_id,
+                        'nama_kelas' => $row->nama_kelas,
+                        'rombel' => [],
+                    ];
+                }
+
+                if (!is_null($row->rombel_id)) {
+                    $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id]['rombel'][] = [
+                        'id' => $row->rombel_id,
+                        'kelas_id' => $row->kelas_id,
+                        'nama_rombel' => $row->nama_rombel,
                     ];
                 }
             }
-        }
-    }
 
-    // Ubah semua map (associative) menjadi array biasa
-    $final = array_values(array_map(function ($negara) {
-        $negara['provinsi'] = array_values(array_map(function ($provinsi) {
-            $provinsi['kabupaten'] = array_values(array_map(function ($kabupaten) {
-                $kabupaten['kecamatan'] = array_values($kabupaten['kecamatan']);
-                return $kabupaten;
-            }, $provinsi['kabupaten']));
-            return $provinsi;
-        }, $negara['provinsi']));
-        return $negara;
-    }, $result));
-
-    return response()->json(['negara' => $final]);
-}
-
-public function menuLembagaJurusanKelasRombel()
-{
-    $data = DB::table('lembaga as l')
-        ->leftJoin('jurusan as j', 'l.id', '=', 'j.lembaga_id')
-        ->leftJoin('kelas as k', 'j.id', '=', 'k.jurusan_id')
-        ->leftJoin('rombel as r', 'k.id', '=', 'r.kelas_id')
-        ->select(
-            'l.id as lembaga_id',
-            'l.nama_lembaga',
-            'j.id as jurusan_id',
-            'j.lembaga_id',
-            'j.nama_jurusan',
-            'k.id as kelas_id',
-            'k.jurusan_id',
-            'k.nama_kelas',
-            'r.id as rombel_id',
-            'r.kelas_id',
-            'r.nama_rombel'
-        )
-        ->orderBy('l.id') // Urutkan berdasarkan lembaga.id
-        ->get();
-
-    $lembaga = [];
-
-    foreach ($data as $row) {
-        if (!isset($lembaga[$row->lembaga_id])) {
-            $lembaga[$row->lembaga_id] = [
-                'id' => $row->lembaga_id,
-                'nama_lembaga' => $row->nama_lembaga,
-                'jurusan' => [],
+            $result = [
+                'lembaga' => array_values(array_map(function ($lembagaItem) {
+                    $lembagaItem['jurusan'] = array_values(array_map(function ($jurusan) {
+                        $jurusan['kelas'] = array_values(array_map(function ($kelas) {
+                            $kelas['rombel'] = array_values($kelas['rombel']);
+                            return $kelas;
+                        }, $jurusan['kelas']));
+                        return $jurusan;
+                    }, $lembagaItem['jurusan']));
+                    return $lembagaItem;
+                }, $lembaga)),
             ];
+
+            return response()->json($result);
         }
-
-        if (!is_null($row->jurusan_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id])) {
-            $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id] = [
-                'id' => $row->jurusan_id,
-                'lembaga_id' => $row->lembaga_id,
-                'nama_jurusan' => $row->nama_jurusan,
-                'kelas' => [],
-            ];
-        }
-
-        if (!is_null($row->kelas_id) && !isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id])) {
-            $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id] = [
-                'id' => $row->kelas_id,
-                'jurusan_id' => $row->jurusan_id,
-                'nama_kelas' => $row->nama_kelas,
-                'rombel' => [],
-            ];
-        }
-
-        if (!is_null($row->rombel_id)) {
-            $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id]['rombel'][] = [
-                'id' => $row->rombel_id,
-                'kelas_id' => $row->kelas_id,
-                'nama_rombel' => $row->nama_rombel,
-            ];
-        }
-    }
-
-    $result = [
-        'lembaga' => array_values(array_map(function ($lembagaItem) {
-            $lembagaItem['jurusan'] = array_values(array_map(function ($jurusan) {
-                $jurusan['kelas'] = array_values(array_map(function ($kelas) {
-                    $kelas['rombel'] = array_values($kelas['rombel']);
-                    return $kelas;
-                }, $jurusan['kelas']));
-                return $jurusan;
-            }, $lembagaItem['jurusan']));
-            return $lembagaItem;
-        }, $lembaga)),
-    ];
-
-    return response()->json($result);
-}
 
      
         public function getAngkatan()
-            {
-                // Ambil angkatan pelajar
-                $angkatanPelajar = DB::table('angkatan')
-                    ->select('id', 'angkatan')
-                    ->where('kategori', 'pelajar')
-                    ->where('status', 1)
-                    ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
-                    ->get()
-                    ->map(function ($item) {
-                        return [
-                            'id' => $item->id,
-                            'label' => $item->angkatan,
-                        ];
-                    });
+        {
+            // Ambil angkatan pelajar
+            $angkatanPelajar = DB::table('angkatan')
+                ->select('id', 'angkatan')
+                ->where('kategori', 'pelajar')
+                ->where('status', 1)
+                ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'label' => $item->angkatan,
+                    ];
+                });
 
-                // Ambil angkatan santri
-                $angkatanSantri = DB::table('angkatan')
-                    ->select('id', 'angkatan')
-                    ->where('kategori', 'santri')
-                    ->where('status', 1)
-                    ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
-                    ->get()
-                    ->map(function ($item) {
-                        return [
-                            'id' => $item->id,
-                            'label' => $item->angkatan,
-                        ];
-                    });
+            // Ambil angkatan santri
+            $angkatanSantri = DB::table('angkatan')
+                ->select('id', 'angkatan')
+                ->where('kategori', 'santri')
+                ->where('status', 1)
+                ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'label' => $item->angkatan,
+                    ];
+                });
 
                 return response()->json([
                     'status' => 'success',
@@ -419,7 +411,7 @@ public function menuLembagaJurusanKelasRombel()
                         'santri' => $angkatanSantri,
                     ]
                 ]);
-            }
+        }
 
         public function menuKategoriGolonganAndGolongan()
         {
@@ -458,85 +450,84 @@ public function menuLembagaJurusanKelasRombel()
         ];
     
         return response()->json($result);
-    }
+        }
 
 
-public function getPeriodeOptions()
-{
-    $periodeAfektif = Catatan_afektif::Active()
-        ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
-        ->groupBy('periode')
-        ->orderBy('periode', 'desc')
-        ->get()
-        ->pluck('periode');
+        public function getPeriodeOptions()
+        {
+            $periodeAfektif = Catatan_afektif::Active()
+                ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
+                ->groupBy('periode')
+                ->orderBy('periode', 'desc')
+                ->get()
+                ->pluck('periode');
 
-    
-    $periodeKognitif = Catatan_kognitif::Active()
-        ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
-        ->groupBy('periode')
-        ->orderBy('periode', 'desc')
-        ->get()
-        ->pluck('periode');
+            
+            $periodeKognitif = Catatan_kognitif::Active()
+                ->selectRaw("DATE_FORMAT(tanggal_buat, '%Y-%m') as periode")
+                ->groupBy('periode')
+                ->orderBy('periode', 'desc')
+                ->get()
+                ->pluck('periode');
 
-    return response()->json([
-        'afektif' => $periodeAfektif,
-        'kognitif' => $periodeKognitif,
-    ]);
-}
-public function getSatuanKerja()
-{
-    $satuanKerja = Pengurus::active()
-        ->select('satuan_kerja')
-        ->groupBy('satuan_kerja')
-        ->orderBy('satuan_kerja')
-        ->pluck('satuan_kerja')
-        ->values(); // reset index ke 0,1,2...
+            return response()->json([
+                'afektif' => $periodeAfektif,
+                'kognitif' => $periodeKognitif,
+            ]);
+        }
+        public function getSatuanKerja()
+        {
+            $satuanKerja = Pengurus::active()
+                ->select('satuan_kerja')
+                ->groupBy('satuan_kerja')
+                ->orderBy('satuan_kerja')
+                ->pluck('satuan_kerja')
+                ->values(); // reset index ke 0,1,2...
 
-    // Bangun array dengan id + nama_satuan_kerja
-    $result = $satuanKerja->map(function ($item, $index) {
-        return [
-            'id' => $index + 1,
-            'nama_satuan_kerja' => $item,
-        ];
-    });
+            // Bangun array dengan id + nama_satuan_kerja
+            $result = $satuanKerja->map(function ($item, $index) {
+                return [
+                    'id' => $index + 1,
+                    'nama_satuan_kerja' => $item,
+                ];
+            });
 
-    return response()->json($result);
-}
-public function getGolonganJabatan()
-{
-    $golonganJabatan = GolonganJabatan::select('id', 'nama_golongan_jabatan')
-        ->where('status', true)
-        ->orderBy('nama_golongan_jabatan')
-        ->get();
+            return response()->json($result);
+        }
+        public function getGolonganJabatan()
+        {
+            $golonganJabatan = GolonganJabatan::select('id', 'nama_golongan_jabatan')
+                ->where('status', true)
+                ->orderBy('nama_golongan_jabatan')
+                ->get();
 
-    $result = $golonganJabatan
-        ->unique('nama_golongan_jabatan') // ambil satu data per nama
-        ->values() // reset indeks
-        ->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'nama_golongan_jabatan' => $item->nama_golongan_jabatan,
-            ];
-        });
+            $result = $golonganJabatan
+                ->unique('nama_golongan_jabatan') // ambil satu data per nama
+                ->values() // reset indeks
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'nama_golongan_jabatan' => $item->nama_golongan_jabatan,
+                    ];
+                });
 
-    return response()->json($result);
-}
-public function nameWaliasuh()
-{
-    $wali = Wali_asuh::join('santri', 'santri.id', '=', 'wali_asuh.id_santri')
-        ->join('biodata', 'biodata.id', '=', 'santri.biodata_id')
-        ->where('wali_asuh.status', 1)
-        ->select([
-            'wali_asuh.id',
-            'biodata.nama',
-        ])
-        ->distinct()
-        ->get();
+            return response()->json($result);
+        }
+        public function nameWaliasuh()
+        {
+            $wali = Wali_asuh::join('santri', 'santri.id', '=', 'wali_asuh.id_santri')
+                ->join('biodata', 'biodata.id', '=', 'santri.biodata_id')
+                ->where('wali_asuh.status', 1)
+                ->select([
+                    'wali_asuh.id',
+                    'biodata.nama',
+                ])
+                ->distinct()
+                ->get();
 
-    return response()->json([
-        'status' => true,
-        'data' => $wali
-    ]);
-}
-
+            return response()->json([
+                'status' => true,
+                'data' => $wali
+            ]);
+        }
 }
