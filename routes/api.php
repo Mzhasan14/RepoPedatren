@@ -129,7 +129,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
-    
+
     Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
     Route::delete('/waliasuh/{id}', [WaliasuhController::class, 'destroy'])->middleware('role:superadmin|admin');
 
@@ -200,9 +200,10 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 
     Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
+    Route::get('/{id}/orangtua/show', [OrangTuaWaliController::class, 'show']);
     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
-    Route::put('/orangtua/{id}', [OrangTuaWaliController::class, 'update']);
-    Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy']);
+    Route::put('{id}/orangtua', [OrangTuaWaliController::class, 'update'])->middleware('role:superadmin|admin');
+    Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy'])->middleware('role:superadmin|admin');
 
     // Catatan Santri
     Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);

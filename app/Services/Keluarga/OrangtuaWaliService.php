@@ -250,6 +250,45 @@ class OrangtuaWaliService
         });
     }
 
+    public function show(int $id) :array {
+        $ortu = OrangtuaWali::with(['biodata','keluarga','hubunganKeluarga'])->find($id);
+
+        if (!$ortu) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+        }
+
+        return ['status' => true, 'data' => [
+            'id'    => $ortu->id,
+            'biodata_id'   => $ortu->biodata->id,
+            'no_passport'     => $ortu->biodata->no_passport,
+            'no_kk'     => optional($ortu->keluarga)->first()->no_kk,
+            'nik'       => $ortu->biodata->nik,
+            'nama'            => $ortu->biodata->nama,
+            'jenis_kelamin'   => $ortu->biodata->jenis_kelamin ?? null,
+            'tanggal_lahir'              => $ortu->biodata->tanggal_lahir
+                ? Carbon::parse($ortu->biodata->tanggal_lahir)->format('Y-m-d')
+                : null,
+            'tempat_lahir'               => $ortu->biodata->tempat_lahir,
+            'anak_keberapa'              => $ortu->biodata->anak_keberapa,
+            'dari_saudara'               => $ortu->biodata->dari_saudara,
+            'tinggal_bersama'            => $ortu->biodata->tinggal_bersama,
+            'jenjang_pendidikan_terakhir' => $ortu->biodata->jenjang_pendidikan_terakhir,
+            'nama_pendidikan_terakhir'   => $ortu->biodata->nama_pendidikan_terakhir,
+            'no_telepon'                 => $ortu->biodata->no_telepon,
+            'no_telepon_2'               => $ortu->biodata->no_telepon_2,
+            'email'                      => $ortu->biodata->email,
+            'pekerjaan'     => $ortu->pekerjaan,
+            'penghasilan'       => $ortu->penghasilan,
+            'negara_id'                  => $ortu->biodata->negara_id,
+            'provinsi_id'                => $ortu->biodata->provinsi_id,
+            'kabupaten_id'               => $ortu->biodata->kabupaten_id,
+            'kecamatan_id'               => $ortu->biodata->kecamatan_id,
+            'jalan'                      => $ortu->biodata->jalan,
+            'kode_pos'                   => $ortu->biodata->kode_pos,
+            'wafat'                      => (bool) $ortu->biodata->wafat,
+        ]];
+    }
+
     public function edit(string $id)
     {
         $ortu = OrangTuaWali::find($id);
