@@ -52,11 +52,10 @@ class OrangtuaWaliRequest extends FormRequest
             'no_kk' => 'nullable|string|max:16',
 
             // ====== Orangtua ======
-            'id_hubungan_keluarga' => 'required|exists:hubungan_keluarga,id',
+            'id_hubungan_keluarga' => 'nullable|exists:hubungan_keluarga,id',
             'wali' => 'nullable|boolean',
             'pekerjaan' => 'nullable|string',
             'penghasilan' => 'nullable|string',
-            'wafat' => 'nullable|boolean'
         ];
     }
 

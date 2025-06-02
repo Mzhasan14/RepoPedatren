@@ -30,11 +30,10 @@ return new class extends Migration
             Schema::create('orang_tua_wali', function (Blueprint $table) {
                 $table->id();
                 $table->uuid('id_biodata');
-                $table->unsignedBigInteger('id_hubungan_keluarga');
+                $table->unsignedBigInteger('id_hubungan_keluarga')->nullable();
                 $table->boolean('wali')->default(false);
                 $table->string('pekerjaan')->nullable();
                 $table->integer('penghasilan')->nullable();
-                $table->boolean('wafat')->default(false);
                 $table->boolean('status');
                 $table->softDeletes();
                 $table->unsignedBigInteger('created_by');

@@ -25,7 +25,6 @@ class OrangTuaFactory extends Factory
             'id_biodata' => Biodata::inRandomOrder()->first()->id ?? Biodata::factory(),
             'pekerjaan' => $this->faker->jobTitle(),
             'penghasilan' => $this->faker->randomElement([null, '500000', '1000000', '2000000']),
-            'wafat' => $this->faker->boolean(),
             'created_by' => User::inRandomOrder()->first()->id ?? User::factory(),
         ];
     }

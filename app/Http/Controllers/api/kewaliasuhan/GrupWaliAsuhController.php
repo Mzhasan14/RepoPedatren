@@ -4,19 +4,20 @@ namespace App\Http\Controllers\api\kewaliasuhan;
 
 use id;
 use App\Models\Biodata;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
 use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use App\Models\Kewaliasuhan\Wali_asuh;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use App\Services\Kewaliasuhan\GrupWaliasuhService;
+use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
 use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
-use Illuminate\Support\Arr;
 
 class GrupWaliAsuhController extends Controller
 {
@@ -55,6 +56,28 @@ class GrupWaliAsuhController extends Controller
             "total_pages"  => $results->lastPage(),
             "data"         => $formatted
         ]);
+    }
+
+    public function index(): JsonResponse
+    {
+        try {
+        $result = $this->grupWaliasuhService->index();
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message']
+                ], 404);
+            }
+
+            return response()->json([
+            'status' => true,
+            'data'   => $result['data']
+        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(grupWaliasuhRequest $request)

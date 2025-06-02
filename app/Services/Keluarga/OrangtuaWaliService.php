@@ -224,11 +224,10 @@ class OrangtuaWaliService
                 // Buat Data Orang Tua
                 $ortu = OrangTuaWali::create([
                     'id_biodata'            => $biodata->id,
-                    'id_hubungan_keluarga'  => $data['id_hubungan_keluarga'],
+                    'id_hubungan_keluarga'  => $data['id_hubungan_keluarga'] ?? null,
                     'wali'                  => $data['wali'] ?? false,
                     'pekerjaan'             => $data['pekerjaan'] ?? null,
                     'penghasilan'           => $data['penghasilan'] ?? null,
-                    'wafat'                 => $data['wafat'] ?? false,
                     'status'                => true,
                     'created_by'            => Auth::id(),
                     'created_at'            => now(),
@@ -334,7 +333,6 @@ class OrangtuaWaliService
                 'wali' => $data['wali'] ?? false,
                 'pekerjaan' => $data['pekerjaan'] ?? null,
                 'penghasilan' => $data['penghasilan'] ?? null,
-                'wafat' => $data['wafat'] ?? false,
                 'updated_by' => Auth::id(),
                 'updated_at' => now(),
             ];

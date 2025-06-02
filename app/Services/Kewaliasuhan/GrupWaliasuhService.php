@@ -58,6 +58,45 @@ class GrupWaliasuhService
         ]);
     }
 
+    public function index(): array
+    {
+        $data = Grup_WaliAsuh::with(['wilayah'])->orderBy('id', 'asc')->get();
+
+        return [
+            'status' => true,
+            'data'   => $data->map(fn($item) => [
+                'id'           => $item->id,
+                'nama_grup'  => $item->nama_status,
+                'wilayah'       =>$item->wilayah->nama_wilayah,
+                'jenis_kelamin' => $item->jenis_kelamin,
+                'status'         =>$item->status,
+                'created_by'    => $item->created_by,
+                'created_at'   => $item->created_at,
+                'updated_by'   => $item->updated_by,
+                'updated_at'   => $item->updated_at,
+                'deleted_by'   => $item->deleted_by,
+                'deleted_at'   => $item->deleted_at
+            ]),
+        ];
+    }
+
+    public function show(int $id)
+    {
+        $hubungan = Grup_WaliAsuh::find($id);
+
+        if (!$hubungan) {
+            return [
+                'status'  => false,
+                'message' => 'Data tidak ditemukan',
+            ];
+        }
+
+        return [
+            'status' => true,
+            'data'   => $hubungan,
+        ];
+    }
+
     public function store(array $data)
     {
         return DB::transaction(function () use ($data) {

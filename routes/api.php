@@ -38,7 +38,7 @@ use App\Http\Controllers\api\PesertaDidik\formulir\{
 
 use App\Http\Controllers\Api\keluarga\{
     KeluargaController,
-    StatusKeluargaController,
+    HubunganKeluargaController,
     OrangTuaWaliController,
     WaliController
 };
@@ -291,7 +291,15 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
     Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
 
+    // Keluarga
+    Route::get('/hubungan', [HubunganKeluargaController::class, 'index']);
+    Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
+    Route::get('{id}/hubungan/show', [HubunganKeluargaController::class, 'show']);
+    Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
+    Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
+
     //Kewaliasuhan
+    Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
@@ -466,4 +474,7 @@ Route::prefix('dropdown')->group(function () {
 
     // Kewaliasuhan
     Route::get('grup/kewaliasuhan', [GrupWaliasuhController::class, 'getGrup']);
+
+    // Keluarga
+    Route::get('hubungan', [HubunganKeluargaController::class, 'getHubungan']);
 });
