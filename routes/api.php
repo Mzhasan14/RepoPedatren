@@ -304,8 +304,8 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-    Route::post('/anakasuh', [AnakasuhController::class, 'store']);
-    Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
+    // Route::put('/anakasuh/{id}', [AnakasuhController::class, 'update']);
+    // Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
     // lembaga
     Route::get('lembaga', [LembagaController::class, 'index']);
@@ -476,7 +476,7 @@ Route::prefix('dropdown')->group(function () {
     Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
 
     // Kewaliasuhan
-    Route::get('grup/kewaliasuhan', [GrupWaliasuhController::class, 'getGrup']);
+    Route::get('/grup', [GrupWaliasuhController::class, 'getGrup']);
     Route::get('/waliasuh', [WaliasuhController::class, 'getWaliasuh']);
 
     // Keluarga
