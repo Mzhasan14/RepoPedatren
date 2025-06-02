@@ -357,6 +357,8 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
     // Pindah
     Route::post('/pindah-naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
     Route::post('/pindah-kamar', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahKamarController::class, 'pindah']);
+    // anak asuh
+    Route::post('/anakasuh', [AnakasuhController::class, 'store']);
 
 });
 

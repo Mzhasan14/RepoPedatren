@@ -80,19 +80,20 @@ class AnakasuhController extends Controller
         try {
             $validated = $request->validated();
             $result = $this->anakasuhService->store($validated);
-            if (!$result['status']) {
-                return response()->json([
-                    'message' => $result['message']
-                ], 200);
-            }
+
             return response()->json([
-                'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
-            ]);
+                'success' => true,
+                'message' => $result['message'],
+                'data' => [
+                    'berhasil' => $result['data_baru'],
+                    'gagal' => $result['data_gagal'],
+                ]
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses permintaan.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

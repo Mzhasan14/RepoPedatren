@@ -119,65 +119,71 @@ class AnakasuhService
 
     public function store(array $data)
     {
-        return DB::transaction(function () use ($data) {
+        $now = Carbon::now();
+        $userId = Auth::id();
+        $santriIds = $data['santri_id'];
+        $waliAsuhId = $data['id_wali_asuh'];
 
-            if (!Auth::id()) {
-                return [
-                    'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi',
-                    'data' => null
-                ];
+        $anakAsuhAktif = Anak_Asuh::whereIn('id_santri', $santriIds)
+            ->where('status', true)
+            ->pluck('id_santri')
+            ->toArray();
+
+        $dataBaru = [];
+        $dataGagal = [];
+        $relasiBaru = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($santriIds as $idSantri) {
+                if (in_array($idSantri, $anakAsuhAktif)) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message' => 'Santri sudah menjadi anak asuh aktif.',
+                    ];
+                    continue;
+                }
+
+                // Tambah ke tabel anak_asuh
+                $anakAsuh = Anak_Asuh::create([
+                    'id_santri' => $idSantri,
+                    'status' => true,
+                    'created_by' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                // Tambah ke tabel kewaliasuhan
+                Kewaliasuhan::create([
+                    'id_wali_asuh' => $waliAsuhId,
+                    'id_anak_asuh' => $anakAsuh->id,
+                    'tanggal_mulai' => $now,
+                    'status' => true,
+                    'created_by' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                $dataBaru[] = $idSantri;
             }
 
-            // Cek apakah santri sudah menjadi wali atau anak asuh
-            if (
-                Wali_asuh::where('id_santri', $data['id_santri'])->exists() ||
-                Anak_asuh::where('id_santri', $data['id_santri'])->exists()
-            ) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri sudah terdaftar sebagai wali asuh atau anak asuh',
-                    'data' => null
-                ];
-            }
-
-            // Buat anak asuh baru
-            $anakAsuh = Anak_asuh::create([
-                'id_santri' => $data['id_santri'],
-                'created_by' => Auth::id(),
-                'status' => true,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // // Update status santri
-            // Santri::where('id', $data->id_santri)->update(['status_anak_asuh' => true]);
-
-            // Jika ada parameter auto_assign_wali_asuh
-            if (array_key_exists('auto_assign_wali_asuh', $data)) {
-                $this->assignToWaliAsuh($anakAsuh->id, $data['auto_assign_wali_asuh']);
-
-                // Tambahkan info wali asuh di response
-                $anakAsuh->load('wali_asuh');
-            }
-
-            // Log activity
-            activity('anak_asuh_create')
-                ->performedOn($anakAsuh)
-                ->withProperties([
-                    'new_attributes' => $anakAsuh->getAttributes(),
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->event('create_anak_asuh')
-                ->log('Anak asuh baru berhasil dibuat');
+            DB::commit();
 
             return [
-                'status' => true,
-                'message' => 'Anak asuh berhasil dibuat',
-                'data' => $anakAsuh
+                'success' => true,
+                'message' => 'Santri berhasil ditambahkan sebagai anak asuh dan dikaitkan dengan wali asuh.',
+                'data_baru' => $dataBaru,
+                'data_gagal' => $dataGagal,
             ];
-        });
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'data_baru' => [],
+                'data_gagal' => $santriIds,
+            ];
+        }
     }
 
     protected function assignToWaliAsuh($anakAsuhId, $waliAsuhId)
