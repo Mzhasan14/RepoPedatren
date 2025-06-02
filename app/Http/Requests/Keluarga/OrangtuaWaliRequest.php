@@ -26,9 +26,9 @@ class OrangtuaWaliRequest extends FormRequest
         return [
             // ======= Alamat ==========
             'negara' => 'required|string|max:255',
-            'provinsi' => 'required|string|max:255',
-            'kabupaten' => 'required|string|max:255',
-            'kecamatan' => 'required|string|max:255',
+            'provinsi' => 'nullable|string|max:255',
+            'kabupaten' => 'nullable|string|max:255',
+            'kecamatan' => 'nullable|string|max:255',
             'jalan' => 'required|string|max:255',
             'kode_pos' => 'nullable|string|max:10',
 
@@ -38,7 +38,7 @@ class OrangtuaWaliRequest extends FormRequest
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:l,p',
             'tempat_lahir' => 'required|string|max:255',
-            'nik' => 'required|string|max:16',
+            'nik' => 'nullable|string|max:16',
             'no_telepon' => 'nullable|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',

@@ -117,11 +117,11 @@ class OrangTuaWaliController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(OrangtuaWaliRequest $request, $bioId)
+    public function store(OrangtuaWaliRequest $request)
     {
         try {
             $validated = $request->validated();
-            $result = $this->orangtuaWaliService->store($validated, $bioId);
+            $result = $this->orangtuaWaliService->store($validated);
             if (!$result['status']) {
                 return response()->json([
                     'message' => $result['message']

@@ -139,12 +139,9 @@ class OrangtuaWaliService
         ];
     }
 
-    public function store(array $data, string $bioId)
+    public function store(array $data)
     {
-        return DB::transaction(function () use ($data, $bioId) {
-            if (!Biodata::find($bioId)) {
-                return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
-            }
+        return DB::transaction(function () use ($data): array {
 
             try {
                 // Buat Negara
