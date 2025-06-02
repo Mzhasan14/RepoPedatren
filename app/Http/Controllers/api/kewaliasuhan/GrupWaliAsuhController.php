@@ -80,6 +80,17 @@ class GrupWaliAsuhController extends Controller
         }
     }
 
+    public function show($id): JsonResponse
+    {
+        $result = $this->grupWaliasuhService->show($id);
+
+        if (!$result['status']) {
+            return response()->json(['message' => $result['message']], 404);
+        }
+
+        return response()->json(['data' => $result['data']]);
+    }
+
     public function store(grupWaliasuhRequest $request)
     {
         try {

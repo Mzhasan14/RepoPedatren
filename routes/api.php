@@ -301,6 +301,7 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     //Kewaliasuhan
     Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
+    Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
@@ -474,6 +475,7 @@ Route::prefix('dropdown')->group(function () {
 
     // Kewaliasuhan
     Route::get('grup/kewaliasuhan', [GrupWaliasuhController::class, 'getGrup']);
+    Route::get('/waliasuh', [WaliasuhController::class, 'getWaliasuh']);
 
     // Keluarga
     Route::get('hubungan', [HubunganKeluargaController::class, 'getHubungan']);

@@ -95,11 +95,20 @@ class KeluargaController extends Controller
             return strtolower($item->status ?? '') === 'anak kandung' && ($item->is_selected ?? false);
         });
 
+        // Cek apakah yang selected adalah 'ayah' 'ibu'
+        $selectedIsAyah = $anggota->first(function ($i) {
+            return $i->is_selected && in_array(strtolower($i->status), ['ayah', 'ayah kandung', 'ayah sambung']);
+        });
+
+        $selectedIsIbu = $anggota->first(function ($i) {
+            return $i->is_selected && in_array(strtolower($i->status), ['ibu', 'ibu kandung', 'ibu sambung']);
+        });
+
         return response()->json([
             'status' => true,
             'data' => [
                 'no_kk' => $noKk,
-                'relasi_keluarga' => $anggota->map(function ($i) use ($adaAnakKandungTerpilih) {
+                'relasi_keluarga' => $anggota->map(function ($i) use ($adaAnakKandungTerpilih, $selectedIsAyah, $selectedIsIbu) {
                     $status = $i->status;
 
                     if (
@@ -108,6 +117,13 @@ class KeluargaController extends Controller
                         $adaAnakKandungTerpilih
                     ) {
                         $status = 'Saudara Kandung';
+                    }
+                    if ($selectedIsAyah OR $selectedIsIbu) {
+                        if (in_array(strtolower($status), ['ayah', 'ayah kandung', 'ayah sambung'])) {
+                            $status = 'suami';
+                        } elseif (in_array(strtolower($status), ['ibu', 'ibu kandung', 'ibu sambung'])) {
+                            $status = 'istri';
+                        }
                     }
 
                     return [
