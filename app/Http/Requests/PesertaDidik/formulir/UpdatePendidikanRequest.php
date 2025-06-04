@@ -37,6 +37,11 @@ class UpdatePendidikanRequest extends FormRequest
             'rombel_id' => 'nullable|exists:rombel,id',
             'angkatan_id' => 'required|exists:angkatan,id',
             'tanggal_masuk' => 'required|date',
+            'status' => [
+                'required',
+                'string',
+                Rule::in(['aktif', 'do', 'berhenti', 'lulus', 'pindah', 'cuti', 'naik_kelas', 'nonaktif']),
+            ],
         ];
     }
 

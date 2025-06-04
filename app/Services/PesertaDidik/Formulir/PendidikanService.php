@@ -194,6 +194,8 @@ class PendidikanService
                 'rombel_id'      => $input['rombel_id'],
                 'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
                 'angkatan_id'    => $input['angkatan_id'] ?? null,
+                'status'         => $input['status'] ?? $rp->status,
+                'updated_at'     => now(),
                 'updated_by'     => Auth::id(),
             ]);
 

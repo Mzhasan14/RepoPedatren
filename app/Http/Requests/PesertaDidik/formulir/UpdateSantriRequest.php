@@ -29,7 +29,11 @@ class UpdateSantriRequest extends FormRequest
             'angkatan_id' => 'required|exists:angkatan,id',
             'tanggal_masuk' => 'required|date',
             'tanggal_keluar' => 'nullable|date',
-            'status' => 'required'
+            'status' => [
+                'required',
+                'string',
+                Rule::in(['aktif', 'alumni', 'do', 'berhenti', 'nonaktif']),
+            ],
         ];
     }
 

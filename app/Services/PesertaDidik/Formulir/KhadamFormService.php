@@ -83,6 +83,8 @@ class KhadamFormService
             $kh->update([
                 'keterangan'     => $input['keterangan'],
                 'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
+                'status'         => $input['status'] ?? true,
+                'updated_at'    => now(),
                 'updated_by'     => Auth::id(),
             ]);
 

@@ -26,6 +26,10 @@ class UpdateKhadamRequest extends FormRequest
         return [
             'keterangan'     => 'required|string|max:255',
             'tanggal_mulai'  => 'required|date',
+            'status'         => [
+                'required',
+                'boolean',
+            ],
         ];
     }
 

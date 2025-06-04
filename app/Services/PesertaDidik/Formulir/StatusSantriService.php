@@ -122,6 +122,7 @@ class StatusSantriService
 
             $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
             $santri->status = $input['status'] ?? $santri->status;
+            $santri->updated_at = Carbon::now();
             $santri->updated_by = Auth::id();
 
             // Check if any change

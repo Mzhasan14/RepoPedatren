@@ -211,6 +211,8 @@ class DomisiliService
                 'blok_id'       => $input['blok_id'],
                 'kamar_id'      => $input['kamar_id'],
                 'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
+                'status'        => $input['status'] ?? $dom->status,
+                'updated_at'    => now(),
                 'updated_by'    => Auth::id(),
             ]);
 

@@ -101,7 +101,7 @@ class PindahNaikJenjangService
 
             // Update riwayat lama
             $rp->update([
-                'status' => 'naik',
+                'status' => 'naik_kelas',
                 'tanggal_keluar' => $now,
                 'updated_at' => $now,
                 'updated_by' => $userId,

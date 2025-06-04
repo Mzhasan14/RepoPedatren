@@ -81,20 +81,20 @@ class PesertaDidikController extends Controller
         }
     }
 
-    public function destroy($id): JsonResponse
-    {
-        try {
-            $this->pesertaDidik->destroy($id);
-            return response()->json([
-                'message' => 'Peserta Didik berhasil dihapus.',
-            ], Response::HTTP_OK);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat menghapus data.',
-                'error'   => $e->getMessage(),
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
+    // public function destroy($id): JsonResponse
+    // {
+    //     try {
+    //         $this->pesertaDidik->destroy($id);
+    //         return response()->json([
+    //             'message' => 'Peserta Didik berhasil dihapus.',
+    //         ], Response::HTTP_OK);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Terjadi kesalahan saat menghapus data.',
+    //             'error'   => $e->getMessage(),
+    //         ], Response::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     // Export Peserta Didik
     public function pesertaDidikExport()
