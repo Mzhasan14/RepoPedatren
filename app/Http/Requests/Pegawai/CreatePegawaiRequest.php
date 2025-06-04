@@ -56,7 +56,7 @@ class CreatePegawaiRequest extends FormRequest
 
             // ===== Karyawan =====
             'karyawan' => 'nullable|in:1,0',
-            'golongan_jabatan_id_karyawan' => 'required_if:karyawan,1|exists:golongan_jabatan,id',
+            'golongan_jabatan_id_karyawan' => 'nullable|required_if:karyawan,1|exists:golongan_jabatan,id',
             'lembaga_id_karyawan' => 'nullable|exists:lembaga,id',
             'jabatan_karyawan' => 'nullable|string|max:100',
             'keterangan_jabatan_karyawan' => 'nullable|string|max:255',
@@ -64,7 +64,7 @@ class CreatePegawaiRequest extends FormRequest
 
             // ===== Pengajar =====
             'pengajar' => 'nullable|in:1,0',
-            'golongan_id_pengajar' => 'required_if:pengajar,1|exists:golongan,id',
+            'golongan_id_pengajar' => 'nullable|required_if:pengajar,1|exists:golongan,id',
             'lembaga_id_pengajar' => 'nullable|exists:lembaga,id',
             'jabatan_pengajar' => 'nullable|string|max:100',
             'tanggal_mulai_pengajar' => 'nullable|date',
@@ -76,7 +76,7 @@ class CreatePegawaiRequest extends FormRequest
 
             // ===== Pengurus =====
             'pengurus' => 'nullable|in:1,0',
-            'golongan_jabatan_id_pengurus' => 'required_if:pengurus,1|exists:golongan_jabatan,id',
+            'golongan_jabatan_id_pengurus' => 'nullable|required_if:pengurus,1|exists:golongan_jabatan,id',
             'jabatan_pengurus' => 'nullable|string|max:100',
             'satuan_kerja_pengurus' => 'nullable|string|max:100',
             'keterangan_jabatan_pengurus' => 'nullable|string|max:255',
@@ -84,7 +84,7 @@ class CreatePegawaiRequest extends FormRequest
 
             // ===== Wali Kelas =====
             'wali_kelas' => 'nullable|in:1,0',
-            'lembaga_id_wali' => 'required_if:wali_kelas,1|exists:lembaga,id',
+            'lembaga_id_wali' => 'nullable|required_if:wali_kelas,1|exists:lembaga,id',
             'jurusan_id_wali' => 'nullable|exists:jurusan,id',
             'kelas_id_wali' => 'nullable|exists:kelas,id',
             'rombel_id_wali' => 'nullable|exists:rombel,id',
