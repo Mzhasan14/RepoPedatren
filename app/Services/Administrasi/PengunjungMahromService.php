@@ -155,7 +155,7 @@ class PengunjungMahromService
                 'tempat_lahir' => $kunjungan->biodata->tempat_lahir,
                 'tanggal_lahir' => $kunjungan->biodata->tanggal_lahir,
                 'jenis_kelamin' => $kunjungan->biodata->jenis_kelamin,
-                'hubungan' => $kunjungan->hubungan->nama_status ?? null,
+                'hubungan_id' => $kunjungan->hubungan_id ?? null,
                 'jumlah_rombongan' => $kunjungan->jumlah_rombongan,
                 'tanggal_kunjungan' => $kunjungan->tanggal_kunjungan,
                 'status' => $kunjungan->status,
