@@ -333,11 +333,6 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
     Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
     Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
-
-    Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
-    Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
-    Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
-    Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
     Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
 
     // Kepegawaian 
@@ -406,10 +401,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/wali', [WaliController::class, 'getAllWali']);
     Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
 
-    // 📍 Alamat
-    Route::apiResource('/provinsi', ProvinsiController::class);
-    Route::apiResource('/kabupaten', KabupatenController::class);
-    Route::apiResource('/kecamatan', KecamatanController::class);
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
     Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
@@ -431,14 +422,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::apiResource('/rombel', RombelController::class);
 
     // 👨‍🏫 Pegawai & Guru
-    Route::apiResource('/crud/pegawai', PegawaiController::class);
-    Route::apiResource('/crud/pengajar', PengajarController::class);
-    Route::apiResource('/crud/walikelas', WalikelasController::class);
-    Route::apiResource('/kategori-golongan', KategoriGolonganController::class);
-    Route::apiResource('/crud/golongan', GolonganController::class);
-    Route::apiResource('/crud/pengurus', PengurusController::class);
-    Route::apiResource('/crud/karyawan', KaryawanController::class);
-    Route::apiResource('/crud/materiAjar', MateriAjarController::class);
     Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
@@ -465,16 +448,16 @@ Route::prefix('dropdown')->group(function () {
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
 
-    // kewilayahan
-    Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-    Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
-    Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
+    // // kewilayahan
+    // Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
+    // Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
+    // Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
 
-    // Pendidikan
-    Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
-    Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
-    Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
-    Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
+    // // Pendidikan
+    // Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
+    // Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
+    // Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
+    // Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
 
     // Kewaliasuhan
     Route::get('/grup', [GrupWaliasuhController::class, 'getGrup']);
