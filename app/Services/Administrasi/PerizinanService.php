@@ -212,6 +212,7 @@ class PerizinanService
             'status' => true,
             'data' => [
                 'id' => $izin->id,
+                'biodata_id' => $izin->santri->biodata_id,
                 'pengasuh_id' => $izin->pengasuh_id,
                 'biktren_id' => $izin->biktren_id,
                 'kamtib_id' => $izin->kamtib_id,

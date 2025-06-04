@@ -38,7 +38,7 @@ class CreatePesertaDidikRequest extends FormRequest
             'no_kk' => 'nullable|required_without_all:passport|digits:16',
             'passport' => 'nullable|required_without_all:nik,no_kk|string|max:20',
 
-            'no_kk' => 'required|string|digits:16',
+            'no_kk' => 'nullable|string|digits:16',
             'jenis_kelamin' => 'required|in:l,p',
             'tanggal_lahir' => 'required|date',
             'tempat_lahir' => 'required|string|max:50',
