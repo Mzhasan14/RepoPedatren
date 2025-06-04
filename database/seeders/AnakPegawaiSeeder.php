@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Santri;
+use App\Models\Biodata;
 use App\Models\Pegawai\Pegawai;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +15,9 @@ class AnakPegawaiSeeder extends Seeder
     {
         // Pastikan ambil kolom 'id', bukan 'pegawai_id' (sesuaikan kalau memang berbeda)
         $pegawaiIds = Pegawai::pluck('id')->toArray();
-        $santriList = Santri::all();
+        $bioList = Biodata::all();
 
-        foreach ($santriList as $santri) {
+        foreach ($bioList as $bio) {
             $hasAyah = rand(0, 1) === 1;
             $hasIbu = rand(0, 1) === 1;
             $assignedPegawai = [];
@@ -26,8 +27,8 @@ class AnakPegawaiSeeder extends Seeder
                 if ($pegawaiAyah) {
                     $assignedPegawai[] = $pegawaiAyah;
                     DB::table('anak_pegawai')->insert([
-                        // gunakan $santri->id jika primary keynya id
-                        'santri_id' => $santri->id,
+                        // gunakan $bio->id jika primary keynya id
+                        'biodata_id' => $bio->id,
                         'pegawai_id' => $pegawaiAyah,
                         'status_hubungan' => 'ayah',
                         'status' => true,
@@ -43,7 +44,7 @@ class AnakPegawaiSeeder extends Seeder
                 if ($pegawaiIbu) {
                     $assignedPegawai[] = $pegawaiIbu;
                     DB::table('anak_pegawai')->insert([
-                        'santri_id' => $santri->id,
+                        'biodata_id' => $bio->id,
                         'pegawai_id' => $pegawaiIbu,
                         'status_hubungan' => 'ibu',
                         'status' => true,

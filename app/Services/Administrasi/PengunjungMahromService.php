@@ -23,7 +23,7 @@ class PengunjungMahromService
             ->join('santri as s', 'pm.santri_id', 's.id')
             ->join('biodata as bs', 's.biodata_id', 'bs.id')
             ->join('riwayat_domisili as rd', 'rd.santri_id', 's.id')
-            ->leftjoin('riwayat_pendidikan as rp', 'rp.santri_id', 's.id')
+            ->leftjoin('riwayat_pendidikan as rp', 'rp.biodata_id', 'bs.id')
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', 'l.id')
             ->leftJoin('jurusan AS j', 'rp.jurusan_id', 'j.id')
             ->join('wilayah AS w', 'rd.wilayah_id', 'w.id')

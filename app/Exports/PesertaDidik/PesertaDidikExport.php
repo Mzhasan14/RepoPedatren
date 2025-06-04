@@ -127,10 +127,15 @@ class PesertaDidikExport implements
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri AS s')
-            ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+        return DB::table('biodata AS b')
+            ->leftjoin('santri AS s', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('angkatan AS as', 's.angkatan_id', '=', 'as.id')
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
+            ->leftjoin('angkatan AS ap', 'rp.angkatan_id', '=', 'ap.id')
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftjoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
+            ->leftjoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
+            ->leftjoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
@@ -140,22 +145,35 @@ class PesertaDidikExport implements
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
+            ->leftJoin('negara as n', 'b.negara_id', '=', 'n.id')
             ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', '=', 'aktif'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at')
+                ->whereNull('rp.deleted_at'))
             ->select([
                 'b.nama as nama_lengkap',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
                 's.nis',
+                'rp.no_induk',
                 'wp.niup',
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi) as alamat"),
+                'b.jalan',
+                'kc.nama_kecamatan',
+                'kb.nama_kabupaten',
+                'pv.nama_provinsi',
+                'n.nama_negara',
                 DB::raw("CONCAT(b.tempat_lahir, ', ', b.tanggal_lahir) as TTL"),
-                DB::raw("CONCAT(km.nama_kamar, ', ', bl.nama_blok, ', ', w.nama_wilayah) as domisili"),
-                'l.nama_lembaga as pendidikan',
-                DB::raw('YEAR(s.tanggal_masuk) as angkatan_santri'),
-                DB::raw('YEAR(rp.tanggal_masuk) as angkatan_pelajar'),
+                'km.nama_kamar',
+                'bl.nama_blok',
+                'w.nama_wilayah',
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'kls.nama_kelas',
+                'r.nama_rombel',
+                'as.angkatan as angkatan_santri',
+                'ap.angkatan as angkatan_pelajar',
             ])
-            ->latest()
+            ->orderby('b.created_at', 'desc')
             ->get();
     }
 
@@ -166,12 +184,22 @@ class PesertaDidikExport implements
             $row->nama_lengkap,
             $row->nik,
             $row->nis,
+            $row->no_induk,
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
+            $row->jalan,
+            $row->nama_kecamatan,
+            $row->nama_kabupaten,
+            $row->nama_provinsi,
+            $row->nama_negara,
             $row->TTL,
-            $row->domisili,
-            $row->pendidikan,
+            $row->nama_kamar,
+            $row->nama_blok,
+            $row->nama_wilayah,
+            $row->nama_lembaga,
+            $row->nama_jurusan,
+            $row->nama_kelas,
+            $row->nama_rombel,
             $row->angkatan_santri,
             $row->angkatan_pelajar,
         ];
@@ -184,12 +212,22 @@ class PesertaDidikExport implements
             'Nama Lengkap',
             'NIK / Passport',
             'NIS',
+            'No Induk',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Negara',
             'Tempat, Tanggal Lahir',
-            'Domisili',
-            'Lembaga Pendidikan',
+            'Kamar',
+            'Blok',
+            'Wilayah',
+            'Lembaga',
+            'Jurusan',
+            'Kelas',
+            'Rombel',
             'Angkatan Santri',
             'Angkatan Pelajar',
         ];

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('riwayat_pendidikan', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('santri_id');
+            $table->uuid('biodata_id');
             $table->string('no_induk')->nullable();
             $table->unsignedBigInteger('lembaga_id');
             $table->unsignedBigInteger('jurusan_id')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('angkatan_id')->nullable();
             $table->date('tanggal_masuk');
             $table->date('tanggal_keluar')->nullable();
-            $table->enum('status', ['aktif', 'do', 'berhenti', 'alumni', 'pindah', 'cuti', 'nonaktif'])->default('aktif');
+            $table->enum('status', ['aktif', 'do', 'berhenti', 'lulus', 'pindah', 'cuti', 'naik_kelas', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('angkatan_id')->references('id')->on('angkatan')->onDelete('set null');
-            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');

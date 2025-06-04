@@ -69,6 +69,29 @@ class Santri extends Model
             $model->deleted_by = Auth::id();
             $model->save();
         });
+
+        // Sinkron status
+        static::saved(function ($santri) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromSantri($santri->biodata_id);
+        });
+
+        static::deleted(function ($santri) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromSantri($santri->biodata_id);
+        });
+    }
+
+    // Sinkron status
+    public static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($santri) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromSantri($santri->biodata_id);
+        });
+
+        static::deleted(function ($santri) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromSantri($santri->biodata_id);
+        });
     }
 
     public function biodata()

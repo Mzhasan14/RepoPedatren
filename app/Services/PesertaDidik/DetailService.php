@@ -9,6 +9,7 @@ class DetailService
 {
     public function getDetail(string $biodataId): array
     {
+
         $data = [];
 
         // --- Ambil No KK (jika ada) ---
@@ -102,7 +103,6 @@ class DetailService
                 ])
                 ->get();
         }
-
         $keluarga = $ortu->merge($saudara);
         $data['Keluarga'] = $keluarga->map(fn($i) => [
             'nama'   => $i->nama,
@@ -196,9 +196,9 @@ class DetailService
 
         // --- Domisili ---
         $dom = DB::table('riwayat_domisili as rd')
+            ->join('santri as s', 'rd.santri_id', 's.id')
+            ->join('biodata as b', 's.biodata_id', 'b.id')
             ->where('b.id', $biodataId)
-            ->join('santri as s', 'rd.santri_id', '=', 's.id')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
@@ -227,13 +227,11 @@ class DetailService
 
         // --- Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
-            ->join('santri as s', 'rp.santri_id', '=', 's.id')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
             ->leftJoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
-            ->where('b.id', $biodataId)
+            ->where('rp.biodata_id', $biodataId)
             ->select([
                 'rp.id',
                 'rp.no_induk',
@@ -335,7 +333,8 @@ class DetailService
             ])
             : [];
 
-                // --- Riwayat Karyawan ---
+
+        // --- Riwayat Karyawan ---
         $karyawan = DB::table('karyawan')
             ->join('pegawai', 'pegawai.id', '=', 'karyawan.pegawai_id')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
@@ -358,7 +357,6 @@ class DetailService
                 'tanggal_selesai'    => $item->tanggal_selesai ? date('d-m-Y', strtotime($item->tanggal_selesai)) : '-',
             ])
             : [];
-
 
         // --- Ambil data pengajar dan riwayat materi ---
         $pengajar = DB::table('pengajar')
@@ -451,47 +449,48 @@ class DetailService
             )
             ->orderBy('pengurus.tanggal_mulai', 'asc')
             ->get();
-            $data['Pengurus'] = $pengurus->isNotEmpty()
+        $data['Pengurus'] = $pengurus->isNotEmpty()
             ? $pengurus->map(fn($item) => [
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
                 'tanggal_mulai'       => $item->tanggal_mulai ?? '-',
                 'tanggal_akhir'       => $item->tanggal_akhir ?? '-',
             ])
             : [];
-            // ambil data wali kelas dan riwayatnya
-            $walikelas = DB::table('wali_kelas') 
-                ->join('pegawai', 'pegawai.id', '=', 'wali_kelas.pegawai_id')
-                ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
-                ->leftJoin('rombel as r', 'r.id', '=', 'wali_kelas.rombel_id')
-                ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
-                ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
-                ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
-                ->where('pegawai.biodata_id', $biodataId)
-                ->select([
-                    'l.nama_lembaga',
-                    'j.nama_jurusan',
-                    'k.nama_kelas',
-                    'r.nama_rombel',
-                    'wali_kelas.periode_awal',
-                    'wali_kelas.periode_akhir',
-                ])
-                ->orderBy('wali_kelas.periode_awal', 'desc') // opsional, jika ingin data terbaru dulu
-                ->get();
+        // ambil data wali kelas dan riwayatnya
+        $walikelas = DB::table('wali_kelas')
+            ->join('pegawai', 'pegawai.id', '=', 'wali_kelas.pegawai_id')
+            ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
+            ->leftJoin('rombel as r', 'r.id', '=', 'wali_kelas.rombel_id')
+            ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
+            ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
+            ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
+            ->where('pegawai.biodata_id', $biodataId)
+            ->select([
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'k.nama_kelas',
+                'r.nama_rombel',
+                'wali_kelas.periode_awal',
+                'wali_kelas.periode_akhir',
+            ])
+            ->orderBy('wali_kelas.periode_awal', 'desc') // opsional, jika ingin data terbaru dulu
+            ->get();
 
-            $data['Wali_Kelas'] = $walikelas->isNotEmpty()
-                ? $walikelas->map(fn($item) => [
-                    'Lembaga'       => $item->nama_lembaga ?? '-',
-                    'Jurusan'       => $item->nama_jurusan ?? '-',
-                    'Kelas'         => $item->nama_kelas ?? '-',
-                    'Rombel'        => $item->nama_rombel ?? '-',
-                    'Periode_awal'  => $item->periode_awal ?? '-',
-                    'Periode_akhir' => $item->periode_akhir ?? '-',
-                ])
-                : [];
+        $data['Wali_Kelas'] = $walikelas->isNotEmpty()
+            ? $walikelas->map(fn($item) => [
+                'Lembaga'       => $item->nama_lembaga ?? '-',
+                'Jurusan'       => $item->nama_jurusan ?? '-',
+                'Kelas'         => $item->nama_kelas ?? '-',
+                'Rombel'        => $item->nama_rombel ?? '-',
+                'Periode_awal'  => $item->periode_awal ?? '-',
+                'Periode_akhir' => $item->periode_akhir ?? '-',
+            ])
+            : [];
 
-        if (!isset($data['Biodata'])) {
-            throw new \Exception("ID biodata tidak valid atau tidak memiliki data terkait");
-        }
+        // if (!isset($data['Biodata'])) {
+
+        //     throw new \Exception("ID biodata tidak valid atau tidak memiliki data terkait");
+        // }
 
         return $data;
     }

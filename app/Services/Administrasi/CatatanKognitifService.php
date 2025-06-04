@@ -36,7 +36,7 @@ class CatatanKognitifService
                 ->leftJoin('wilayah', 'wilayah.id', '=', 'domisili_santri.wilayah_id')
                 ->leftJoin('blok', 'blok.id', '=', 'domisili_santri.blok_id')
                 ->leftJoin('kamar', 'kamar.id', '=', 'domisili_santri.kamar_id')
-                ->leftJoin('riwayat_pendidikan', 'riwayat_pendidikan.santri_id', '=', 'CatatanSantri.id')
+                ->leftJoin('riwayat_pendidikan', 'riwayat_pendidikan.biodata_id', '=', 'Catatanbiodata.id')
                 ->leftJoin('lembaga', 'lembaga.id', '=', 'riwayat_pendidikan.lembaga_id')
                 ->leftJoin('jurusan', 'jurusan.id', '=', 'riwayat_pendidikan.jurusan_id')
                 ->leftJoin('kelas', 'kelas.id', '=', 'riwayat_pendidikan.kelas_id')

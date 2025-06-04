@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik;
 
 use App\Models\Santri;
+use App\Models\Biodata;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Helpers\StatusPesertaDidikHelper;
 
 class PesertaDidikService
 {
@@ -33,9 +35,10 @@ class PesertaDidikService
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri AS s')
-            ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+        return DB::table('biodata as b')
+            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
@@ -50,7 +53,6 @@ class PesertaDidikService
                 ->whereNull('s.deleted_at'))
             ->select([
                 'b.id as biodata_id',
-                's.id',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
                 'b.nama',
                 'wp.niup',
@@ -76,7 +78,6 @@ class PesertaDidikService
     {
         return collect($results->items())->map(fn($item) => [
             'biodata_id'       => $item->biodata_id,
-            'id'               => $item->id,
             'nik_or_passport'  => $item->identitas,
             'nama'             => $item->nama,
             'niup'             => $item->niup ?? '-',
@@ -109,13 +110,13 @@ class PesertaDidikService
                 if ($santriAktif) {
                     // Cek pendidikan aktif
                     $hasActivePendidikan = DB::table('riwayat_pendidikan')
-                        ->where('santri_id', $santriAktif->id)
+                        ->where('biodata_id', $existingBiodata->id)
                         ->where('status', 'aktif')
                         ->exists();
 
                     if ($hasActivePendidikan) {
                         throw ValidationException::withMessages([
-                            'riwayat_pendidikan' => ['Santri ini masih memiliki riwayat pendidikan yang aktif.'],
+                            'riwayat_pendidikan' => ['Data ini masih memiliki riwayat pendidikan yang aktif.'],
                         ]);
                     }
 
@@ -127,13 +128,13 @@ class PesertaDidikService
 
                     if ($hasActiveDomisili) {
                         throw ValidationException::withMessages([
-                            'riwayat_domisili' => ['Santri ini masih memiliki riwayat domisili yang aktif.'],
+                            'riwayat_domisili' => ['Data ini masih memiliki riwayat domisili yang aktif.'],
                         ]);
                     }
 
                     // Jika santri aktif tapi tidak ada riwayat aktif, tetap tolak pendaftaran baru
                     throw ValidationException::withMessages([
-                        'santri' => ['Santri ini masih memiliki status aktif. Tidak dapat menambahkan santri baru.'],
+                        'santri' => ['Data ini masih memiliki status santri aktif. Tidak dapat menambahkan data baru.'],
                     ]);
                 }
             }
@@ -208,21 +209,6 @@ class PesertaDidikService
                     'created_at' => $now,
                 ]);
             }
-
-            // Tambah Santri
-            do {
-                $nis = now()->format('YmdHis') . sprintf("%04d", mt_rand(0, 9999));
-            } while (DB::table('santri')->where('nis', $nis)->exists());
-
-            $santriId = DB::table('santri')->insertGetId([
-                'biodata_id'    => $biodataId,
-                'nis'           => $nis,
-                'tanggal_masuk' => $now,
-                'status'        => 'aktif',
-                'created_by'    => $userId,
-                'created_at'    => $now,
-                'updated_at'    => $now,
-            ]);
 
             // Ayah dan Ibu
             $hubungan = DB::table('hubungan_keluarga')
@@ -400,7 +386,7 @@ class PesertaDidikService
             // Tambah Riwayat Pendidikan jika lembaga diisi
             if (!empty($data['lembaga_id'])) {
                 DB::table('riwayat_pendidikan')->insert([
-                    'santri_id'      => $santriId,
+                    'biodata_id'      => $biodataId,
                     'lembaga_id'     => $data['lembaga_id'],
                     'jurusan_id'     => $data['jurusan_id'] ?? null,
                     'kelas_id'       => $data['kelas_id'] ?? null,
@@ -411,10 +397,29 @@ class PesertaDidikService
                     'created_at'     => $now,
                     'updated_at'     => $now,
                 ]);
+
+                StatusPesertaDidikHelper::updateFromPendidikan($biodataId);
             }
 
             // Tambah Riwayat Domisili jika wilayah diisi
             if (!empty($data['wilayah_id'])) {
+                // Tambah Santri
+                do {
+                    $nis = now()->format('YmdHis') . sprintf("%04d", mt_rand(0, 9999));
+                } while (DB::table('santri')->where('nis', $nis)->exists());
+
+                $santriId = DB::table('santri')->insertGetId([
+                    'biodata_id'    => $biodataId,
+                    'nis'           => $nis,
+                    'tanggal_masuk' => $now,
+                    'status'        => 'aktif',
+                    'created_by'    => $userId,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
+                ]);
+
+                StatusPesertaDidikHelper::updateFromSantri($biodataId);
+
                 DB::table('riwayat_domisili')->insert([
                     'santri_id'     => $santriId,
                     'wilayah_id'    => $data['wilayah_id'],
@@ -447,12 +452,12 @@ class PesertaDidikService
                 }
             }
 
-            activity('santri_registration')
+            activity('registrasi_peserta_didik')
                 ->causedBy(Auth::user())
-                ->performedOn(Santri::find($santriId))
+                ->performedOn(Biodata::find($biodataId))
                 ->withProperties([
-                    'santri_id'     => $santriId,
                     'biodata_id'    => $biodataId,
+                    'santri_id'     => $santriId ?? null,
                     'no_kk'         => $data['no_kk'],
                     'nik'           => $data['nik'],
                     'orang_tua'     => [
@@ -477,61 +482,66 @@ class PesertaDidikService
                     'ip'            => request()->ip(),
                     'user_agent'    => request()->userAgent(),
                 ])
-                ->event('create_santri')
-                ->log('Pendaftaran santri baru beserta orang tua, wali, keluarga, dan berkas berhasil disimpan.');
+                ->event('create_peserta_didik')
+                ->log('Pendaftaran peserta didik baru beserta orang tua, wali, keluarga, dan berkas berhasil disimpan.');
 
             return [
-                'santri_id'    => $santriId,
                 'biodata_diri' => $biodataId,
+                'santri_id'    => $santriId ?? null,
             ];
         });
     }
 
-    public function destroy(string $santriId)
-    {
-        return DB::transaction(function () use ($santriId) {
-            $userId = Auth::id();
+    // public function destroy(string $bioId)
+    // {
+    //     return DB::transaction(function () use ($bioId) {
+    //         $userId = Auth::id();
 
-            $santri = Santri::with([
-                'biodata',
-                'riwayatPendidikan',
-                'riwayatDomisili',
-                'waliAsuh',
-                'anakAsuh',
-            ])->findOrFail($santriId);
+    //         $bio = Biodata::with([
+    //             'santriAktif',
+    //             'riwayatPendidikan',
+    //             'santriAktif.riwayatDomisili',
+    //             'santriAktif.waliAsuh',
+    //             'santriAktif.anakAsuh',
+    //         ])->findOrFail($bioId);
 
-            // Cek relasi yang masih aktif
-            $aktifPendidikan = $santri->riwayatPendidikan->where('status', 'aktif')->count();
-            $aktifDomisili   = $santri->riwayatDomisili->where('status', 'aktif')->count();
-            $aktifWaliAsuh   = $santri->waliAsuh->where('status', true)->count();
-            $aktifAnakAsuh   = $santri->anakAsuh->where('status', true)->count();
+    //         // Pastikan santriAktif tidak null
+    //         $santriAktif = $bio->santriAktif;
 
-            if ($aktifPendidikan || $aktifDomisili || $aktifWaliAsuh || $aktifAnakAsuh) {
-                throw ValidationException::withMessages([
-                    'santri' => 'Penghapusan dibatalkan. Pastikan semua data relasi sudah tidak aktif.',
-                    'detail' => [
-                        'riwayat_pendidikan_aktif' => $aktifPendidikan,
-                        'riwayat_domisili_aktif'   => $aktifDomisili,
-                        'wali_asuh_aktif'          => $aktifWaliAsuh,
-                        'anak_asuh_aktif'          => $aktifAnakAsuh,
-                    ]
-                ]);
-            }
+    //         // Gunakan collect() untuk memastikan array/collection
+    //         $aktifPendidikan = collect($bio->riwayatPendidikan)->where('status', 'aktif')->count();
+    //         $aktifDomisili   = collect(optional($santriAktif)->riwayatDomisili)->where('status', 'aktif')->count();
+    //         $aktifWaliAsuh   = collect(optional($santriAktif)->waliAsuh)->where('status', true)->count();
+    //         $aktifAnakAsuh   = collect(optional($santriAktif)->anakAsuh)->where('status', true)->count();
 
-            // Lakukan soft delete
-            if ($santri->biodata) {
-                $santri->biodata->deleted_by = $userId;
-                $santri->biodata->save();
-                $santri->biodata->delete();
-            }
+    //         if ($aktifPendidikan || $aktifDomisili || $aktifWaliAsuh || $aktifAnakAsuh) {
+    //             throw ValidationException::withMessages([
+    //                 'general' => 'Penghapusan dibatalkan. Masih ada data relasi aktif.',
+    //                 'riwayat_pendidikan_aktif' => $aktifPendidikan ? 'Riwayat pendidikan aktif: ' . $aktifPendidikan : null,
+    //                 'riwayat_domisili_aktif'   => $aktifDomisili ? 'Riwayat domisili aktif: ' . $aktifDomisili : null,
+    //                 'wali_asuh_aktif'          => $aktifWaliAsuh ? 'Wali asuh aktif: ' . $aktifWaliAsuh : null,
+    //                 'anak_asuh_aktif'          => $aktifAnakAsuh ? 'Anak asuh aktif: ' . $aktifAnakAsuh : null,
+    //             ]);
+    //         }
 
-            $santri->deleted_by = $userId;
-            $santri->save();
-            $santri->delete();
+    //         // Soft delete Biodata
+    //         $bio->deleted_by = $userId;
+    //         $bio->save();
+    //         $bio->delete();
 
-            return $santri;
-        });
-    }
+    //         // Soft delete Santri jika ada
+    //         if ($santriAktif) {
+    //             $santriAktif->deleted_by = $userId;
+    //             $santriAktif->save();
+    //             $santriAktif->delete();
+    //         }
+
+    //         return $bio;
+    //     });
+    // }
+
+
+
 
 
     // public function destroy(string $santriId)

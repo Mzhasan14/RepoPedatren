@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('anak_pegawai', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('santri_id');
+            $table->uuid('biodata_id');
             $table->unsignedBigInteger('pegawai_id');
             $table->enum('status_hubungan', ['ayah', 'ibu']);
             $table->boolean('status');
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('biodata_id')->references('id')->on('biodata')->onDelete('cascade');
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
         });
     }

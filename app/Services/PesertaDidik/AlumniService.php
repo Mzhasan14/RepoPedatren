@@ -12,10 +12,10 @@ class AlumniService
     public function getAllAlumni(Request $request)
     {
         // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
-        $riwayatLast = DB::table('riwayat_pendidikan')
-            ->select('santri_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
-            ->where('status', 'alumni')
-            ->groupBy('santri_id');
+        $rpLast = DB::table('riwayat_pendidikan')
+            ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
+            ->where('status', 'lulus')
+            ->groupBy('biodata_id');
 
         // 2) Sub‐query: santri alumni terakhir
         $santriLast = DB::table('santri')
@@ -40,10 +40,11 @@ class AlumniService
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri as s')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftJoinSub($riwayatLast, 'lr', fn($j) => $j->on('lr.santri_id', '=', 's.id'))
-            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+        return DB::table('biodata as b')
+            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
@@ -51,11 +52,14 @@ class AlumniService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where('s.status', 'alumni')
+            ->where(fn($q) => $q->where('s.status', 'alumni')
+                ->orWhere('rp.status', 'lulus'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at')
+                ->whereNull('rp.deleted_at'))
             // ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
             ->select([
                 'b.id as biodata_id',
-                's.id',
                 'wp.niup',
                 'b.nama',
                 DB::raw('YEAR(rp.tanggal_keluar)  AS tahun_keluar_pelajar'),
@@ -63,23 +67,22 @@ class AlumniService
                 DB::raw('YEAR(s.tanggal_keluar) AS tahun_keluar_santri'),
                 'l.nama_lembaga',
                 'kb.nama_kabupaten AS kota_asal',
-                's.created_at',
+                'b.created_at',
                 DB::raw("
                 GREATEST(
-                    s.updated_at,
-                    COALESCE(rp.updated_at, s.updated_at)
+                    b.updated_at,
+                    COALESCE(rp.updated_at, b.updated_at)
                 ) AS updated_at
             "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            ->latest();
+            ->orderBy('b.created_at', 'desc');
     }
 
     public function formatData($results)
     {
         return collect($results->items())->map(fn($item) => [
             "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
@@ -108,7 +111,7 @@ class AlumniService
                     'tanggal_keluar' => now()->toDateString(),
                     'updated_by'     => Auth::id(),
                 ]);
-    
+
             // Update status di tabel riwayat_domisili
             DB::table('riwayat_domisili')
                 ->whereIn('santri_id', $ids)
@@ -118,10 +121,9 @@ class AlumniService
                     'tanggal_keluar' => now()->toDateString(),
                     'updated_by'     => Auth::id(),
                 ]);
-    
+
             // Commit transaksi jika kedua update berhasil
             DB::commit();
-    
         } catch (\Exception $e) {
             // Rollback transaksi jika terjadi error
             DB::rollBack();
@@ -134,7 +136,7 @@ class AlumniService
     public function setAlumniPelajar(array $santriIds): int
     {
         return DB::table('riwayat_pendidikan')
-            ->whereIn('santri_id', $santriIds) 
+            ->whereIn('santri_id', $santriIds)
             ->where('status', 'aktif')
             ->update([
                 'status'         => 'alumni',

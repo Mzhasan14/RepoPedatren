@@ -209,23 +209,23 @@ class FilterSantriService
 
         switch (strtolower($request->status)) {
             case 'santri':
-                $query->where('s.status', 'aktif');
+                $query->where('spd.is_santri', true);
                 break;
             case 'santri non pelajar':
-                $query->where('s.status', 'aktif')
-                    ->where(fn($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
+                $query->where('spd.is_santri', true)
+                    ->where('spd.is_pelajar', false);
                 break;
             case 'pelajar':
-                $query->where('rp.status', 'aktif');
+                $query->where('spd.is_pelajar', true);
                 break;
             case 'pelajar non santri':
-                $query->where('rp.status', 'aktif')
-                    ->where('s.status', '!=', 'aktif');
+                $query->where('spd.is_pelajar', true)
+                    ->where('spd.is_santri', false);
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
-                $query->where('rp.status', 'aktif')
-                    ->where('s.status', 'aktif');
+                $query->where('spd.is_santri', true)
+                    ->where('spd.is_pelajar', true);
                 break;
             default:
                 $query->whereRaw('0 = 1');

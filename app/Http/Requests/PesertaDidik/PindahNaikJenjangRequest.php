@@ -24,8 +24,8 @@ class PindahNaikJenjangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'santri_id' => 'required|array|min:1',
-            'santri_id.*' => 'required|integer|exists:santri,id',
+            'biodata_id' => 'required|array|min:1',
+            'biodata_id.*' => 'required|uuid|exists:biodata,id',
             'lembaga_id' => 'required|integer|exists:lembaga,id',
             'jurusan_id' => 'required|integer|exists:jurusan,id',
             'kelas_id' => 'required|integer|exists:kelas,id',

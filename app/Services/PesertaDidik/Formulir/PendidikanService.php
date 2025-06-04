@@ -21,19 +21,18 @@ class PendidikanService
             'jurusan:id,nama_jurusan',
             'kelas:id,nama_kelas',
             'rombel:id,nama_rombel',
-            'santri.biodata:id',
         ])
-            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->where('biodata_id', $bioId)
             ->get();
 
         $data = $collection->map(fn(RiwayatPendidikan $rp) => [
             'id'             => $rp->id,
             'no_induk'       => $rp->no_induk,
-            'nama_lembaga'   => $rp->lembaga->nama_lembaga,
-            'nama_jurusan'   => $rp->jurusan->nama_jurusan,
-            'nama_kelas'     => $rp->kelas->nama_kelas,
-            'nama_rombel'    => $rp->rombel->nama_rombel,
-            'angkatan_id'  => $rp->angkatan_id,
+            'nama_lembaga'   => $rp->lembaga->nama_lembaga ?? null,
+            'nama_jurusan'   => $rp->jurusan->nama_jurusan ?? null,
+            'nama_kelas'     => $rp->kelas->nama_kelas ?? null,
+            'nama_rombel'    => $rp->rombel->nama_rombel ?? null,
+            'angkatan_id'    => $rp->angkatan_id,
             'tanggal_masuk'  => $rp->tanggal_masuk,
             'tanggal_keluar' => $rp->tanggal_keluar,
             'status'         => $rp->status,
@@ -42,34 +41,29 @@ class PendidikanService
         return ['status' => true, 'data' => $data];
     }
 
+
     public function store(array $input, string $bioId): array
     {
         return DB::transaction(function () use ($input, $bioId) {
-            $santri = Santri::where('biodata_id', $bioId)->latest()->first();
-            if (! $santri) {
-                return ['status' => false, 'message' => 'Santri tidak ditemukan.'];
-            }
-
             // Cek duplikasi pendidikan aktif
-            if (RiwayatPendidikan::where('santri_id', $santri->id)
+            if (RiwayatPendidikan::where('biodata_id', $bioId)
                 ->where('status', 'aktif')
                 ->exists()
             ) {
-                return ['status' => false, 'message' => 'Santri sudah memiliki pendidikan aktif.'];
+                return ['status' => false, 'message' => 'Data ini sudah memiliki pendidikan aktif.'];
             }
 
             $rp = RiwayatPendidikan::create([
-                'santri_id'      => $santri->id,
+                'biodata_id'     => $bioId,
                 'no_induk'       => $input['no_induk'] ?? null,
                 'lembaga_id'     => $input['lembaga_id'],
                 'jurusan_id'     => $input['jurusan_id'],
                 'kelas_id'       => $input['kelas_id'],
                 'rombel_id'      => $input['rombel_id'],
-                'angkatan_id'   => $input['angkatan_id'] ?? null,
+                'angkatan_id'    => $input['angkatan_id'] ?? null,
                 'tanggal_masuk'  => isset($input['tanggal_masuk'])
                     ? Carbon::parse($input['tanggal_masuk'])
                     : Carbon::now(),
-                'angkatan_id'    => $input['angkatan_id'] ?? null,
                 'status'         => 'aktif',
                 'created_by'     => Auth::id(),
             ]);
@@ -90,11 +84,11 @@ class PendidikanService
             'data'   => [
                 'id'             => $rp->id,
                 'no_induk'       => $rp->no_induk,
-                'nama_lembaga'   => $rp->lembaga->nama_lembaga,
-                'nama_jurusan'   => $rp->jurusan->nama_jurusan,
-                'nama_kelas'     => $rp->kelas->nama_kelas,
-                'nama_rombel'    => $rp->rombel->nama_rombel,
-                'nama_angkatan'  => $rp->angkatan ? $rp->angkatan->nama_angkatan : null,
+                'nama_lembaga'   => $rp->lembaga->nama_lembaga ?? null,
+                'nama_jurusan'   => $rp->jurusan->nama_jurusan ?? null,
+                'nama_kelas'     => $rp->kelas->nama_kelas ?? null,
+                'nama_rombel'    => $rp->rombel->nama_rombel ?? null,
+                'nama_angkatan'  => $rp->angkatan->nama_angkatan ?? null,
                 'tanggal_masuk'  => $rp->tanggal_masuk,
                 'tanggal_keluar' => $rp->tanggal_keluar,
                 'status'         => $rp->status,
@@ -131,7 +125,7 @@ class PendidikanService
             ]);
 
             $new = RiwayatPendidikan::create([
-                'santri_id'      => $old->santri_id,
+                'biodata_id'     => $old->biodata_id,
                 'no_induk'       => $old->no_induk,
                 'lembaga_id'     => $input['lembaga_id'],
                 'jurusan_id'     => $input['jurusan_id'],
@@ -185,7 +179,6 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // Jika data sudah memiliki tanggal keluar sebelumnya, larang perubahan
             if (! is_null($rp->tanggal_keluar)) {
                 return [
                     'status'  => false,

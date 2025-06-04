@@ -355,7 +355,8 @@ Route::prefix('approve')->middleware('auth:sanctum')->group(function () {
 
 Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Pindah
-    Route::post('/pindah-naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
+    Route::post('/pindah-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
+    Route::post('/naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
     Route::post('/pindah-kamar', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahKamarController::class, 'pindah']);
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);

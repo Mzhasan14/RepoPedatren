@@ -27,9 +27,10 @@ class BersaudaraService
             ->groupBy('biodata_id');
 
         // Ambil semua no_kk yang memiliki lebih dari 1 santri aktif
-        $noKkBersaudara = DB::table('santri AS s')
+        $noKkBersaudara = DB::table('biodata as b')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 's.biodata_id')
-            ->leftJoin('riwayat_pendidikan AS rp', 's.id', '=', 'rp.santri_id')
+            ->leftJoin('riwayat_pendidikan AS rp', 'b.id', '=', 'rp.biodata_id')
             ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', 'aktif'))
             ->whereNull('s.deleted_at')
             ->groupBy('k.no_kk')
@@ -48,12 +49,13 @@ class BersaudaraService
             ])
             ->groupBy('k2.no_kk');
 
-        return DB::table('santri AS s')
-            ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
+        return DB::table('biodata as b')
+            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
             ->whereIn('k.no_kk', $noKkBersaudara)
             ->leftJoinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
-            ->leftJoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftJoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')

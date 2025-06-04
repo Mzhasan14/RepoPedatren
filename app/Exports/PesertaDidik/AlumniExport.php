@@ -27,9 +27,13 @@ class AlumniExport implements
     public function collection()
     {
         // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
-        $riwayatLast = DB::table('riwayat_pendidikan')
+        $rpLast = DB::table('riwayat_pendidikan')
+            ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
+            ->where('status', 'lulus')
+            ->groupBy('biodata_id');
+
+        $rdLast = DB::table('riwayat_domisili')
             ->select('santri_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
-            ->where('status', 'alumni')
             ->groupBy('santri_id');
 
         // 2) Sub‐query: santri alumni terakhir
@@ -44,31 +48,58 @@ class AlumniExport implements
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri as s')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftJoinSub($riwayatLast, 'lr', fn($j) => $j->on('lr.santri_id', '=', 's.id'))
-            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.santri_id', '=', 'lr.santri_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+        return DB::table('biodata as b')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoinSub($rdLast, 'lrd', fn($j) => $j->on('lrd.santri_id', '=', 'b.id'))
+            ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('rd.santri_id', '=', 'lrd.santri_id')->on('rd.tanggal_keluar', '=', 'lrd.max_tanggal_keluar'))
+            ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
+            ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
+            ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+            ->leftjoin('angkatan AS as', 's.angkatan_id', '=', 'as.id')
+            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftjoin('angkatan AS ap', 'rp.angkatan_id', '=', 'ap.id')
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftjoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
+            ->leftjoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
+            ->leftjoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
             ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
-            ->where('s.status', 'alumni')
-            // ->where(fn($q) => $q->where('s.status', 'alumni')->orWhere('rp.status', 'alumni'))
+            ->leftJoin('negara as n', 'b.negara_id', '=', 'n.id')
+            ->where(fn($q) => $q->where('s.status', 'alumni')
+                ->orWhere('rp.status', 'lulus'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at')
+                ->whereNull('rp.deleted_at'))
             ->select([
                 'b.nama as nama_lengkap',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
                 's.nis',
+                'rp.no_induk',
                 'wp.niup',
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT(b.jalan, ', ', kc.nama_kecamatan, ', ', kb.nama_kabupaten, ', ', pv.nama_provinsi) as alamat"),
+                'b.jalan',
+                'kc.nama_kecamatan',
+                'kb.nama_kabupaten',
+                'pv.nama_provinsi',
+                'n.nama_negara',
                 DB::raw("CONCAT(b.tempat_lahir, ', ', b.tanggal_lahir) as TTL"),
-                'l.nama_lembaga as pendidikan',
+                'km.nama_kamar',
+                'bl.nama_blok',
+                'w.nama_wilayah',
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'kls.nama_kelas',
+                'r.nama_rombel',
+                'as.angkatan as angkatan_santri',
+                'ap.angkatan as angkatan_pelajar',
                 DB::raw('YEAR(rp.tanggal_keluar) as tahun_lulus'),
             ])
-            ->latest()
+            ->orderby('b.created_at', 'desc')
             ->get();
     }
 
@@ -79,11 +110,24 @@ class AlumniExport implements
             $row->nama_lengkap,
             $row->nik,
             $row->nis,
+            $row->no_induk,
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
+            $row->jalan,
+            $row->nama_kecamatan,
+            $row->nama_kabupaten,
+            $row->nama_provinsi,
+            $row->nama_negara,
             $row->TTL,
-            $row->pendidikan,
+            $row->nama_kamar,
+            $row->nama_blok,
+            $row->nama_wilayah,
+            $row->nama_lembaga,
+            $row->nama_jurusan,
+            $row->nama_kelas,
+            $row->nama_rombel,
+            $row->angkatan_santri,
+            $row->angkatan_pelajar,
             $row->tahun_lulus,
         ];
     }
@@ -95,11 +139,24 @@ class AlumniExport implements
             'Nama Lengkap',
             'NIK / Passport',
             'NIS',
+            'No Induk',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Negara',
             'Tempat, Tanggal Lahir',
-            'Lembaga Pendidikan',
+            'Kamar',
+            'Blok',
+            'Wilayah',
+            'Lembaga',
+            'Jurusan',
+            'Kelas',
+            'Rombel',
+            'Angkatan Santri',
+            'Angkatan Pelajar',
             'Tahun Lulus',
         ];
     }

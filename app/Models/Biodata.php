@@ -112,6 +112,10 @@ class Biodata extends Model
     {
         return $this->hasMany(Santri::class, 'biodata_id');
     }
+    public function santriAktif()
+    {
+        return $this->hasOne(Santri::class)->where('status', 'aktif');
+    }
     public function berkas()
     {
         return $this->hasMany(Berkas::class);
@@ -124,5 +128,10 @@ class Biodata extends Model
     public function keluarga()
     {
         return $this->hasMany(Keluarga::class, 'id_biodata', 'id');
+    }
+
+    public function riwayatPendidikan()
+    {
+        return $this->hasMany(RiwayatPendidikan::class, 'biodata_id', 'id');
     }
 }

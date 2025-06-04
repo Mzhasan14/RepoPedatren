@@ -38,4 +38,27 @@ class PindahNaikJenjangController extends Controller
             ], 500);
         }
     }
+
+    public function naik(PindahNaikJenjangRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->pindah->naik($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => [
+                    'berhasil' => $result['data_baru'],
+                    'gagal' => $result['data_gagal'],
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses permintaan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

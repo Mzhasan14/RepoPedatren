@@ -30,11 +30,12 @@ class NonDomisiliService
         // Query utama: data peserta_didik all
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')

@@ -32,7 +32,7 @@ class PerizinanService
             ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
             ->leftjoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftjoin('kelas as kls', 'rp.kelas_id', '=', 'kls.id')

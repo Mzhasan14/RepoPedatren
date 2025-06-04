@@ -12,7 +12,7 @@ class DetailPerizinanService
     $biodata = DB::table('santri as s')
       ->join('perizinan as pr', 's.id', '=', 'pr.santri_id')
       ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-      ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+      ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
       ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
       ->leftjoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
       ->leftjoin('kelas as kls', 'rp.kelas_id', '=', 'kls.id')

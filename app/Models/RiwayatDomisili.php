@@ -65,6 +65,11 @@ class RiwayatDomisili extends Model
         });
     }
 
+     public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'biodata_id', 'id');
+    }
+
     public function wilayah(): BelongsTo
     {
         return $this->belongsTo(Wilayah::class, 'wilayah_id');

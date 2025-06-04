@@ -134,32 +134,31 @@ class FilterAlumniService
         if ($request->filled('status')) {
             switch (strtolower($request->status)) {
                 case 'alumni santri':
-                    $query->where('s.status', 'alumni');
+                    $query->where('spd.status_santri', 'alumni');
                     break;
                 case 'alumni santri non pelajar':
-                    $query->where('s.status', 'alumni')
-                        ->where(fn($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
+                    $query->where('spd.status_santri', 'alumni')
+                        ->where('spd.is_pelajar', false);
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
-                    $query->join('riwayat_pendidikan as rp2', 'rp2.santri_id', '=', 's.id')
-                    ->where(fn($q) => $q->where('s.status', 'alumni')
-                        ->where('rp2.status', '=', 'aktif'));
+                    $query->where('spd.status_santri', 'alumni')
+                        ->where('spd.status_pelajar', '=', 'aktif');
                     break;
                 case 'alumni pelajar':
-                    $query->where('rp.status', 'alumni');
+                    $query->where('spd.status_pelajar', 'lulus');
                     break;
                 case 'alumni pelajar non santri':
-                    $query->where('rp.status', 'alumni')
-                        ->where('s.status', '!=', 'aktif');
+                    $query->where('spd.status_pelajar', 'lulus')
+                        ->where('spd.is_santri', false);
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->where('rp.status', 'alumni')
-                        ->where('s.status', '=', 'aktif');
+                    $query->where('spd.status_pelajar', 'lulus')
+                        ->where('spd.status_santri', '=', 'aktif');
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
-                    $query->where('rp.status', 'alumni')
-                        ->where('s.status', 'alumni');
+                    $query->where('spd.status_santri', 'lulus')
+                        ->where('spd.status_pelajar', 'alumni');
                     break;
                 default:
                     $query->whereRaw('0 = 1');

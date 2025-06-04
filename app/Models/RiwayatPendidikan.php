@@ -67,6 +67,20 @@ class RiwayatPendidikan extends Model
             $model->deleted_by = Auth::id();
             $model->save();
         });
+
+        //sinkron status
+        static::saved(function ($pendidikan) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromPendidikan($pendidikan->biodata_id);
+        });
+
+        static::deleted(function ($pendidikan) {
+            \App\Helpers\StatusPesertaDidikHelper::updateFromPendidikan($pendidikan->biodata_id);
+        });
+    }
+
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'biodata_id', 'id');
     }
 
     public function lembaga(): BelongsTo
