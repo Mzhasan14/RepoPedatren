@@ -34,19 +34,6 @@ class AuthService
 
         $user->assignRole($role);
 
-        activity('auth')
-            ->event('created')
-            ->performedOn($user)
-            ->causedBy($authUser)
-            ->withProperties([
-                'created_user'  => $user->only(['id', 'name', 'email']),
-                'created_by'    => $authUser->only(['id', 'name', 'email']),
-                'assigned_role' => $role,
-                'ip'            => request()->ip(),
-                'user_agent'    => request()->userAgent(),
-            ])
-            ->log("Pengguna baru '{$user->name}' didaftarkan oleh '{$authUser->name}'");
-
         return $user;
     }
 
@@ -116,15 +103,6 @@ class AuthService
 
     public function sendResetLink(string $email): string
     {
-        activity('auth')
-            ->event('password_request')
-            ->withProperties([
-                'email'      => $email,
-                'ip'         => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ])
-            ->log("Link reset password dikirim ke email '{$email}'");
-
         return Password::sendResetLink(['email' => $email]);
     }
 
@@ -135,18 +113,6 @@ class AuthService
             $user->setRememberToken(Str::random(60));
             $user->tokens()->delete();
             $user->save();
-
-            activity('auth')
-                ->event('password_reset')
-                ->performedOn($user)
-                ->causedBy($user)
-                ->withProperties([
-                    'user_id'    => $user->id,
-                    'email'      => $user->email,
-                    'ip'         => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ])
-                ->log("Password pengguna '{$user->email}' berhasil direset");
         });
     }
 

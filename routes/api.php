@@ -287,7 +287,7 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
 
     // //pengunjung mahrom
     // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
-    // Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+    Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
     Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
     Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
 
@@ -465,16 +465,16 @@ Route::prefix('dropdown')->group(function () {
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
 
-    // kewilayahan
-    Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-    Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
-    Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
+    // // kewilayahan
+    // Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
+    // Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
+    // Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
 
-    // Pendidikan
-    Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
-    Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
-    Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
-    Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
+    // // Pendidikan
+    // Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
+    // Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
+    // Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
+    // Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
 
     // Kewaliasuhan
     Route::get('/grup', [GrupWaliasuhController::class, 'getGrup']);

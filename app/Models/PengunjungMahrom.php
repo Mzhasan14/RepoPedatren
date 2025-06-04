@@ -64,4 +64,13 @@ class PengunjungMahrom extends Model
     {
         return $this->belongsTo(Santri::class, 'santri_id');
     }
+
+    public function biodata()
+    {
+        return $this->belongsTo(Biodata::class, 'biodata_id');
+    }
+    public function hubungan()
+    {
+        return $this->belongsTo(HubunganKeluarga::class, 'hubungan_id');
+    }
 }

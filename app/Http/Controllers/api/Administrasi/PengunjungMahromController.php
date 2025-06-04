@@ -79,6 +79,30 @@ class PengunjungMahromController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        try {
+            $result = $this->pengunjung->show($id);
+            if (!$result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail pengunjung mahrom: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function update(PengunjungMahromRequest $request, $id)
     {

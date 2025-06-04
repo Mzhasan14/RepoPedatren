@@ -129,6 +129,39 @@ class PengunjungMahromService
         });
     }
 
+    public function show(string $id): array
+    {
+        $kunjungan = PengunjungMahrom::with([
+            'biodata',
+            'santri.biodata',
+            'hubungan' // pastikan relasi ini ada di model
+        ])->find($id);
+
+        if (!$kunjungan) {
+            return [
+                'status' => false,
+                'message' => 'Data kunjungan tidak ditemukan'
+            ];
+        }
+
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $kunjungan->id,
+                'santri_id' => $kunjungan->santri_id,
+                'santri_nama' => $kunjungan->santri->biodata->nama ?? null,
+                'nik' => $kunjungan->biodata->nik,
+                'nama' => $kunjungan->biodata->nama,
+                'tempat_lahir' => $kunjungan->biodata->tempat_lahir,
+                'tanggal_lahir' => $kunjungan->biodata->tanggal_lahir,
+                'jenis_kelamin' => $kunjungan->biodata->jenis_kelamin,
+                'hubungan' => $kunjungan->hubungan->nama_status ?? null,
+                'jumlah_rombongan' => $kunjungan->jumlah_rombongan,
+                'tanggal_kunjungan' => $kunjungan->tanggal_kunjungan,
+                'status' => $kunjungan->status,
+            ]
+        ];
+    }
 
     public function update(array $data, string $id): array
     {
