@@ -74,7 +74,6 @@ class AuthController extends Controller
     public function resetPassword(ResetPasswordRequest $req): JsonResponse
     {
         $status = $this->authService->resetPassword($req->validated());
-        dd($status);
         return $status === Password::PASSWORD_RESET
             ? response()->json(['message' => 'Password berhasil direset.'])
             : response()->json(['message' => __($status)], 500);
