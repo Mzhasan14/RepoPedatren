@@ -150,7 +150,7 @@ class AnakPegawaiService
 
             if (!$ayahIsPegawai && !$ibuIsPegawai) {
                 throw ValidationException::withMessages([
-                    'orang_tua' => ['Minimal salah satu orang tua harus pegawai aktif.'],
+                    'orang_tua' => ['Minimal salah satu orang tua harus berstatus pegawai aktif.'],
                 ]);
             }
 
@@ -174,7 +174,7 @@ class AnakPegawaiService
 
                     if ($hasActivePendidikan) {
                         throw ValidationException::withMessages([
-                            'riwayat_pendidikan' => ['Data ini masih memiliki riwayat pendidikan yang aktif.'],
+                            'riwayat_pendidikan' => ['Data dengan nik ini masih tercatat memiliki riwayat pendidikan yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
@@ -186,13 +186,13 @@ class AnakPegawaiService
 
                     if ($hasActiveDomisili) {
                         throw ValidationException::withMessages([
-                            'riwayat_domisili' => ['Data ini masih memiliki riwayat domisili yang aktif.'],
+                            'riwayat_domisili' => ['Data dengan nik ini masih tercatat memiliki riwayat domisili yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
                     // Jika santri aktif tapi tidak ada riwayat aktif, tetap tolak pendaftaran baru
                     throw ValidationException::withMessages([
-                        'santri' => ['Data ini masih memiliki status santri aktif. Tidak dapat menambahkan data baru.'],
+                        'santri' => ['Data dengan nik ini masih tercatat memiliki status santri aktif. Tidak dapat menambahkan data baru.'],
                     ]);
                 }
             }
@@ -281,13 +281,14 @@ class AnakPegawaiService
                 $jenisKelamin = $role === 'ayah' ? 'l' : 'p'; // Tentukan jenis kelamin
 
                 // Jika data sudah ada berdasarkan NIK, lakukan update (kecuali created_at dan created_by)
+                $wafat = $data["wafat_{$role}"] == 1 ? true : false;
                 if ($parent) {
                     DB::table('biodata')->where('id', $parentId)->update([
                         'nama'          => $data[$nameKey],
                         'tempat_lahir'  => $data["tempat_lahir_{$role}"] ?? null,
                         'tanggal_lahir' => $data["tanggal_lahir_{$role}"] ?? null,
                         'no_telepon'    => $data["no_telepon_{$role}"] ?? null,
-                        'wafat'         => $data["wafat_{$role}"],
+                        'wafat'         => $wafat,
                         'status'        => true,
                         'updated_by'    => $userId,
                         'updated_at'    => $now,
@@ -302,7 +303,7 @@ class AnakPegawaiService
                         'tempat_lahir'  => $data["tempat_lahir_{$role}"] ?? null,
                         'tanggal_lahir' => $data["tanggal_lahir_{$role}"] ?? null,
                         'no_telepon'    => $data["no_telepon_{$role}"] ?? null,
-                        'wafat'         => $data["wafat_{$role}"],
+                        'wafat'         => $wafat,
                         'status'        => true,
                         'created_by'    => $userId,
                         'created_at'    => $now,
@@ -480,17 +481,12 @@ class AnakPegawaiService
                 StatusPesertaDidikHelper::updateFromPendidikan($biodataId);
             }
 
-            // Tambah Riwayat Domisili jika wilayah diisi
-            if (!empty($data['wilayah_id'])) {
-
+            // validasi mondok
+            if (!empty($data['wilayah_id']) || $data['mondok'] == 1) {
                 // Tambah Santri
-                do {
-                    $nis = now()->format('YmdHis') . Str::random(2);
-                } while (DB::table('santri')->where('nis', $nis)->exists());
-
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id'    => $biodataId,
-                    'nis'           => $nis,
+                    'nis'           => $data['nis'],
                     'tanggal_masuk' => $now,
                     'status'        => 'aktif',
                     'created_by'    => $userId,
@@ -499,7 +495,10 @@ class AnakPegawaiService
                 ]);
 
                 StatusPesertaDidikHelper::updateFromSantri($biodataId);
+            }
 
+            // Tambah Riwayat Domisili jika wilayah diisi
+            if (!empty($data['wilayah_id'])) {
                 DB::table('riwayat_domisili')->insert([
                     'santri_id'     => $santriId,
                     'wilayah_id'    => $data['wilayah_id'],
