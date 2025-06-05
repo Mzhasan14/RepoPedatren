@@ -190,14 +190,13 @@ class FilterSantriService
         return $query;
     }
 
-    public function applyAngkatanSantri(Builder $query, Request $request): Builder
+     public function applyAngkatanSantri(Builder $query, Request $request): Builder
     {
         if (! $request->filled('angkatan_santri')) {
             return $query;
         }
 
-
-        $query->whereYear('s.tanggal_masuk', $request->angkatan_santri);
+        $query->where('s.angkatan_id', $request->angkatan_santri);
         return $query;
     }
 

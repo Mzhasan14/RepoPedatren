@@ -218,14 +218,13 @@ class FilterPesertaDidikService
         return $query;
     }
 
-    public function applyAngkatanSantri(Builder $query, Request $request): Builder
+      public function applyAngkatanSantri(Builder $query, Request $request): Builder
     {
         if (! $request->filled('angkatan_santri')) {
             return $query;
         }
 
-
-        $query->whereYear('s.tanggal_masuk', $request->angkatan_santri);
+        $query->where('s.angkatan_id', $request->angkatan_santri);
         return $query;
     }
 
@@ -235,7 +234,7 @@ class FilterPesertaDidikService
             return $query;
         }
 
-        $query->whereYear('rp.tanggal_masuk', $request->angkatan_pelajar);
+        $query->where('rp.angkatan_id', $request->angkatan_pelajar);
         return $query;
     }
 

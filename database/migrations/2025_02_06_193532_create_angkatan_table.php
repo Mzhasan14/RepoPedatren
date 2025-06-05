@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('angkatan')->unique();
             $table->enum('kategori', ['santri', 'pelajar']);
-            $table->unsignedBigInteger('tahun_ajaran_id');
+            $table->unsignedBigInteger('tahun_ajaran_id')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
 

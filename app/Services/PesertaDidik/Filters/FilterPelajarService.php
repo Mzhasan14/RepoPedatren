@@ -215,7 +215,7 @@ class FilterPelajarService
             return $query;
         }
 
-        $query->whereYear('rp.tanggal_masuk', $request->angkatan_pelajar);
+        $query->where('rp.angkatan_id', $request->angkatan_pelajar);
         return $query;
     }
 

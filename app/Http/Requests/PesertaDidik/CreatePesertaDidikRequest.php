@@ -96,12 +96,14 @@ class CreatePesertaDidikRequest extends FormRequest
             'rombel_id' => 'nullable|exists:rombel,id',
             'angkatan_id' => 'nullable|exists:angkatan,id',
             'tanggal_masuk_pendidikan' => 'nullable|date',
+            'angkatan_pelajar_id' => 'nullable|integer',
 
             // Rencana Domisili
             'wilayah_id' => 'nullable|exists:wilayah,id',
             'blok_id' => 'nullable|exists:blok,id',
             'kamar_id' => 'nullable|exists:kamar,id',
             'tanggal_masuk_domisili' => 'nullable|date',
+            'angkatan_santri_id' => 'nullable|integer',
 
             // Berkas
             'berkas' => 'required|array|min:1',
@@ -116,6 +118,9 @@ class CreatePesertaDidikRequest extends FormRequest
             // Validasi: jika lembaga diisi, maka tanggal masuk pendidikan wajib
             if ($this->filled('lembaga_id') && !$this->filled('tanggal_masuk_pendidikan')) {
                 $validator->errors()->add('tanggal_masuk_pendidikan', 'Tanggal masuk pendidikan wajib diisi jika lembaga diisi.');
+                if (!$this->filled('angkatan_pelajar_id')) {
+                    $validator->errors()->add('angkatan_pelajar_id', 'Angkatan pelajar wajib diisi jika lembaga diisi.');
+                }
             }
 
             // Validasi: jika wilayah diisi, maka blok, kamar, dan tanggal masuk domisili wajib
@@ -128,6 +133,9 @@ class CreatePesertaDidikRequest extends FormRequest
                 }
                 if (!$this->filled('tanggal_masuk_domisili')) {
                     $validator->errors()->add('tanggal_masuk_domisili', 'Tanggal masuk domisili wajib diisi jika wilayah diisi.');
+                }
+                if (!$this->filled('angkatan_santri_id')) {
+                    $validator->errors()->add('angkatan_santri_id', 'Angkatan santri wajib diisi jika wilayah diisi.');
                 }
             }
 
