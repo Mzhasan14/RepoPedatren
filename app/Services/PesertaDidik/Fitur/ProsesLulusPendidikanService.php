@@ -60,4 +60,58 @@ class ProsesLulusPendidikanService
             'data_gagal' => $dataGagal,
         ];
     }
+
+    public function batalLulus(array $data)
+    {
+        $now = now();
+        $userId = Auth::id();
+        $bioIds = $data['biodata_id'];
+
+        // Ambil semua nama lengkap berdasarkan biodata_id
+        $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
+
+        // Ambil semua riwayat pendidikan yang statusnya lulus dan tanggal keluar tidak null
+        $riwayatLulus = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
+            ->where('status', 'lulus')
+            ->whereNotNull('tanggal_keluar')
+            ->latest('id')
+            ->get()
+            ->keyBy('biodata_id');
+
+        $dataGagal = [];
+        $dataBerhasil = [];
+
+        foreach ($bioIds as $bioId) {
+            $rp = $riwayatLulus->get($bioId);
+            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+
+            if (is_null($rp)) {
+                $dataGagal[] = [
+                    'nama' => $nama,
+                    'message' => 'Riwayat pendidikan tidak ditemukan atau belum lulus.',
+                ];
+                continue;
+            }
+
+            // Update status jadi aktif dan hapus tanggal keluar
+            $rp->update([
+                'status' => 'aktif',
+                'tanggal_keluar' => null,
+                'updated_at' => $now,
+                'updated_by' => $userId,
+            ]);
+
+            $dataBerhasil[] = [
+                'nama' => $nama,
+                'message' => 'Status lulus berhasil dibatalkan.',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Proses batal lulus selesai.',
+            'data_berhasil' => $dataBerhasil,
+            'data_gagal' => $dataGagal,
+        ];
+    }
 }

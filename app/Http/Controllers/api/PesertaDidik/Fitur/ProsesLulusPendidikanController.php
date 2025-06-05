@@ -37,4 +37,28 @@ class ProsesLulusPendidikanController extends Controller
             ], 500);
         }
     }
+
+    public function batalLulus(ProsesLulusPendidikanRequest $request)
+    {
+
+        try {
+            $validated = $request->validated();
+            $result = $this->data->batalLulus($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => [
+                    'berhasil' => $result['data_berhasil'],
+                    'gagal' => $result['data_gagal'],
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses permintaan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
