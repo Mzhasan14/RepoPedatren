@@ -9,7 +9,7 @@ class Angkatan extends Model
     protected $table = 'angkatan';
 
     protected $fillable = [
-        'nama',
+        'angkatan',
         'kategori',
         'tahun_ajaran_id',
         'status',
@@ -19,6 +19,5 @@ class Angkatan extends Model
     {
         return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id', 'id');
     }
-
 
 }

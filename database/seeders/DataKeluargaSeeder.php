@@ -31,7 +31,10 @@ class DataKeluargaSeeder extends Seeder
         // Ambil daftar ID lembaga, jurusan, angkatan, kelas, rombel, wilayah, blok, kamar
         $lembagaIds    = DB::table('lembaga')->pluck('id')->toArray();
         $jurusanIds    = DB::table('jurusan')->pluck('id')->toArray();
-        $angkatanList  = DB::table('angkatan')->get(); // koleksi karena butuh tahun_ajaran_id
+        $angkatanList  = DB::table('angkatan')->get(); // koleksi karena butuh kategori dan tahun_ajaran_id
+        // Pisahkan angkatan berdasarkan kategori
+        $angkatanSantriList  = $angkatanList->where('kategori', 'santri')->values();
+        $angkatanPelajarList = $angkatanList->where('kategori', 'pelajar')->values();
         $kelasIds      = DB::table('kelas')->pluck('id')->toArray();
         $rombelIds     = DB::table('rombel')->pluck('id')->toArray();
         $wilayahIds    = DB::table('wilayah')->pluck('id')->toArray();
@@ -244,7 +247,8 @@ class DataKeluargaSeeder extends Seeder
 
             // Jika masuk ke tabel santri
             if ($doSantri) {
-                $angkatan = $faker->randomElement($angkatanList);
+                // Pilih angkatan yang kategori = 'santri'
+                $angkatan = $faker->randomElement($angkatanSantriList);
                 $angkatanId = $angkatan->id;
 
                 // Tanggal masuk santri (acak antara tanggal awal dan akhir tahun ajaran)
@@ -290,7 +294,12 @@ class DataKeluargaSeeder extends Seeder
 
                 // Jika juga ada riwayat pendidikan
                 if ($doPendidikan) {
-                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
+                    // Pilih angkatan yang kategori = 'pelajar'
+                    $angkatanPel = $faker->randomElement($angkatanPelajarList);
+                    $angkatanPelId = $angkatanPel->id;
+                    $tahunAjaranPel = DB::table('tahun_ajaran')->where('id', $angkatanPel->tahun_ajaran_id)->first();
+
+                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaranPel->tanggal_mulai, $tahunAjaranPel->tanggal_selesai)->format('Y-m-d');
 
                     // Kalau status pendidikan = 'alumni' → tanggal keluar acak, kalau 'aktif' → null
                     if ($stPendidikan === 'alumni') {
@@ -305,7 +314,7 @@ class DataKeluargaSeeder extends Seeder
 
                     DB::table('riwayat_pendidikan')->insert([
                         'biodata_id'     => $childId,          // gunakan biodata_id, bukan santri_id
-                        'angkatan_id'    => $angkatanId,
+                        'angkatan_id'    => $angkatanPelId,
                         'no_induk'       => $faker->unique()->numerify('###########'),
                         'lembaga_id'     => $faker->randomElement($lembagaIds),
                         'jurusan_id'     => $faker->randomElement($jurusanIds),
@@ -344,7 +353,8 @@ class DataKeluargaSeeder extends Seeder
                 // Tambahkan relasi: random antara santri+domisili atau langsung riwayat_pendidikan
                 if ($faker->boolean(50)) {
                     // --- Buat sebagai santri (untuk anak pegawai) ---
-                    $angkatan = $faker->randomElement($angkatanList);
+                    // Pilih angkatan yang kategori = 'santri'
+                    $angkatan = $faker->randomElement($angkatanSantriList);
                     $angkatanId = $angkatan->id;
                     $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
 
@@ -381,17 +391,18 @@ class DataKeluargaSeeder extends Seeder
                     ]);
                 } else {
                     // --- Buat riwayat_pendidikan langsung (untuk anak pegawai) ---
-                    $angkatan = $faker->randomElement($angkatanList);
-                    $angkatanId = $angkatan->id;
-                    $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
-                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
+                    // Pilih angkatan yang kategori = 'pelajar'
+                    $angkatanPel = $faker->randomElement($angkatanPelajarList);
+                    $angkatanPelId = $angkatanPel->id;
+                    $tahunAjaranPel = DB::table('tahun_ajaran')->where('id', $angkatanPel->tahun_ajaran_id)->first();
+                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaranPel->tanggal_mulai, $tahunAjaranPel->tanggal_selesai)->format('Y-m-d');
 
                     // Karena status kita paksa 'aktif', maka TANGGAL_KELUAR = NULL
                     $tanggalKeluarPendidikan = null;
 
                     DB::table('riwayat_pendidikan')->insert([
                         'biodata_id'     => $childId,
-                        'angkatan_id'    => $angkatanId,
+                        'angkatan_id'    => $angkatanPelId,
                         'no_induk'       => $faker->unique()->numerify('###########'),
                         'lembaga_id'     => $faker->randomElement($lembagaIds),
                         'jurusan_id'     => $faker->randomElement($jurusanIds),
@@ -569,7 +580,8 @@ class DataKeluargaSeeder extends Seeder
                 // 5) Relasi ke santri atau riwayat_pendidikan seperti biasa
                 if ($faker->boolean(50)) {
                     // --- Buat sebagai santri (untuk anak pegawai) ---
-                    $angkatan = $faker->randomElement($angkatanList);
+                    // Pilih angkatan yang kategori = 'santri'
+                    $angkatan = $faker->randomElement($angkatanSantriList);
                     $angkatanId = $angkatan->id;
                     $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
 
@@ -606,17 +618,18 @@ class DataKeluargaSeeder extends Seeder
                     ]);
                 } else {
                     // --- Buat riwayat_pendidikan langsung (untuk anak pegawai) ---
-                    $angkatan = $faker->randomElement($angkatanList);
-                    $angkatanId = $angkatan->id;
-                    $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
-                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
+                    // Pilih angkatan yang kategori = 'pelajar'
+                    $angkatanPel = $faker->randomElement($angkatanPelajarList);
+                    $angkatanPelId = $angkatanPel->id;
+                    $tahunAjaranPel = DB::table('tahun_ajaran')->where('id', $angkatanPel->tahun_ajaran_id)->first();
+                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaranPel->tanggal_mulai, $tahunAjaranPel->tanggal_selesai)->format('Y-m-d');
 
                     // Karena status kita paksa 'aktif', maka TANGGAL_KELUAR = NULL
                     $tanggalKeluarPendidikan = null;
 
                     DB::table('riwayat_pendidikan')->insert([
                         'biodata_id'     => $childIdExtra,
-                        'angkatan_id'    => $angkatanId,
+                        'angkatan_id'    => $angkatanPelId,
                         'no_induk'       => $faker->unique()->numerify('###########'),
                         'lembaga_id'     => $faker->randomElement($lembagaIds),
                         'jurusan_id'     => $faker->randomElement($jurusanIds),

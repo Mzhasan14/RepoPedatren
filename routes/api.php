@@ -23,7 +23,8 @@ use App\Http\Controllers\Api\PesertaDidik\{
     DetailController,
     KhadamController,
     BersaudaraController,
-    NonDomisiliController
+    NonDomisiliController,
+    DropDownAngkatanController
 };
 
 use App\Http\Controllers\api\PesertaDidik\formulir\{
@@ -452,6 +453,9 @@ Route::prefix('dropdown')->group(function () {
     Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
+
+    Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
+    Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);
 
     // // kewilayahan
     // Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
