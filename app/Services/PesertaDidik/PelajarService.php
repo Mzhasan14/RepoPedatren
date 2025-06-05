@@ -64,6 +64,7 @@ class PelajarService
                     COALESCE(rd.updated_at, rp.updated_at)
                 ) AS updated_at
             "),
+                'rp.status',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->latest();
@@ -83,6 +84,7 @@ class PelajarService
             "kota_asal" => $item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            "status" => $item->status ?? '-',
             "foto_profil" => url($item->foto_profil)
         ]);
     }

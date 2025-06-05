@@ -68,12 +68,14 @@ class AlumniService
                 'l.nama_lembaga',
                 'kb.nama_kabupaten AS kota_asal',
                 'b.created_at',
+                'rp.status',
                 DB::raw("
                 GREATEST(
                     b.updated_at,
                     COALESCE(rp.updated_at, b.updated_at)
                 ) AS updated_at
             "),
+
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->orderBy('b.created_at', 'desc');
@@ -92,6 +94,7 @@ class AlumniService
             "kota_asal" => $item->kota_asal,
             "tgl_update"       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             "tgl_input"        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            "status"           => $item->status,
             "foto_profil" => url($item->foto_profil)
         ]);
     }
