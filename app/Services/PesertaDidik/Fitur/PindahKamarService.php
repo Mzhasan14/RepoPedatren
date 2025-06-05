@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use App\Models\Santri;
 use App\Models\RiwayatDomisili;
 use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +15,13 @@ class PindahKamarService
         $userId = Auth::id();
         $santriIds = $data['santri_id'];
 
-        // Ambil semua riwayat aktif sekaligus untuk menghindari query berulang
+        // Ambil nama santri
+        $namaSantriList = Santri::whereIn('id', $santriIds)
+            ->with('biodata:id,nama')
+            ->get()
+            ->pluck('biodata.nama', 'id');
+
+        // Ambil riwayat aktif domisili
         $riwayatAktif = RiwayatDomisili::whereIn('santri_id', $santriIds)
             ->where('status', 'aktif')
             ->latest('id')
@@ -22,17 +29,18 @@ class PindahKamarService
             ->keyBy('santri_id');
 
         $dataBaru = [];
+        $dataBaruNama = [];
         $dataGagal = [];
 
         foreach ($santriIds as $santriId) {
             $rp = $riwayatAktif->get($santriId);
+            $nama = $namaSantriList[$santriId] ?? 'Tidak diketahui';
 
             if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
                 $dataGagal[] = [
-                    'santri_id' => $santriId,
+                    'nama' => $nama,
                     'message' => 'Riwayat domisili tidak ditemukan atau sudah keluar.',
                 ];
-
                 continue;
             }
 
@@ -56,9 +64,13 @@ class PindahKamarService
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
+
+            $dataBaruNama[] = [
+                'nama' => $nama,
+                'message' => 'Berhasil dipindahkan.',
+            ];
         }
 
-        // Insert sekaligus untuk efisiensi
         if (!empty($dataBaru)) {
             RiwayatDomisili::insert($dataBaru);
         }
@@ -66,8 +78,8 @@ class PindahKamarService
         return [
             'success' => true,
             'message' => 'Santri berhasil dipindahkan ke domisili baru.',
-            'data_baru' => count($dataBaru),
-            'data_gagal' => $dataGagal ?? 0,
+            'data_baru' => $dataBaruNama,
+            'data_gagal' => $dataGagal,
         ];
     }
 }

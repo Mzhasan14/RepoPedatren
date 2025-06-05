@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use App\Models\Biodata;
 use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,7 +14,10 @@ class PindahNaikJenjangService
         $userId = Auth::id();
         $bioIds = $data['biodata_id'];
 
-        // Ambil semua riwayat aktif sekaligus untuk menghindari query berulang
+        // Ambil nama lengkap
+        $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
+
+        // Ambil riwayat aktif
         $riwayatAktif = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
             ->where('status', 'aktif')
             ->latest('id')
@@ -21,21 +25,21 @@ class PindahNaikJenjangService
             ->keyBy('biodata_id');
 
         $dataBaru = [];
+        $dataBaruNama = [];
         $dataGagal = [];
 
         foreach ($bioIds as $bioId) {
             $rp = $riwayatAktif->get($bioId);
+            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
 
             if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
                 $dataGagal[] = [
-                    'biodata_id' => $bioId,
+                    'nama' => $nama,
                     'message' => 'Riwayat pendidikan tidak ditemukan atau sudah keluar.',
                 ];
-                
                 continue;
             }
 
-            // Update riwayat lama
             $rp->update([
                 'status' => 'pindah',
                 'tanggal_keluar' => $now,
@@ -43,7 +47,6 @@ class PindahNaikJenjangService
                 'updated_by' => $userId,
             ]);
 
-            // Siapkan riwayat baru
             $dataBaru[] = [
                 'biodata_id' => $bioId,
                 'lembaga_id' => $data['lembaga_id'],
@@ -56,9 +59,13 @@ class PindahNaikJenjangService
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
+
+            $dataBaruNama[] = [
+                'nama' => $nama,
+                'message' => 'Berhasil dipindahkan.',
+            ];
         }
 
-        // Insert sekaligus untuk efisiensi
         if (!empty($dataBaru)) {
             RiwayatPendidikan::insert($dataBaru);
         }
@@ -66,8 +73,8 @@ class PindahNaikJenjangService
         return [
             'success' => true,
             'message' => 'Peserta didik berhasil dipindahkan ke jenjang baru.',
-            'data_baru' => count($dataBaru),
-            'data_gagal' => $dataGagal ?? 0,
+            'data_baru' => $dataBaruNama,
+            'data_gagal' => $dataGagal,
         ];
     }
 
@@ -77,7 +84,8 @@ class PindahNaikJenjangService
         $userId = Auth::id();
         $bioIds = $data['biodata_id'];
 
-        // Ambil semua riwayat aktif sekaligus untuk menghindari query berulang
+        $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
+
         $riwayatAktif = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
             ->where('status', 'aktif')
             ->latest('id')
@@ -85,21 +93,21 @@ class PindahNaikJenjangService
             ->keyBy('biodata_id');
 
         $dataBaru = [];
+        $dataBaruNama = [];
         $dataGagal = [];
 
         foreach ($bioIds as $bioId) {
             $rp = $riwayatAktif->get($bioId);
+            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
 
             if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
                 $dataGagal[] = [
-                    'santri_id' => $bioId,
+                    'nama' => $nama,
                     'message' => 'Riwayat pendidikan tidak ditemukan atau sudah keluar.',
                 ];
-                
                 continue;
             }
 
-            // Update riwayat lama
             $rp->update([
                 'status' => 'naik_kelas',
                 'tanggal_keluar' => $now,
@@ -107,7 +115,6 @@ class PindahNaikJenjangService
                 'updated_by' => $userId,
             ]);
 
-            // Siapkan riwayat baru
             $dataBaru[] = [
                 'biodata_id' => $bioId,
                 'lembaga_id' => $data['lembaga_id'],
@@ -120,9 +127,13 @@ class PindahNaikJenjangService
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
+
+            $dataBaruNama[] = [
+                'nama' => $nama,
+                'message' => 'Berhasil naik kelas.',
+            ];
         }
 
-        // Insert sekaligus untuk efisiensi
         if (!empty($dataBaru)) {
             RiwayatPendidikan::insert($dataBaru);
         }
@@ -130,8 +141,8 @@ class PindahNaikJenjangService
         return [
             'success' => true,
             'message' => 'Peserta didik berhasil naik ke jenjang baru.',
-            'data_baru' => count($dataBaru),
-            'data_gagal' => $dataGagal ?? 0,
+            'data_baru' => $dataBaruNama,
+            'data_gagal' => $dataGagal,
         ];
     }
 }
