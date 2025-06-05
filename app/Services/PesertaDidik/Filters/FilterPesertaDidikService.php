@@ -4,6 +4,7 @@ namespace App\Services\PesertaDidik\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
+use SebastianBergmann\Type\FalseType;
 
 class FilterPesertaDidikService
 {
@@ -174,23 +175,23 @@ class FilterPesertaDidikService
 
         switch (strtolower($request->status)) {
             case 'santri':
-                $query->where('spd.is_santri', true);
+                $query->where('spd.status_santri', 'aktif');
                 break;
             case 'santri non pelajar':
-                $query->where('spd.is_santri', true)
+                $query->where('spd.status_santri', 'aktif')
                     ->where('spd.is_pelajar', false);
                 break;
             case 'pelajar':
-                $query->where('spd.is_pelajar', true);
+                $query->where('spd.status_pelajar', 'aktif');
                 break;
             case 'pelajar non santri':
-                $query->where('spd.is_pelajar', true)
+                $query->where('spd.status_pelajar', 'aktif')
                     ->where('spd.is_santri', false);
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
-                $query->where('spd.is_santri', true)
-                    ->where('spd.is_pelajar', true);
+                $query->where('spd.status_santri', 'aktif')
+                    ->where('spd.status_pelajar', 'aktif');
                 break;
             default:
                 $query->whereRaw('0 = 1');

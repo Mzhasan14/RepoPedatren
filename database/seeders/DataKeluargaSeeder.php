@@ -320,6 +320,12 @@ class DataKeluargaSeeder extends Seeder
                     ]);
 
                     StatusPesertaDidikHelper::updateFromPendidikan($childId);
+                    // Jika riwayat_pendidikan berstatus 'lulus', update status_peserta_didik menjadi 'alumni'
+                    if ($statusPendidikan === 'lulus') {
+                        DB::table('status_peserta_didik')
+                            ->where('biodata_id', $childId)
+                            ->update(['status_pelajar' => 'alumni']);
+                    }
                 }
             }
 

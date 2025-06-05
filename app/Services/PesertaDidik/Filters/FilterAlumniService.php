@@ -145,19 +145,19 @@ class FilterAlumniService
                         ->where('spd.status_pelajar', '=', 'aktif');
                     break;
                 case 'alumni pelajar':
-                    $query->where('spd.status_pelajar', 'lulus');
+                    $query->where('spd.status_pelajar', 'alumni');
                     break;
                 case 'alumni pelajar non santri':
-                    $query->where('spd.status_pelajar', 'lulus')
+                    $query->where('spd.status_pelajar', 'alumni')
                         ->where('spd.is_santri', false);
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->where('spd.status_pelajar', 'lulus')
+                    $query->where('spd.status_pelajar', 'alumni')
                         ->where('spd.status_santri', '=', 'aktif');
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
-                    $query->where('spd.status_santri', 'lulus')
+                    $query->where('spd.status_santri', 'alumni')
                         ->where('spd.status_pelajar', 'alumni');
                     break;
                 default:

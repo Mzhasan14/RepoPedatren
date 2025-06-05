@@ -42,7 +42,7 @@ class NonDomisiliService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where('s.status', 'aktif')
+            ->where('spd.status_santri', 'aktif')
             ->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))

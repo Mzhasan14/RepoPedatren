@@ -62,8 +62,8 @@ class AnakPegawaiService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ap.status', true)
             ->where(function ($q) {
-                $q->where('s.status', 'aktif')
-                    ->orWhere('rp.status', 'aktif');
+                $q->where('spd.status_santri', 'aktif')
+                    ->orWhere('spd.status_pelajar', 'aktif');
             })
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))

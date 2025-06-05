@@ -3,7 +3,9 @@
 namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Biodata;
+use Illuminate\Http\Request;
 use App\Models\RiwayatPendidikan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class ProsesLulusPendidikanService
@@ -113,5 +115,32 @@ class ProsesLulusPendidikanService
             'data_berhasil' => $dataBerhasil,
             'data_gagal' => $dataGagal,
         ];
+    }
+
+    public function listDataLulus(Request $request)
+    {
+        // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
+        $rpLast = DB::table('riwayat_pendidikan')
+            ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
+            ->where('status', 'lulus')
+            ->groupBy('biodata_id');
+
+        return DB::table('biodata as b')
+            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
+            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
+            ->where('spd.status_pelajar', 'lulus')
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at')
+                ->whereNull('rp.deleted_at'))
+            ->select([
+                'b.id as biodata_id',
+                'b.nama',
+                'rp.no_induk',
+                'l.nama_lembaga',
+                'rp.status',
+            ])
+            ->orderBy('rp.updated_at', 'desc');
     }
 }

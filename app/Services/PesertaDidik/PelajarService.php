@@ -27,7 +27,7 @@ class PelajarService
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // Query utama: data peserta_didik all
+        // Query utama: data pelajar all
         return DB::table('biodata as b')
             ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->join('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))

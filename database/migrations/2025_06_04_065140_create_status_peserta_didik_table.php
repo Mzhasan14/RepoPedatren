@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('is_pelajar')->default(false);
 
             $table->enum('status_santri', ['aktif', 'alumni', 'do', 'berhenti', 'nonaktif'])->nullable();
-            $table->enum('status_pelajar', ['aktif', 'do', 'berhenti', 'lulus', 'pindah', 'cuti', 'naik_kelas', 'nonaktif'])->nullable();
+            $table->enum('status_pelajar', ['aktif', 'alumni', 'do', 'berhenti', 'lulus', 'pindah', 'cuti', 'naik_kelas', 'nonaktif'])->nullable();
 
             $table->date('tanggal_keluar_santri')->nullable();
             $table->date('tanggal_keluar_pelajar')->nullable();

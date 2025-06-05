@@ -64,8 +64,8 @@ class BersaudaraService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')
-                ->orWhere('rp.status', '=', 'aktif'))
+            ->where(fn($q) => $q->where('spd.status_santri', 'aktif')
+                ->orWhere('spd.status_pelajar', 'aktif'))
             ->whereNull('b.deleted_at')
             ->whereNull('s.deleted_at')
             ->select([
