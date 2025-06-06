@@ -358,6 +358,7 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
 
     Route::post('/proses-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'prosesLulus']);
     Route::post('/batal-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'batalLulus']);
+    Route::get('/list-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'listDataLulus']);
 
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
