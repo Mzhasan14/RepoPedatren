@@ -94,16 +94,15 @@ class CreatePesertaDidikRequest extends FormRequest
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
-            'angkatan_id' => 'nullable|exists:angkatan,id',
             'tanggal_masuk_pendidikan' => 'nullable|date',
-            'angkatan_pelajar_id' => 'nullable|integer',
+            'angkatan_pelajar_id' => 'nullable|integer|exists:angkatan,id',
 
             // Rencana Domisili
             'wilayah_id' => 'nullable|exists:wilayah,id',
             'blok_id' => 'nullable|exists:blok,id',
             'kamar_id' => 'nullable|exists:kamar,id',
             'tanggal_masuk_domisili' => 'nullable|date',
-            'angkatan_santri_id' => 'nullable|integer',
+            'angkatan_santri_id' => 'nullable|integer|exists:angkatan,id',
 
             // Berkas
             'berkas' => 'required|array|min:1',
