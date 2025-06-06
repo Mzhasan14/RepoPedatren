@@ -399,7 +399,9 @@ Route::prefix('data-pokok')->group(function () {
 
     Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
-
+    Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
+    
     // 🏫 Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);

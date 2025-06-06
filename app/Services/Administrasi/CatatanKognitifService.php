@@ -57,6 +57,7 @@ class CatatanKognitifService
                 ->whereNull('catatan_kognitif.deleted_at')
                 ->select(
                     'CatatanBiodata.id as Biodata_uuid',
+                    'PencatatBiodata.id as Pencatat_uuid',
                     'catatan_kognitif.id',
                     'CatatanBiodata.nama',
                     DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
@@ -83,6 +84,7 @@ class CatatanKognitifService
                 )
                 ->groupBy(
                     'CatatanBiodata.id',
+                    'PencatatBiodata.id',
                     'catatan_kognitif.id',
                     'CatatanBiodata.nama',
                     'catatan_kognitif.kebahasaan_nilai',
@@ -134,6 +136,7 @@ public function formatData($results, $kategoriFilter = null)
 
             $entries[] = [
                 'Biodata_uuid' => $item->Biodata_uuid,
+                'Pencatat_uuid' => $item->Pencatat_uuid,
                 'id_santri' => $item->id,
                 'nama_santri' => $item->nama,
                 'blok' => $item->blok,

@@ -56,7 +56,7 @@ class CatatanAfektifService
                         ->whereNull('catatan_afektif.deleted_at')
                         ->select(
                             'CatatanBiodata.id as Biodata_uuid',
-                            'catatan_afektif.id',
+                            'PencatatBiodata.id as Pencatat_uuid',
                             'CatatanBiodata.nama',
                             DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
                             DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
@@ -76,6 +76,7 @@ class CatatanAfektifService
                         )
                         ->groupBy(
                             'CatatanBiodata.id',
+                            'PencatatBiodata.id',
                             'catatan_afektif.id',
                             'CatatanBiodata.nama',
                             'catatan_afektif.kepedulian_nilai',
@@ -112,6 +113,7 @@ public function formatData($results, $kategori = null)
             if ($item->akhlak_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
@@ -132,6 +134,7 @@ public function formatData($results, $kategori = null)
             if ($item->kepedulian_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
@@ -152,6 +155,7 @@ public function formatData($results, $kategori = null)
             if ($item->kebersihan_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
@@ -173,6 +177,7 @@ public function formatData($results, $kategori = null)
             if ($item->akhlak_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
@@ -192,6 +197,7 @@ public function formatData($results, $kategori = null)
             if ($item->kepedulian_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
@@ -211,6 +217,7 @@ public function formatData($results, $kategori = null)
             if ($item->kebersihan_nilai !== null) {
                 $data[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
                     'id_santri' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
