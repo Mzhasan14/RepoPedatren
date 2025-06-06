@@ -46,6 +46,11 @@ class ProsesLulusPendidikanService
                 // Insert ke riwayat dengan status lulus
                 RiwayatPendidikan::create([
                     'biodata_id' => $pd->biodata_id,
+                    'lembaga_id' => $pd->lembaga_id,
+                    'jurusan_id' => $pd->jurusan_id ?? null,
+                    'kelas_id' => $pd->kelas_id ?? null,
+                    'rombel_Id' => $pd->rombel_id ?? null,
+                    'no_induk' => $pd->no_induk ?? null,
                     'angkatan_id' => $pd->angkatan,
                     'status' => 'lulus',
                     'tanggal_masuk' => $pd->tanggal_masuk,
@@ -129,10 +134,14 @@ class ProsesLulusPendidikanService
                 Pendidikan::create([
                     'biodata_id' => $rp->biodata_id,
                     'angkatan_id' => $rp->angkatan,
+                    'lembaga_id' => $rp->lembaga_id,
+                    'jurusan_id' => $rp->jurusan_id ?? null,
+                    'kelas_id' => $rp->kelas_id ?? null,
+                    'rombel_Id' => $rp->rombel_id ?? null,
+                    'no_induk' => $rp->no_induk ?? null,
                     'status' => 'aktif',
                     'tanggal_masuk' => $rp->tanggal_masuk,
                     'created_by' => $userId,
-                    'updated_by' => $userId,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
