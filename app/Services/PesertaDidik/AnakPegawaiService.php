@@ -37,24 +37,23 @@ class AnakPegawaiService
 
         return DB::table('anak_pegawai as ap')
             ->join('biodata AS b', 'ap.biodata_id', '=', 'b.id')
-            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
-            ->leftJoin('riwayat_pendidikan AS rp', function ($j) {
-                $j->on('b.id', '=', 'rp.biodata_id')
-                    ->where('rp.status', 'aktif');
+            ->leftJoin('pendidikan AS pd', function ($j) {
+                $j->on('b.id', '=', 'pd.biodata_id')
+                    ->where('pd.status', 'aktif');
             })
             ->join('pegawai as p', 'ap.pegawai_id', '=', 'p.id')
             ->join('biodata as bp', 'p.biodata_id', '=', 'bp.id')
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
-            ->leftJoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
-            ->leftJoin('riwayat_domisili AS rd', function ($j) {
-                $j->on('s.id', '=', 'rd.santri_id')
-                    ->where('rd.status', 'aktif');
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan AS j', 'pd.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas AS kls', 'pd.kelas_id', '=', 'kls.id')
+            ->leftJoin('domisili_santri AS ds', function ($j) {
+                $j->on('s.id', '=', 'ds.santri_id')
+                    ->where('ds.status', 'aktif');
             })
-            ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-            ->leftJoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-            ->leftJoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
@@ -62,8 +61,8 @@ class AnakPegawaiService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ap.status', true)
             ->where(function ($q) {
-                $q->where('spd.status_santri', 'aktif')
-                    ->orWhere('spd.status_pelajar', 'aktif');
+                $q->where('s.status', 'aktif')
+                    ->orWhere('pd.status', 'aktif');
             })
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))
@@ -84,8 +83,8 @@ class AnakPegawaiService
                 's.created_at',
                 DB::raw("GREATEST(
                     s.updated_at,
-                    COALESCE(rp.updated_at, s.updated_at),
-                    COALESCE(rd.updated_at, s.updated_at)
+                    COALESCE(pd.updated_at, s.updated_at),
+                    COALESCE(ds.updated_at, s.updated_at)
                 ) AS updated_at"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
@@ -103,7 +102,7 @@ class AnakPegawaiService
                 'bl.nama_blok',
                 'kb.nama_kabupaten',
                 's.created_at',
-                DB::raw("GREATEST(s.updated_at, COALESCE(rp.updated_at, s.updated_at), COALESCE(rd.updated_at, s.updated_at))"),
+                DB::raw("GREATEST(s.updated_at, COALESCE(pd.updated_at, s.updated_at), COALESCE(ds.updated_at, s.updated_at))"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg')"),
             ])
             ->distinct()

@@ -21,7 +21,8 @@ return new class extends Migration
             $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('angkatan_id')->nullable();
             $table->date('tanggal_masuk');
-            $table->enum('status', ['aktif', 'cuti', 'tunda'])->default('aktif');
+            $table->date('tanggal_keluar')->nullable();
+            $table->enum('status', ['aktif', 'cuti', 'tunda', 'selesai', 'lulus', 'do', 'berhenti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

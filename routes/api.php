@@ -350,12 +350,14 @@ Route::prefix('approve')->middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
-    // Pindah
+    // Pendidikan
     Route::post('/pindah-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
     Route::post('/naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
 
+    //domisili
     Route::post('/pindah-kamar', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahKamarController::class, 'pindah']);
 
+    // Proses lulus
     Route::post('/proses-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'prosesLulus']);
     Route::post('/batal-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'batalLulus']);
     Route::get('/list-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'listDataLulus']);

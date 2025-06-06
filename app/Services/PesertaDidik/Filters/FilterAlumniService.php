@@ -139,7 +139,7 @@ class FilterAlumniService
                 case 'alumni santri non pelajar':
                     $query->where('s.status', 'alumni')
                         ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
-                        ->whereNull('pd.id');
+                        ->where(fn($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
                     $query->where('s.status', 'alumni')
@@ -147,20 +147,20 @@ class FilterAlumniService
                         ->whereNotNull('pd.id');
                     break;
                 case 'alumni pelajar':
-                    $query->where('rp.status', 'alumni');
+                    $query->where('rp.status', 'lulus');
                     break;
                 case 'alumni pelajar non santri':
-                    $query->where('rp.status', 'alumni')
-                        ->whereNull('s.id');
+                    $query->where('rp.status', 'lulus')
+                        ->where(fn($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->where('rp.status', 'alumni')
+                    $query->where('rp.status', 'lulus')
                         ->where('s.status', '=', 'aktif');
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
                     $query->where('s.status', 'alumni')
-                        ->where('rp.status', 'alumni');
+                        ->where('rp.status', 'lulus');
                     break;
                 default:
                     $query->whereRaw('0 = 1');

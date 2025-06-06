@@ -212,7 +212,8 @@ class FilterSantriService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->whereNull('pd.id');
+                    ->where(fn($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
+
                 break;
             case 'pelajar':
                 $query->where('pd.status', 'aktif');

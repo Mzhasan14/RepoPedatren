@@ -18,7 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('blok_id')->nullable();
             $table->unsignedBigInteger('kamar_id')->nullable();
             $table->datetime('tanggal_masuk');
-            $table->enum('status', ['aktif', 'cuti'])->default('aktif');
+            $table->datetime('tanggal_keluar')->nullable();
+            $table->enum('status', ['aktif', 'cuti', 'pindah', 'keluar'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

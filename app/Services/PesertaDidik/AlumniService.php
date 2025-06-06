@@ -14,7 +14,7 @@ class AlumniService
         // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
         $rpLast = DB::table('riwayat_pendidikan')
             ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
-            ->where('status', 'alumni')
+            ->where('status', 'lulus')
             ->groupBy('biodata_id');
 
         // 2) Sub‐query: santri alumni terakhir
@@ -52,7 +52,7 @@ class AlumniService
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(fn($q) => $q->where('s.status', 'alumni')
-                ->orWhere('rp.status', 'alumni'))
+                ->orWhere('rp.status', 'lulus'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('rp.deleted_at'))
@@ -95,54 +95,5 @@ class AlumniService
             "status"           => $item->status,
             "foto_profil" => url($item->foto_profil)
         ]);
-    }
-
-    // Set alumni santri
-    public function setAlumniSantri($ids)
-    {
-        DB::beginTransaction();
-
-        try {
-            // Update status di tabel santri
-            DB::table('santri')
-                ->whereIn('id', $ids)
-                ->where('status', 'aktif')
-                ->update([
-                    'status'         => 'alumni',
-                    'tanggal_keluar' => now()->toDateString(),
-                    'updated_by'     => Auth::id(),
-                ]);
-
-            // Update status di tabel riwayat_domisili
-            DB::table('riwayat_domisili')
-                ->whereIn('santri_id', $ids)
-                ->whereNull('tanggal_keluar')  // hanya update jika tanggal_keluar masih null
-                ->update([
-                    'status'         => 'alumni',
-                    'tanggal_keluar' => now()->toDateString(),
-                    'updated_by'     => Auth::id(),
-                ]);
-
-            // Commit transaksi jika kedua update berhasil
-            DB::commit();
-        } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
-            DB::rollBack();
-            // Log error atau lakukan penanganan error sesuai kebutuhan
-            throw $e;
-        }
-    }
-
-    // Set alumni pelajar
-    public function setAlumniPelajar(array $santriIds): int
-    {
-        return DB::table('riwayat_pendidikan')
-            ->whereIn('santri_id', $santriIds)
-            ->where('status', 'aktif')
-            ->update([
-                'status'         => 'alumni',
-                'tanggal_keluar' => now()->toDateString(),
-                'updated_by'     => Auth::id(),
-            ]);
     }
 }

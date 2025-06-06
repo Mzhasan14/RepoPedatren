@@ -62,7 +62,11 @@ class ProsesLulusPendidikanService
                 ]);
 
                 // Hapus data aktif dari pendidikan
-                $pd->delete();
+                $pd->update([
+                    'status' => 'lulus',
+                    'updated_by' => $userId,
+                    'updated_at' => $now
+                ]);
 
                 DB::commit();
 
@@ -88,15 +92,24 @@ class ProsesLulusPendidikanService
         ];
     }
 
-
     public function batalLulus(array $data)
     {
         $now = now();
         $userId = Auth::id();
-        $bioIds = $data['biodata_id'];
+        $bioIds = $data['biodata_id'] ?? [];
+
+        if (empty($bioIds)) {
+            return [
+                'success' => false,
+                'message' => 'Tidak ada data biodata_id yang dikirim.',
+                'data_berhasil' => [],
+                'data_gagal' => [],
+            ];
+        }
 
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
 
+        // Ambil riwayat pendidikan yang berstatus lulus
         $riwayatLulus = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
             ->where('status', 'lulus')
             ->whereNotNull('tanggal_keluar')
@@ -104,18 +117,34 @@ class ProsesLulusPendidikanService
             ->get()
             ->keyBy('biodata_id');
 
-        $dataGagal = [];
-        $dataBerhasil = [];
+        // Ambil data pendidikan yang berstatus lulus
+        $pendidikanLulus = Pendidikan::whereIn('biodata_id', $bioIds)
+            ->where('status', 'lulus')
+            ->latest('id')
+            ->get()
+            ->keyBy('biodata_id');
+
+        $dataBerhasil = collect();
+        $dataGagal = collect();
 
         foreach ($bioIds as $bioId) {
-            $rp = $riwayatLulus->get($bioId);
             $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+            $rp = $riwayatLulus->get($bioId);
+            $pd = $pendidikanLulus->get($bioId);
 
-            if (is_null($rp)) {
-                $dataGagal[] = [
+            if (!$rp) {
+                $dataGagal->push([
                     'nama' => $nama,
                     'message' => 'Riwayat lulus tidak ditemukan.',
-                ];
+                ]);
+                continue;
+            }
+
+            if (!$pd) {
+                $dataGagal->push([
+                    'nama' => $nama,
+                    'message' => 'Data pendidikan berstatus lulus tidak ditemukan.',
+                ]);
                 continue;
             }
 
@@ -130,46 +159,36 @@ class ProsesLulusPendidikanService
                     'updated_by' => $userId,
                 ]);
 
-                // Insert kembali ke tabel pendidikan sebagai aktif
-                Pendidikan::create([
-                    'biodata_id' => $rp->biodata_id,
-                    'angkatan_id' => $rp->angkatan_id,
-                    'lembaga_id' => $rp->lembaga_id,
-                    'jurusan_id' => $rp->jurusan_id ?? null,
-                    'kelas_id' => $rp->kelas_id ?? null,
-                    'rombel_id' => $rp->rombel_id ?? null,
-                    'no_induk' => $rp->no_induk ?? null,
+                // Update pendidikan dari lulus menjadi aktif
+                $pd->update([
                     'status' => 'aktif',
-                    'tanggal_masuk' => $rp->tanggal_masuk,
-                    'created_by' => $userId,
-                    'created_at' => $now,
                     'updated_at' => $now,
+                    'updated_by' => $userId,
                 ]);
 
                 DB::commit();
 
-                $dataBerhasil[] = [
+                $dataBerhasil->push([
                     'nama' => $nama,
                     'message' => 'Status lulus berhasil dibatalkan.',
-                ];
+                ]);
             } catch (\Exception $e) {
                 DB::rollBack();
 
-                $dataGagal[] = [
+                $dataGagal->push([
                     'nama' => $nama,
                     'message' => 'Gagal membatalkan lulus: ' . $e->getMessage(),
-                ];
+                ]);
             }
         }
 
         return [
             'success' => true,
             'message' => 'Proses batal lulus selesai.',
-            'data_berhasil' => $dataBerhasil,
-            'data_gagal' => $dataGagal,
+            'data_berhasil' => $dataBerhasil->all(),
+            'data_gagal' => $dataGagal->all(),
         ];
     }
-
 
     public function listDataLulus(Request $request)
     {
