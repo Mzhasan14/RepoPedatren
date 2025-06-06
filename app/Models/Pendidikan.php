@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Santri;
+use App\Models\Biodata;
+use App\Models\Angkatan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Rombel;
 use App\Models\Pendidikan\Jurusan;
@@ -10,14 +12,15 @@ use App\Models\Pendidikan\Lembaga;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Helpers\StatusPesertaDidikHelper;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class RiwayatPendidikan extends Model
+class Pendidikan extends Model
 {
     use SoftDeletes, LogsActivity;
-    protected $table = 'riwayat_pendidikan';
+    protected $table = 'pendidikan';
 
     protected $fillable = [
         'biodata_id',
@@ -39,7 +42,7 @@ class RiwayatPendidikan extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('riwayat_pendidikan')
+            ->useLogName('pendidikan')
             ->logOnlyDirty()
             ->logOnly($this->fillable)
             ->setDescriptionForEvent(function (string $event) {

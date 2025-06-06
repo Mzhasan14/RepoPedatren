@@ -30,8 +30,8 @@ class BersaudaraService
         $noKkBersaudara = DB::table('biodata as b')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 's.biodata_id')
-            ->leftJoin('riwayat_pendidikan AS rp', 'b.id', '=', 'rp.biodata_id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('rp.status', 'aktif'))
+            ->leftJoin('pendidikan AS pd', 'b.id', '=', 'pd.biodata_id')
+            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('pd.status', 'aktif'))
             ->whereNull('s.deleted_at')
             ->groupBy('k.no_kk')
             ->havingRaw('COUNT(k.id_biodata) > 1')
@@ -50,22 +50,21 @@ class BersaudaraService
             ->groupBy('k2.no_kk');
 
         return DB::table('biodata as b')
-            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
             ->whereIn('k.no_kk', $noKkBersaudara)
             ->leftJoinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
-            ->leftJoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-            ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('spd.status_santri', 'aktif')
-                ->orWhere('spd.status_pelajar', 'aktif'))
+            ->where(fn($q) => $q->where('s.status', 'aktif')
+                ->orWhere('pd.status', 'aktif'))
             ->whereNull('b.deleted_at')
             ->whereNull('s.deleted_at')
             ->select([
@@ -82,8 +81,8 @@ class BersaudaraService
                 's.created_at',
                 DB::raw("GREATEST(
                 s.updated_at,
-                COALESCE(rp.updated_at, s.updated_at),
-                COALESCE(rd.updated_at, s.updated_at)
+                COALESCE(pd.updated_at, s.updated_at),
+                COALESCE(ds.updated_at, s.updated_at)
             ) AS updated_at"),
                 DB::raw("COALESCE(parents.nama_ibu, 'Tidak Diketahui') AS nama_ibu"),
                 DB::raw("COALESCE(parents.nama_ayah, 'Tidak Diketahui') AS nama_ayah"),

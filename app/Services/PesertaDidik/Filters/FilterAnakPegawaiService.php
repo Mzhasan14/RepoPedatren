@@ -169,25 +169,25 @@ class FilterAnakPegawaiService
             return $query;
         }
 
-     switch (strtolower($request->status)) {
+        switch (strtolower($request->status)) {
             case 'santri':
-                $query->where('spd.status_santri', 'aktif');
+                $query->where('s.status', 'aktif');
                 break;
             case 'santri non pelajar':
-                $query->where('spd.status_santri', 'aktif')
-                    ->where('spd.is_pelajar', false);
+                $query->where('s.status', 'aktif')
+                    ->whereNull('pd.id');
                 break;
             case 'pelajar':
-                $query->where('spd.status_pelajar', 'aktif');
+                $query->where('pd.status', 'aktif');
                 break;
             case 'pelajar non santri':
-                $query->where('spd.status_pelajar', 'aktif')
-                    ->where('spd.is_santri', false);
+                $query->where('pd.status', 'aktif')
+                    ->where(fn($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
-                $query->where('spd.status_santri', 'aktif')
-                    ->where('spd.status_pelajar', 'aktif');
+                $query->where('s.status', 'aktif')
+                    ->where('pd.status', 'aktif');
                 break;
             default:
                 $query->whereRaw('0 = 1');
@@ -309,7 +309,4 @@ class FilterAnakPegawaiService
 
         return $query;
     }
-
-    
-
 }

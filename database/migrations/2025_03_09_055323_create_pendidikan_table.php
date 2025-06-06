@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('riwayat_pendidikan', function (Blueprint $table) {
+        Schema::create('pendidikan', function (Blueprint $table) {
             $table->id();
             $table->uuid('biodata_id');
             $table->string('no_induk')->nullable();
@@ -21,8 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('angkatan_id')->nullable();
             $table->date('tanggal_masuk');
-            $table->date('tanggal_keluar')->nullable();
-            $table->enum('status', ['selesai', 'lulus', 'alumni', 'do', 'batal_lulus', 'pindah', 'berhenti', 'nonaktif']);
+            $table->enum('status', ['aktif', 'cuti', 'tunda'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -46,6 +45,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('riwayat_pendidikan');
+        Schema::dropIfExists('pendidikan');
     }
 };

@@ -29,25 +29,24 @@ class PelajarService
 
         // Query utama: data pelajar all
         return DB::table('biodata as b')
-            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
-            ->join('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
-            ->leftJoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
-            ->leftJoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
+            ->join('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan AS j', 'pd.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas AS kls', 'pd.kelas_id', '=', 'kls.id')
+            ->leftJoin('rombel AS r', 'pd.rombel_id', '=', 'r.id')
             ->leftjoin('santri AS s', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-            ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+            ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where(fn($q) => $q->whereNull('b.deleted_at')
-                ->whereNull('rp.deleted_at'))
+                ->whereNull('pd.deleted_at'))
             ->select([
                 'b.id as biodata_id',
-                'rp.no_induk',
+                'pd.no_induk',
                 'b.nama',
                 'l.nama_lembaga',
                 'j.nama_jurusan',
@@ -55,16 +54,16 @@ class PelajarService
                 'r.nama_rombel',
                 'w.nama_wilayah',
                 'kb.nama_kabupaten AS kota_asal',
-                'rp.created_at',
-                // ambil updated_at terbaru antar rp, rp, rd
+                'pd.created_at',
+                // ambil updated_at terbaru antar pd, pd, ds
                 DB::raw("
                 GREATEST(
-                    rp.updated_at,
-                    COALESCE(rp.updated_at, rp.updated_at),
-                    COALESCE(rd.updated_at, rp.updated_at)
+                    pd.updated_at,
+                    COALESCE(pd.updated_at, pd.updated_at),
+                    COALESCE(ds.updated_at, pd.updated_at)
                 ) AS updated_at
             "),
-                'rp.status',
+                'pd.status',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->latest();

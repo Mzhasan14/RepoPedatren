@@ -180,8 +180,7 @@ class DomisiliController extends Controller
             }
 
             return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'message' => $result['message'],
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal keluar domisili: ' . $e->getMessage());

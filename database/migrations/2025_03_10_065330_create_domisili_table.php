@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('riwayat_domisili', function (Blueprint $table) {
+        Schema::create('domisili_santri', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('santri_id');
             $table->unsignedBigInteger('wilayah_id');
             $table->unsignedBigInteger('blok_id')->nullable();
             $table->unsignedBigInteger('kamar_id')->nullable();
             $table->datetime('tanggal_masuk');
-            $table->datetime('tanggal_keluar')->nullable();
-            $table->enum('status', ['pindah', 'keluar']);
+            $table->enum('status', ['aktif', 'cuti'])->default('aktif');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -41,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('riwayat_domisili');
+        Schema::dropIfExists('domisili');
     }
 };

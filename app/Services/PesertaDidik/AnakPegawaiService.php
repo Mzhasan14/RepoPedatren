@@ -167,26 +167,26 @@ class AnakPegawaiService
 
                 if ($santriAktif) {
                     // Cek pendidikan aktif
-                    $hasActivePendidikan = DB::table('riwayat_pendidikan')
+                    $hasActivePendidikan = DB::table('pendidikan')
                         ->where('biodata_id', $existingBiodata->id)
-                        ->where('status', 'aktif')
+                        ->whereNull('pendidikan.deleted_at')
                         ->exists();
 
                     if ($hasActivePendidikan) {
                         throw ValidationException::withMessages([
-                            'riwayat_pendidikan' => ['Data dengan nik ini masih tercatat memiliki riwayat pendidikan yang aktif. Tidak dapat menambahkan data baru.'],
+                            'pendidikan' => ['Data dengan nik ini masih tercatat memiliki pendidikan yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
                     // Cek domisili aktif
-                    $hasActiveDomisili = DB::table('riwayat_domisili')
+                    $hasActiveDomisili = DB::table('domisili_santri')
                         ->where('santri_id', $santriAktif->id)
-                        ->where('status', 'aktif')
+                        ->where('domisili_santri.deleted_at')
                         ->exists();
 
                     if ($hasActiveDomisili) {
                         throw ValidationException::withMessages([
-                            'riwayat_domisili' => ['Data dengan nik ini masih tercatat memiliki riwayat domisili yang aktif. Tidak dapat menambahkan data baru.'],
+                            'domisili_santri' => ['Data dengan nik ini masih tercatat memiliki domisili yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
@@ -465,7 +465,7 @@ class AnakPegawaiService
 
             // Tambah Riwayat Pendidikan jika lembaga diisi
             if (!empty($data['lembaga_id'])) {
-                DB::table('riwayat_pendidikan')->insert([
+                DB::table('pendidikan')->insert([
                     'biodata_id'      => $biodataId,
                     'lembaga_id'     => $data['lembaga_id'],
                     'jurusan_id'     => $data['jurusan_id'] ?? null,
@@ -478,8 +478,6 @@ class AnakPegawaiService
                     'created_at'     => $now,
                     'updated_at'     => $now,
                 ]);
-
-                StatusPesertaDidikHelper::updateFromPendidikan($biodataId);
             }
 
             // validasi mondok
@@ -495,13 +493,11 @@ class AnakPegawaiService
                     'created_at'    => $now,
                     'updated_at'    => $now,
                 ]);
-
-                StatusPesertaDidikHelper::updateFromSantri($biodataId);
             }
 
             // Tambah Riwayat Domisili jika wilayah diisi
             if (!empty($data['wilayah_id'])) {
-                DB::table('riwayat_domisili')->insert([
+                DB::table('domisili_santri')->insert([
                     'santri_id'     => $santriId,
                     'wilayah_id'    => $data['wilayah_id'],
                     'blok_id'       => $data['blok_id'],
@@ -545,14 +541,14 @@ class AnakPegawaiService
                         'ibu'  => $data['nik_ibu'] ?? null,
                         'wali' => $data['nik_wali'] ?? null,
                     ],
-                    'riwayat_pendidikan' => !empty($data['lembaga_id']) ? [
+                    'pendidikan' => !empty($data['lembaga_id']) ? [
                         'lembaga_id'     => $data['lembaga_id'],
                         'jurusan_id'     => $data['jurusan_id'] ?? null,
                         'kelas_id'       => $data['kelas_id'] ?? null,
                         'rombel_id'      => $data['rombel_id'] ?? null,
                         'tanggal_masuk'  => $data['tanggal_masuk_pendidikan'],
                     ] : null,
-                    'riwayat_domisili' => !empty($data['wilayah_id']) ? [
+                    'domisili_santri' => !empty($data['wilayah_id']) ? [
                         'wilayah_id'     => $data['wilayah_id'],
                         'blok_id'        => $data['blok_id'],
                         'kamar_id'       => $data['kamar_id'],

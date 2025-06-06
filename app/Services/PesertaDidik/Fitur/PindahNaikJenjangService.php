@@ -3,80 +3,91 @@
 namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Biodata;
+use App\Models\Pendidikan;
 use App\Models\RiwayatPendidikan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class PindahNaikJenjangService
 {
+
     public function pindah(array $data)
     {
         $now = now();
         $userId = Auth::id();
         $bioIds = $data['biodata_id'];
 
-        // Ambil nama lengkap
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
-
-        // Ambil riwayat aktif
-        $riwayatAktif = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
-            ->where('status', 'aktif')
-            ->latest('id')
+        $pendidikanAktif = Pendidikan::whereIn('biodata_id', $bioIds)
             ->get()
             ->keyBy('biodata_id');
 
-        $dataBaru = [];
         $dataBaruNama = [];
         $dataGagal = [];
 
-        foreach ($bioIds as $bioId) {
-            $rp = $riwayatAktif->get($bioId);
-            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+        DB::beginTransaction();
+        try {
+            foreach ($bioIds as $bioId) {
+                $pendidikan = $pendidikanAktif->get($bioId);
+                $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
 
-            if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
-                $dataGagal[] = [
+                if (is_null($pendidikan)) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Data pendidikan aktif tidak ditemukan.',
+                    ];
+                    continue;
+                }
+
+                RiwayatPendidikan::create([
+                    'biodata_id' => $pendidikan->biodata_id,
+                    'lembaga_id' => $pendidikan->lembaga_id,
+                    'jurusan_id' => $pendidikan->jurusan_id,
+                    'kelas_id' => $pendidikan->kelas_id,
+                    'rombel_id' => $pendidikan->rombel_id,
+                    'status' => 'pindah',
+                    'tanggal_masuk' => $pendidikan->tanggal_masuk,
+                    'tanggal_keluar' => $now,
+                    'created_by' => $pendidikan->created_by,
+                    'created_at' => $pendidikan->created_at,
+                    'updated_by' => $userId,
+                    'updated_at' => $now,
+                ]);
+
+                $pendidikan->update([
+                    'lembaga_id' => $data['lembaga_id'],
+                    'jurusan_id' => $data['jurusan_id'],
+                    'kelas_id' => $data['kelas_id'],
+                    'rombel_id' => $data['rombel_id'],
+                    'tanggal_masuk' => $now,
+                    'updated_by' => $userId,
+                    'updated_at' => $now,
+                ]);
+
+                $dataBaruNama[] = [
                     'nama' => $nama,
-                    'message' => 'Riwayat pendidikan tidak ditemukan atau sudah keluar.',
+                    'message' => 'Berhasil dipindahkan.',
                 ];
-                continue;
             }
 
-            $rp->update([
-                'status' => 'pindah',
-                'tanggal_keluar' => $now,
-                'updated_at' => $now,
-                'updated_by' => $userId,
-            ]);
-
-            $dataBaru[] = [
-                'biodata_id' => $bioId,
-                'lembaga_id' => $data['lembaga_id'],
-                'jurusan_id' => $data['jurusan_id'],
-                'kelas_id' => $data['kelas_id'],
-                'rombel_id' => $data['rombel_id'],
-                'status' => 'aktif',
-                'tanggal_masuk' => $now,
-                'created_by' => $userId,
-                'created_at' => $now,
-                'updated_at' => $now,
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memindahkan data.',
+                'error' => $e->getMessage(),
             ];
-
-            $dataBaruNama[] = [
-                'nama' => $nama,
-                'message' => 'Berhasil dipindahkan.',
-            ];
-        }
-
-        if (!empty($dataBaru)) {
-            RiwayatPendidikan::insert($dataBaru);
         }
 
         return [
             'success' => true,
-            'message' => 'Peserta didik berhasil dipindahkan ke jenjang baru.',
+            'message' => 'Peserta didik berhasil dipindahkan.',
             'data_baru' => $dataBaruNama,
             'data_gagal' => $dataGagal,
         ];
     }
+
 
     public function naik(array $data)
     {
@@ -85,62 +96,71 @@ class PindahNaikJenjangService
         $bioIds = $data['biodata_id'];
 
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
-
-        $riwayatAktif = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
-            ->where('status', 'aktif')
-            ->latest('id')
+        $pendidikanAktif = Pendidikan::whereIn('biodata_id', $bioIds)
             ->get()
             ->keyBy('biodata_id');
 
-        $dataBaru = [];
         $dataBaruNama = [];
         $dataGagal = [];
 
-        foreach ($bioIds as $bioId) {
-            $rp = $riwayatAktif->get($bioId);
-            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+        DB::beginTransaction();
+        try {
+            foreach ($bioIds as $bioId) {
+                $pendidikan = $pendidikanAktif->get($bioId);
+                $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
 
-            if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
-                $dataGagal[] = [
+                if (is_null($pendidikan)) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Data pendidikan aktif tidak ditemukan.',
+                    ];
+                    continue;
+                }
+
+                RiwayatPendidikan::create([
+                    'biodata_id' => $pendidikan->biodata_id,
+                    'lembaga_id' => $pendidikan->lembaga_id,
+                    'jurusan_id' => $pendidikan->jurusan_id,
+                    'kelas_id' => $pendidikan->kelas_id,
+                    'rombel_id' => $pendidikan->rombel_id,
+                    'status' => 'selesai',
+                    'tanggal_masuk' => $pendidikan->tanggal_masuk,
+                    'tanggal_keluar' => $now,
+                    'created_by' => $pendidikan->created_by,
+                    'created_at' => $pendidikan->created_at,
+                    'updated_by' => $userId,
+                    'updated_at' => $now,
+                ]);
+
+                $pendidikan->update([
+                    'lembaga_id' => $data['lembaga_id'],
+                    'jurusan_id' => $data['jurusan_id'],
+                    'kelas_id' => $data['kelas_id'],
+                    'rombel_id' => $data['rombel_id'],
+                    'tanggal_masuk' => $now,
+                    'updated_by' => $userId,
+                    'updated_at' => $now,
+                ]);
+
+                $dataBaruNama[] = [
                     'nama' => $nama,
-                    'message' => 'Riwayat pendidikan tidak ditemukan atau sudah keluar.',
+                    'message' => 'Berhasil naik kelas.',
                 ];
-                continue;
             }
 
-            $rp->update([
-                'status' => 'naik_kelas',
-                'tanggal_keluar' => $now,
-                'updated_at' => $now,
-                'updated_by' => $userId,
-            ]);
-
-            $dataBaru[] = [
-                'biodata_id' => $bioId,
-                'lembaga_id' => $data['lembaga_id'],
-                'jurusan_id' => $data['jurusan_id'],
-                'kelas_id' => $data['kelas_id'],
-                'rombel_id' => $data['rombel_id'],
-                'status' => 'aktif',
-                'tanggal_masuk' => $now,
-                'created_by' => $userId,
-                'created_at' => $now,
-                'updated_at' => $now,
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses kenaikan kelas.',
+                'error' => $e->getMessage(),
             ];
-
-            $dataBaruNama[] = [
-                'nama' => $nama,
-                'message' => 'Berhasil naik kelas.',
-            ];
-        }
-
-        if (!empty($dataBaru)) {
-            RiwayatPendidikan::insert($dataBaru);
         }
 
         return [
             'success' => true,
-            'message' => 'Peserta didik berhasil naik ke jenjang baru.',
+            'message' => 'Peserta didik berhasil naik kelas.',
             'data_baru' => $dataBaruNama,
             'data_gagal' => $dataGagal,
         ];

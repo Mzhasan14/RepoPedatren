@@ -182,8 +182,7 @@ class PendidikanController extends Controller
             }
 
             return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data'    => $result['data'],
+                'message' => $result['message'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal keluar pendidikan: {$e->getMessage()}");

@@ -36,19 +36,18 @@ class PesertaDidikService
             ->groupBy('biodata_id');
 
         return DB::table('biodata as b')
-            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-            ->leftJoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('spd.status_santri', 'aktif')
-                ->orWhere('spd.status_pelajar', '=', 'aktif'))
+            ->where(fn($q) => $q->where('s.status', 'aktif')
+                ->orWhere('pd.status', '=', 'aktif'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))
             ->select([
@@ -60,12 +59,12 @@ class PesertaDidikService
                 'w.nama_wilayah',
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                // ambil updated_at terbaru antar s, rp, rd
+                // ambil updated_at terbaru antar s, pd, ds
                 DB::raw("
                     GREATEST(
                         s.updated_at,
-                        COALESCE(rp.updated_at, s.updated_at),
-                        COALESCE(rd.updated_at, s.updated_at)
+                        COALESCE(pd.updated_at, s.updated_at),
+                        COALESCE(ds.updated_at, s.updated_at)
                     ) AS updated_at
                 "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
@@ -109,26 +108,26 @@ class PesertaDidikService
 
                 if ($santriAktif) {
                     // Cek pendidikan aktif
-                    $hasActivePendidikan = DB::table('riwayat_pendidikan')
+                    $hasActivePendidikan = DB::table('pendidikan')
                         ->where('biodata_id', $existingBiodata->id)
-                        ->where('status', 'aktif')
+                        ->whereNull('pendidikan.deleted_at')
                         ->exists();
 
                     if ($hasActivePendidikan) {
                         throw ValidationException::withMessages([
-                            'riwayat_pendidikan' => ['Data dengan nik ini masih tercatat memiliki riwayat pendidikan yang aktif. Tidak dapat menambahkan data baru.'],
+                            'pendidikan' => ['Data dengan nik ini masih tercatat memiliki pendidikan yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
                     // Cek domisili aktif
-                    $hasActiveDomisili = DB::table('riwayat_domisili')
+                    $hasActiveDomisili = DB::table('domisili_santri')
                         ->where('santri_id', $santriAktif->id)
-                        ->where('status', 'aktif')
+                        ->whereNull('domisili_santri.deleted_at')
                         ->exists();
 
                     if ($hasActiveDomisili) {
                         throw ValidationException::withMessages([
-                            'riwayat_domisili' => ['Data dengan nik ini masih tercatat memiliki riwayat domisili yang aktif. Tidak dapat menambahkan data baru.'],
+                            'domisili_santri' => ['Data dengan nik ini masih tercatat memiliki riwayat domisili yang aktif. Tidak dapat menambahkan data baru.'],
                         ]);
                     }
 
@@ -387,7 +386,7 @@ class PesertaDidikService
 
             // Tambah Riwayat Pendidikan jika lembaga diisi
             if (!empty($data['lembaga_id'])) {
-                DB::table('riwayat_pendidikan')->insert([
+                DB::table('pendidikan')->insert([
                     'biodata_id'      => $biodataId,
                     'lembaga_id'     => $data['lembaga_id'],
                     'jurusan_id'     => $data['jurusan_id'] ?? null,
@@ -400,8 +399,6 @@ class PesertaDidikService
                     'created_at'     => $now,
                     'updated_at'     => $now,
                 ]);
-
-                StatusPesertaDidikHelper::updateFromPendidikan($biodataId);
             }
 
             // validasi mondok
@@ -417,13 +414,11 @@ class PesertaDidikService
                     'created_at'    => $now,
                     'updated_at'    => $now,
                 ]);
-
-                StatusPesertaDidikHelper::updateFromSantri($biodataId);
             }
 
             // Tambah Riwayat Domisili jika wilayah diisi
             if (!empty($data['wilayah_id'])) {
-                DB::table('riwayat_domisili')->insert([
+                DB::table('domisili_santri')->insert([
                     'santri_id'     => $santriId,
                     'wilayah_id'    => $data['wilayah_id'],
                     'blok_id'       => $data['blok_id'],
@@ -468,14 +463,14 @@ class PesertaDidikService
                         'ibu'  => $data['nik_ibu'] ?? null,
                         'wali' => $data['nik_wali'] ?? null,
                     ],
-                    'riwayat_pendidikan' => !empty($data['lembaga_id']) ? [
+                    'pendidikan' => !empty($data['lembaga_id']) ? [
                         'lembaga_id'     => $data['lembaga_id'],
                         'jurusan_id'     => $data['jurusan_id'] ?? null,
                         'kelas_id'       => $data['kelas_id'] ?? null,
                         'rombel_id'      => $data['rombel_id'] ?? null,
                         'tanggal_masuk'  => $data['tanggal_masuk_pendidikan'],
                     ] : null,
-                    'riwayat_domisili' => !empty($data['wilayah_id']) ? [
+                    'domisili_santri' => !empty($data['wilayah_id']) ? [
                         'wilayah_id'     => $data['wilayah_id'],
                         'blok_id'        => $data['blok_id'],
                         'kamar_id'       => $data['kamar_id'],

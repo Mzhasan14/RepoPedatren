@@ -14,7 +14,7 @@ class AlumniService
         // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
         $rpLast = DB::table('riwayat_pendidikan')
             ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
-            ->where('status', 'lulus')
+            ->where('status', 'alumni')
             ->groupBy('biodata_id');
 
         // 2) Sub‐query: santri alumni terakhir
@@ -41,7 +41,6 @@ class AlumniService
             ->groupBy('biodata_id');
 
         return DB::table('biodata as b')
-            ->leftjoin('status_peserta_didik AS spd', 'spd.biodata_id', '=', 'b.id')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
             ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
@@ -52,8 +51,8 @@ class AlumniService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('spd.status_santri', 'alumni')
-                ->orWhere('spd.status_pelajar', 'alumni'))
+            ->where(fn($q) => $q->where('s.status', 'alumni')
+                ->orWhere('rp.status', 'alumni'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('rp.deleted_at'))
@@ -75,7 +74,6 @@ class AlumniService
                     COALESCE(rp.updated_at, b.updated_at)
                 ) AS updated_at
             "),
-
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->orderBy('b.created_at', 'desc');

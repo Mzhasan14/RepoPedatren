@@ -84,16 +84,16 @@ class FilterAlumniService
         if (! $request->filled('nama')) {
             return $query;
         }
-    
+
         // tambahkan tanda kutip ganda di awal‑akhir
         $phrase = '"' . trim($request->nama) . '"';
-    
+
         return $query->whereRaw(
             "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
             [$phrase]
         );
     }
-    
+
 
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder
     {
@@ -134,31 +134,33 @@ class FilterAlumniService
         if ($request->filled('status')) {
             switch (strtolower($request->status)) {
                 case 'alumni santri':
-                    $query->where('spd.status_santri', 'alumni');
+                    $query->where('s.status', 'alumni');
                     break;
                 case 'alumni santri non pelajar':
-                    $query->where('spd.status_santri', 'alumni')
-                        ->where('spd.is_pelajar', false);
+                    $query->where('s.status', 'alumni')
+                        ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
+                        ->whereNull('pd.id');
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
-                    $query->where('spd.status_santri', 'alumni')
-                        ->where('spd.status_pelajar', '=', 'aktif');
+                    $query->where('s.status', 'alumni')
+                        ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
+                        ->whereNotNull('pd.id');
                     break;
                 case 'alumni pelajar':
-                    $query->where('spd.status_pelajar', 'alumni');
+                    $query->where('rp.status', 'alumni');
                     break;
                 case 'alumni pelajar non santri':
-                    $query->where('spd.status_pelajar', 'alumni')
-                        ->where('spd.is_santri', false);
+                    $query->where('rp.status', 'alumni')
+                        ->whereNull('s.id');
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
-                    $query->where('spd.status_pelajar', 'alumni')
-                        ->where('spd.status_santri', '=', 'aktif');
+                    $query->where('rp.status', 'alumni')
+                        ->where('s.status', '=', 'aktif');
                     break;
                 case 'alumni pelajar sekaligus santri':
                 case 'alumni santri sekaligus pelajar':
-                    $query->where('spd.status_santri', 'alumni')
-                        ->where('spd.status_pelajar', 'alumni');
+                    $query->where('s.status', 'alumni')
+                        ->where('rp.status', 'alumni');
                     break;
                 default:
                     $query->whereRaw('0 = 1');

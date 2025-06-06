@@ -194,8 +194,28 @@ class DetailService
             ])
             : [];
 
+
         // --- Domisili ---
-        $dom = DB::table('riwayat_domisili as rd')
+        // 1. Domisili aktif dari tabel domisili_santri
+        $domAktif = DB::table('domisili_santri as ds')
+            ->join('santri as s', 'ds.santri_id', 's.id')
+            ->join('biodata as b', 's.biodata_id', 'b.id')
+            ->where('b.id', $biodataId)
+            ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
+            ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
+            ->join('kamar as km', 'ds.kamar_id', '=', 'km.id')
+            ->select([
+                'ds.id',
+                'km.nama_kamar',
+                'bl.nama_blok',
+                'w.nama_wilayah',
+                'ds.tanggal_masuk',
+                DB::raw('NULL as tanggal_keluar'), // Karena ini data aktif
+                DB::raw("'aktif' as status")
+            ]);
+
+        // 2. Riwayat domisili dari riwayat_domisili
+        $riwayatDom = DB::table('riwayat_domisili as rd')
             ->join('santri as s', 'rd.santri_id', 's.id')
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->where('b.id', $biodataId)
@@ -209,24 +229,48 @@ class DetailService
                 'w.nama_wilayah',
                 'rd.tanggal_masuk',
                 'rd.tanggal_keluar',
-                'rd.status'
-            ])
+                'rd.status',
+            ]);
+
+        // 3. Gabungkan aktif dan riwayat domisili
+        $dom = $domAktif->unionAll($riwayatDom)
+            ->orderByDesc('tanggal_masuk')
             ->get();
 
         $data['Domisili'] = $dom->isNotEmpty()
             ? $dom->map(fn($d) => [
-                'id'           => $d->id,
-                'wilayah'           => $d->nama_wilayah,
-                'blok'              => $d->nama_blok,
-                'kamar'             => $d->nama_kamar,
+                'id'               => $d->id,
+                'wilayah'          => $d->nama_wilayah,
+                'blok'             => $d->nama_blok,
+                'kamar'            => $d->nama_kamar,
                 'tanggal_ditempati' => $d->tanggal_masuk,
-                'tanggal_pindah'    => $d->tanggal_keluar ?? '-',
-                'status'    => $d->status,
+                'tanggal_pindah'   => $d->tanggal_keluar ?? '-',
+                'status'           => $d->status,
             ])
             : [];
 
         // --- Pendidikan ---
-        $pend = DB::table('riwayat_pendidikan as rp')
+        // 1. Pendidikan aktif dari table pendidikan
+        $pendidikanAktif = DB::table('pendidikan as p')
+            ->join('lembaga as l', 'p.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan as j', 'p.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas as k', 'p.kelas_id', '=', 'k.id')
+            ->leftJoin('rombel as r', 'p.rombel_id', '=', 'r.id')
+            ->where('p.biodata_id', $biodataId)
+            ->select([
+                'p.id',
+                'p.no_induk',
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'k.nama_kelas',
+                'r.nama_rombel',
+                'p.tanggal_masuk',
+                DB::raw('NULL as tanggal_keluar'), // aktif = belum keluar
+                DB::raw("'aktif' as status"),
+            ]);
+
+        // 2. Riwayat pendidikan dari riwayat_pendidikan
+        $riwayat = DB::table('riwayat_pendidikan as rp')
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
@@ -240,22 +284,29 @@ class DetailService
                 'k.nama_kelas',
                 'r.nama_rombel',
                 'rp.tanggal_masuk',
-                'rp.tanggal_keluar'
-            ])
+                'rp.tanggal_keluar',
+                DB::raw("'riwayat' as status"),
+            ]);
+
+        // 3. Gabungkan aktif dan riwayat pendidikan
+        $listPendidikan = $pendidikanAktif->unionAll($riwayat)
+            ->orderByDesc('tanggal_masuk')
             ->get();
 
-        $data['Pendidikan'] = $pend->isNotEmpty()
-            ? $pend->map(fn($p) => [
-                'id'     => $p->id,
+        $data['Pendidikan'] = $listPendidikan->isNotEmpty()
+            ? $listPendidikan->map(fn($p) => [
+                'id'           => $p->id,
                 'no_induk'     => $p->no_induk,
                 'nama_lembaga' => $p->nama_lembaga,
-                'nama_jurusan' => $p->nama_jurusan,
+                'nama_jurusan' => $p->nama_jurusan ?? '-',
                 'nama_kelas'   => $p->nama_kelas ?? '-',
                 'nama_rombel'  => $p->nama_rombel ?? '-',
                 'tahun_masuk'  => $p->tanggal_masuk,
-                'tahun_lulus'  => $p->tanggal_keluar ?? '-',
+                'tahun_lulus'  => $p->status === 'aktif' ? '-' : ($p->tanggal_keluar ?? '-'),
+                'status'       => $p->status,
             ])
             : [];
+
 
         // --- Catatan Afektif ---
         $af = DB::table('catatan_afektif as ca')

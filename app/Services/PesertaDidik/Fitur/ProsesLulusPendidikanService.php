@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Biodata;
+use App\Models\Pendidikan;
 use Illuminate\Http\Request;
 use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,9 @@ class ProsesLulusPendidikanService
         $userId = Auth::id();
         $bioIds = $data['biodata_id'];
 
-        // Ambil semua nama lengkap berdasarkan biodata_id
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
 
-        // Ambil semua riwayat aktif untuk biodata_id yang diberikan
-        $riwayatAktif = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
+        $pdAktif = Pendidikan::whereIn('biodata_id', $bioIds)
             ->where('status', 'aktif')
             ->latest('id')
             ->get()
@@ -30,29 +29,50 @@ class ProsesLulusPendidikanService
         $dataBerhasil = [];
 
         foreach ($bioIds as $bioId) {
-            $rp = $riwayatAktif->get($bioId);
+            $pd = $pdAktif->get($bioId);
             $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
 
-            if (is_null($rp) || !is_null($rp->tanggal_keluar)) {
+            if (is_null($pd)) {
                 $dataGagal[] = [
                     'nama' => $nama,
-                    'message' => 'Riwayat pendidikan tidak ditemukan atau sudah keluar.',
+                    'message' => 'Pendidikan aktif tidak ditemukan.',
                 ];
                 continue;
             }
 
-            // Update status jadi lulus
-            $rp->update([
-                'status' => 'lulus',
-                'tanggal_keluar' => $now,
-                'updated_at' => $now,
-                'updated_by' => $userId,
-            ]);
+            try {
+                DB::beginTransaction();
 
-            $dataBerhasil[] = [
-                'nama' => $nama,
-                'message' => 'Berhasil di-set lulus.',
-            ];
+                // Insert ke riwayat dengan status lulus
+                RiwayatPendidikan::create([
+                    'biodata_id' => $pd->biodata_id,
+                    'angkatan_id' => $pd->angkatan,
+                    'status' => 'lulus',
+                    'tanggal_masuk' => $pd->tanggal_masuk,
+                    'tanggal_keluar' => $now,
+                    'created_by' => $userId,
+                    'updated_by' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                // Hapus data aktif dari pendidikan
+                $pd->delete();
+
+                DB::commit();
+
+                $dataBerhasil[] = [
+                    'nama' => $nama,
+                    'message' => 'Berhasil di-set lulus.',
+                ];
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                $dataGagal[] = [
+                    'nama' => $nama,
+                    'message' => 'Gagal memproses lulus: ' . $e->getMessage(),
+                ];
+            }
         }
 
         return [
@@ -63,16 +83,15 @@ class ProsesLulusPendidikanService
         ];
     }
 
+
     public function batalLulus(array $data)
     {
         $now = now();
         $userId = Auth::id();
         $bioIds = $data['biodata_id'];
 
-        // Ambil semua nama lengkap berdasarkan biodata_id
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
 
-        // Ambil semua riwayat pendidikan yang statusnya lulus dan tanggal keluar tidak null
         $riwayatLulus = RiwayatPendidikan::whereIn('biodata_id', $bioIds)
             ->where('status', 'lulus')
             ->whereNotNull('tanggal_keluar')
@@ -90,23 +109,48 @@ class ProsesLulusPendidikanService
             if (is_null($rp)) {
                 $dataGagal[] = [
                     'nama' => $nama,
-                    'message' => 'Riwayat pendidikan tidak ditemukan atau belum lulus.',
+                    'message' => 'Riwayat lulus tidak ditemukan.',
                 ];
                 continue;
             }
 
-            // Update status jadi aktif dan hapus tanggal keluar
-            $rp->update([
-                'status' => 'aktif',
-                'tanggal_keluar' => null,
-                'updated_at' => $now,
-                'updated_by' => $userId,
-            ]);
+            try {
+                DB::beginTransaction();
 
-            $dataBerhasil[] = [
-                'nama' => $nama,
-                'message' => 'Status lulus berhasil dibatalkan.',
-            ];
+                // Update riwayat menjadi batal_lulus
+                $rp->update([
+                    'status' => 'batal_lulus',
+                    'tanggal_keluar' => null,
+                    'updated_at' => $now,
+                    'updated_by' => $userId,
+                ]);
+
+                // Insert kembali ke tabel pendidikan sebagai aktif
+                Pendidikan::create([
+                    'biodata_id' => $rp->biodata_id,
+                    'angkatan_id' => $rp->angkatan,
+                    'status' => 'aktif',
+                    'tanggal_masuk' => $rp->tanggal_masuk,
+                    'created_by' => $userId,
+                    'updated_by' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                DB::commit();
+
+                $dataBerhasil[] = [
+                    'nama' => $nama,
+                    'message' => 'Status lulus berhasil dibatalkan.',
+                ];
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                $dataGagal[] = [
+                    'nama' => $nama,
+                    'message' => 'Gagal membatalkan lulus: ' . $e->getMessage(),
+                ];
+            }
         }
 
         return [
@@ -116,6 +160,7 @@ class ProsesLulusPendidikanService
             'data_gagal' => $dataGagal,
         ];
     }
+
 
     public function listDataLulus(Request $request)
     {
