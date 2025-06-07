@@ -100,11 +100,11 @@ class DomisiliService
 
     public function show(int $id): array
     {
-        $dom = RiwayatDomisili::with(['wilayah', 'blok', 'kamar'])->find($id);
+        $dom = RiwayatDomisili::find($id);
         $source = 'riwayat';
 
         if (!$dom) {
-            $dom = DomisiliSantri::with(['wilayah', 'blok', 'kamar'])->find($id);
+            $dom = DomisiliSantri::find($id);
             $source = 'aktif';
         }
 
@@ -116,9 +116,9 @@ class DomisiliService
             'status' => true,
             'data'   => [
                 'id'             => $dom->id,
-                'nama_wilayah'   => $dom->wilayah->nama_wilayah ?? '-',
-                'nama_blok'      => $dom->blok->nama_blok ?? '-',
-                'nama_kamar'     => $dom->kamar->nama_kamar ?? '-',
+                'nama_wilayah'   => $dom->wilayah_id ?? '-',
+                'nama_blok'      => $dom->blok_id ?? '-',
+                'nama_kamar'     => $dom->kamar_id ?? '-',
                 'tanggal_masuk'  => $dom->tanggal_masuk,
                 'tanggal_keluar' => $dom->tanggal_keluar ?? '-',
                 'status'         => $dom->status,

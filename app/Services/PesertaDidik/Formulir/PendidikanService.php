@@ -108,11 +108,11 @@ class PendidikanService
 
     public function show(int $id): array
     {
-        $pendidikan = RiwayatPendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel', 'angkatan'])->find($id);
+        $pendidikan = RiwayatPendidikan::find($id);
         $source = 'riwayat';
 
         if (! $pendidikan) {
-            $pendidikan = Pendidikan::with(['lembaga', 'jurusan', 'kelas', 'rombel', 'angkatan'])->find($id);
+            $pendidikan = Pendidikan::find($id);
             $source = 'aktif';
         }
 
@@ -126,11 +126,11 @@ class PendidikanService
                 'id'             => $pendidikan->id,
                 'biodata_id'     => $pendidikan->biodata_id,
                 'no_induk'       => $pendidikan->no_induk ?? null,
-                'nama_lembaga'   => $pendidikan->lembaga->nama_lembaga ?? '-',
-                'nama_jurusan'   => $pendidikan->jurusan->nama_jurusan ?? '-',
-                'nama_kelas'     => $pendidikan->kelas->nama_kelas ?? '-',
-                'nama_rombel'    => $pendidikan->rombel->nama_rombel ?? '-',
-                'nama_angkatan'  => $pendidikan->angkatan->nama_angkatan ?? '-',
+                'nama_lembaga'   => $pendidikan->lembaga_id ?? '-',
+                'nama_jurusan'   => $pendidikan->jurusan_id ?? '-',
+                'nama_kelas'     => $pendidikan->kelas_id ?? '-',
+                'nama_rombel'    => $pendidikan->rombel_id ?? '-',
+                'nama_angkatan'  => $pendidikan->angkatan_id ?? '-',
                 'tanggal_masuk'  => $pendidikan->tanggal_masuk,
                 'tanggal_keluar' => $pendidikan->tanggal_keluar ?? ($source === 'riwayat' ? '-' : '-'),
                 'status'         => $pendidikan->status,
