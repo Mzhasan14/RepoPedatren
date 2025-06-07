@@ -148,6 +148,16 @@ class ProsesLulusPendidikanService
                 continue;
             }
 
+            // Cek apakah tanggal_keluar masih dalam 30 hari terakhir
+            $daysDiff = $rp->tanggal_keluar->diffInDays($now);
+            if ($daysDiff > 30) {
+                $dataGagal->push([
+                    'nama' => $nama,
+                    'message' => 'Pembatalan tidak dapat dilakukan karena tanggal keluar melebihi batas waktu 30 hari.',
+                ]);
+                continue;
+            }
+
             try {
                 DB::beginTransaction();
 
@@ -190,32 +200,48 @@ class ProsesLulusPendidikanService
         ];
     }
 
+
     public function listDataLulus(Request $request)
     {
-        // 1) Sub‐query: tanggal_keluar riwayat_pendidikan alumni terakhir per santri
+        $tanggalBatas = now()->subDays(30)->toDateString(); // tanggal 30 hari yang lalu
+
+        // 1) Sub-query: tanggal_keluar terakhir untuk masing-masing biodata yang lulus
         $rpLast = DB::table('riwayat_pendidikan')
             ->select('biodata_id', DB::raw('MAX(tanggal_keluar) AS max_tanggal_keluar'))
             ->where('status', 'lulus')
             ->groupBy('biodata_id');
 
         $query = DB::table('biodata as b')
-            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
-            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftJoinSub(
+                $rpLast,
+                'lr',
+                fn($j) =>
+                $j->on('lr.biodata_id', '=', 'b.id')
+            )
+            ->leftJoin(
+                'riwayat_pendidikan as rp',
+                fn($j) =>
+                $j->on('rp.biodata_id', '=', 'lr.biodata_id')
+                    ->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar')
+            )
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->where('rp.status', 'lulus')
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
-                ->whereNull('rp.deleted_at'))
+            ->whereDate('rp.tanggal_keluar', '>=', $tanggalBatas) // maksimal 30 hari
+            ->whereNull('b.deleted_at')
+            ->whereNull('rp.deleted_at')
             ->select([
                 'rp.id as riwayat_id',
                 'b.id as biodata_id',
                 'b.nama',
                 'rp.no_induk',
                 'rp.status',
+                'rp.tanggal_keluar',
             ])
             ->orderBy('rp.updated_at', 'desc');
 
         return $query;
     }
+
 
     public function formatData($results)
     {
