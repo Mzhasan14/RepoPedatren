@@ -247,13 +247,31 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Data pendidikan aktif tidak ditemukan.'];
             }
 
-            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
-            $tanggalLama = Carbon::parse($pendidikan->tanggal_masuk);
+            // Ambil tanggal masuk dan keluar dari input atau fallback ke nilai lama
+            $tanggalMasuk = isset($input['tanggal_masuk'])
+                ? Carbon::parse($input['tanggal_masuk'])
+                : $pendidikan->tanggal_masuk;
 
-            if ($tanggalBaru->lt($tanggalLama)) {
+            $tanggalKeluar = isset($input['tanggal_keluar'])
+                ? Carbon::parse($input['tanggal_keluar'])
+                : $pendidikan->tanggal_keluar;
+
+            // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
+            if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
                 return [
-                    'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
+                ];
+            }
+
+            // Ambil status dari input atau dari database
+            $status = $input['status'] ?? $pendidikan->status;
+
+            // Validasi: jika status 'aktif', tanggal_keluar tidak boleh diisi
+            if (strtolower($status) === 'aktif' && isset($input['tanggal_keluar'])) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh diisi jika status santri masih aktif.',
                 ];
             }
 
@@ -265,7 +283,9 @@ class PendidikanService
                 'kelas_id'       => $input['kelas_id'] ?? null,
                 'rombel_id'      => $input['rombel_id'] ?? null,
                 'angkatan_id'    => $input['angkatan_id'] ?? null,
-                'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
+                'status'         => $status,
+                'tanggal_masuk'  => $tanggalMasuk,
+                'tanggal_keluar' => $tanggalKeluar ?? null,
                 'updated_by'     => Auth::id(),
                 'updated_at'     => now()
             ]);

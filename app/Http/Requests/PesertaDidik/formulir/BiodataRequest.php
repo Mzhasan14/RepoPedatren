@@ -68,7 +68,7 @@ class BiodataRequest extends FormRequest
 
             'jalan' => 'nullable|string',
             'kode_pos' => 'nullable|string',
-            'wafat' => 'required:in:0,1',
+            'wafat' => 'required|integer|in:0,1',
         ];
     }
 

@@ -12,7 +12,7 @@ class KhadamFormService
 {
     public function index(string $bioId): array
     {
-        $list = Khadam::where('biodata_id', $bioId)->get();
+        $list = Khadam::where('biodata_id', $bioId)->orderByDesc('tanggal_mulai')->get();
 
         return [
             'status' => true,
@@ -104,13 +104,16 @@ class KhadamFormService
                 return ['status' => false, 'message' => 'Khadam sudah ditandai selesai.'];
             }
 
-            $tglBaru = Carbon::parse($input['tanggal_mulai']);
-            $today   = Carbon::now();
+            $today  = Carbon::now();
+            $tanggalBaru = Carbon::parse($input['tanggal_mulai']);
+            $tanggalLama = Carbon::parse($old->tanggal_mulai);
 
-            if ($tglBaru->lt($today)) {
-                return ['status' => false, 'message' => 'Tanggal mulai baru tidak boleh sebelum hari ini.'];
+            if ($tanggalBaru->lt($tanggalLama)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
             }
-
             $old->update([
                 'status'         => false,
                 'tanggal_akhir'  => $today,
@@ -120,7 +123,7 @@ class KhadamFormService
             $new = Khadam::create([
                 'biodata_id'     => $old->biodata_id,
                 'keterangan'     => $input['keterangan'],
-                'tanggal_mulai'  => $tglBaru,
+                'tanggal_mulai'  => $tanggalBaru,
                 'status'         => true,
                 'created_by'     => Auth::id(),
             ]);

@@ -149,14 +149,6 @@ class StatusSantriService
                 ];
             }
 
-            // Validasi: tanggal_keluar tidak boleh lebih kecil dari tanggal_masuk
-            if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
-                return [
-                    'status'  => false,
-                    'message' => 'Tanggal keluar tidak boleh lebih kecil dari tanggal masuk.',
-                ];
-            }
-
             // Lakukan update nilai-nilai
             $santri->tanggal_masuk = $tanggalMasuk;
             $santri->tanggal_keluar = $tanggalKeluar;

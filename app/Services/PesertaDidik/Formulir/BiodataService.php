@@ -156,7 +156,7 @@ class BiodataService
         $biodata->kecamatan_id                = $input['kecamatan_id'] ?? $biodata->kecamatan_id;
         $biodata->jalan                       = $input['jalan'] ?? $biodata->jalan;
         $biodata->kode_pos                    = $input['kode_pos'] ?? $biodata->kode_pos;
-        $biodata->wafat                       = $input['wafat'] ?? $biodata->wafat;
+        $biodata->wafat                       = (bool) $input['wafat'] ?? $biodata->wafat;
 
         // Cek apakah ada data yang berubah
         if (!$biodata->isDirty()) {
