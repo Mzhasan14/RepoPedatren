@@ -29,11 +29,6 @@ class UpdateDomisiliRequest extends FormRequest
             'blok_id' => 'required|exists:blok,id',
             'kamar_id' => 'required|exists:kamar,id',
             'tanggal_masuk' => 'required|date',
-            'status' => [
-                'required',
-                'string',
-                Rule::in(['aktif', 'keluar', 'pindah']),
-            ],
         ];
     }
 

@@ -27,7 +27,6 @@ class PerizinanRequest extends FormRequest
             'pengasuh_id'     => 'nullable|integer|exists:users,id',
             'biktren_id'      => 'nullable|integer|exists:users,id',
             'kamtib_id'       => 'nullable|integer|exists:users,id',
-            'pengantar_id'    => 'nullable|integer',
             'alasan_izin'     => 'required|string',
             'alamat_tujuan'   => 'required|string',
             'tanggal_mulai'   => 'required|date',

@@ -24,7 +24,7 @@ class KeluarPendidikanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|in:do,berhenti,cuti,alumni,nonaktif',
+            'status' => 'required|in:do,berhenti,lulus,nonaktif,selesai',
             'tanggal_keluar' => 'required|date',
         ];
     }

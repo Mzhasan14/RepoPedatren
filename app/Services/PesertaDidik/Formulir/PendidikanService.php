@@ -40,7 +40,7 @@ class PendidikanService
             $gabungan->push($aktif);
         }
 
-        $gabungan = $gabungan->sortByDesc('created_at')->values();
+        $gabungan = $gabungan->sortByDesc('tanggal_masuk')->values();
 
         $data = $gabungan->map(function ($item) {
             return [
@@ -56,7 +56,7 @@ class PendidikanService
                 'tanggal_keluar' => $item->tanggal_keluar ?? null,
                 'status'         => $item->status ?? null,
             ];
-         });
+        });
 
         return [
             'status' => true,
@@ -73,6 +73,20 @@ class PendidikanService
 
             if ($pendidikanAktif) {
                 return ['status' => false, 'message' => 'Data ini sudah memiliki pendidikan aktif.'];
+            }
+
+            $tanggalMasuk = $input['tanggal_masuk'] ? Carbon::parse($input['tanggal_masuk']) : now();
+
+            // Ambil tanggal terakhir dari riwayat, jika ada
+            $riwayatTerakhir = RiwayatPendidikan::where('biodata_id', $bioId)
+                ->orderByDesc('tanggal_masuk')
+                ->first();
+
+            if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat pendidikan terakhir (' . $riwayatTerakhir->tanggal_masuk->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
+                ];
             }
 
             $pendidikan = Pendidikan::create([
@@ -140,11 +154,15 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Tanggal masuk tidak valid.'];
             }
 
-            $tglBaru = Carbon::parse($input['tanggal_masuk']);
             $today  = Carbon::now();
+            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+            $tanggalLama = Carbon::parse($aktif->tanggal_masuk);
 
-            if ($tglBaru->lt($today)) {
-                return ['status' => false, 'message' => 'Tanggal masuk baru minimal hari ini.'];
+            if ($tanggalBaru->lt($tanggalLama)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
             }
 
             // Arsipkan ke riwayat
@@ -160,7 +178,6 @@ class PendidikanService
                 'tanggal_keluar' => $today,
                 'status'        => 'pindah',
                 'created_by'    => $aktif->created_by,
-                'updated_by'    => Auth::id(),
             ]);
 
             // Update data aktif baru
@@ -169,9 +186,10 @@ class PendidikanService
                 'jurusan_id'     => $input['jurusan_id'] ?? null,
                 'kelas_id'       => $input['kelas_id'] ?? null,
                 'rombel_id'      => $input['rombel_id'] ?? null,
-                'tanggal_masuk'  => $tglBaru,
+                'tanggal_masuk'  => $tanggalBaru,
                 'status'         => 'aktif',
                 'updated_by'     => Auth::id(),
+                'updated_at'     => now()
             ]);
 
             return ['status' => true, 'data' => $aktif];
@@ -212,7 +230,6 @@ class PendidikanService
                 'tanggal_keluar' => $input['tanggal_keluar'],
                 'status'        => $input['status'],
                 'created_by'    => $aktif->created_by,
-                'updated_by'    => Auth::id(),
             ]);
 
             // Hapus data aktif
@@ -230,21 +247,15 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Data pendidikan aktif tidak ditemukan.'];
             }
 
-            // Simpan data lama ke riwayat sebelum update
-            RiwayatPendidikan::create([
-                'biodata_id'    => $pendidikan->biodata_id,
-                'no_induk'      => $pendidikan->no_induk ?? null,
-                'lembaga_id'    => $pendidikan->lembaga_id,
-                'jurusan_id'    => $pendidikan->jurusan_id ?? null,
-                'kelas_id'      => $pendidikan->kelas_id ?? null,
-                'rombel_id'     => $pendidikan->rombel_id ?? null,
-                'angkatan_id'   => $pendidikan->angkatan_id ?? null,
-                'tanggal_masuk' => $pendidikan->tanggal_masuk,
-                'tanggal_keluar' => now(),
-                'status'        => $pendidikan->status,
-                'created_by'    => $pendidikan->updated_by ?? null,
-                'created_at'    => $pendidikan->updated_at ?? now(),
-            ]);
+            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+            $tanggalLama = Carbon::parse($pendidikan->tanggal_masuk);
+
+            if ($tanggalBaru->lt($tanggalLama)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
+            }
 
             // Update data aktif
             $pendidikan->update([
@@ -255,8 +266,8 @@ class PendidikanService
                 'rombel_id'      => $input['rombel_id'] ?? null,
                 'angkatan_id'    => $input['angkatan_id'] ?? null,
                 'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
-                'status'         => $input['status'] ?? $pendidikan->status,
                 'updated_by'     => Auth::id(),
+                'updated_at'     => now()
             ]);
 
             return ['status' => true, 'data' => $pendidikan];

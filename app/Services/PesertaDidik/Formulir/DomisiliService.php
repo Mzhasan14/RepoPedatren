@@ -36,7 +36,7 @@ class DomisiliService
             $gabungan->push($aktif);
         }
 
-        $gabungan = $gabungan->sortByDesc('created_at')->values();
+        $gabungan = $gabungan->sortByDesc('tanggal_masuk')->values();
 
         $data = $gabungan->map(function ($item) {
             return [
@@ -69,12 +69,26 @@ class DomisiliService
                 return ['status' => false, 'message' => 'Santri masih memiliki domisili aktif.'];
             }
 
+            $tanggalMasuk = $input['tanggal_masuk'] ? Carbon::parse($input['tanggal_masuk']) : now();
+
+            // Ambil tanggal terakhir dari riwayat, jika ada
+            $riwayatTerakhir = RiwayatDomisili::where('santri_id', $santri->id)
+                ->orderByDesc('tanggal_masuk')
+                ->first();
+
+            if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir (' . $riwayatTerakhir->tanggal_masuk->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
+                ];
+            }
+
             $dom = DomisiliSantri::create([
                 'santri_id'     => $santri->id,
                 'wilayah_id'    => $input['wilayah_id'],
                 'blok_id'       => $input['blok_id'],
                 'kamar_id'      => $input['kamar_id'],
-                'tanggal_masuk' => $input['tanggal_masuk'] ? Carbon::parse($input['tanggal_masuk']) : now(),
+                'tanggal_masuk' => $tanggalMasuk,
                 'status'        => $input['status'] ?? 'aktif',
                 'created_by'    => Auth::id(),
             ]);
@@ -82,6 +96,7 @@ class DomisiliService
             return ['status' => true, 'data' => $dom];
         });
     }
+
 
     public function show(int $id): array
     {
@@ -111,15 +126,26 @@ class DomisiliService
             ],
         ];
     }
-
     public function pindahDomisili(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
             $aktif = DomisiliSantri::find($id);
+
             if (!$aktif) {
                 return ['status' => false, 'message' => 'Domisili aktif tidak ditemukan.'];
             }
 
+            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+            $tanggalLama = Carbon::parse($aktif->tanggal_masuk);
+
+            if ($tanggalBaru->lt($tanggalLama)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
+            }
+
+            // Simpan ke riwayat
             RiwayatDomisili::create([
                 'santri_id'      => $aktif->santri_id,
                 'wilayah_id'     => $aktif->wilayah_id,
@@ -129,21 +155,23 @@ class DomisiliService
                 'tanggal_keluar' => now(),
                 'status'         => 'pindah',
                 'created_by'     => $aktif->created_by,
-                'updated_by'     => Auth::id(),
             ]);
 
+            // Update domisili aktif
             $aktif->update([
                 'wilayah_id'     => $input['wilayah_id'],
                 'blok_id'        => $input['blok_id'],
                 'kamar_id'       => $input['kamar_id'],
-                'tanggal_masuk'  => Carbon::parse($input['tanggal_masuk']),
+                'tanggal_masuk'  => $tanggalBaru,
                 'status'         => 'aktif',
                 'updated_by'     => Auth::id(),
+                'updated_at'    => now()
             ]);
 
             return ['status' => true, 'data' => $aktif];
         });
     }
+
 
     public function keluarDomisili(array $input, int $id): array
     {
@@ -167,7 +195,6 @@ class DomisiliService
                 'tanggal_keluar' => $tglKeluar,
                 'status'         => 'keluar',
                 'created_by'     => $aktif->created_by,
-                'updated_by'     => Auth::id(),
             ]);
 
             $aktif->delete();
@@ -184,25 +211,23 @@ class DomisiliService
                 return ['status' => false, 'message' => 'Domisili aktif tidak ditemukan.'];
             }
 
-            RiwayatDomisili::create([
-                'santri_id'      => $dom->santri_id,
-                'wilayah_id'     => $dom->wilayah_id,
-                'blok_id'        => $dom->blok_id,
-                'kamar_id'       => $dom->kamar_id,
-                'tanggal_masuk'  => $dom->tanggal_masuk,
-                'tanggal_keluar' => now(),
-                'status'         => $dom->status,
-                'created_by'     => $dom->created_by,
-                'updated_by'     => Auth::id(),
-            ]);
+            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+            $tanggalLama = Carbon::parse($dom->tanggal_masuk);
+
+            if ($tanggalBaru->lt($tanggalLama)) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
+            }
 
             $dom->update([
                 'wilayah_id'    => $input['wilayah_id'],
                 'blok_id'       => $input['blok_id'],
                 'kamar_id'      => $input['kamar_id'],
                 'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
-                'status'        => $input['status'] ?? $dom->status,
                 'updated_by'    => Auth::id(),
+                'updated_at'    => now()
             ]);
 
             return ['status' => true, 'data' => $dom];
