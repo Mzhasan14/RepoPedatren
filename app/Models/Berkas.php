@@ -55,7 +55,7 @@ class Berkas extends Model
 
     public function jenisBerkas()
     {
-        return $this->belongsTo(JenisBerkas::class, 'id_jenis_berkas', 'id');
+        return $this->belongsTo(JenisBerkas::class, 'jenis_berkas_id', 'id');
     }
 
     public function biodata()

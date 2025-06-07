@@ -22,6 +22,6 @@ class JenisBerkas extends Model
 
     public function berkas()
     {
-        return $this->hasMany(Berkas::class,'id_jenis_berkas','id');
+        return $this->hasMany(Berkas::class,'jenis_berkas_id','id');
     }
 }

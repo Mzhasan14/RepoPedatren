@@ -31,9 +31,6 @@ class NonDomisiliService
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
-            ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
-            ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
@@ -52,9 +49,6 @@ class NonDomisiliService
                 'b.nama',
                 'wp.niup',
                 'l.nama_lembaga',
-                'w.nama_wilayah',
-                'km.nama_kamar',
-                'bl.nama_blok',
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
@@ -80,9 +74,6 @@ class NonDomisiliService
             "nama" => $item->nama,
             "niup" => $item->niup ?? '-',
             "lembaga" => $item->nama_lembaga ?? '-',
-            "wilayah" => $item->nama_wilayah ?? '-',
-            "blok" => $item->nama_blok ?? '-',
-            "kamar" => $item->nama_kamar ?? '-',
             "angkatan" => $item->angkatan,
             "kota_asal" => $item->kota_asal,
             "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
