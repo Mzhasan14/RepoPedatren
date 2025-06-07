@@ -12,6 +12,7 @@ class StatusSantriService
     public function index(string $bioId): array
     {
         $santri = Santri::where('biodata_id', $bioId)
+            ->orderByDesc('tanggal_masuk')
             ->get();
 
         if ($santri->isEmpty()) {
@@ -51,14 +52,23 @@ class StatusSantriService
                 ];
             }
 
-            // Generate NIS unik 10 digit
-            do {
-                $nis = str_pad(mt_rand(0, 9999999999), 10, '0', STR_PAD_LEFT);
-            } while (Santri::where('nis', $nis)->exists());
+            $tanggalMasuk = $input['tanggal_masuk'] ? Carbon::parse($input['tanggal_masuk']) : now();
+
+            // Ambil tanggal terakhir dari riwayat, jika ada
+            $riwayatTerakhir = Santri::where('biodata_id', $bioId)
+                ->orderByDesc('tanggal_masuk')
+                ->first();
+
+            if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
+                return [
+                    'status' => false,
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir (' . Carbon::parse($riwayatTerakhir->tanggal_masuk)->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
+                ];
+            }
 
             $santri = Santri::create([
                 'biodata_id'     => $bioId,
-                'nis'            => $nis,
+                'nis'            => $input['nis'] ?? null,
                 'tanggal_masuk'  => isset($input['tanggal_masuk'])
                     ? Carbon::parse($input['tanggal_masuk'])
                     : Carbon::now(),
@@ -111,17 +121,47 @@ class StatusSantriService
                 ];
             }
 
-            // Assign only provided fields
-            $santri->tanggal_masuk = isset($input['tanggal_masuk'])
+            // Ambil tanggal masuk dan keluar dari input atau fallback ke nilai lama
+            $tanggalMasuk = isset($input['tanggal_masuk'])
                 ? Carbon::parse($input['tanggal_masuk'])
                 : $santri->tanggal_masuk;
 
-            $santri->tanggal_keluar = isset($input['tanggal_keluar'])
+            $tanggalKeluar = isset($input['tanggal_keluar'])
                 ? Carbon::parse($input['tanggal_keluar'])
                 : $santri->tanggal_keluar;
 
+            // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
+            if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
+                ];
+            }
+
+            // Ambil status dari input atau dari database
+            $status = $input['status'] ?? $santri->status;
+
+            // Validasi: jika status 'aktif', tanggal_keluar tidak boleh diisi
+            if (strtolower($status) === 'aktif' && isset($input['tanggal_keluar'])) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh diisi jika status santri masih aktif.',
+                ];
+            }
+
+            // Validasi: tanggal_keluar tidak boleh lebih kecil dari tanggal_masuk
+            if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tanggal keluar tidak boleh lebih kecil dari tanggal masuk.',
+                ];
+            }
+
+            // Lakukan update nilai-nilai
+            $santri->tanggal_masuk = $tanggalMasuk;
+            $santri->tanggal_keluar = $tanggalKeluar;
             $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
-            $santri->status = $input['status'] ?? $santri->status;
+            $santri->status = $status;
             $santri->updated_at = Carbon::now();
             $santri->updated_by = Auth::id();
 
