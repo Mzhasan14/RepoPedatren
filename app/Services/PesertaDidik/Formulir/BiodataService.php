@@ -7,6 +7,7 @@ use App\Models\Keluarga;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class BiodataService
 {
@@ -59,7 +60,7 @@ class BiodataService
 
     public function show(string $bioId): array
     {
-        $biodata = Biodata::with('keluarga')->find($bioId);
+        $biodata = Biodata::with(['keluarga', 'berkas.jenisBerkas'])->find($bioId);
 
         if (! $biodata) {
             return [
@@ -67,6 +68,10 @@ class BiodataService
                 'message' => 'Data tidak ditemukan.',
             ];
         }
+
+        // Cari berkas dengan jenis "Pas foto"
+        $pasFoto = $biodata->berkas
+            ->firstWhere(fn($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas Foto');
 
         return [
             'status' => true,
@@ -96,6 +101,7 @@ class BiodataService
                 'jalan'                      => $biodata->jalan,
                 'kode_pos'                   => $biodata->kode_pos,
                 'wafat'                      => (bool) $biodata->wafat,
+                'pas_foto_url'               => $pasFoto ? url($pasFoto->file_path) : null,
             ],
         ];
     }
