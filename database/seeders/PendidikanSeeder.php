@@ -2,12 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Lembaga;
-use App\Models\Pendidikan\Rombel;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Rombel;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Lembaga;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PendidikanSeeder extends Seeder
 {
@@ -16,157 +18,95 @@ class PendidikanSeeder extends Seeder
      */
     public function run(): void
     {
-                $userId = 1;
+        $now = Carbon::now();
+        $userId = 1; // ID admin default
 
-            $data = [
-                'SMP Negeri 1 Jakarta' => [
-                    'jurusan' => [
-                        'IPA' => [
-                            'kelas' => [
-                                '7 IPA 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel A', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel B', 'gender' => 'putri'],
-                                    ],
-                                ],
-                                '8 IPA 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel C', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel D', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'SMP Negeri 2 Bandung' => [
-                    'jurusan' => [
-                        'IPS' => [
-                            'kelas' => [
-                                '8 IPS 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel E', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel F', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'SMA Negeri 3 Yogyakarta' => [
-                    'jurusan' => [
-                        'IPA' => [
-                            'kelas' => [
-                                '10 IPA 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel G', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel H', 'gender' => 'putri'],
-                                    ],
-                                ],
-                                '11 IPA 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel I', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel J', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'SMA Negeri 5 Surabaya' => [
-                    'jurusan' => [
-                        'Bahasa' => [
-                            'kelas' => [
-                                '11 Bahasa 1' => [
-                                    'rombel' => [
-                                        ['nama' => 'Rombel K', 'gender' => 'putra'],
-                                        ['nama' => 'Rombel L', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'Universitas Indonesia' => [
-                    'jurusan' => [
-                        'Teknik Informatika' => [
-                            'kelas' => [
-                                'D3.08' => [
-                                    'rombel' => [
-                                        ['nama' => 'Kelompok A', 'gender' => 'putra'],
-                                        ['nama' => 'Kelompok B', 'gender' => 'putri'],
-                                    ],
-                                ],
-                                'D3.09' => [
-                                    'rombel' => [
-                                        ['nama' => 'Kelompok C', 'gender' => 'putra'],
-                                        ['nama' => 'Kelompok D', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                        'Sistem Informasi' => [
-                            'kelas' => [
-                                'D3.10' => [
-                                    'rombel' => [
-                                        ['nama' => 'Kelompok E', 'gender' => 'putra'],
-                                        ['nama' => 'Kelompok F', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'Universitas Gadjah Mada' => [
-                    'jurusan' => [
-                        'Manajemen' => [
-                            'kelas' => [
-                                'D3.11' => [
-                                    'rombel' => [
-                                        ['nama' => 'Kelompok G', 'gender' => 'putra'],
-                                        ['nama' => 'Kelompok H', 'gender' => 'putri'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ];
+        $data = [
+            'PAUD/TK/TPA' => [
+                'jurusan' => ['PAUD', 'TK', 'TPA'],
+            ],
+            'MI Nurul Mun\'im' => [
+                'jurusan' => ['MI'],
+            ],
+            'MTs Nurul Jadid' => [
+                'jurusan' => ['MTs'],
+            ],
+            'SMP Nurul Jadid' => [
+                'jurusan' => ['Umum'],
+            ],
+            'SMA Nurul Jadid' => [
+                'jurusan' => ['IPA', 'IPS', 'Bahasa'],
+            ],
+            'MA Nurul Jadid' => [
+                'jurusan' => ['IPA Reguler', 'IPA Unggulan', 'Tahfidz', 'IPS', 'Bahasa'],
+            ],
+            'SMK Nurul Jadid' => [
+                'jurusan' => ['TKJ', 'RPL'],
+            ],
+            'Universitas Nurul Jadid (UNUJA)' => [
+                'jurusan' => ['Tarbiyah', 'Syariah', 'Da\'wah'],
+            ],
+            'Ma\'had Aly Nurul Jadid' => [
+                'jurusan' => ['Fiqh', 'Ushul Fiqh'],
+            ],
+        ];
 
-            foreach ($data as $namaLembaga => $jurusanList) {
-                $lembaga = Lembaga::create([
-                    'nama_lembaga' => $namaLembaga,
+        foreach ($data as $lembagaName => $content) {
+            $lembagaId = DB::table('lembaga')->insertGetId([
+                'nama_lembaga' => $lembagaName,
+                'created_by' => $userId,
+                'status' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            foreach ($content['jurusan'] as $jurusanName) {
+                $jurusanId = DB::table('jurusan')->insertGetId([
+                    'nama_jurusan' => $jurusanName,
+                    'lembaga_id' => $lembagaId,
                     'created_by' => $userId,
                     'status' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
 
-                foreach ($jurusanList['jurusan'] as $namaJurusan => $kelasList) {
-                    $jurusan = Jurusan::create([
-                        'nama_jurusan' => $namaJurusan,
-                        'lembaga_id' => $lembaga->id,
+                // Tentukan kelas berdasarkan jenjang
+                $kelasList = [];
+                if (str_contains($lembagaName, 'SMP')) {
+                    $kelasList = ['7', '8', '9'];
+                } elseif (str_contains($lembagaName, 'SMA') || str_contains($lembagaName, 'MA') || str_contains($lembagaName, 'SMK')) {
+                    $kelasList = ['10', '11', '12'];
+                } elseif (str_contains($lembagaName, 'MI') || str_contains($lembagaName, 'MTs')) {
+                    $kelasList = ['1', '2', '3', '4', '5', '6'];
+                } elseif (str_contains($lembagaName, 'PAUD') || str_contains($lembagaName, 'TK') || str_contains($lembagaName, 'TPA')) {
+                    $kelasList = ['A', 'B', 'C'];
+                } else {
+                    $kelasList = ['Angkatan I', 'Angkatan II'];
+                }
+
+                foreach ($kelasList as $kelasName) {
+                    $kelasId = DB::table('kelas')->insertGetId([
+                        'nama_kelas' => $kelasName,
+                        'jurusan_id' => $jurusanId,
                         'created_by' => $userId,
                         'status' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ]);
 
-                    foreach ($kelasList['kelas'] as $namaKelas => $rombelList) {
-                        $kelas = Kelas::create([
-                            'nama_kelas' => $namaKelas,
-                            'jurusan_id' => $jurusan->id,
+                    foreach (['putra', 'putri'] as $gender) {
+                        DB::table('rombel')->insert([
+                            'nama_rombel' => $kelasName . ' ' . ucfirst($gender),
+                            'gender_rombel' => $gender,
+                            'kelas_id' => $kelasId,
                             'created_by' => $userId,
                             'status' => true,
+                            'created_at' => $now,
+                            'updated_at' => $now,
                         ]);
-
-                        foreach ($rombelList['rombel'] as $rombelData) {
-                            Rombel::create([
-                                'nama_rombel' => $rombelData['nama'],
-                                'gender_rombel' => $rombelData['gender'],
-                                'kelas_id' => $kelas->id,
-                                'created_by' => $userId,
-                                'status' => true,
-                            ]);
-                        }
                     }
                 }
             }
+        }
     }
 }

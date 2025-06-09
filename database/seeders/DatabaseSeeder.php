@@ -28,7 +28,6 @@ use Database\Seeders\Pegawai\MateriAjarSeeder;
 use Database\Seeders\Pendidikan\JurusanSeeder;
 use Database\Seeders\Pendidikan\LembagaSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Database\Seeders\Kewilayahan\WilayahSeeder;
 use Database\Seeders\Pegawai\GolonganJabatanSeeder;
 use Database\Seeders\Pegawai\KategoriGolonganSeeder;
 use Database\Seeders\Pegawai\RiwayatJabatanKaryawanSeeder;
@@ -48,8 +47,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             PendidikanSeeder::class,
             WilayahSeeder::class,
-            BlokSeeder::class,
-            KamarSeeder::class,
+            // BlokSeeder::class,
+            // KamarSeeder::class,
             AlamatSeeder::class,
             TahunAjaranSeeder::class,
             SemesterSeeder::class,
