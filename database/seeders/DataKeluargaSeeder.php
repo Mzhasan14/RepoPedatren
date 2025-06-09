@@ -55,6 +55,7 @@ class DataKeluargaSeeder extends Seeder
             'santri_active_pendidikan_lulus'  => [true,  'aktif',  true,  'lulus',   10],
             'santri_alumni_pendidikan_active' => [true,  'alumni', true,  'aktif',   10],
             'lulus_both'                      => [true,  'alumni', true,  'lulus',   10],
+            'santri_no_domisili'              => [true,  'aktif',  false, null,      5],
         ];
         $weighted = [];
         foreach ($scenarios as $key => $cfg) {
@@ -239,6 +240,7 @@ class DataKeluargaSeeder extends Seeder
             // Pilih skenario
             $pick = $faker->randomElement($weighted);
             [$doSantri, $stSantri, $doPendidikan, $stPendidikan] = $scenarios[$pick];
+            $noDomisili = $pick === 'santri_no_domisili';
 
             // ------------------ BAGIAN SANTRI ------------------
             if ($doSantri) {
@@ -250,57 +252,58 @@ class DataKeluargaSeeder extends Seeder
                     ? $faker->dateTimeBetween($tanggalMasukSantri, '+2 years')->format('Y-m-d')
                     : null;
                 $santriId = DB::table('santri')->insertGetId([
-                    'biodata_id'     => $childId,
-                    'angkatan_id'    => $angkatanId,
-                    'nis'            => $faker->unique()->numerify('###########'),
-                    'tanggal_masuk'  => $tanggalMasukSantri,
+                    'biodata_id'    => $childId,
+                    'angkatan_id'   => $angkatanId,
+                    'nis'           => $faker->unique()->numerify('###########'),
+                    'tanggal_masuk' => $tanggalMasukSantri,
                     'tanggal_keluar' => $tanggalKeluarSantri,
-                    'status'         => $stSantri,
-                    'created_by'     => 1,
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status'        => $stSantri,
+                    'created_by'    => 1,
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
                 ]);
 
-                // Kelola domisili
-                $wilayah      = $faker->randomElement($wilayahList);
-                $wilayahId    = $wilayah->id;
-                $blokFiltered = $blokList->where('wilayah_id', $wilayahId)->values();
-                $blok         = $faker->randomElement($blokFiltered);
-                $blokId       = $blok->id;
-                $kamarFiltered = $kamarList->where('blok_id', $blokId)->values();
-                $kamar         = $faker->randomElement($kamarFiltered);
-                $kamarId       = $kamar->id;
+                // **Hanya buat domisili jika bukan skenario no domisili**
+                if (! $noDomisili) {
+                    // Pilih wilayah/blok/kamar
+                    $wilayah      = $faker->randomElement($wilayahList);
+                    $blokFiltered = $blokList->where('wilayah_id', $wilayah->id)->values();
+                    $blok         = $faker->randomElement($blokFiltered);
+                    $kamarFiltered = $kamarList->where('blok_id', $blok->id)->values();
+                    $kamar        = $faker->randomElement($kamarFiltered);
 
-                if ($stSantri === 'aktif') {
-                    DB::table('domisili_santri')->insert([
-                        'santri_id'     => $santriId,
-                        'wilayah_id'    => $wilayahId,
-                        'blok_id'       => $blokId,
-                        'kamar_id'      => $kamarId,
-                        'tanggal_masuk' => $tanggalMasukSantri . ' 00:00:00',
-                        'status'        => 'aktif',
-                        'created_by'    => 1,
-                        'created_at'    => now(),
-                        'updated_at'    => now(),
-                    ]);
-                } else {
-                    DB::table('riwayat_domisili')->insert([
-                        'santri_id'      => $santriId,
-                        'wilayah_id'     => $wilayahId,
-                        'blok_id'        => $blokId,
-                        'kamar_id'       => $kamarId,
-                        'tanggal_masuk'  => $tanggalMasukSantri . ' 00:00:00',
-                        'tanggal_keluar' => ($tanggalKeluarSantri ?: now()) . ' 00:00:00',
-                        'status'         => 'keluar',
-                        'created_by'     => 1,
-                        'created_at'     => now(),
-                        'updated_at'     => now(),
-                    ]);
-                    DB::table('domisili_santri')
-                        ->where('santri_id', $santriId)
-                        ->update(['status' => 'keluar', 'updated_at' => now()]);
+                    if ($stSantri === 'aktif') {
+                        DB::table('domisili_santri')->insert([
+                            'santri_id'     => $santriId,
+                            'wilayah_id'    => $wilayah->id,
+                            'blok_id'       => $blok->id,
+                            'kamar_id'      => $kamar->id,
+                            'tanggal_masuk' => $tanggalMasukSantri . ' 00:00:00',
+                            'status'        => 'aktif',
+                            'created_by'    => 1,
+                            'created_at'    => now(),
+                            'updated_at'    => now(),
+                        ]);
+                    } else {
+                        DB::table('riwayat_domisili')->insert([
+                            'santri_id'      => $santriId,
+                            'wilayah_id'     => $wilayah->id,
+                            'blok_id'        => $blok->id,
+                            'kamar_id'       => $kamar->id,
+                            'tanggal_masuk'  => $tanggalMasukSantri . ' 00:00:00',
+                            'tanggal_keluar' => ($tanggalKeluarSantri ?: now()) . ' 00:00:00',
+                            'status'         => 'keluar',
+                            'created_by'     => 1,
+                            'created_at'     => now(),
+                            'updated_at'     => now(),
+                        ]);
+                        DB::table('domisili_santri')
+                            ->where('santri_id', $santriId)
+                            ->update(['status' => 'keluar', 'updated_at' => now()]);
+                    }
                 }
             }
+
 
             // ------------------ BAGIAN PENDIDIKAN ------------------
             if ($doPendidikan) {
