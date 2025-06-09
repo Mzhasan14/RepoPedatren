@@ -3,7 +3,9 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Santri;
+use App\Models\DomisiliSantri;
 use Illuminate\Support\Carbon;
+use App\Models\RiwayatDomisili;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -149,6 +151,15 @@ class StatusSantriService
                 ];
             }
 
+            // Validasi: jika status termasuk salah satu status non-aktif, tanggal_keluar wajib diisi
+            $statusNonAktif = ['alumni', 'do', 'berhenti', 'nonaktif'];
+            if (in_array($status, $statusNonAktif) && empty($input['tanggal_keluar'])) {
+                return [
+                    'status'  => false,
+                    'message' => 'Mohon mengisi tanggal keluar karena status santri telah berubah menjadi tidak aktif.',
+                ];
+            }
+
             // Lakukan update nilai-nilai
             $santri->tanggal_masuk = $tanggalMasuk;
             $santri->tanggal_keluar = $tanggalKeluar;
@@ -166,6 +177,34 @@ class StatusSantriService
             }
 
             $santri->save();
+
+
+           // Jika tanggal_keluar baru diisi atau diperbarui
+        if (!is_null($input['tanggal_keluar']) && ($santri->wasChanged('tanggal_keluar'))) {
+            $dom = DomisiliSantri::where('santri_id', $santri->id)->where('status', 'aktif')->first();
+
+            if ($dom) {
+                $now = Carbon::now();
+                $user = Auth::id();
+
+                $dom->status = 'keluar';
+                $dom->tanggal_keluar = $now;
+                $dom->updated_at = $now;
+                $dom->updated_by = $user;
+                $dom->save();
+
+                RiwayatDomisili::create([
+                    'santri_id'      => $dom->santri_id,
+                    'wilayah_id'     => $dom->wilayah_id,
+                    'blok_id'        => $dom->blok_id,
+                    'kamar_id'       => $dom->kamar_id,
+                    'tanggal_masuk'  => $dom->tanggal_masuk,
+                    'tanggal_keluar' => $now,
+                    'status'         => 'keluar',
+                    'created_by'     => $user,
+                ]);
+            }
+        }
 
             return [
                 'status' => true,

@@ -29,6 +29,7 @@ class DomisiliService
             'santri.biodata:id',
         ])
             ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->where('status', 'aktif')
             ->first();
 
         $gabungan = collect($riwayat);
