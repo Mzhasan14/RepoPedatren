@@ -21,28 +21,23 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
 
     public function collection()
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga pesantren terakhir per biodata
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // 4) Query utama
-        return Pengurus::Active()
+        return Pengurus::active()
             ->leftJoin('golongan_jabatan as g', function ($join) {
-                $join->on('pengurus.golongan_jabatan_id', '=', 'g.id')
-                    ->where('g.status', true);
+                $join->on('pengurus.golongan_jabatan_id', '=', 'g.id')->where('g.status', true);
             })
             ->join('pegawai', function ($join) {
                 $join->on('pengurus.pegawai_id', '=', 'pegawai.id')
@@ -51,62 +46,37 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
             })
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            // join data wilayah untuk alamat lengkap
+            ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
             ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
             ->leftJoin('provinsi as prov', 'prov.id', 'b.provinsi_id')
-            // no kk
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->whereNull('pengurus.deleted_at')
             ->select(
                 'b.nama as nama_lengkap',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
                 'k.no_kk',
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
-                DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT_WS(', ', 
-                    b.jalan, 
-                    COALESCE(kec.nama_kecamatan, b.kecamatan_id), 
-                    COALESCE(kab.nama_kabupaten, b.kabupaten_id), 
-                    COALESCE(prov.nama_provinsi, b.provinsi_id)
-                ) as alamat"),
-                DB::raw("CONCAT(
-                    b.tempat_lahir, 
-                    ', ', 
-                    DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y')
-                ) as ttl"),
-                'pengurus.satuan_kerja',
-                'pengurus.jabatan as jenis_jabatan',
-                'pengurus.keterangan_jabatan',
-                'g.nama_golongan_jabatan',
-                DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur"),
-                'b.nama_pendidikan_terakhir'
-            )
-            ->groupBy(
-                'b.nama',
-                'b.nik',
-                'b.no_passport',
-                'k.no_kk',
-                'wp.niup',
-                'b.jenis_kelamin',
+                DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE '-' END as jenis_kelamin"),
                 'b.jalan',
                 'kec.nama_kecamatan',
-                'b.kecamatan_id',
                 'kab.nama_kabupaten',
-                'b.kabupaten_id',
                 'prov.nama_provinsi',
-                'b.provinsi_id',
                 'b.tempat_lahir',
-                'b.tanggal_lahir',
+                DB::raw("DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y') as tanggal_lahir"),
+                'b.jenjang_pendidikan_terakhir',
+                'b.email',
+                'b.no_telepon as no_hp',
                 'pengurus.satuan_kerja',
+                'g.nama_golongan_jabatan',
                 'pengurus.jabatan',
                 'pengurus.keterangan_jabatan',
-                'g.nama_golongan_jabatan',
-                'b.nama_pendidikan_terakhir'
+                DB::raw("DATE_FORMAT(pengurus.tanggal_mulai, '%d-%m-%Y') as tanggal_mulai"),
+                DB::raw("DATE_FORMAT(pengurus.tanggal_akhir, '%d-%m-%Y') as tanggal_selesai"),
+                DB::raw("IF(pengurus.status_aktif = 1, 'Aktif', 'Nonaktif') as status_aktif")
             )
+            ->whereNull('pengurus.deleted_at')
             ->get();
     }
 
@@ -119,14 +89,22 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
             $row->no_kk ?? '-',
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
-            $row->ttl,
+            $row->jalan ?? '-',
+            $row->nama_kecamatan ?? '-',
+            $row->nama_kabupaten ?? '-',
+            $row->nama_provinsi ?? '-',
+            $row->tempat_lahir ?? '-',
+            $row->tanggal_lahir ?? '-',
+            $row->jenjang_pendidikan_terakhir ?? '-',
+            $row->email ?? '-',
+            $row->no_hp ?? '-',
             $row->satuan_kerja ?? '-',
-            $row->jenis_jabatan ?? '-',
-            $row->keterangan_jabatan ?? '-',
             $row->nama_golongan_jabatan ?? '-',
-            $row->umur,
-            $row->nama_pendidikan_terakhir ?? '-',
+            $row->jabatan ?? '-',
+            $row->keterangan_jabatan ?? '-',
+            $row->tanggal_mulai ?? '-',
+            $row->tanggal_selesai ?? '-',
+            $row->status_aktif ?? '-',
         ];
     }
 
@@ -139,14 +117,22 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
             'No KK',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
-            'Tempat, Tanggal Lahir',
-            'Satuan Kerja',
-            'Jenis Jabatan',
-            'Keterangan Jabatan',
-            'Golongan Jabatan',
-            'Umur',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Tempat Lahir',
+            'Tanggal Lahir',
             'Pendidikan Terakhir',
+            'Email',
+            'No Telepon',
+            'Satuan Kerja',
+            'Golongan Jabatan',
+            'Jabatan',
+            'Keterangan Jabatan',
+            'Tanggal Mulai',
+            'Tanggal Selesai',
+            'Status Aktif',
         ];
     }
 

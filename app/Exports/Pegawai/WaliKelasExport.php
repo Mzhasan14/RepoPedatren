@@ -21,24 +21,20 @@ class WaliKelasExport implements FromCollection, WithHeadings, WithMapping, With
 
     public function collection()
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga pesantren terakhir per biodata
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // 4) Query utama
         return WaliKelas::Active()
             ->join('pegawai', function ($join) {
                 $join->on('wali_kelas.pegawai_id', '=', 'pegawai.id')
@@ -54,11 +50,9 @@ class WaliKelasExport implements FromCollection, WithHeadings, WithMapping, With
             ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
             ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
-            // join data wilayah untuk alamat lengkap
             ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
             ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
             ->leftJoin('provinsi as prov', 'prov.id', 'b.provinsi_id')
-            // no kk
             ->leftJoin('keluarga as kk', 'b.id', '=', 'kk.id_biodata')
             ->whereNull('wali_kelas.deleted_at')
             ->select(
@@ -67,48 +61,26 @@ class WaliKelasExport implements FromCollection, WithHeadings, WithMapping, With
                 'kk.no_kk',
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT_WS(', ', 
-                    b.jalan, 
-                    COALESCE(kec.nama_kecamatan, b.kecamatan_id), 
-                    COALESCE(kab.nama_kabupaten, b.kabupaten_id), 
-                    COALESCE(prov.nama_provinsi, b.provinsi_id)
-                ) as alamat"),
-                DB::raw("CONCAT(
-                    b.tempat_lahir, 
-                    ', ', 
-                    DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y')
-                ) as ttl"),
-                DB::raw("COALESCE(NULLIF(CONCAT_WS(' , ', l.nama_lembaga, j.nama_jurusan, k.nama_kelas, r.nama_rombel), ''), '-') AS Unit_Pendidikan"),
-
-                DB::raw("CASE r.gender_rombel 
-                    WHEN 'l' THEN 'Laki-laki' 
-                    WHEN 'p' THEN 'Perempuan' 
-                    ELSE r.gender_rombel 
-                END as jenis_rombel"),
-                DB::raw("CONCAT(wali_kelas.jumlah_murid, ' pelajar') as jumlah_murid")
+                'b.jalan',
+                DB::raw("COALESCE(kec.nama_kecamatan, b.kecamatan_id) as kecamatan"),
+                DB::raw("COALESCE(kab.nama_kabupaten, b.kabupaten_id) as kabupaten"),
+                DB::raw("COALESCE(prov.nama_provinsi, b.provinsi_id) as provinsi"),
+                'b.tempat_lahir',
+                DB::raw("DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y') as tanggal_lahir"),
+                'b.jenjang_pendidikan_terakhir as pendidikan_terakhir',
+                'b.email',
+                'b.no_telepon',
+                'l.nama_lembaga',
+                'k.nama_kelas',
+                'wali_kelas.periode_awal as tahun_ajaran',
+                'pegawai.status_aktif'
             )
             ->groupBy(
-                'b.nama',
-                'b.nik',
-                'b.no_passport',
-                'kk.no_kk',
-                'wp.niup',
-                'b.jenis_kelamin',
-                'b.jalan',
-                'kec.nama_kecamatan',
-                'b.kecamatan_id',
-                'kab.nama_kabupaten',
-                'b.kabupaten_id',
-                'prov.nama_provinsi',
-                'b.provinsi_id',
-                'b.tempat_lahir',
-                'b.tanggal_lahir',
-                'l.nama_lembaga',
-                'j.nama_jurusan',
-                'k.nama_kelas',
-                'r.nama_rombel',
-                'r.gender_rombel',
-                'wali_kelas.jumlah_murid'
+                'b.nama', 'b.nik', 'b.no_passport', 'kk.no_kk', 'wp.niup', 'b.jenis_kelamin',
+                'b.jalan', 'kec.nama_kecamatan', 'b.kecamatan_id', 'kab.nama_kabupaten',
+                'b.kabupaten_id', 'prov.nama_provinsi', 'b.provinsi_id', 'b.tempat_lahir',
+                'b.tanggal_lahir', 'b.jenjang_pendidikan_terakhir', 'b.email', 'b.no_telepon',
+                'l.nama_lembaga', 'k.nama_kelas', 'wali_kelas.periode_awal', 'pegawai.status_aktif'
             )
             ->get();
     }
@@ -122,10 +94,19 @@ class WaliKelasExport implements FromCollection, WithHeadings, WithMapping, With
             $row->no_kk ?? '-',
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
-            $row->ttl,
-            $row->Unit_Pendidikan ?? '-',
-            $row->jumlah_murid ?? '0 pelajar',
+            $row->jalan,
+            $row->kecamatan,
+            $row->kabupaten,
+            $row->provinsi,
+            $row->tempat_lahir,
+            $row->tanggal_lahir,
+            $row->pendidikan_terakhir ?? '-',
+            $row->email ?? '-',
+            $row->no_telepon ?? '-',
+            $row->nama_lembaga ?? '-',
+            $row->nama_kelas ?? '-',
+            $row->tahun_ajaran ?? '-',
+            ucfirst($row->status_aktif),
         ];
     }
 
@@ -138,12 +119,22 @@ class WaliKelasExport implements FromCollection, WithHeadings, WithMapping, With
             'No KK',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
-            'Tempat, Tanggal Lahir',
-            'Unit Pendidikan',
-            'Jumlah Murid',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Tempat Lahir',
+            'Tanggal Lahir',
+            'Pendidikan Terakhir',
+            'Email',
+            'No Telepon',
+            'Lembaga',
+            'Kelas',
+            'Tahun Ajaran',
+            'Status Aktif',
         ];
     }
+
 
     public function styles(Worksheet $sheet)
     {
