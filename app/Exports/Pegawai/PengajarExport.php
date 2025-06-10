@@ -21,100 +21,45 @@ class PengajarExport implements FromCollection, WithHeadings, WithMapping, WithS
 
     public function collection()
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
-        $pasFotoId = DB::table('jenis_berkas')
-            ->where('nama_jenis_berkas', 'Pas foto')
-            ->value('id');
-
-        // 2) Subquery: foto terakhir per biodata
-        $fotoLast = DB::table('berkas')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('jenis_berkas_id', $pasFotoId)
-            ->groupBy('biodata_id');
-
-        // 3) Subquery: warga pesantren terakhir per biodata
-        $wpLast = DB::table('warga_pesantren')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('status', true)
-            ->groupBy('biodata_id');
-
-        // 4) Query utama
-        return Pengajar::Active()
+        return Pengajar::active()
             ->join('pegawai', function ($join) {
                 $join->on('pegawai.id', '=', 'pengajar.pegawai_id')
                     ->where('pegawai.status_aktif', 'aktif')
                     ->whereNull('pegawai.deleted_at');
             })
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoin('warga_pesantren as wp', function ($join) {
+                $join->on('wp.biodata_id', '=', 'b.id')->where('wp.status', true);
+            })
             ->leftJoin('lembaga as l', 'pengajar.lembaga_id', '=', 'l.id')
             ->leftJoin('golongan as g', 'pengajar.golongan_id', '=', 'g.id')
-            ->leftJoin('kategori_golongan as kg', 'g.kategori_golongan_id', '=', 'kg.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoin('materi_ajar', function ($join) {
-                $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
-                    ->where('materi_ajar.status_aktif', 'aktif')
-                    ->whereNull('materi_ajar.tahun_akhir');
-            })
-            ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
-            ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
-            ->leftJoin('provinsi as prov', 'prov.id', 'b.provinsi_id')
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->whereNull('pengajar.deleted_at')
+            ->leftJoin('kecamatan as kec', 'kec.id', '=', 'b.kecamatan_id')
+            ->leftJoin('kabupaten as kab', 'kab.id', '=', 'b.kabupaten_id')
+            ->leftJoin('provinsi as prov', 'prov.id', '=', 'b.provinsi_id')
             ->select(
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) as nik'),
                 'k.no_kk',
-                DB::raw("COALESCE(wp.niup, '-') AS niup"),
-                DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT_WS(', ', 
-                    b.jalan, 
-                    COALESCE(kec.nama_kecamatan, b.kecamatan_id), 
-                    COALESCE(kab.nama_kabupaten, b.kabupaten_id), 
-                    COALESCE(prov.nama_provinsi, b.provinsi_id)
-                ) as alamat"),
-                DB::raw("CONCAT(
-                    b.tempat_lahir, 
-                    ', ', 
-                    DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y')
-                ) as ttl"),
-                'l.nama_lembaga',
-                DB::raw("GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', ') AS daftar_materi"),
-                'g.nama_golongan',
-                DB::raw("
-                    CASE 
-                        WHEN TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())) = 0 
-                        THEN 'Belum setahun'
-                        ELSE CONCAT(
-                            TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())), 
-                            ' Tahun'
-                        )
-                    END AS masa_kerja
-                ")
-            )
-            ->groupBy(
-                'b.nama',
-                'b.nik',
-                'b.no_passport',
-                'k.no_kk',
-                'wp.niup',
-                'b.jenis_kelamin',
+                DB::raw('COALESCE(wp.niup, "-") as niup'),
+                DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE '-' END AS jenis_kelamin"),
                 'b.jalan',
                 'kec.nama_kecamatan',
-                'b.kecamatan_id',
                 'kab.nama_kabupaten',
-                'b.kabupaten_id',
                 'prov.nama_provinsi',
-                'b.provinsi_id',
                 'b.tempat_lahir',
-                'b.tanggal_lahir',
+                DB::raw('DATE_FORMAT(b.tanggal_lahir, "%d-%m-%Y") as tanggal_lahir'),
+                'b.jenjang_pendidikan_terakhir as pendidikan_terakhir',
+                'b.email',
+                'b.no_telepon as no_hp',
                 'l.nama_lembaga',
                 'g.nama_golongan',
-                'pengajar.tahun_masuk',
-                'pengajar.tahun_akhir'
+                'pengajar.jabatan',
+                DB::raw('DATE_FORMAT(pengajar.tahun_masuk, "%d-%m-%Y") as tanggal_mulai'),
+                DB::raw('DATE_FORMAT(pengajar.tahun_akhir, "%d-%m-%Y") as tanggal_selesai'),
+                DB::raw("IF(pengajar.status_aktif = 1, 'Aktif', 'Nonaktif') as status_aktif")
             )
+            ->whereNull('pengajar.deleted_at')
             ->get();
     }
 
@@ -127,12 +72,21 @@ class PengajarExport implements FromCollection, WithHeadings, WithMapping, WithS
             $row->no_kk ?? '-',
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
-            $row->ttl,
+            $row->jalan ?? '-',
+            $row->nama_kecamatan ?? '-',
+            $row->nama_kabupaten ?? '-',
+            $row->nama_provinsi ?? '-',
+            $row->tempat_lahir ?? '-',
+            $row->tanggal_lahir ?? '-',
+            $row->pendidikan_terakhir ?? '-',
+            $row->email ?? '-',
+            $row->no_hp ?? '-',
             $row->nama_lembaga ?? '-',
-            $row->daftar_materi ?? '-',
             $row->nama_golongan ?? '-',
-            $row->masa_kerja ?? '-',
+            $row->jabatan ?? '-',
+            $row->tanggal_mulai ?? '-',
+            $row->tanggal_selesai ?? '-',
+            $row->status_aktif ?? '-',
         ];
     }
 
@@ -145,14 +99,24 @@ class PengajarExport implements FromCollection, WithHeadings, WithMapping, WithS
             'No KK',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
-            'Tempat, Tanggal Lahir',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Tempat Lahir',
+            'Tanggal Lahir',
+            'Pendidikan Terakhir',
+            'Email',
+            'No Telepon',
             'Lembaga',
-            'Materi Ajar',
             'Golongan',
-            'Masa Kerja',
+            'Jabatan',
+            'Tanggal Mulai',
+            'Tanggal Selesai',
+            'Status Aktif',
         ];
     }
+
 
     public function styles(Worksheet $sheet)
     {

@@ -17,89 +17,78 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents, ShouldAutoSize
 {
-    protected $index = 1;
+ protected $index = 1;
 
     public function collection()
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
+        // Subquery: foto terakhir
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga pesantren terakhir per biodata
+        // Subquery: warga pesantren terakhir
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // 4) Query utama
-        return Karyawan::Active()
+        // Subquery: keluarga terakhir (KK)
+        $kkLast = DB::table('keluarga')
+            ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+            ->groupBy('id_biodata');
+
+        return DB::table('karyawan')
             ->join('pegawai', function ($join) {
                 $join->on('pegawai.id', '=', 'karyawan.pegawai_id')
                     ->where('pegawai.status_aktif', 'aktif')
                     ->whereNull('pegawai.deleted_at');
             })
             ->join('biodata as b', 'b.id', '=', 'pegawai.biodata_id')
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoinSub($kkLast, 'kk_sub', fn($j) => $j->on('kk_sub.id_biodata', '=', 'b.id'))
+            ->leftJoin('keluarga as kk', 'kk.id', '=', 'kk_sub.last_id')
             ->leftJoin('golongan_jabatan as g', function ($join) {
                 $join->on('karyawan.golongan_jabatan_id', '=', 'g.id')
                     ->where('g.status', true);
             })
-            ->leftJoin('keluarga as kk','kk.id_biodata','=','b.id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'karyawan.lembaga_id')
-            ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
-            ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
-            ->leftJoin('provinsi as prov', 'prov.id', 'b.provinsi_id')
-            ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-            ->whereNull('karyawan.deleted_at')
+            ->leftJoin('kecamatan as kec', 'kec.id', '=', 'b.kecamatan_id')
+            ->leftJoin('kabupaten as kab', 'kab.id', '=', 'b.kabupaten_id')
+            ->leftJoin('provinsi as prov', 'prov.id', '=', 'b.provinsi_id')
             ->select(
                 'b.nama as nama_lengkap',
                 DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
-                'kk.no_kk',
+                DB::raw("COALESCE(kk.no_kk, '-') AS no_kk"),
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
-                DB::raw("CONCAT_WS(', ', 
-                    b.jalan, 
-                    COALESCE(kec.nama_kecamatan, b.kecamatan_id), 
-                    COALESCE(kab.nama_kabupaten, b.kabupaten_id), 
-                    COALESCE(prov.nama_provinsi, b.provinsi_id)
-                ) as alamat"),
-                DB::raw("CONCAT(
-                    b.tempat_lahir, 
-                    ', ', 
-                    DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y')
-                ) as ttl"),
-                'karyawan.keterangan_jabatan as jabatan'
-            )
-            ->groupBy(
-                'b.nama',
-                'b.nik',
-                'b.no_passport',
-                'kk.no_kk',
-                'wp.niup',
-                'b.jenis_kelamin',
                 'b.jalan',
-                'kec.nama_kecamatan',
-                'b.kecamatan_id',
-                'kab.nama_kabupaten',
-                'b.kabupaten_id',
-                'prov.nama_provinsi',
-                'b.provinsi_id',
+                DB::raw("COALESCE(kec.nama_kecamatan, '-') AS kecamatan"),
+                DB::raw("COALESCE(kab.nama_kabupaten, '-') AS kabupaten"),
+                DB::raw("COALESCE(prov.nama_provinsi, '-') AS provinsi"),
                 'b.tempat_lahir',
-                'b.tanggal_lahir',
-                'l.nama_lembaga',
-                'karyawan.keterangan_jabatan',
-                'g.nama_golongan_jabatan'
+                DB::raw("DATE_FORMAT(b.tanggal_lahir, '%d-%m-%Y') as tanggal_lahir"),
+                DB::raw("COALESCE(b.jenjang_pendidikan_terakhir, '-') AS pendidikan_terakhir"),
+                DB::raw("COALESCE(b.email, '-') AS email"),
+                DB::raw("COALESCE(b.no_telepon, '-') AS no_telepon"),
+                DB::raw("COALESCE(l.nama_lembaga, '-') AS lembaga"),
+                DB::raw("COALESCE(g.nama_golongan_jabatan, '-') AS golongan_jabatan"),
+                DB::raw("COALESCE(karyawan.jabatan, '-') AS jabatan"),
+                DB::raw("COALESCE(karyawan.keterangan_jabatan, '-') AS keterangan_jabatan"),
+                DB::raw("DATE_FORMAT(karyawan.tanggal_mulai, '%d-%m-%Y') as tanggal_mulai"),
+                DB::raw("DATE_FORMAT(karyawan.tanggal_selesai, '%d-%m-%Y') as tanggal_selesai"),
+                DB::raw("CASE WHEN pegawai.status_aktif = 'aktif' THEN 'Aktif' ELSE 'Nonaktif' END AS status_aktif")
             )
+            ->whereNull('karyawan.deleted_at')
+            ->distinct() // Mencegah duplikat
             ->get();
     }
 
@@ -109,12 +98,25 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithS
             $this->index++,
             $row->nama_lengkap,
             $row->nik,
-            $row->no_kk ?? '-',
+            $row->no_kk,
             $row->niup,
             $row->jenis_kelamin,
-            $row->alamat,
-            $row->ttl,
-            $row->jabatan ?: '-',
+            $row->jalan,
+            $row->kecamatan,
+            $row->kabupaten,
+            $row->provinsi,
+            $row->tempat_lahir,
+            $row->tanggal_lahir,
+            $row->pendidikan_terakhir,
+            $row->email,
+            $row->no_telepon,
+            $row->lembaga,
+            $row->golongan_jabatan,
+            $row->jabatan,
+            $row->keterangan_jabatan,
+            $row->tanggal_mulai,
+            $row->tanggal_selesai,
+            $row->status_aktif,
         ];
     }
 
@@ -127,11 +129,25 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithS
             'No KK',
             'NIUP',
             'Jenis Kelamin',
-            'Alamat Lengkap',
-            'Tempat, Tanggal Lahir',
-            'jabatan',
+            'Jalan',
+            'Kecamatan',
+            'Kabupaten',
+            'Provinsi',
+            'Tempat Lahir',
+            'Tanggal Lahir',
+            'Pendidikan Terakhir',
+            'Email',
+            'No Telepon',
+            'Lembaga',
+            'Golongan Jabatan',
+            'Jabatan',
+            'Keterangan Jabatan',
+            'Tanggal Mulai',
+            'Tanggal Selesai',
+            'Status Aktif',
         ];
     }
+
 
     public function styles(Worksheet $sheet)
     {
