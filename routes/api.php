@@ -2,7 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\api\Auth\AuthController;
+use App\Http\Controllers\api\Auth\{
+    AuthController,
+    UserController
+};
 
 use App\Http\Controllers\Api\Administrasi\{
     CatatanAfektifController as AdministrasiCatatanAfektifController,
@@ -366,6 +369,8 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
 
 });
+
+Route::get('/user', [UserController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin');
 
 Route::prefix('data-pokok')->group(function () {
 
