@@ -24,6 +24,7 @@ class PengunjungMahromController extends Controller
         try {
             $query = $this->pengunjung->getAllPengunjung($request);
             $query = $this->filter->pengunjungFilters($query, $request);
+            $query->latest('pm.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

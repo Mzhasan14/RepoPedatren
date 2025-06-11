@@ -26,6 +26,7 @@ class PelanggaranController extends Controller
         try {
             $query = $this->pelanggaran->getAllPelanggaran($request);
             $query = $this->filter->pelanggaranFilters($query, $request);
+            $query->latest('pl.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

@@ -55,8 +55,7 @@ class KhadamService
                 'kh.created_at',
                 'kh.updated_at',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
-            )
-            ->latest();
+            );
     }
 
     public function formatData($results)

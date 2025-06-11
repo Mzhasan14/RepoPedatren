@@ -61,8 +61,7 @@ class NonDomisiliService
                   ) AS updated_at
               "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->latest();
+            ]);
     }
 
     public function formatData($results)

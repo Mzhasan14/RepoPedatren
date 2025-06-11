@@ -68,8 +68,7 @@ class PesertaDidikService
                     ) AS updated_at
                 "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->latest('b.created_at');
+            ]);
         return $query;
     }
 
@@ -620,9 +619,6 @@ class PesertaDidikService
                 case 'status':
                     $select[] = 's.status';
                     break;
-                    // Tambah case lain jika ada field baru
-                    // default:
-                    //     $select[] = 'b.' . $field;
             }
         }
 

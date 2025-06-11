@@ -28,6 +28,7 @@ class PerizinanController extends Controller
         try {
             $query = $this->perizinan->getAllPerizinan($request);
             $query = $this->filter->perizinanFilters($query, $request);
+            $query->latest('pr.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

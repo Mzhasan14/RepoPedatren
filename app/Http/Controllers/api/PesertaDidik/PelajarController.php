@@ -26,6 +26,7 @@ class PelajarController extends Controller
         try {
             $query = $this->pelajarService->getAllPelajar($request);
             $query = $this->filterController->pelajarFilters($query, $request);
+            $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

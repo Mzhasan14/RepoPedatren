@@ -31,6 +31,7 @@ class PesertaDidikController extends Controller
         try {
             $query = $this->pesertaDidik->getAllPesertaDidik($request);
             $query = $this->filter->pesertaDidikFilters($query, $request);
+            $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

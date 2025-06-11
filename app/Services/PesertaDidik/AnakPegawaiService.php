@@ -104,9 +104,7 @@ class AnakPegawaiService
                 's.created_at',
                 DB::raw("GREATEST(s.updated_at, COALESCE(pd.updated_at, s.updated_at), COALESCE(ds.updated_at, s.updated_at))"),
                 DB::raw("COALESCE(br.file_path, 'default.jpg')"),
-            ])
-            ->distinct()
-            ->latest();
+            ]);
     }
 
     public function formatData($results)

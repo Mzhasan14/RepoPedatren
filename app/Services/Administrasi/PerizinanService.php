@@ -98,8 +98,7 @@ class PerizinanService
                 'pr.created_at',
                 'pr.updated_at',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->latest();
+            ]);
     }
 
     public function formatData($results)

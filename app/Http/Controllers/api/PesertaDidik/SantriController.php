@@ -32,6 +32,7 @@ class SantriController extends Controller
         try {
             $query = $this->santriService->getAllSantri($request);
             $query = $this->filterController->santriFilters($query, $request);
+            $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

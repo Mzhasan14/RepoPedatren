@@ -41,8 +41,7 @@ class PengunjungMahromService
                 'j.nama_jurusan',
                 'pm.jumlah_rombongan',
                 'pm.tanggal_kunjungan'
-            )
-            ->orderBy('pm.created_at', 'desc');
+            );
     }
 
     public function formatData($results)

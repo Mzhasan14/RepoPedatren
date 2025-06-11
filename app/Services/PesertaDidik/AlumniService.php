@@ -75,8 +75,7 @@ class AlumniService
                 ) AS updated_at
             "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ])
-            ->orderBy('b.created_at', 'desc');
+            ]);
     }
 
     public function formatData($results)

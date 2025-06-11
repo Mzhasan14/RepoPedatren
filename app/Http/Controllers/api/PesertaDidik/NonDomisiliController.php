@@ -25,6 +25,7 @@ class NonDomisiliController extends Controller
         try {
             $query = $this->nonDomisili->getAllNonDomisili($request);
             $query = $this->filter->nonDomisiliFilters($query, $request);
+            $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
