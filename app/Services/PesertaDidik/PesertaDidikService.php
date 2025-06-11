@@ -69,7 +69,7 @@ class PesertaDidikService
                 "),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            ->latest();
+            ->latest('b.created_at');
         return $query;
     }
 
@@ -490,77 +490,302 @@ class PesertaDidikService
         });
     }
 
-    // public function destroy(string $bioId)
-    // {
-    //     return DB::transaction(function () use ($bioId) {
-    //         $userId = Auth::id();
+    // Query khusus export (mirip, tapi bisa beda dari list)
+    public function getExportPesertaDidikQuery($fields, $request)
+    {
+        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
+        $wpLast = DB::table('warga_pesantren')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('status', true)
+            ->groupBy('biodata_id');
 
-    //         $bio = Biodata::with([
-    //             'santriAktif',
-    //             'riwayatPendidikan',
-    //             'santriAktif.riwayatDomisili',
-    //             'santriAktif.waliAsuh',
-    //             'santriAktif.anakAsuh',
-    //         ])->findOrFail($bioId);
+        $query = DB::table('biodata as b')
+            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftjoin('angkatan as as', 's.angkatan_id', '=', 'as.id')
+            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftjoin('angkatan as ap', 'pd.angkatan_id', '=', 'ap.id')
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan AS j', 'pd.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas AS kls', 'pd.kelas_id', '=', 'kls.id')
+            ->leftJoin('rombel AS r', 'pd.rombel_id', '=', 'r.id')
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftjoin('keluarga as k', 'k.id_biodata', 'b.id')
+            ->where(fn($q) => $q->where('s.status', 'aktif')
+                ->orWhere('pd.status', '=', 'aktif'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
+                ->whereNull('s.deleted_at'));
 
-    //         // Pastikan santriAktif tidak null
-    //         $santriAktif = $bio->santriAktif;
+        // Kolom default dan optional (hanya addSelect jika dipakai)
+        $select = [];
 
-    //         // Gunakan collect() untuk memastikan array/collection
-    //         $aktifPendidikan = collect($bio->riwayatPendidikan)->where('status', 'aktif')->count();
-    //         $aktifDomisili   = collect(optional($santriAktif)->riwayatDomisili)->where('status', 'aktif')->count();
-    //         $aktifWaliAsuh   = collect(optional($santriAktif)->waliAsuh)->where('status', true)->count();
-    //         $aktifAnakAsuh   = collect(optional($santriAktif)->anakAsuh)->where('status', true)->count();
+        // JOIN alamat jika request field 'alamat'
+        if (in_array('alamat', $fields)) {
+            $query->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id');
+            $query->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id');
+            $query->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id');
+            $query->leftJoin('negara as ng', 'b.negara_id', '=', 'ng.id');
+            $select[] = 'b.jalan';
+            $select[] = 'kc.nama_kecamatan';
+            $select[] = 'kb.nama_kabupaten';
+            $select[] = 'pv.nama_provinsi';
+            $select[] = 'ng.nama_negara';
+        }
 
-    //         if ($aktifPendidikan || $aktifDomisili || $aktifWaliAsuh || $aktifAnakAsuh) {
-    //             throw ValidationException::withMessages([
-    //                 'general' => 'Penghapusan dibatalkan. Masih ada data relasi aktif.',
-    //                 'riwayat_pendidikan_aktif' => $aktifPendidikan ? 'Riwayat pendidikan aktif: ' . $aktifPendidikan : null,
-    //                 'riwayat_domisili_aktif'   => $aktifDomisili ? 'Riwayat domisili aktif: ' . $aktifDomisili : null,
-    //                 'wali_asuh_aktif'          => $aktifWaliAsuh ? 'Wali asuh aktif: ' . $aktifWaliAsuh : null,
-    //                 'anak_asuh_aktif'          => $aktifAnakAsuh ? 'Anak asuh aktif: ' . $aktifAnakAsuh : null,
-    //             ]);
-    //         }
+        // JOIN domisili santri jika request field 'domisili_santri'
+        if (in_array('domisili_santri', $fields)) {
+            $query->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
+            $query->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id');
+            $query->leftJoin('blok as bl', 'ds.blok_id', '=', 'bl.id');
+            $query->leftJoin('kamar as km', 'ds.kamar_id', '=', 'km.id');
+            $select[] = 'w.nama_wilayah as dom_wilayah';
+            $select[] = 'bl.nama_blok as dom_blok';
+            $select[] = 'km.nama_kamar as dom_kamar';
+        }
 
-    //         // Soft delete Biodata
-    //         $bio->deleted_by = $userId;
-    //         $bio->save();
-    //         $bio->delete();
+        // Join ibu kandung dengan subquery agar tidak duplicate
+        if (in_array('ibu_kandung', $fields)) {
+            $subIbu = DB::table('keluarga as k1')
+                ->select('k1.no_kk', 'otw.id_biodata as id_biodata_ibu')
+                ->join('orang_tua_wali as otw', 'otw.id_biodata', '=', 'k1.id_biodata')
+                ->join('hubungan_keluarga as hk', function ($join) {
+                    $join->on('otw.id_hubungan_keluarga', '=', 'hk.id')
+                        ->where('hk.nama_status', '=', 'ibu kandung');
+                });
+            $query->leftJoinSub($subIbu, 'ibu', function ($join) {
+                $join->on('k.no_kk', '=', 'ibu.no_kk');
+            });
+            $query->leftJoin('biodata as b_ibu', 'ibu.id_biodata_ibu', '=', 'b_ibu.id');
+            $select[] = 'b_ibu.nama as nama_ibu';
+        }
 
-    //         // Soft delete Santri jika ada
-    //         if ($santriAktif) {
-    //             $santriAktif->deleted_by = $userId;
-    //             $santriAktif->save();
-    //             $santriAktif->delete();
-    //         }
+        foreach ($fields as $field) {
+            switch ($field) {
+                case 'nama':
+                    $select[] = 'b.nama';
+                    break;
+                case 'tempat_lahir':
+                    $select[] = 'b.tempat_lahir';
+                    break;
+                case 'tanggal_lahir':
+                    $select[] = 'b.tanggal_lahir';
+                    break;
+                case 'jenis_kelamin':
+                    $select[] = 'b.jenis_kelamin';
+                    break;
+                case 'nis':
+                    $select[] = 's.nis';
+                    break;
+                case 'no_induk':
+                    $select[] = 'pd.no_induk';
+                    break;
+                case 'lembaga':
+                    $select[] = 'l.nama_lembaga as lembaga';
+                    break;
+                case 'jurusan':
+                    $select[] = 'j.nama_jurusan as jurusan';
+                    break;
+                case 'kelas':
+                    $select[] = 'kls.nama_kelas as kelas';
+                    break;
+                case 'rombel':
+                    $select[] = 'r.nama_rombel as rombel';
+                    break;
+                case 'no_kk':
+                    $select[] = 'k.no_kk';
+                    break;
+                case 'nik':
+                    // NIK atau No Passport
+                    $select[] = DB::raw('COALESCE(b.nik, b.no_passport) as nik');
+                    break;
+                case 'niup':
+                    $select[] = 'wp.niup';
+                    break;
+                case 'anak_ke':
+                    $select[] = 'b.anak_ke';
+                    break;
+                case 'jumlah_saudara':
+                    $select[] = 'b.jumlah_saudara';
+                    break;
+                case 'domisili_santri':
+                    $query->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id');
+                    $select[] = 'ds.nama_domisili as domisili_santri';
+                    break;
+                case 'angkatan_santri':
+                    $select[] = 'as.angkatan as angkatan_santri';
+                    break;
+                case 'angkatan_pelajar':
+                    $select[] = 'ap.angkatan as angkatan_pelajar';
+                    break;
+                case 'status':
+                    $select[] = 's.status';
+                    break;
+                    // Tambah case lain jika ada field baru
+                    // default:
+                    //     $select[] = 'b.' . $field;
+            }
+        }
 
-    //         return $bio;
-    //     });
-    // }
+        $query->select($select);
 
 
+        return $query->latest('b.created_at');
+    }
 
+    // Format export data
+    public function formatDataExport($results, $fields, $addNumber = false)
+    {
+        return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
+            $data = [];
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
+            foreach ($fields as $field) {
+                switch ($field) {
+                    case 'nama':
+                        $data['Nama'] = isset($item->nama) && $item->nama !== null ? $item->nama : '';
+                        break;
+                    case 'tempat_lahir':
+                        $data['Tempat Lahir'] = isset($item->tempat_lahir) && $item->tempat_lahir !== null ? $item->tempat_lahir : '';
+                        break;
+                    case 'tanggal_lahir':
+                        $data['Tanggal Lahir'] = isset($item->tanggal_lahir) && $item->tanggal_lahir !== null ? \Carbon\Carbon::parse($item->tanggal_lahir)->translatedFormat('d F Y')
+                            : '';
+                        break;
+                    case 'jenis_kelamin':
+                        if (isset($item->jenis_kelamin)) {
+                            if (strtolower($item->jenis_kelamin) === 'l') {
+                                $data['Jenis Kelamin'] = 'Laki-laki';
+                            } elseif (strtolower($item->jenis_kelamin) === 'p') {
+                                $data['Jenis Kelamin'] = 'Perempuan';
+                            } else {
+                                $data['Jenis Kelamin'] = '';
+                            }
+                        } else {
+                            $data['Jenis Kelamin'] = '';
+                        }
+                        break;
+                    case 'nis':
+                        $data['NIS'] = isset($item->nis) && $item->nis !== null && $item->nis !== ''
+                            ? ' ' . $item->nis
+                            : '';
+                        break;
+                    case 'no_induk':
+                        $data['No. Induk'] = isset($item->no_induk) && $item->no_induk !== null && $item->no_induk !== ''
+                            ? ' ' . $item->no_induk
+                            : '';
+                        break;
+                    case 'lembaga':
+                        $data['Lembaga'] = isset($item->lembaga) && $item->lembaga !== null ? $item->lembaga : '';
+                        break;
+                    case 'jurusan':
+                        $data['Jurusan'] = isset($item->jurusan) && $item->jurusan !== null ? $item->jurusan : '';
+                        break;
+                    case 'kelas':
+                        $data['Kelas'] = isset($item->kelas) && $item->kelas !== null ? $item->kelas : '';
+                        break;
+                    case 'rombel':
+                        $data['Rombel'] = isset($item->rombel) && $item->rombel !== null ? $item->rombel : '';
+                        break;
+                    case 'no_kk':
+                        $data['No. KK'] = isset($item->no_kk) && $item->no_kk !== null && $item->no_kk !== ''
+                            ? ' ' . $item->no_kk
+                            : '';
+                        break;
+                    case 'nik':
+                        // Ingat: dari query sudah COALESCE nik/no_passport
+                        $data['NIK'] = isset($item->nik) && $item->nik !== null && $item->nik !== ''
+                            ? ' ' . $item->nik
+                            : '';
+                        break;
+                    case 'no_passport':
+                        $data['No Passport'] = isset($item->no_passport) && $item->no_passport !== null && $item->no_passport !== ''
+                            ? ' ' . $item->no_passport
+                            : '';
+                        break;
+                    case 'niup':
+                        $data['NIUP'] = isset($item->niup) && $item->niup !== null && $item->niup !== ''
+                            ? ' ' . $item->niup
+                            : '';
+                        break;
+                    case 'anak_ke':
+                        $data['Anak ke'] = isset($item->anak_ke) && $item->anak_ke !== null ? $item->anak_ke : '';
+                        break;
+                    case 'jumlah_saudara':
+                        $data['Jumlah Saudara'] = isset($item->jumlah_saudara) && $item->jumlah_saudara !== null ? $item->jumlah_saudara : '';
+                        break;
+                    case 'alamat':
+                        $data['Jalan']     = isset($item->jalan) && $item->jalan !== null ? $item->jalan : '';
+                        $data['Kecamatan'] = isset($item->nama_kecamatan) && $item->nama_kecamatan !== null ? $item->nama_kecamatan : '';
+                        $data['Kabupaten'] = isset($item->nama_kabupaten) && $item->nama_kabupaten !== null ? $item->nama_kabupaten : '';
+                        $data['Provinsi']  = isset($item->nama_provinsi) && $item->nama_provinsi !== null ? $item->nama_provinsi : '';
+                        $data['Negara']    = isset($item->nama_negara) && $item->nama_negara !== null ? $item->nama_negara : '';
+                        break;
+                    case 'domisili_santri':
+                        $data['Wilayah Domisili'] = isset($item->dom_wilayah) && $item->dom_wilayah !== null ? $item->dom_wilayah : '';
+                        $data['Blok Domisili']    = isset($item->dom_blok) && $item->dom_blok !== null ? $item->dom_blok : '';
+                        $data['Kamar Domisili']   = isset($item->dom_kamar) && $item->dom_kamar !== null ? $item->dom_kamar : '';
+                        break;
+                    case 'angkatan_santri':
+                        $data['Angkatan Santri'] = isset($item->angkatan_santri) && $item->angkatan_santri !== null ? $item->angkatan_santri : '';
+                        break;
+                    case 'angkatan_pelajar':
+                        $data['Angkatan Pelajar'] = isset($item->angkatan_pelajar) && $item->angkatan_pelajar !== null ? $item->angkatan_pelajar : '';
+                        break;
+                    case 'status':
+                        $data['Status'] = isset($item->status) && $item->status !== null ? $item->status : '';
+                        break;
+                    case 'ibu_kandung':
+                        $data['Ibu Kandung'] = isset($item->nama_ibu) && $item->nama_ibu !== null ? $item->nama_ibu : '';
+                        break;
+                    default:
+                        $data[$field] = isset($item->{$field}) && $item->{$field} !== null ? $item->{$field} : '';
+                }
+            }
+            return $data;
+        })->values();
+    }
 
-
-    // public function destroy(string $santriId)
-    // {
-    //     return DB::transaction(function () use ($santriId) {
-    //         $userId = Auth::id();
-
-    //         $santri  = Santri::with('biodata')->findOrFail($santriId);
-    //         $biodata = $santri->biodata;
-
-    //         if ($biodata) {
-    //             $biodata->deleted_by = $userId;
-    //             $biodata->save();
-    //             $biodata->delete();
-    //         }
-
-    //         $santri->deleted_by = $userId;
-    //         $santri->save();
-    //         $santri->delete();
-
-    //         return $santri;
-    //     });
-    // }
+    public function getFieldExportHeadings($fields, $addNumber = false)
+    {
+        $map = [
+            'nama' => 'Nama',
+            'tempat_lahir' => 'Tempat Lahir',
+            'tanggal_lahir' => 'Tanggal Lahir',
+            'jenis_kelamin' => 'Jenis Kelamin',
+            'nis' => 'NIS',
+            'no_induk' => 'No. Induk',
+            'lembaga' => 'Lembaga',
+            'jurusan' => 'Jurusan',
+            'kelas' => 'Kelas',
+            'rombel' => 'Rombel',
+            'no_kk' => 'No. KK',
+            'nik' => 'NIK',
+            'niup' => 'NIUP',
+            'anak_ke' => 'Anak ke',
+            'jumlah_saudara' => 'Jumlah Saudara',
+            'alamat'   => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'domisili_santri' => ['Wilayah Domisili', 'Blok Domisili', 'Kamar Domisili'],
+            'angkatan_santri' => 'Angkatan Santri',
+            'angkatan_pelajar' => 'Angkatan Pelajar',
+            'status' => 'Status',
+            'ibu_kandung' => 'Ibu Kandung',
+        ];
+        $headings = [];
+        foreach ($fields as $field) {
+            if (isset($map[$field])) {
+                if (is_array($map[$field])) {
+                    foreach ($map[$field] as $h) $headings[] = $h;
+                } else {
+                    $headings[] = $map[$field];
+                }
+            } else {
+                $headings[] = $field;
+            }
+        }
+        if ($addNumber) {
+            array_unshift($headings, 'No');
+        }
+        return $headings;
+    }
 }

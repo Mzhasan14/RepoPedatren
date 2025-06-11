@@ -247,7 +247,7 @@ Route::prefix('biometric')->group(function () {
 
 // Export
 Route::prefix('export')->group(function () {
-    Route::get('/pesertadidik', [PesertaDidikController::class, 'pesertaDidikExport'])->name('pesertadidik.export');
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/alumni', [AlumniController::class, 'alumniExport'])->name('alumni.export');
     Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
 
