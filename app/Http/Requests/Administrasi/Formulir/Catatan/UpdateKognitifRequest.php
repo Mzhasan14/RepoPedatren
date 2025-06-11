@@ -24,6 +24,7 @@ class UpdateKognitifRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id_wali_asuh'                     => 'required|exists:users,id',
             'kebahasaan_nilai'                 => 'required|string|max:255',
             'kebahasaan_tindak_lanjut'         => 'nullable|string|max:1000',
             'baca_kitab_kuning_nilai'          => 'required|string|max:255',

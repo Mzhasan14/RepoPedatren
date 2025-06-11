@@ -24,6 +24,7 @@ class UpdateAfektifRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id_wali_asuh'  => 'required|exists:users,id',
             'kepedulian_nilai' => 'nullable|string|max:255',
             'kepedulian_tindak_lanjut' => 'nullable|string|max:255',
             'kebersihan_nilai' => 'nullable|string|max:255',

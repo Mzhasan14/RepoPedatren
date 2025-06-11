@@ -64,6 +64,7 @@ class CatatanKognitifService
     {
         $kognitif = Catatan_kognitif::select(
                 'id',
+                'id_wali_asuh',
                 'kebahasaan_nilai',
                 'kebahasaan_tindak_lanjut',
                 'baca_kitab_kuning_nilai',
@@ -107,6 +108,7 @@ class CatatanKognitifService
 
             // 3. Update data
             $kognitif->update([
+                'id_wali_asuh' => $input['id_wali_asuh'] ?? null,
                 'kebahasaan_nilai'                => $input['kebahasaan_nilai'],
                 'kebahasaan_tindak_lanjut'       => $input['kebahasaan_tindak_lanjut'],
                 'baca_kitab_kuning_nilai'        => $input['baca_kitab_kuning_nilai'],

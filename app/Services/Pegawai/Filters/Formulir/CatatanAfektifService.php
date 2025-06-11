@@ -58,6 +58,7 @@ class CatatanAfektifService
         {
             $afektif = Catatan_afektif::select(
                     'id',
+                    'id_wali_asuh',
                     'kepedulian_nilai',
                     'kepedulian_tindak_lanjut',
                     'kebersihan_nilai',
@@ -94,6 +95,7 @@ class CatatanAfektifService
 
                 // 3. Update data
                 $afektif->update([
+                    'id_wali_asuh' => $input['id_wali_asuh'] ?? null,
                     'kepedulian_nilai'         => $input['kepedulian_nilai'],
                     'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'],
                     'kebersihan_nilai'         => $input['kebersihan_nilai'],

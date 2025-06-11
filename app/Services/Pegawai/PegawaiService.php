@@ -273,18 +273,22 @@ if ($pegawaiNonaktif) {
 
             // Simpan keluarga jika ada
             if (!empty($input['no_kk'])) {
-                Keluarga::updateOrCreate(
-                    ['id_biodata' => $biodata->id],
-                    ['no_kk' => $input['no_kk'], 'status' => 1, 'created_by' => Auth::id()]
-                );
+                Keluarga::create([
+                    'id_biodata' => $biodata->id,
+                    'no_kk' => $input['no_kk'],
+                    'status' => 1,
+                    'created_by' => Auth::id()
+                ]);
             }
 
             // Simpan warga pesantren jika ada
             if (!empty($input['niup'])) {
-                WargaPesantren::updateOrCreate(
-                    ['biodata_id' => $biodata->id],
-                    ['niup' => $input['niup'], 'status' => 1, 'created_by' => Auth::id()]
-                );
+                WargaPesantren::create([
+                    'biodata_id' => $biodata->id,
+                    'niup' => $input['niup'],
+                    'status' => 1,
+                    'created_by' => Auth::id()
+                ]);
             }
 
             // Simpan berkas
