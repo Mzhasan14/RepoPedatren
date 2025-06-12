@@ -117,20 +117,20 @@ class FilterKhadamService
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
 
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         if ($request->filled('wilayah')) {
-            $query->join('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-                ->join('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
+            $query->join('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+                ->join('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
                 ->where('w.nama_wilayah', $request->wilayah);
 
             if ($request->filled('blok')) {
-                $query->join('blok AS bl', 'rd.blok_id', '=', 'bl.id')
+                $query->join('blok AS bl', 'ds.blok_id', '=', 'bl.id')
                     ->where('bl.nama_blok', $request->blok);
 
                 if ($request->filled('kamar')) {
-                    $query->join('kamar AS km', 'rd.kamar_id', '=', 'km.id')
+                    $query->join('kamar AS km', 'ds.kamar_id', '=', 'km.id')
                         ->where('km.nama_kamar', $request->kamar);
                 }
             }
@@ -148,20 +148,20 @@ class FilterKhadamService
         }
 
         if ($request->filled('lembaga')) {
-            $query->join('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
-                ->join('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
+            $query->join('pendidikan AS pd', fn($j) => $j->on('s.id', '=', 'pd.santri_id')->where('pd.status', 'aktif'))
+                ->join('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
                 ->where('l.nama_lembaga', $request->lembaga);
 
             if ($request->filled('jurusan')) {
-                $query->join('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
+                $query->join('jurusan AS j', 'pd.jurusan_id', '=', 'j.id')
                     ->where('j.nama_jurusan', $request->jurusan);
 
                 if ($request->filled('kelas')) {
-                    $query->join('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
+                    $query->join('kelas AS kls', 'pd.kelas_id', '=', 'kls.id')
                         ->where('kls.nama_kelas', $request->kelas);
 
                     if ($request->filled('rombel')) {
-                        $query->join('rombel AS r', 'rp.rombel_id', '=', 'r.id')
+                        $query->join('rombel AS r', 'pd.rombel_id', '=', 'r.id')
                             ->where('r.nama_rombel', $request->rombel);
                     }
                 }

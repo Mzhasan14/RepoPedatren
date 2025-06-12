@@ -148,7 +148,7 @@ class FilterNonDomisiliService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -173,15 +173,15 @@ class FilterNonDomisiliService
         $query->where('l.nama_lembaga', $request->lembaga);
 
         if ($request->filled('jurusan')) {
-            $query->join('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
+            $query->join('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
                 ->where('j.nama_jurusan', $request->jurusan);
 
             if ($request->filled('kelas')) {
-                $query->join('kelas as kls', 'rp.kelas_id', '=', 'kls.id')
+                $query->join('kelas as kls', 'pd.kelas_id', '=', 'kls.id')
                     ->where('kls.nama_kelas', $request->kelas);
 
                 if ($request->filled('rombel')) {
-                    $query->join('rombel as r', 'rp.rombel_id', '=', 'r.id')
+                    $query->join('rombel as r', 'pd.rombel_id', '=', 'r.id')
                         ->where('r.nama_rombel', $request->rombel);
                 }
             }

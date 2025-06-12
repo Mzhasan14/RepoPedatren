@@ -26,6 +26,7 @@ class PesertaDidikController extends Controller
         $this->filter = $filter;
     }
 
+    // Untuk LIST
     public function getAllPesertaDidik(Request $request): JsonResponse
     {
         try {
@@ -64,6 +65,7 @@ class PesertaDidikController extends Controller
         ]);
     }
 
+
     public function store(CreatePesertaDidikRequest $request)
     {
         try {
@@ -82,9 +84,9 @@ class PesertaDidikController extends Controller
         }
     }
 
+    // Untuk EXPORT
     public function exportExcel(Request $request)
     {
-        // Daftar kolom default untuk export (export utama, bukan tampilan list)
         $defaultExportFields = [
             'nama',
             'tempat_lahir',
@@ -101,7 +103,7 @@ class PesertaDidikController extends Controller
         ];
 
         $columnOrder = [
-            'no_kk',           // di depan
+            'no_kk',
             'nik',
             'niup',
             'nama',
@@ -110,6 +112,7 @@ class PesertaDidikController extends Controller
             'jenis_kelamin',
             'anak_ke',
             'jumlah_saudara',
+            'alamat',
             'nis',
             'domisili_santri',
             'angkatan_santri',
@@ -123,25 +126,23 @@ class PesertaDidikController extends Controller
             'ibu_kandung'
         ];
 
-        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
         $optionalFields = $request->input('fields', []);
 
-        // Gabung kolom default export + kolom optional (hindari duplikat)
+        // Gabung default + optional, urutkan sesuai $columnOrder, tidak ada duplikat
         $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
         $fields = array_values(array_intersect($columnOrder, $fields));
 
-        // Gunakan query khusus untuk export (boleh mirip dengan list)
+        // Ambil query export (sudah pakai base query utama!)
         $query = $this->pesertaDidik->getExportPesertaDidikQuery($fields, $request);
         $query = $this->filter->pesertaDidikFilters($query, $request);
         $query = $query->latest('b.id');
 
-        // Jika user centang "all", ambil semua, else gunakan limit/pagination
+        // Jika export all, ambil semua data, else limit
         $results = $request->input('all') === 'true'
             ? $query->get()
             : $query->limit((int) $request->input('limit', 100))->get();
 
-        // Format data sesuai urutan dan field export
-        $addNumber = true; // Supaya kolom No selalu muncul
+        $addNumber = true;
         $formatted = $this->pesertaDidik->formatDataExport($results, $fields, $addNumber);
         $headings  = $this->pesertaDidik->getFieldExportHeadings($fields, $addNumber);
 

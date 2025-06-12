@@ -8,64 +8,73 @@ use Illuminate\Support\Facades\DB;
 
 class SantriService
 {
-    public function getAllSantri(Request $request)
+    // base santri
+    public function baseSantriQuery(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        // Subquery
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('santri AS s')
+        $query = DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
-            ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
-            ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
+            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
             ->where('s.status', 'aktif')
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
-                ->whereNull('s.deleted_at'))
-            ->select([
-                'b.id as biodata_id',
-                's.id',
-                's.nis',
-                'b.nama',
-                'wp.niup',
-                'km.nama_kamar',
-                'bl.nama_blok',
-                'l.nama_lembaga',
-                'w.nama_wilayah',
-                DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
-                'kb.nama_kabupaten AS kota_asal',
-                's.created_at',
-                // ambil updated_at terbaru antar s, pd, ds
-                DB::raw("
-                   GREATEST(
-                       s.updated_at,
-                       COALESCE(pd.updated_at, s.updated_at),
-                       COALESCE(ds.updated_at, s.updated_at)
-                   ) AS updated_at
-               "),
-                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ]);
+            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
+
+        return $query;
+    }
+
+    public function getAllSantri(Request $request, $fields = null)
+    {
+        $query = $this->baseSantriQuery($request);
+
+        // Default SELECT untuk list
+        $fields = $fields ?? [
+            'b.id as biodata_id',
+            's.id',
+            's.nis',
+            'b.nama',
+            'wp.niup',
+            'km.nama_kamar',
+            'bl.nama_blok',
+            'l.nama_lembaga',
+            'w.nama_wilayah',
+            DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
+            'kb.nama_kabupaten AS kota_asal',
+            's.created_at',
+            DB::raw("GREATEST(
+            s.updated_at,
+            COALESCE(pd.updated_at, s.updated_at),
+            COALESCE(ds.updated_at, s.updated_at)
+        ) AS updated_at"),
+            DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
+        ];
+
+        // JOIN domisili & blok & kamar & lembaga untuk kebutuhan list
+        $query->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id');
+
+        return $query->select($fields);
     }
 
     public function formatData($results)
@@ -90,86 +99,61 @@ class SantriService
 
     public function getExportSantriQuery($fields, $request)
     {
-        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
-        $wpLast = DB::table('warga_pesantren')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('status', true)
-            ->groupBy('biodata_id');
+        $query = $this->baseSantriQuery($request);
 
-        $query = DB::table('santri as s')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('angkatan as as', 's.angkatan_id', '=', 'as.id')
-            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
-            ->leftjoin('angkatan as ap', 'pd.angkatan_id', '=', 'ap.id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftjoin('keluarga as k', 'k.id_biodata', 'b.id')
-            ->where('s.status', 'aktif')
-            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
-
-        // Untuk multi-field (alamat, domisili_santri, pendidikan), lakukan join di awal, 
-        // lalu tambahkan field pada saat loop, supaya urutan terjaga.
-
-        // JOIN alamat jika field ada
+        // JOIN dinamis, alias semua pakai "2"
         if (in_array('alamat', $fields)) {
-            $query->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id');
-            $query->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id');
-            $query->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id');
-            $query->leftJoin('negara as ng', 'b.negara_id', '=', 'ng.id');
+            $query->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
+            $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');
+            $query->leftJoin('provinsi as pv2', 'b.provinsi_id', '=', 'pv2.id');
+            $query->leftJoin('negara as ng2', 'b.negara_id', '=', 'ng2.id');
         }
-
-        // JOIN domisili santri jika field ada
         if (in_array('domisili_santri', $fields)) {
-            $query->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
-            $query->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id');
-            $query->leftJoin('blok as bl', 'ds.blok_id', '=', 'bl.id');
-            $query->leftJoin('kamar as km', 'ds.kamar_id', '=', 'km.id');
+            $query->leftJoin('domisili_santri AS ds2', fn($join) => $join->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'));
+            $query->leftJoin('wilayah as w2', 'ds2.wilayah_id', '=', 'w2.id');
+            $query->leftJoin('blok as bl2', 'ds2.blok_id', '=', 'bl2.id');
+            $query->leftJoin('kamar as km2', 'ds2.kamar_id', '=', 'km2.id');
         }
-
-        // JOIN pendidikan jika field ada
+        if (in_array('angkatan_santri', $fields)) {
+            $query->leftJoin('angkatan as as2', 's.angkatan_id', '=', 'as2.id');
+        }
+        if (in_array('angkatan_pelajar', $fields)) {
+            $query->leftJoin('angkatan as ap2', 'pd.angkatan_id', '=', 'ap2.id');
+        }
         if (in_array('pendidikan', $fields)) {
-            $query->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id');
-            $query->leftJoin('jurusan AS j', 'pd.jurusan_id', '=', 'j.id');
-            $query->leftJoin('kelas AS kls', 'pd.kelas_id', '=', 'kls.id');
-            $query->leftJoin('rombel AS r', 'pd.rombel_id', '=', 'r.id');
+            $query->leftJoin('lembaga AS l2', 'pd.lembaga_id', '=', 'l2.id');
+            $query->leftJoin('jurusan AS j2', 'pd.jurusan_id', '=', 'j2.id');
+            $query->leftJoin('kelas AS kls2', 'pd.kelas_id', '=', 'kls2.id');
+            $query->leftJoin('rombel AS r2', 'pd.rombel_id', '=', 'r2.id');
         }
-
-        // Join ibu kandung jika field ada
         if (in_array('ibu_kandung', $fields)) {
             $subIbu = DB::table('keluarga as k1')
-                ->select('k1.no_kk', 'otw.id_biodata as id_biodata_ibu')
-                ->join('orang_tua_wali as otw', 'otw.id_biodata', '=', 'k1.id_biodata')
-                ->join('hubungan_keluarga as hk', function ($join) {
-                    $join->on('otw.id_hubungan_keluarga', '=', 'hk.id')
-                        ->where('hk.nama_status', '=', 'ibu kandung');
+                ->select('k1.no_kk', 'otw2.id_biodata as id_biodata_ibu')
+                ->join('orang_tua_wali as otw2', 'otw2.id_biodata', '=', 'k1.id_biodata')
+                ->join('hubungan_keluarga as hk2', function ($join) {
+                    $join->on('otw2.id_hubungan_keluarga', '=', 'hk2.id')
+                        ->where('hk2.nama_status', '=', 'ibu kandung');
                 });
-            $query->leftJoinSub($subIbu, 'ibu', function ($join) {
-                $join->on('k.no_kk', '=', 'ibu.no_kk');
+            $query->leftJoinSub($subIbu, 'ibu2', function ($join) {
+                $join->on('k.no_kk', '=', 'ibu2.no_kk');
             });
-            $query->leftJoin('biodata as b_ibu', 'ibu.id_biodata_ibu', '=', 'b_ibu.id');
+            $query->leftJoin('biodata as b_ibu2', 'ibu2.id_biodata_ibu', '=', 'b_ibu2.id');
         }
-
-        // Join ayah kandung jika field ada
         if (in_array('ayah_kandung', $fields)) {
             $subAyah = DB::table('keluarga as k1')
-                ->select('k1.no_kk', 'otw.id_biodata as id_biodata_ayah')
-                ->join('orang_tua_wali as otw', 'otw.id_biodata', '=', 'k1.id_biodata')
-                ->join('hubungan_keluarga as hk', function ($join) {
-                    $join->on('otw.id_hubungan_keluarga', '=', 'hk.id')
-                        ->where('hk.nama_status', '=', 'ayah kandung');
+                ->select('k1.no_kk', 'otw2.id_biodata as id_biodata_ayah')
+                ->join('orang_tua_wali as otw2', 'otw2.id_biodata', '=', 'k1.id_biodata')
+                ->join('hubungan_keluarga as hk2', function ($join) {
+                    $join->on('otw2.id_hubungan_keluarga', '=', 'hk2.id')
+                        ->where('hk2.nama_status', '=', 'ayah kandung');
                 });
-            $query->leftJoinSub($subAyah, 'ayah', function ($join) {
-                $join->on('k.no_kk', '=', 'ayah.no_kk');
+            $query->leftJoinSub($subAyah, 'ayah2', function ($join) {
+                $join->on('k.no_kk', '=', 'ayah2.no_kk');
             });
-            $query->leftJoin('biodata as b_ayah', 'ayah.id_biodata_ayah', '=', 'b_ayah.id');
+            $query->leftJoin('biodata as b_ayah2', 'ayah2.id_biodata_ayah', '=', 'b_ayah2.id');
         }
 
-        // -------------------------------
-        // Fix utama: $select[] hanya diisi dari $fields
-        // -------------------------------
-
         $select = [];
-
         foreach ($fields as $field) {
             switch ($field) {
                 case 'nama':
@@ -202,37 +186,37 @@ class SantriService
                     break;
                 case 'alamat':
                     $select[] = 'b.jalan';
-                    $select[] = 'kc.nama_kecamatan';
-                    $select[] = 'kb.nama_kabupaten';
-                    $select[] = 'pv.nama_provinsi';
-                    $select[] = 'ng.nama_negara';
+                    $select[] = 'kc2.nama_kecamatan';
+                    $select[] = 'kb2.nama_kabupaten';
+                    $select[] = 'pv2.nama_provinsi';
+                    $select[] = 'ng2.nama_negara';
                     break;
                 case 'domisili_santri':
-                    $select[] = 'w.nama_wilayah as dom_wilayah';
-                    $select[] = 'bl.nama_blok as dom_blok';
-                    $select[] = 'km.nama_kamar as dom_kamar';
+                    $select[] = 'w2.nama_wilayah as dom_wilayah';
+                    $select[] = 'bl2.nama_blok as dom_blok';
+                    $select[] = 'km2.nama_kamar as dom_kamar';
                     break;
                 case 'angkatan_santri':
-                    $select[] = 'as.angkatan as angkatan_santri';
+                    $select[] = 'as2.angkatan as angkatan_santri';
                     break;
                 case 'angkatan_pelajar':
-                    $select[] = 'ap.angkatan as angkatan_pelajar';
+                    $select[] = 'ap2.angkatan as angkatan_pelajar';
                     break;
                 case 'pendidikan':
                     $select[] = 'pd.no_induk';
-                    $select[] = 'l.nama_lembaga as lembaga';
-                    $select[] = 'j.nama_jurusan as jurusan';
-                    $select[] = 'kls.nama_kelas as kelas';
-                    $select[] = 'r.nama_rombel as rombel';
+                    $select[] = 'l2.nama_lembaga as lembaga';
+                    $select[] = 'j2.nama_jurusan as jurusan';
+                    $select[] = 'kls2.nama_kelas as kelas';
+                    $select[] = 'r2.nama_rombel as rombel';
                     break;
                 case 'status':
                     $select[] = 's.status';
                     break;
                 case 'ibu_kandung':
-                    $select[] = 'b_ibu.nama as nama_ibu';
+                    $select[] = 'b_ibu2.nama as nama_ibu';
                     break;
                 case 'ayah_kandung':
-                    $select[] = 'b_ayah.nama as nama_ayah';
+                    $select[] = 'b_ayah2.nama as nama_ayah';
                     break;
             }
         }
@@ -241,7 +225,6 @@ class SantriService
 
         return $query;
     }
-
 
     public function formatDataExport($results, $fields, $addNumber = false)
     {
@@ -332,7 +315,6 @@ class SantriService
             return $data;
         })->values();
     }
-
 
     public function getFieldExportHeadings($fields, $addNumber = false)
     {

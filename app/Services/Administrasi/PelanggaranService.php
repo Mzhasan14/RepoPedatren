@@ -25,8 +25,8 @@ class PelanggaranService
             ->groupBy('biodata_id');
 
         return DB::table('pelanggaran as pl')
-            ->leftjoin('santri as s', 'pl.santri_id', '=', 's.id')
-            ->leftjoin('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->join('santri as s', 'pl.santri_id', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')

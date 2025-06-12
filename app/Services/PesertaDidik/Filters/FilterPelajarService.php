@@ -119,17 +119,17 @@ class FilterPelajarService
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
 
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
 
         if ($request->filled('blok')) {
-            $query->join('blok AS bl', 'rd.blok_id', '=', 'bl.id')
+            $query->join('blok AS bl', 'ds.blok_id', '=', 'bl.id')
                 ->where('bl.nama_blok', $request->blok);
 
             if ($request->filled('kamar')) {
-                $query->join('kamar AS km', 'rd.kamar_id', '=', 'km.id')
+                $query->join('kamar AS km', 'ds.kamar_id', '=', 'km.id')
                     ->where('km.nama_kamar', $request->kamar);
             }
         }
@@ -215,7 +215,7 @@ class FilterPelajarService
             return $query;
         }
 
-        $query->where('rp.angkatan_id', $request->angkatan_pelajar);
+        $query->where('pd.angkatan_id', $request->angkatan_pelajar);
         return $query;
     }
 
