@@ -197,7 +197,7 @@ class DetailService
 
         // Gabungkan domisili aktif dan riwayat
         $domisiliAktif = DB::table('domisili_santri as ds')
-            ->join('santri as s', 'ds.santri_id', 's.id')
+            ->join('santri AS s', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
@@ -302,8 +302,6 @@ class DetailService
             ])
             ->sortByDesc('tanggal_masuk')
             ->values();
-
-
 
         // --- Catatan Afektif ---
         $af = DB::table('catatan_afektif as ca')
