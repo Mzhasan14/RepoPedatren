@@ -38,6 +38,7 @@ class PelajarService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
+            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
             ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('pd.deleted_at'));
 
         return $query;
@@ -174,10 +175,10 @@ class PelajarService
                     $select[] = 'wp.niup';
                     break;
                 case 'anak_ke':
-                    $select[] = 'b.anak_ke';
+                    $select[] = 'b.anak_keberapa';
                     break;
                 case 'jumlah_saudara':
-                    $select[] = 'b.jumlah_saudara';
+                    $select[] = 'b.dari_saudara';
                     break;
                 case 'alamat':
                     $select[] = 'b.jalan';
@@ -205,7 +206,14 @@ class PelajarService
                     $select[] = 'r2.nama_rombel as rombel';
                     break;
                 case 'status':
-                    $select[] = 's.status';
+                    $select[] = DB::raw(
+                        "CASE 
+                            WHEN s.status = 'aktif' AND pd.status = 'aktif' THEN 'santri-pelajar'
+                            WHEN s.status = 'aktif' THEN 'santri'
+                            WHEN pd.status = 'aktif' THEN 'pelajar'
+                            ELSE ''
+                        END as status"
+                    );
                     break;
                 case 'ibu_kandung':
                     $select[] = 'b_ibu2.nama as nama_ibu';

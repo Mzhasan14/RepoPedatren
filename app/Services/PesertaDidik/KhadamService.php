@@ -41,6 +41,7 @@ class KhadamService
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
             ->where('kh.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')

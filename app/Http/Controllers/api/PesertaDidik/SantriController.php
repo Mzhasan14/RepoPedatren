@@ -80,6 +80,7 @@ class SantriController extends Controller
             'jenis_kelamin',
             'anak_ke',
             'jumlah_saudara',
+            'alamat',
             'nis',
             'domisili_santri',
             'angkatan_santri',
