@@ -22,7 +22,7 @@ class PengunjungMahromService
             ->join('biodata as bp', 'pm.biodata_id', 'bp.id')
             ->join('santri as s', 'pm.santri_id', 's.id')
             ->join('biodata as bs', 's.biodata_id', 'bs.id')
-            ->join('riwayat_domisili as rd', 'rd.santri_id', 's.id')
+            ->leftjoin('riwayat_domisili as rd', 'rd.santri_id', 's.id')
             ->leftjoin('riwayat_pendidikan as rp', 'rp.biodata_id', 'bs.id')
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', 'l.id')
             ->leftJoin('jurusan AS j', 'rp.jurusan_id', 'j.id')
@@ -76,17 +76,17 @@ class PengunjungMahromService
 
             if ($biodata) {
                 // Ambil no_kk pengunjung
-                $kkPengunjung = Keluarga::where('biodata_id', $biodata->id)->value('no_kk');
+                $kkPengunjung = Keluarga::where('id_biodata', $biodata->id)->value('no_kk');
 
                 if ($kkPengunjung) {
                     // Cek apakah santri berada dalam KK yang sama
-                    $kkSantri = Keluarga::where('biodata_id', $santri->biodata_id)
+                    $kkSantri = Keluarga::where('id_biodata', $santri->biodata_id)
                         ->where('no_kk', $kkPengunjung)
                         ->exists();
 
                     if ($kkSantri) {
                         // Ambil hubungan_id dan nama hubungan dari orang_tua_wali
-                        $orangTuaWali = OrangTuaWali::where('biodata_id', $biodata->id)->first();
+                        $orangTuaWali = OrangTuaWali::where('id_biodata', $biodata->id)->first();
 
                         if ($orangTuaWali && $orangTuaWali->hubungan_id != $data['hubungan_id']) {
                             // Ambil nama hubungan yang tercatat
