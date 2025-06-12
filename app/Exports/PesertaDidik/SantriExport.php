@@ -2,6 +2,7 @@
 
 namespace App\Exports\PesertaDidik;
 
+
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -9,7 +10,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
 
-class PesertaDidikExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
+class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
 {
     protected $data;
     protected $headings;

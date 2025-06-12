@@ -28,7 +28,7 @@ class KhadamController extends Controller
         try {
             $query = $this->khadamService->getAllKhadam($request);
             $query = $this->filterController->khadamFilters($query, $request);
-            $query->latest('b.created_at');
+            $query = $query->latest('b.id');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

@@ -31,7 +31,7 @@ class PesertaDidikController extends Controller
         try {
             $query = $this->pesertaDidik->getAllPesertaDidik($request);
             $query = $this->filter->pesertaDidikFilters($query, $request);
-            $query->latest('b.created_at');
+            $query = $query->latest('b.id');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -113,6 +113,7 @@ class PesertaDidikController extends Controller
             'nis',
             'domisili_santri',
             'angkatan_santri',
+            'status',
             'no_induk',
             'lembaga',
             'jurusan',
@@ -132,6 +133,7 @@ class PesertaDidikController extends Controller
         // Gunakan query khusus untuk export (boleh mirip dengan list)
         $query = $this->pesertaDidik->getExportPesertaDidikQuery($fields, $request);
         $query = $this->filter->pesertaDidikFilters($query, $request);
+        $query = $query->latest('b.id');
 
         // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'

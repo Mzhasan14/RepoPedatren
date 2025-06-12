@@ -489,15 +489,15 @@ class PesertaDidikService
         });
     }
 
-    // Query khusus export (mirip, tapi bisa beda dari list)
     public function getExportPesertaDidikQuery($fields, $request)
     {
-        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
+        // 1. Subquery
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
+        // 2. Query Builder & JOINS (sesuai kebutuhan multi-field)
         $query = DB::table('biodata as b')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->leftjoin('angkatan as as', 's.angkatan_id', '=', 'as.id')
@@ -510,39 +510,22 @@ class PesertaDidikService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftjoin('keluarga as k', 'k.id_biodata', 'b.id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')
-                ->orWhere('pd.status', '=', 'aktif'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
-                ->whereNull('s.deleted_at'));
+            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('pd.status', '=', 'aktif'))
+            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
 
-        // Kolom default dan optional (hanya addSelect jika dipakai)
-        $select = [];
-
-        // JOIN alamat jika request field 'alamat'
+        // -- Multi-field JOINs (di luar loop, agar SELECT tetap clean)
         if (in_array('alamat', $fields)) {
             $query->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id');
             $query->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id');
             $query->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id');
             $query->leftJoin('negara as ng', 'b.negara_id', '=', 'ng.id');
-            $select[] = 'b.jalan';
-            $select[] = 'kc.nama_kecamatan';
-            $select[] = 'kb.nama_kabupaten';
-            $select[] = 'pv.nama_provinsi';
-            $select[] = 'ng.nama_negara';
         }
-
-        // JOIN domisili santri jika request field 'domisili_santri'
         if (in_array('domisili_santri', $fields)) {
             $query->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
             $query->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id');
             $query->leftJoin('blok as bl', 'ds.blok_id', '=', 'bl.id');
             $query->leftJoin('kamar as km', 'ds.kamar_id', '=', 'km.id');
-            $select[] = 'w.nama_wilayah as dom_wilayah';
-            $select[] = 'bl.nama_blok as dom_blok';
-            $select[] = 'km.nama_kamar as dom_kamar';
         }
-
-        // Join ibu kandung dengan subquery agar tidak duplicate
         if (in_array('ibu_kandung', $fields)) {
             $subIbu = DB::table('keluarga as k1')
                 ->select('k1.no_kk', 'otw.id_biodata as id_biodata_ibu')
@@ -555,9 +538,10 @@ class PesertaDidikService
                 $join->on('k.no_kk', '=', 'ibu.no_kk');
             });
             $query->leftJoin('biodata as b_ibu', 'ibu.id_biodata_ibu', '=', 'b_ibu.id');
-            $select[] = 'b_ibu.nama as nama_ibu';
         }
 
+        // --- Select sesuai urutan fields, konsisten! ---
+        $select = [];
         foreach ($fields as $field) {
             switch ($field) {
                 case 'nama':
@@ -594,7 +578,6 @@ class PesertaDidikService
                     $select[] = 'k.no_kk';
                     break;
                 case 'nik':
-                    // NIK atau No Passport
                     $select[] = DB::raw('COALESCE(b.nik, b.no_passport) as nik');
                     break;
                 case 'niup':
@@ -606,9 +589,17 @@ class PesertaDidikService
                 case 'jumlah_saudara':
                     $select[] = 'b.jumlah_saudara';
                     break;
+                case 'alamat':
+                    $select[] = 'b.jalan';
+                    $select[] = 'kc.nama_kecamatan';
+                    $select[] = 'kb.nama_kabupaten';
+                    $select[] = 'pv.nama_provinsi';
+                    $select[] = 'ng.nama_negara';
+                    break;
                 case 'domisili_santri':
-                    $query->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id');
-                    $select[] = 'ds.nama_domisili as domisili_santri';
+                    $select[] = 'w.nama_wilayah as dom_wilayah';
+                    $select[] = 'bl.nama_blok as dom_blok';
+                    $select[] = 'km.nama_kamar as dom_kamar';
                     break;
                 case 'angkatan_santri':
                     $select[] = 'as.angkatan as angkatan_santri';
@@ -619,16 +610,21 @@ class PesertaDidikService
                 case 'status':
                     $select[] = 's.status';
                     break;
+                case 'ibu_kandung':
+                    $select[] = 'b_ibu.nama as nama_ibu';
+                    break;
+                // --- tambahkan 'ayah_kandung' jika ingin support export ayah juga
+                case 'ayah_kandung':
+                    // ... tambahkan join sub & select jika perlu
+                    break;
             }
         }
-
         $query->select($select);
 
-
-        return $query->latest('b.created_at');
+        return $query;
     }
 
-    // Format export data
+
     public function formatDataExport($results, $fields, $addNumber = false)
     {
         return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
@@ -636,111 +632,92 @@ class PesertaDidikService
             if ($addNumber) {
                 $data['No'] = $idx + 1;
             }
+            $itemArr = (array) $item;
+            $i = 0; // pointer index hasil select (array order)
+
             foreach ($fields as $field) {
                 switch ($field) {
                     case 'nama':
-                        $data['Nama'] = isset($item->nama) && $item->nama !== null ? $item->nama : '';
+                        $data['Nama'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'tempat_lahir':
-                        $data['Tempat Lahir'] = isset($item->tempat_lahir) && $item->tempat_lahir !== null ? $item->tempat_lahir : '';
+                        $data['Tempat Lahir'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'tanggal_lahir':
-                        $data['Tanggal Lahir'] = isset($item->tanggal_lahir) && $item->tanggal_lahir !== null ? \Carbon\Carbon::parse($item->tanggal_lahir)->translatedFormat('d F Y')
-                            : '';
+                        $tgl = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Tanggal Lahir'] = $tgl ? \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y') : '';
                         break;
                     case 'jenis_kelamin':
-                        if (isset($item->jenis_kelamin)) {
-                            if (strtolower($item->jenis_kelamin) === 'l') {
-                                $data['Jenis Kelamin'] = 'Laki-laki';
-                            } elseif (strtolower($item->jenis_kelamin) === 'p') {
-                                $data['Jenis Kelamin'] = 'Perempuan';
-                            } else {
-                                $data['Jenis Kelamin'] = '';
-                            }
-                        } else {
-                            $data['Jenis Kelamin'] = '';
-                        }
+                        $jk = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        if (strtolower($jk) === 'l') $data['Jenis Kelamin'] = 'Laki-laki';
+                        elseif (strtolower($jk) === 'p') $data['Jenis Kelamin'] = 'Perempuan';
+                        else $data['Jenis Kelamin'] = '';
                         break;
                     case 'nis':
-                        $data['NIS'] = isset($item->nis) && $item->nis !== null && $item->nis !== ''
-                            ? ' ' . $item->nis
-                            : '';
+                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = isset($item->no_induk) && $item->no_induk !== null && $item->no_induk !== ''
-                            ? ' ' . $item->no_induk
-                            : '';
+                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
-                        $data['Lembaga'] = isset($item->lembaga) && $item->lembaga !== null ? $item->lembaga : '';
+                        $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'jurusan':
-                        $data['Jurusan'] = isset($item->jurusan) && $item->jurusan !== null ? $item->jurusan : '';
+                        $data['Jurusan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'kelas':
-                        $data['Kelas'] = isset($item->kelas) && $item->kelas !== null ? $item->kelas : '';
+                        $data['Kelas'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'rombel':
-                        $data['Rombel'] = isset($item->rombel) && $item->rombel !== null ? $item->rombel : '';
+                        $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = isset($item->no_kk) && $item->no_kk !== null && $item->no_kk !== ''
-                            ? ' ' . $item->no_kk
-                            : '';
+                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        // Ingat: dari query sudah COALESCE nik/no_passport
-                        $data['NIK'] = isset($item->nik) && $item->nik !== null && $item->nik !== ''
-                            ? ' ' . $item->nik
-                            : '';
-                        break;
-                    case 'no_passport':
-                        $data['No Passport'] = isset($item->no_passport) && $item->no_passport !== null && $item->no_passport !== ''
-                            ? ' ' . $item->no_passport
-                            : '';
+                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = isset($item->niup) && $item->niup !== null && $item->niup !== ''
-                            ? ' ' . $item->niup
-                            : '';
+                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
-                        $data['Anak ke'] = isset($item->anak_ke) && $item->anak_ke !== null ? $item->anak_ke : '';
+                        $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'jumlah_saudara':
-                        $data['Jumlah Saudara'] = isset($item->jumlah_saudara) && $item->jumlah_saudara !== null ? $item->jumlah_saudara : '';
+                        $data['Jumlah Saudara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'alamat':
-                        $data['Jalan']     = isset($item->jalan) && $item->jalan !== null ? $item->jalan : '';
-                        $data['Kecamatan'] = isset($item->nama_kecamatan) && $item->nama_kecamatan !== null ? $item->nama_kecamatan : '';
-                        $data['Kabupaten'] = isset($item->nama_kabupaten) && $item->nama_kabupaten !== null ? $item->nama_kabupaten : '';
-                        $data['Provinsi']  = isset($item->nama_provinsi) && $item->nama_provinsi !== null ? $item->nama_provinsi : '';
-                        $data['Negara']    = isset($item->nama_negara) && $item->nama_negara !== null ? $item->nama_negara : '';
+                        $data['Jalan']     = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kecamatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kabupaten'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Provinsi']  = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Negara']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'domisili_santri':
-                        $data['Wilayah Domisili'] = isset($item->dom_wilayah) && $item->dom_wilayah !== null ? $item->dom_wilayah : '';
-                        $data['Blok Domisili']    = isset($item->dom_blok) && $item->dom_blok !== null ? $item->dom_blok : '';
-                        $data['Kamar Domisili']   = isset($item->dom_kamar) && $item->dom_kamar !== null ? $item->dom_kamar : '';
+                        $data['Wilayah Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Blok Domisili']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kamar Domisili']   = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_santri':
-                        $data['Angkatan Santri'] = isset($item->angkatan_santri) && $item->angkatan_santri !== null ? $item->angkatan_santri : '';
+                        $data['Angkatan Santri'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_pelajar':
-                        $data['Angkatan Pelajar'] = isset($item->angkatan_pelajar) && $item->angkatan_pelajar !== null ? $item->angkatan_pelajar : '';
+                        $data['Angkatan Pelajar'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'status':
-                        $data['Status'] = isset($item->status) && $item->status !== null ? $item->status : '';
+                        $data['Status'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'ibu_kandung':
-                        $data['Ibu Kandung'] = isset($item->nama_ibu) && $item->nama_ibu !== null ? $item->nama_ibu : '';
+                        $data['Ibu Kandung'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     default:
-                        $data[$field] = isset($item->{$field}) && $item->{$field} !== null ? $item->{$field} : '';
+                        $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
             return $data;
         })->values();
     }
+
 
     public function getFieldExportHeadings($fields, $addNumber = false)
     {

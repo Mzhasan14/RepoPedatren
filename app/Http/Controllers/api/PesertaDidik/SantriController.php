@@ -3,26 +3,21 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PesertaDidik\SantriExport;
 use App\Services\PesertaDidik\Filters\FilterSantriService;
-use App\Services\PesertaDidik\NonDomisiliService;
 use App\Services\PesertaDidik\SantriService;
 
 class SantriController extends Controller
 {
     private SantriService $santriService;
     private FilterSantriService $filterController;
-    private NonDomisiliService $nonDomisiliService;
 
-    public function __construct(SantriService $santriService,FilterSantriService $filterController, NonDomisiliService $nonDomisiliService)
+    public function __construct(SantriService $santriService, FilterSantriService $filterController)
     {
         $this->santriService = $santriService;
-        $this->nonDomisiliService = $nonDomisiliService;
         $this->filterController = $filterController;
     }
 
@@ -32,7 +27,8 @@ class SantriController extends Controller
         try {
             $query = $this->santriService->getAllSantri($request);
             $query = $this->filterController->santriFilters($query, $request);
-            $query->latest('b.created_at');
+
+            $query = $query->latest('b.id');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -64,12 +60,63 @@ class SantriController extends Controller
         ]);
     }
 
-    
+    public function exportExcel(Request $request)
+    {
+        // Daftar kolom default untuk export (export utama, bukan tampilan list)
+        $defaultExportFields = [
+            'nama',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'angkatan_pelajar',
+        ];
 
-    // public function santriExport(Request $request, FilterSantriService $filterService)
-    // {
-    //     return Excel::download(new SantriExport($request, $filterService), 'santri.xlsx');
-    // }
+        $columnOrder = [
+            'no_kk',           // di depan
+            'nik',
+            'niup',
+            'nama',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'status',
+            'no_induk',
+            'pendidikan',
+            'angkatan_pelajar',
+            'ibu_kandung',
+            'ayah_kandung'
+        ];
 
-   
+        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung kolom default export + kolom optional (hindari duplikat)
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Gunakan query khusus untuk export (boleh mirip dengan list)
+        $query = $this->santriService->getExportSantriQuery($fields, $request);
+        $query = $this->filterController->santriFilters($query, $request);
+
+        $query = $query->latest('b.id');
+
+        // Jika user centang "all", ambil semua, else gunakan limit/pagination
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        // Format data sesuai urutan dan field export
+        $addNumber = true; // Supaya kolom No selalu muncul
+        $formatted = $this->santriService->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->santriService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "santri_{$now}.xlsx";
+
+        return Excel::download(new SantriExport($formatted, $headings), $filename);
+    }
 }

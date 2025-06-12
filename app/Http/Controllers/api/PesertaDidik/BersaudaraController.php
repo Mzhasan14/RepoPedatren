@@ -26,7 +26,7 @@ class BersaudaraController extends Controller
         try {
             $query = $this->bersaudara->getAllBersaudara($request);
             $query = $this->filter->bersaudaraFilters($query, $request);
-            $query->orderBy('k.no_kk');
+            $query = $query->latest('b.id');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

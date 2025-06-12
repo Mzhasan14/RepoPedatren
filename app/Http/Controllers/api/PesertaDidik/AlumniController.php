@@ -27,7 +27,7 @@ class AlumniController extends Controller
         try {
             $query = $this->alumniService->getAllAlumni($request);
             $query = $this->filterController->alumniFilters($query, $request);
-            $query->latest('b.created_at');
+            $query = $query->latest('b.id');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
