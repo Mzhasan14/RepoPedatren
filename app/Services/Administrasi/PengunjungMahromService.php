@@ -22,13 +22,10 @@ class PengunjungMahromService
             ->join('biodata as bp', 'pm.biodata_id', 'bp.id')
             ->join('santri as s', 'pm.santri_id', 's.id')
             ->join('biodata as bs', 's.biodata_id', 'bs.id')
-            ->leftjoin('riwayat_domisili as rd', 'rd.santri_id', 's.id')
-            ->leftjoin('riwayat_pendidikan as rp', 'rp.biodata_id', 'bs.id')
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', 'l.id')
-            ->leftJoin('jurusan AS j', 'rp.jurusan_id', 'j.id')
-            ->join('wilayah AS w', 'rd.wilayah_id', 'w.id')
-            ->leftjoin('blok AS bl', 'rd.blok_id', 'bl.id')
-            ->leftjoin('kamar AS km', 'rd.kamar_id', 'km.id')
+            ->join('domisili_santri as ds', 'ds.santri_id', 's.id')
+            ->join('wilayah AS w', 'ds.wilayah_id', 'w.id')
+            ->leftjoin('blok AS bl', 'ds.blok_id', 'bl.id')
+            ->leftjoin('kamar AS km', 'ds.kamar_id', 'km.id')
             ->select(
                 'pm.id',
                 'w.nama_wilayah',
@@ -37,8 +34,6 @@ class PengunjungMahromService
                 'bs.nama as nama_santri',
                 'bl.nama_blok',
                 'km.nama_kamar',
-                'l.nama_lembaga',
-                'j.nama_jurusan',
                 'pm.jumlah_rombongan',
                 'pm.tanggal_kunjungan'
             );
