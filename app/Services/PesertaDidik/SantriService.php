@@ -27,8 +27,13 @@ class SantriService
             ->groupBy('biodata_id');
 
         $query = DB::table('santri AS s')
+            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
@@ -66,13 +71,6 @@ class SantriService
         ) AS updated_at"),
             DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
         ];
-
-        // JOIN domisili & blok & kamar & lembaga untuk kebutuhan list
-        $query->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
-            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
-            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id');
 
         return $query->select($fields);
     }

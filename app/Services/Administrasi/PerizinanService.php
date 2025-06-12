@@ -10,7 +10,6 @@ use App\Models\BerkasPerizinan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\Administrasi\PerizinanRequest;
 
 class PerizinanService
 {
@@ -28,25 +27,7 @@ class PerizinanService
         return DB::table('perizinan as pr')
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
-    }
-
-    public function getAllPerizinan(Request $request, $fields = null)
-    {
-        $query = $this->basePerizinanQuery($request);
-
-        $fields = $fields ?? [
-            'pr.id',
-            'b.nama as nama_santri',
-            'b.jenis_kelamin',
-            'pr.alasan_izin',
-            'pr.tanggal_mulai',
-            'pr.tanggal_akhir',
-            // dst...
-        ];
-        // JOIN default, ex: domisili, pendidikan, users
-        $query->leftjoin('domisili_santri as ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftjoin('domisili_santri as ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
@@ -60,7 +41,70 @@ class PerizinanService
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
             ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
-            ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id');
+            ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
+    }
+
+    public function getAllPerizinan(Request $request, $fields = null)
+    {
+        $query = $this->basePerizinanQuery($request);
+
+        $fields = $fields ?? [
+            'pr.id',
+            'b.nama as nama_santri',
+            'b.jenis_kelamin',
+            'w.nama_wilayah',
+            'bl.nama_blok',
+            'km.nama_kamar',
+            'l.nama_lembaga',
+            'j.nama_jurusan',
+            'kls.nama_kelas',
+            'r.nama_rombel',
+            'pv.nama_provinsi',
+            'kb.nama_kabupaten',
+            'kc.nama_kecamatan',
+            'pr.alasan_izin',
+            'pr.alamat_tujuan',
+            'pr.tanggal_mulai',
+            'pr.tanggal_akhir',
+            // kolom bermalam: kalau tanggal mulai dan tanggal akhir berbeda → bermalam,
+            // kalau sama tanggalnya → sehari
+            DB::raw("
+                  CASE
+                  WHEN DATE(pr.tanggal_mulai) = DATE(pr.tanggal_akhir) THEN 'sehari'
+                  ELSE 'bermalam'
+                  END AS bermalam
+              "),
+            DB::raw("
+                  CASE
+                      WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
+                      CONCAT(TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir), ' jam')
+                      WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 7 THEN
+                      CONCAT(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir), ' hari')
+                      WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 30 THEN
+                      CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 7), ' minggu')
+                      ELSE
+                      CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) / 30), ' bulan')
+                  END
+                  AS lama_izin
+                  "),
+            'pr.tanggal_kembali',
+            'pr.jenis_izin',
+            'pr.status',
+            'pr.created_by as pembuat',
+            'pengasuh.name as nama_pengasuh',
+            'biktren.name as nama_biktren',
+            'kamtib.name as nama_kamtib',
+            'pr.approved_by_biktren',
+            'pr.approved_by_kamtib',
+            'pr.approved_by_pengasuh',
+            'pr.keterangan',
+            'pr.created_at',
+            'pr.updated_at',
+            DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
+        ];
+        // JOIN default, ex: domisili, pendidikan, users
 
         return $query->select($fields);
     }
@@ -252,10 +296,10 @@ class PerizinanService
 
         // Join dinamis sesuai kebutuhan export
         if (in_array('wilayah', $fields) || in_array('blok', $fields) || in_array('kamar', $fields)) {
-            $query->leftJoin('domisili_santri as ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
-                ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-                ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
-                ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id');
+            $query->leftJoin('domisili_santri as ds2', fn($j) => $j->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'))
+                ->leftJoin('wilayah AS w2', 'ds2.wilayah_id', '=', 'w2.id')
+                ->leftJoin('blok AS bl2', 'ds2.blok_id', '=', 'bl2.id')
+                ->leftJoin('kamar AS km2', 'ds2.kamar_id', '=', 'km2.id');
         }
         if (
             in_array('lembaga', $fields) ||
@@ -263,34 +307,33 @@ class PerizinanService
             in_array('kelas', $fields) ||
             in_array('rombel', $fields)
         ) {
-            $query->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
-                ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-                ->leftJoin('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
-                ->leftJoin('kelas as kls', 'pd.kelas_id', '=', 'kls.id')
-                ->leftJoin('rombel as r', 'pd.rombel_id', '=', 'r.id');
+            $query->leftJoin('pendidikan AS pd2', fn($j) => $j->on('b.id', '=', 'pd2.biodata_id')->where('pd2.status', 'aktif'))
+                ->leftJoin('lembaga AS l2', 'pd2.lembaga_id', '=', 'l2.id')
+                ->leftJoin('jurusan as j2', 'pd2.jurusan_id', '=', 'j2.id')
+                ->leftJoin('kelas as kls2', 'pd2.kelas_id', '=', 'kls2.id')
+                ->leftJoin('rombel as r2', 'pd2.rombel_id', '=', 'r2.id');
         }
         if (
             in_array('provinsi', $fields) ||
             in_array('kabupaten', $fields) ||
             in_array('kecamatan', $fields)
         ) {
-            $query->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
-                ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
-                ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id');
+            $query->leftJoin('provinsi as pv2', 'b.provinsi_id', '=', 'pv2.id')
+                ->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id')
+                ->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
         }
         if (
             in_array('nama_pengasuh', $fields) ||
             in_array('nama_biktren', $fields) ||
             in_array('nama_kamtib', $fields)
         ) {
-            $query->leftJoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
-                ->leftJoin('users as pengasuh', 'pr.pengasuh_id', '=', 'pengasuh.id')
-                ->leftJoin('users as kamtib', 'pr.kamtib_id', '=', 'kamtib.id');
+            $query->leftJoin('users as biktren2', 'pr.biktren_id', '=', 'biktren2.id')
+                ->leftJoin('users as pengasuh2', 'pr.pengasuh_id', '=', 'pengasuh2.id')
+                ->leftJoin('users as kamtib2', 'pr.kamtib_id', '=', 'kamtib2.id');
         }
         if (in_array('pembuat', $fields)) {
-            $query->leftJoin('users as user_pembuat', 'pr.created_by', '=', 'user_pembuat.id');
+            $query->leftJoin('users as user_pembuat2', 'pr.created_by', '=', 'user_pembuat2.id');
         }
-
 
         $select = [];
         foreach ($fields as $field) {
@@ -305,34 +348,34 @@ class PerizinanService
                     $select[] = 'b.jenis_kelamin';
                     break;
                 case 'wilayah':
-                    $select[] = 'w.nama_wilayah';
+                    $select[] = 'w2.nama_wilayah';
                     break;
                 case 'blok':
-                    $select[] = 'bl.nama_blok';
+                    $select[] = 'bl2.nama_blok';
                     break;
                 case 'kamar':
-                    $select[] = 'km.nama_kamar';
+                    $select[] = 'km2.nama_kamar';
                     break;
                 case 'lembaga':
-                    $select[] = 'l.nama_lembaga';
+                    $select[] = 'l2.nama_lembaga';
                     break;
                 case 'jurusan':
-                    $select[] = 'j.nama_jurusan';
+                    $select[] = 'j2.nama_jurusan';
                     break;
                 case 'kelas':
-                    $select[] = 'kls.nama_kelas';
+                    $select[] = 'kls2.nama_kelas';
                     break;
                 case 'rombel':
-                    $select[] = 'r.nama_rombel';
+                    $select[] = 'r2.nama_rombel';
                     break;
                 case 'provinsi':
-                    $select[] = 'pv.nama_provinsi';
+                    $select[] = 'pv2.nama_provinsi';
                     break;
                 case 'kabupaten':
-                    $select[] = 'kb.nama_kabupaten';
+                    $select[] = 'kb2.nama_kabupaten';
                     break;
                 case 'kecamatan':
-                    $select[] = 'kc.nama_kecamatan';
+                    $select[] = 'kc2.nama_kecamatan';
                     break;
                 case 'alasan_izin':
                     $select[] = 'pr.alasan_izin';
@@ -351,17 +394,17 @@ class PerizinanService
                     break;
                 case 'lama_izin':
                     $select[] = DB::raw("
-                        CASE
-                            WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
-                                CONCAT(TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir), ' jam')
-                            WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 7 THEN
-                                CONCAT(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir), ' hari')
-                            WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 30 THEN
-                                CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir)/7), ' minggu')
-                            ELSE
-                                CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir)/30), ' bulan')
-                        END as lama_izin
-                    ");
+                    CASE
+                        WHEN TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) < 24 THEN
+                            CONCAT(TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir), ' jam')
+                        WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 7 THEN
+                            CONCAT(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir), ' hari')
+                        WHEN TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir) < 30 THEN
+                            CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir)/7), ' minggu')
+                        ELSE
+                            CONCAT(CEIL(TIMESTAMPDIFF(DAY, pr.tanggal_mulai, pr.tanggal_akhir)/30), ' bulan')
+                    END as lama_izin
+                ");
                     break;
                 case 'tanggal_kembali':
                     $select[] = 'pr.tanggal_kembali';
@@ -373,16 +416,16 @@ class PerizinanService
                     $select[] = 'pr.status';
                     break;
                 case 'pembuat':
-                    $select[] = 'user_pembuat.name as pembuat';
+                    $select[] = 'user_pembuat2.name as pembuat';
                     break;
                 case 'nama_pengasuh':
-                    $select[] = 'pengasuh.name as nama_pengasuh';
+                    $select[] = 'pengasuh2.name as nama_pengasuh';
                     break;
                 case 'nama_biktren':
-                    $select[] = 'biktren.name as nama_biktren';
+                    $select[] = 'biktren2.name as nama_biktren';
                     break;
                 case 'nama_kamtib':
-                    $select[] = 'kamtib.name as nama_kamtib';
+                    $select[] = 'kamtib2.name as nama_kamtib';
                     break;
                 case 'approved_by_biktren':
                     $select[] = 'pr.approved_by_biktren';
@@ -409,6 +452,7 @@ class PerizinanService
         }
         return $query->select($select);
     }
+
 
     public function formatDataExport($results, $fields, $addNumber = false)
     {
