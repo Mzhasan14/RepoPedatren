@@ -36,7 +36,7 @@ class KhadamService
 
         return DB::table('khadam as kh')
             ->join('biodata as b', 'kh.biodata_id', '=', 'b.id')
-            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))

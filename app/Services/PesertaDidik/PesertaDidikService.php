@@ -34,7 +34,7 @@ class PesertaDidikService
             ->groupBy('biodata_id');
 
         $query = DB::table('biodata as b')
-            ->leftJoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
@@ -610,7 +610,14 @@ class PesertaDidikService
                     $select[] = 'ap2.angkatan as angkatan_pelajar';
                     break;
                 case 'status':
-                    $select[] = 's.status';
+                    $select[] = DB::raw(
+                        "CASE 
+                            WHEN s.status = 'aktif' AND pd.status = 'aktif' THEN 'santri-pelajar'
+                            WHEN s.status = 'aktif' THEN 'santri'
+                            WHEN pd.status = 'aktif' THEN 'pelajar'
+                            ELSE ''
+                        END as status"
+                    );
                     break;
                 case 'ibu_kandung':
                     $select[] = 'b_ibu2.nama as nama_ibu';

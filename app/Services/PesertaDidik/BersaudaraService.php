@@ -50,7 +50,7 @@ class BersaudaraService
             ->groupBy('k2.no_kk');
 
         return DB::table('biodata as b')
-            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
             ->whereIn('k.no_kk', $noKkBersaudara)
             ->leftJoinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))

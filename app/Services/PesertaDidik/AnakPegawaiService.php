@@ -37,7 +37,7 @@ class AnakPegawaiService
 
         return DB::table('anak_pegawai as ap')
             ->join('biodata AS b', 'ap.biodata_id', '=', 'b.id')
-            ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->leftJoin('pendidikan AS pd', function ($j) {
                 $j->on('b.id', '=', 'pd.biodata_id')
                     ->where('pd.status', 'aktif');

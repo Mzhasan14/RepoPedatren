@@ -8,33 +8,29 @@ use Illuminate\Support\Facades\DB;
 
 class PelajarService
 {
-    public function getAllPelajar(Request $request)
+    public function basePelajarQuery(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        // Query utama: data pelajar all
-        return DB::table('biodata as b')
+        $query = DB::table('biodata as b')
             ->join('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan AS j', 'pd.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas AS kls', 'pd.kelas_id', '=', 'kls.id')
             ->leftJoin('rombel AS r', 'pd.rombel_id', '=', 'r.id')
-            ->leftjoin('santri AS s', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
@@ -42,30 +38,39 @@ class PelajarService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
-                ->whereNull('pd.deleted_at'))
-            ->select([
-                'b.id as biodata_id',
-                'pd.no_induk',
-                'b.nama',
-                'l.nama_lembaga',
-                'j.nama_jurusan',
-                'kls.nama_kelas',
-                'r.nama_rombel',
-                'w.nama_wilayah',
-                'kb.nama_kabupaten AS kota_asal',
-                'pd.created_at',
-                // ambil updated_at terbaru antar pd, pd, ds
-                DB::raw("
+            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('pd.deleted_at'));
+
+        return $query;
+    }
+
+    public function getAllPelajar(Request $request, $fields = null)
+    {
+        $query = $this->basePelajarQuery($request);
+
+        $fields = $fields ?? [
+            'b.id as biodata_id',
+            'pd.no_induk',
+            'b.nama',
+            'l.nama_lembaga',
+            'j.nama_jurusan',
+            'kls.nama_kelas',
+            'r.nama_rombel',
+            'w.nama_wilayah',
+            'kb.nama_kabupaten AS kota_asal',
+            'pd.created_at',
+            // ambil updated_at terbaru antar pd, pd, ds
+            DB::raw("
                 GREATEST(
                     pd.updated_at,
                     COALESCE(pd.updated_at, pd.updated_at),
                     COALESCE(ds.updated_at, pd.updated_at)
                 ) AS updated_at
             "),
-                'pd.status',
-                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
-            ]);
+            'pd.status',
+            DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
+        ];
+
+        return $query->select($fields);
     }
 
     public function formatData($results)
@@ -86,4 +91,6 @@ class PelajarService
             "foto_profil" => url($item->foto_profil)
         ]);
     }
+
+    public function getExportPelajarQuery($fields, $request) {}
 }
