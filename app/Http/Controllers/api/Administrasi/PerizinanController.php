@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\Administrasi;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\Administrasi\PerizinanService;
 use App\Http\Requests\Administrasi\PerizinanRequest;
 use App\Http\Requests\Administrasi\BerkasPerizinanRequest;
@@ -178,5 +180,94 @@ class PerizinanController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        // **Default fields cerdas (paling penting + umum)**
+        $defaultExportFields = [
+            'nama_santri',
+            'nis',
+            'jenis_kelamin',
+            'wilayah',
+            'blok',
+            'kamar',
+            'lembaga',
+            'kelas',
+            'rombel',
+            'alasan_izin',
+            'alamat_tujuan',
+            'tanggal_mulai',
+            'tanggal_akhir',
+            'bermalam',
+            'lama_izin',
+            'tanggal_kembali',
+            'jenis_izin',
+            'status',
+            'pembuat',
+            'nama_pengasuh',
+            'nama_biktren',
+            'nama_kamtib',
+            'keterangan',
+            'created_at'
+        ];
+
+        $columnOrder = [
+            'nama_santri',
+            'nis',
+            'jenis_kelamin',
+            'wilayah',
+            'blok',
+            'kamar',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'provinsi',
+            'kabupaten',
+            'kecamatan',
+            'alasan_izin',
+            'alamat_tujuan',
+            'tanggal_mulai',
+            'tanggal_akhir',
+            'bermalam',
+            'lama_izin',
+            'tanggal_kembali',
+            'jenis_izin',
+            'status',
+            'pembuat',
+            'nama_pengasuh',
+            'nama_biktren',
+            'nama_kamtib',
+            'approved_by_biktren',
+            'approved_by_kamtib',
+            'approved_by_pengasuh',
+            'keterangan',
+            'created_at',
+            'updated_at',
+            'foto_profil'
+        ];
+
+        $optionalFields = $request->input('fields', []);
+
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        $query = $this->perizinan->getExportPerizinanQuery($fields, $request);
+        $query = $this->filter->perizinanFilters($query, $request);
+        $query = $query->latest('pr.id');
+
+        // Jika all, ambil semua, else limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->perizinan->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->perizinan->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "perizinan_{$now}.xlsx";
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

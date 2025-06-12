@@ -49,7 +49,7 @@ class BersaudaraService
             ])
             ->groupBy('k2.no_kk');
 
-        return DB::table('biodata as b')
+        $query = DB::table('biodata as b')
             ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
             ->whereIn('k.no_kk', $noKkBersaudara)
@@ -67,6 +67,8 @@ class BersaudaraService
                 ->orWhere('pd.status', 'aktif'))
             ->whereNull('b.deleted_at')
             ->whereNull('s.deleted_at');
+
+        return $query;
     }
 
     // Query untuk LIST (select default)

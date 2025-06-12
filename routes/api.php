@@ -251,9 +251,9 @@ Route::prefix('export')->group(function () {
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
     Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
-    Route::get('/alumni', [AlumniController::class, 'alumniExport'])->name('alumni.export');
-    Route::get('/khadam', [KhadamController::class, 'khadamExport'])->name('khadam.export');
+    Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');
     Route::get('/perizinan', [PerizinanController::class, 'exportExcel'])->name('perizinan.export');
+    // Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
 
     // Kepegawaian
     Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');

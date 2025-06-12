@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api\PesertaDidik;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PesertaDidik\KhadamExport;
 use App\Services\PesertaDidik\KhadamService;
 use App\Http\Requests\PesertaDidik\CreateKhadamRequest;
 use App\Services\PesertaDidik\Filters\FilterKhadamService;
@@ -80,8 +80,74 @@ class KhadamController extends Controller
         }
     }
 
-    public function khadamExport()
+    // Untuk EXPORT
+    public function exportExcel(Request $request)
     {
-        return Excel::download(new KhadamExport, 'khadam.xlsx');
+        $defaultExportFields = [
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'keterangan',
+            'tanggal_mulai',
+            'nis',
+            'angkatan_santri',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+        ];
+
+        $columnOrder = [
+            'no_kk',
+            'nik',
+            'niup',
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'keterangan',
+            'tanggal_mulai',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+            'ibu_kandung'
+        ];
+
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung default + optional, urutkan sesuai $columnOrder, tidak ada duplikat
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Ambil query export (sudah pakai base query utama!)
+        $query = $this->khadamService->getExportKhadamQuery($fields, $request);
+        $query = $this->filterController->khadamFilters($query, $request);
+        $query = $query->latest('b.id');
+
+        // Jika export all, ambil semua data, else limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->khadamService->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->khadamService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "khadam_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }
