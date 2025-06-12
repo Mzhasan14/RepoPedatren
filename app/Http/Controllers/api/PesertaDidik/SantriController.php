@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PesertaDidik\SantriExport;
-use App\Services\PesertaDidik\Filters\FilterSantriService;
 use App\Services\PesertaDidik\SantriService;
+use App\Services\PesertaDidik\Filters\FilterSantriService;
 
 class SantriController extends Controller
 {
@@ -117,6 +117,6 @@ class SantriController extends Controller
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "santri_{$now}.xlsx";
 
-        return Excel::download(new SantriExport($formatted, $headings), $filename);
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

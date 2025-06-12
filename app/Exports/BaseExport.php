@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exports\PesertaDidik;
+namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
 
-class PesertaDidikExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
+class BaseExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
 {
     protected $data;
     protected $headings;

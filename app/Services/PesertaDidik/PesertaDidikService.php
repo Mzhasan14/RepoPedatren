@@ -628,7 +628,6 @@ class PesertaDidikService
         return $query->select($select);
     }
 
-
     public function formatDataExport($results, $fields, $addNumber = false)
     {
         return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
@@ -721,7 +720,6 @@ class PesertaDidikService
             return $data;
         })->values();
     }
-
 
     public function getFieldExportHeadings($fields, $addNumber = false)
     {

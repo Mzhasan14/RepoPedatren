@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PesertaDidik\PesertaDidikExport;
 use App\Services\PesertaDidik\PesertaDidikService;
 use App\Http\Requests\PesertaDidik\CreatePesertaDidikRequest;
 use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
@@ -149,6 +149,6 @@ class PesertaDidikController extends Controller
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "peserta_didik_{$now}.xlsx";
 
-        return Excel::download(new PesertaDidikExport($formatted, $headings), $filename);
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }
