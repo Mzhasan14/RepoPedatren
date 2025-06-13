@@ -579,6 +579,9 @@ class AnakPegawaiService
         $query = $this->baseAnakPegawaiQuery($request);
 
         // Join dinamis: tambah join sesuai field export, alias dikasih angka semua
+        if (in_array('no_kk', $fields)) {
+            $query->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id');
+        }
         if (in_array('alamat', $fields)) {
             $query->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
             $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');
@@ -782,6 +785,10 @@ class AnakPegawaiService
                     break;
                 case 'angkatan_pelajar':
                     $groupBy[] = 'ap2.angkatan';
+                    break;
+                case 'status':
+                    $groupBy[] = 's.status';
+                    $groupBy[] = 'pd.status';
                     break;
                 // 'status' dan field yang pakai CASE/alias, skip group by (SQL tidak butuh)
                 case 'ibu_kandung':

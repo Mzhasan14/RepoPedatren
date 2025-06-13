@@ -50,7 +50,6 @@ class BiometricProfileController extends Controller
         }
     }
 
-
     // Update profil biometric santri (termasuk kartu & fingerprint).
     public function update(Request $request, $id)
     {

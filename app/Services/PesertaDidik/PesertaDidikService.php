@@ -44,7 +44,6 @@ class PesertaDidikService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
             // Tambahkan default join lain jika dibutuhkan oleh kebanyakan fitur
             ->where(fn($q) => $q->where('s.status', 'aktif')
                 ->orWhere('pd.status', '=', 'aktif'))
@@ -504,6 +503,9 @@ class PesertaDidikService
         $query = $this->basePesertaDidikQuery($request);
 
         // Join dinamis: tambah join sesuai field export, alias dikasih angka semua
+        if (in_array('no_kk', $fields)) {
+            $query->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id');
+        }
         if (in_array('alamat', $fields)) {
             $query->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
             $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');

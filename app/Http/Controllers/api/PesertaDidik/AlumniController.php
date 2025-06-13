@@ -89,7 +89,6 @@ class AlumniController extends Controller
             'jumlah_saudara',
             'alamat',
             'nis',
-            'domisili_santri',
             'angkatan_santri',
             'tahun_keluar_santri',
             'status',

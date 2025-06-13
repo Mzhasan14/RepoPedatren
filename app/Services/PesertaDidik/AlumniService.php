@@ -45,6 +45,7 @@ class AlumniService
             ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'alumni'))
             ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
             ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftjoin('pendidikan as pd', 'pd.biodata_id', '=', 'b.id')
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
@@ -110,6 +111,9 @@ class AlumniService
     {
         $query = $this->baseAlumniQuery($request);
 
+        if (in_array('no_kk', $fields)) {
+            $query->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id');
+        }
         if (in_array('alamat', $fields)) {
             $query->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
             $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');
@@ -214,14 +218,19 @@ class AlumniService
                     $select[] = DB::raw('YEAR(rp.tanggal_keluar) as tahun_keluar_pelajar');
                     break;
                 case 'status':
-                    $select[] = DB::raw(
-                        "CASE 
-                            WHEN s.status = 'aktif' AND rp.status = 'aktif' THEN 'santri-pelajar'
-                            WHEN s.status = 'aktif' THEN 'santri'
-                            WHEN rp.status = 'aktif' THEN 'pelajar'
+                    $select[] = DB::raw("
+                        CASE
+                            WHEN s.status = 'alumni' AND pd.id IS NULL THEN 'alumni santri non pelajar'
+                            WHEN s.status = 'alumni' AND pd.status = 'aktif' THEN 'alumni santri tetapi masih pelajar aktif'
+                            WHEN s.status = 'alumni' AND rp.status = 'lulus' THEN 'alumni pelajar sekaligus santri'
+                            WHEN s.status = 'alumni' THEN 'alumni santri'
+                            WHEN rp.status = 'lulus' AND s.id IS NULL THEN 'alumni pelajar non santri'
+                            WHEN rp.status = 'lulus' AND s.status = 'aktif' THEN 'alumni pelajar tetapi masih santri aktif'
+                            WHEN rp.status = 'lulus' AND s.status = 'alumni' THEN 'alumni pelajar sekaligus santri'
+                            WHEN rp.status = 'lulus' THEN 'alumni pelajar'
                             ELSE ''
-                        END as status"
-                    );
+                        END as status
+                    ");
                     break;
                 case 'ibu_kandung':
                     $select[] = 'b_ibu2.nama as nama_ibu';
