@@ -199,7 +199,7 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     // Keluarga
     Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
     Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
-    Route::put('{id}/keluarga', [KeluargaController::class, 'update']);// update hanya 1 data keluarga saja
+    Route::put('{id}/keluarga', [KeluargaController::class, 'update']); // update hanya 1 data keluarga saja
     Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']); // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
 
     Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
@@ -372,6 +372,11 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
 
+    //presensi
+    Route::get('/presensi-santri', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);
+    Route::post('/presensi-santri', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'store']);
+    Route::put('/presensi-santri/{presensi}', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'update']);
+    Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
 });
 
 Route::get('/user', [UserController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin');
@@ -413,7 +418,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
-    
+
     // 🏫 Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
     Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);

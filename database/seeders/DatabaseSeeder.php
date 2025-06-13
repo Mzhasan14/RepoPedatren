@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
             PengunjungMahromSeeder::class,
             GolonganJabatanSeeder::class,
             BiometricSeeder::class,
+            PresensiSantriSeeder::class,
         ]);
 
         // Aktifkan kembali logging activity setelah seeding selesai
