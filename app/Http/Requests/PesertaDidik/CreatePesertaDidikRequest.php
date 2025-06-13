@@ -77,7 +77,6 @@ class CreatePesertaDidikRequest extends FormRequest
             // Wali
             'nama_wali' => 'required|string|max:100',
             'nik_wali' => 'required|digits:16',
-            'hubungan' => 'required|in:ayah kandung,ibu kandung,kakak kandung,adik kandung,kakek kandung,nenek kandung,paman dari ayah/ibu,bibi dari ayah/ibu,ayah sambung,ibu sambung',
             'tempat_lahir_wali' => 'required|string|max:50',
             'tanggal_lahir_wali' => 'required|date',
             'no_telepon_wali' => 'required|string|max:20',
@@ -242,7 +241,6 @@ class CreatePesertaDidikRequest extends FormRequest
             'nama_wali.max' => 'Nama wali maksimal 100 karakter.',
             'nik_wali.required' => 'NIK wali wajib diisi.',
             'nik_wali.digits' => 'NIK wali harus 16 digit.',
-            'hubungan.required' => 'Hubungan dengan wali wajib diisi.',
             'hubungan.in' => 'Hubungan dengan wali tidak valid.',
             'tempat_lahir_wali.required' => 'Tempat lahir wali wajib diisi.',
             'tempat_lahir_wali.max' => 'Tempat lahir wali maksimal 50 karakter.',

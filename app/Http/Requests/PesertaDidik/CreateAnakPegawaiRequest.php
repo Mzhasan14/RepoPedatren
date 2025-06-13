@@ -77,7 +77,6 @@ class CreateAnakPegawaiRequest extends FormRequest
             // Wali
             'nama_wali' => 'required|string|max:100',
             'nik_wali' => 'required|digits:16',
-            'hubungan' => 'required|in:ayah kandung,ibu kandung,kakak kandung,adik kandung,kakek kandung,nenek kandung,paman dari ayah/ibu,bibi dari ayah/ibu,ayah sambung,ibu sambung',
             'tempat_lahir_wali' => 'required|string|max:50',
             'tanggal_lahir_wali' => 'required|date',
             'no_telepon_wali' => 'required|string|max:20',

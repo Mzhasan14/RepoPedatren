@@ -373,13 +373,15 @@ class AnakPegawaiService
                 }
             }
 
-            // --- 6. Proses data wali (jika ada) ---
+            // --- 4. PROSES WALI (JIKA ADA) ---
             if (!empty($data['nama_wali'])) {
                 $waliNik = $data['nik_wali'] ?? null;
-                $assigned = false;
+                $waliIsAyahIbu = false;
 
+                // Cek apakah wali adalah ayah atau ibu
                 foreach (['ayah', 'ibu'] as $role) {
                     if ($waliNik && $waliNik === ($data["nik_$role"] ?? null)) {
+                        // Wali adalah ayah/ibu kandung
                         $parentId = DB::table('biodata')->where('nik', $waliNik)->value('id');
                         $roleKandung = "$role kandung";
                         DB::table('orang_tua_wali')
@@ -390,15 +392,17 @@ class AnakPegawaiService
                                 'updated_by' => $userId,
                                 'updated_at' => $now,
                             ]);
-                        $assigned = true;
+                        $waliIsAyahIbu = true;
                         break;
                     }
                 }
 
-                if (!$assigned) {
+                // Jika wali BUKAN ayah/ibu
+                if (!$waliIsAyahIbu) {
                     $parent = $waliNik ? DB::table('biodata')->where('nik', $waliNik)->first() : null;
                     $parentId = $parent->id ?? Str::uuid()->toString();
 
+                    // Insert/update biodata wali
                     if ($parent) {
                         DB::table('biodata')->where('id', $parentId)->update([
                             'nama' => $data['nama_wali'],
@@ -450,6 +454,7 @@ class AnakPegawaiService
                         ]));
                     }
 
+                    // Tambah ke keluarga jika belum ada
                     if (!DB::table('keluarga')->where('no_kk', $data['no_kk'])->where('id_biodata', $parentId)->exists()) {
                         DB::table('keluarga')->insert([
                             'id_biodata' => $parentId,
