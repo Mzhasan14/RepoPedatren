@@ -27,7 +27,7 @@ class AnakPegawaiController extends Controller
         try {
             $query = $this->anakPegawaiService->getAllAnakPegawai($request);
             $query = $this->filterController->anakPegawaiFilters($query, $request);
-            $query = $query->distinct()->latest('b.id');
+            $query = $query->distinct()->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);

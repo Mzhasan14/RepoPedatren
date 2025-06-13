@@ -193,7 +193,6 @@ class PerizinanService
                 'alamat_tujuan'    => $data['alamat_tujuan'],
                 'tanggal_mulai'    => $data['tanggal_mulai'],
                 'tanggal_akhir'    => $data['tanggal_akhir'],
-                'tanggal_kembali'  => $data['tanggal_kembali'] ?? null,
                 'jenis_izin'       => $data['jenis_izin'],
                 'status'           => $data['status'],
                 'keterangan'       => $data['keterangan'] ?? null,
@@ -242,6 +241,18 @@ class PerizinanService
             if (!$izin) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
+
+            // $tglMulai = Carbon::parse($data['tanggal_mulai']);
+            // $tglKembali = Carbon::parse($data['tanggal_kembali']);
+
+            // if (!is_null($data['tanggal_kembali'])) {
+            //     if ($tglKembali->lt($tglMulai)) {
+            //         return [
+            //             'status' => false,
+            //             'message' => 'Tanggal kembali tidak boleh lebih awal dari tanggal mulai sebelumnya (' . $tglMulai->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+            //         ];
+            //     }
+            // }
 
             $izin->update([
                 'pengasuh_id'      => $data['pengasuh_id'] ?? null,

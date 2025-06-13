@@ -28,7 +28,7 @@ class KhadamController extends Controller
         try {
             $query = $this->khadamService->getAllKhadam($request);
             $query = $this->filterController->khadamFilters($query, $request);
-            $query = $query->latest('b.id');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -134,7 +134,7 @@ class KhadamController extends Controller
         // Ambil query export (sudah pakai base query utama!)
         $query = $this->khadamService->getExportKhadamQuery($fields, $request);
         $query = $this->filterController->khadamFilters($query, $request);
-        $query = $query->latest('b.id');
+        $query = $query->latest('b.created_at');
 
         // Jika export all, ambil semua data, else limit
         $results = $request->input('all') === 'true'

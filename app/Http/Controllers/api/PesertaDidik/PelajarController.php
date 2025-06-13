@@ -26,7 +26,7 @@ class PelajarController extends Controller
         try {
             $query = $this->pelajarService->getAllPelajar($request);
             $query = $this->filterController->pelajarFilters($query, $request);
-            $query = $query->latest('b.id');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -101,7 +101,7 @@ class PelajarController extends Controller
         $query = $this->pelajarService->getExportpelajarQuery($fields, $request);
         $query = $this->filterController->pelajarFilters($query, $request);
 
-        $query = $query->latest('b.id');
+        $query = $query->latest('b.created_at');
 
         // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'

@@ -32,7 +32,7 @@ class PesertaDidikController extends Controller
         try {
             $query = $this->pesertaDidik->getAllPesertaDidik($request);
             $query = $this->filter->pesertaDidikFilters($query, $request);
-            $query = $query->latest('b.id');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -135,7 +135,7 @@ class PesertaDidikController extends Controller
         // Ambil query export (sudah pakai base query utama!)
         $query = $this->pesertaDidik->getExportPesertaDidikQuery($fields, $request);
         $query = $this->filter->pesertaDidikFilters($query, $request);
-        $query = $query->latest('b.id');
+        $query = $query->latest('b.created_at');
 
         // Jika export all, ambil semua data, else limit
         $results = $request->input('all') === 'true'

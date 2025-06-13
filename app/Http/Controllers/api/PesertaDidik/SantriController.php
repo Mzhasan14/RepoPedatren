@@ -28,7 +28,7 @@ class SantriController extends Controller
             $query = $this->santriService->getAllSantri($request);
             $query = $this->filterController->santriFilters($query, $request);
 
-            $query = $query->latest('b.id');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -103,7 +103,7 @@ class SantriController extends Controller
         $query = $this->santriService->getExportSantriQuery($fields, $request);
         $query = $this->filterController->santriFilters($query, $request);
 
-        $query = $query->latest('b.id');
+        $query = $query->latest('b.created_at');
 
         // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'

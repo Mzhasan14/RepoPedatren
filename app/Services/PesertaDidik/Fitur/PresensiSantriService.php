@@ -83,9 +83,7 @@ class PresensiSantriService
     public function update(PresensiSantri $presensi, array $data, int $userId)
     {
         // Cek duplikasi kalau ada perubahan tanggal/jenis
-        if (
-            ($data['tanggal'] !== $presensi->tanggal->format('Y-m-d') || $data['jenis_presensi_id'] != $presensi->jenis_presensi_id)
-        ) {
+        if (($data['tanggal'] !== $presensi->tanggal->format('Y-m-d') || $data['jenis_presensi_id'] != $presensi->jenis_presensi_id)) {
             $cek = PresensiSantri::where('santri_id', $presensi->santri_id)
                 ->where('jenis_presensi_id', $data['jenis_presensi_id'])
                 ->where('tanggal', $data['tanggal'])
@@ -96,6 +94,8 @@ class PresensiSantriService
             }
         }
         $data['updated_by'] = $userId;
+        $data['updated_at'] = now();
+        
         $presensi->update($data);
         return $presensi;
     }
