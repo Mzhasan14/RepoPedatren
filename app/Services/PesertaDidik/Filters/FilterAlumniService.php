@@ -94,7 +94,6 @@ class FilterAlumniService
         );
     }
 
-
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('lembaga')) {
@@ -139,19 +138,19 @@ class FilterAlumniService
                 case 'alumni santri non pelajar':
                     $query->where('s.status', 'alumni')
                         ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
-                        ->where(fn($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
+                        ->where(fn($j) => $j->whereNull('pd.id'));
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
                     $query->where('s.status', 'alumni')
                         ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
-                        ->whereNotNull('pd.id');
+                        ->where('pd.status', 'aktif');
                     break;
                 case 'alumni pelajar':
                     $query->where('rp.status', 'lulus');
                     break;
                 case 'alumni pelajar non santri':
                     $query->where('rp.status', 'lulus')
-                        ->where(fn($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
+                        ->where(fn($j) => $j->whereNull('s.id'));
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
                     $query->where('rp.status', 'lulus')
@@ -176,7 +175,7 @@ class FilterAlumniService
             return $query;
         }
 
-        $query->where('s.angkatan_id', $request->angkatan_santri);
+        $query->whereYear('s.tanggal_keluar', $request->angkatan_santri);
         return $query;
     }
 
@@ -186,7 +185,7 @@ class FilterAlumniService
             return $query;
         }
 
-        $query->where('rp.angkatan_id', $request->angkatan_pelajar);
+        $query->whereYear('rp.tanggal_keluar', $request->angkatan_pelajar);
         return $query;
     }
 

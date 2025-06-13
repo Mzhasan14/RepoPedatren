@@ -4,10 +4,13 @@ namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
 use Exception;
 use Illuminate\Http\Request;
+use App\Models\JenisPresensi;
 use App\Models\PresensiSantri;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Biometric\BiometricLog;
+use App\Models\Biometric\BiometricProfile;
 use App\Http\Requests\PesertaDidik\PresensiSantriRequest;
 use App\Services\PesertaDidik\Fitur\PresensiSantriService;
 
@@ -74,7 +77,6 @@ class PresensiSantriController extends Controller
             ], 422);
         }
     }
-
     public function update(PresensiSantriRequest $request, PresensiSantri $presensi)
     {
         try {
@@ -110,5 +112,60 @@ class PresensiSantriController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    public function presensiBiometric(Request $request)
+    {
+        // Data dari alat
+        $finger_id = $request->input('finger_id');
+        $card_uid = $request->input('card_uid');
+        $device_id = $request->input('device_id');
+        $metode = $request->input('metode');
+        $waktu = $request->input('waktu', now());
+        $lokasi = $request->input('lokasi');
+        $jenis_presensi_kode = $request->input('jenis_presensi_kode'); 
+
+        // Cek dan ambil jenis presensi
+        $jenisPresensi = JenisPresensi::where('kode', $jenis_presensi_kode)->first();
+        if (!$jenisPresensi) {
+            return response()->json(['message' => 'Jenis presensi tidak ditemukan'], 404);
+        }
+
+        // Temukan profile santri
+        $profile = BiometricProfile::where('card_uid', $card_uid)
+            ->orWhereHas('fingerprints', function ($q) use ($finger_id) {
+                $q->where('template', $finger_id); 
+            })->first();
+
+        if (!$profile) {
+            return response()->json(['message' => 'Santri tidak ditemukan'], 404);
+        }
+
+        // Catat log biometrik
+        $log = BiometricLog::create([
+            'biometric_profile_id' => $profile->id,
+            'device_id' => $device_id,
+            'method' => $metode,
+            'scanned_at' => $waktu,
+            'success' => true,
+            'message' => 'Presensi berhasil',
+        ]);
+
+        // Catat presensi santri
+        $presensi = PresensiSantri::updateOrCreate([
+            'santri_id' => $profile->santri_id,
+            'jenis_presensi_id' => $jenisPresensi->id,
+            'tanggal' => date('Y-m-d', strtotime($waktu)),
+        ], [
+            'waktu_presensi' => date('H:i:s', strtotime($waktu)),
+            'status' => 'hadir',
+            'metode' => $metode,
+            'biometric_log_id' => $log->id,
+            'device_id' => $device_id,
+            'lokasi' => $lokasi,
+            'created_by' => null,
+        ]);
+
+        return response()->json(['message' => 'Presensi tercatat', 'data' => $presensi]);
     }
 }

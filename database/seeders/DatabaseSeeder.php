@@ -75,7 +75,7 @@ class DatabaseSeeder extends Seeder
             WargaPesantrenSeeder::class,
             PengunjungMahromSeeder::class,
             GolonganJabatanSeeder::class,
-            BiometricSeeder::class,
+            // BiometricSeeder::class,
             PresensiSantriSeeder::class,
         ]);
 

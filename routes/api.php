@@ -53,8 +53,7 @@ use App\Http\Controllers\Api\Alamat\{
     KecamatanController
 };
 use App\Http\Controllers\api\Biometric\{
-    BiometricRegistrationController,
-    BiometricScanController
+    BiometricProfileController
 };
 use App\Http\Controllers\Api\Kewaliasuhan\{
     GrupWaliAsuhController,
@@ -237,12 +236,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Biometric
 Route::prefix('biometric')->group(function () {
-    Route::post('register-profile', [BiometricRegistrationController::class, 'registerProfile']);
-    Route::post('add-finger', [BiometricRegistrationController::class, 'addFingerPosition']);
-    Route::post('store-templates', [BiometricRegistrationController::class, 'storeFingerprintTemplates']);
-    Route::get('santri/{santri_id}/templates', [BiometricRegistrationController::class, 'getTemplatesBySantri']);
-
-    Route::post('/scan', [BiometricScanController::class, 'scan']);
+    Route::post('register-profile', [BiometricProfileController::class, 'store']);
+    Route::post('update-profile', [BiometricProfileController::class, 'update']);
+    Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
 });
 
 // Export
@@ -253,7 +249,8 @@ Route::prefix('export')->group(function () {
     Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
     Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');
     Route::get('/perizinan', [PerizinanController::class, 'exportExcel'])->name('perizinan.export');
-    // Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
+    Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
+    Route::get('/anakpegawai', [AnakPegawaiController::class, 'exportExcel'])->name('anakpegawai.export');
 
     // Kepegawaian
     Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');

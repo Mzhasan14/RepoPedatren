@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
-use App\Exports\PesertaDidik\AlumniExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PesertaDidik\AlumniExport;
 use App\Services\PesertaDidik\AlumniService;
 use App\Http\Requests\PesertaDidik\AlumniRequest;
 use App\Services\PesertaDidik\Filters\FilterAlumniService;
@@ -27,7 +28,7 @@ class AlumniController extends Controller
         try {
             $query = $this->alumniService->getAllAlumni($request);
             $query = $this->filterController->alumniFilters($query, $request);
-            $query = $query->latest('b.id');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -59,8 +60,72 @@ class AlumniController extends Controller
         ]);
     }
 
-     public function alumniExport()
+    public function exportExcel(Request $request)
     {
-        return Excel::download(new AlumniExport, 'alumni.xlsx');
+        $defaultExportFields = [
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+        ];
+
+        $columnOrder = [
+            'no_kk',
+            'nik',
+            'niup',
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'tahun_keluar_santri',
+            'status',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+            'tahun_keluar_pelajar',
+            'ibu_kandung'
+        ];
+
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung default + optional, urutkan sesuai $columnOrder, tidak ada duplikat
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Ambil query export (sudah pakai base query utama!)
+        $query = $this->alumniService->getExportAlumniQuery($fields, $request);
+        $query = $this->filterController->alumniFilters($query, $request);
+        $query = $query->latest('b.created_at');
+
+        // Jika export all, ambil semua data, else limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->alumniService->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->alumniService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "alumni_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

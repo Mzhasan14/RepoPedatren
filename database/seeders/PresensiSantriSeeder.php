@@ -14,27 +14,78 @@ class PresensiSantriSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seeder jenis_presensi
+        // Data jenis_presensi dengan kode unik (bisa di-generate atau tentukan sendiri)
         $jenisPresensi = [
-            ['nama' => 'Presensi Tahajjud', 'deskripsi' => 'Salat Tahajjud berjamaah di masjid', 'aktif' => true],
-            ['nama' => 'Presensi Subuh', 'deskripsi' => 'Salat Subuh berjamaah di masjid', 'aktif' => true],
-            ['nama' => 'Presensi Malam Jumat', 'deskripsi' => 'Pembacaan Yasin dan Tahlil setiap malam Jumat', 'aktif' => true],
-            ['nama' => 'Presensi Dhuha', 'deskripsi' => 'Salat Dhuha di pagi hari', 'aktif' => true],
-            ['nama' => 'Presensi Maghrib', 'deskripsi' => 'Salat Maghrib berjamaah di masjid', 'aktif' => true],
-            ['nama' => 'Presensi Isya', 'deskripsi' => 'Salat Isya berjamaah di masjid', 'aktif' => true],
-            ['nama' => 'Presensi Kegiatan Sore', 'deskripsi' => 'Kegiatan ekstra sore hari', 'aktif' => true],
+            [
+                'kode' => 'TAHAJJUD',
+                'nama' => 'Presensi Tahajjud',
+                'deskripsi' => 'Salat Tahajjud berjamaah di masjid',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'SUBUH',
+                'nama' => 'Presensi Subuh',
+                'deskripsi' => 'Salat Subuh berjamaah di masjid',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'MLM_JUMAT',
+                'nama' => 'Presensi Malam Jumat',
+                'deskripsi' => 'Pembacaan Yasin dan Tahlil setiap malam Jumat',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'DHUHA',
+                'nama' => 'Presensi Dhuha',
+                'deskripsi' => 'Salat Dhuha di pagi hari',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'MAGHRIB',
+                'nama' => 'Presensi Maghrib',
+                'deskripsi' => 'Salat Maghrib berjamaah di masjid',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'ISYA',
+                'nama' => 'Presensi Isya',
+                'deskripsi' => 'Salat Isya berjamaah di masjid',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'kode' => 'KEG_SORE',
+                'nama' => 'Presensi Kegiatan Sore',
+                'deskripsi' => 'Kegiatan ekstra sore hari',
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
+        // Insert ke jenis_presensi
         DB::table('jenis_presensi')->insert($jenisPresensi);
 
+        // Ambil id dari nama jenis_presensi yang sudah diinsert
         $jenisIds = DB::table('jenis_presensi')->pluck('id', 'nama');
 
-        // --- Seeder presensi_santri anti duplicate ---
+        // Seeder presensi_santri anti duplicate
         foreach ($jenisIds as $nama => $jenisId) {
             $used = [];
             $loop = 0;
-            while (count($used) < 30 && $loop < 1000) { // 30 unik per jenis, max 1000 percobaan biar tidak infinite loop
-                $santriId = rand(1, 50);
+            while (count($used) < 30 && $loop < 1000) {
+                $santriId = rand(1, 50); // Pastikan santri dengan id 1-50 ada
                 $tanggal = Carbon::today()->subDays(rand(0, 60))->toDateString();
                 $uniqueKey = "{$santriId}-{$jenisId}-{$tanggal}";
 
@@ -49,9 +100,14 @@ class PresensiSantriSeeder extends Seeder
                         'keterangan' => null,
                         'lokasi' => 'Masjid',
                         'metode' => ['qr', 'manual', 'rfid', 'fingerprint'][array_rand(['qr', 'manual', 'rfid', 'fingerprint'])],
-                        'created_by' => 1,
+                        'biometric_log_id' => null,
+                        'device_id' => null,
+                        'created_by' => 1, // Atau sesuaikan user admin
+                        'updated_by' => 1,
+                        'deleted_by' => null,
                         'created_at' => now(),
                         'updated_at' => now(),
+                        'deleted_at' => null,
                     ]);
                 }
                 $loop++;

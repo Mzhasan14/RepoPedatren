@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Services\PesertaDidik\AnakPegawaiService;
 use App\Http\Requests\PesertaDidik\CreateAnakPegawaiRequest;
 use App\Services\PesertaDidik\Filters\FilterAnakPegawaiService;
@@ -27,7 +29,7 @@ class AnakPegawaiController extends Controller
         try {
             $query = $this->anakPegawaiService->getAllAnakPegawai($request);
             $query = $this->filterController->anakPegawaiFilters($query, $request);
-            $query = $query->distinct()->latest('b.created_at');
+            $query = $query->latest('b.created_at');
 
             $perPage     = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
@@ -77,5 +79,73 @@ class AnakPegawaiController extends Controller
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $defaultExportFields = [
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+        ];
+
+        $columnOrder = [
+            'no_kk',
+            'nik',
+            'niup',
+            'nama',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'status',
+            'no_induk',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'angkatan_pelajar',
+            'ibu_kandung',
+            'ayah_kandung'
+        ];
+
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung default + optional, urutkan sesuai $columnOrder, tidak ada duplikat
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Ambil query export (sudah pakai base query utama!)
+        $query = $this->anakPegawaiService->getExportAnakPegawaiQuery($fields, $request);
+        $query = $this->filterController->anakPegawaiFilters($query, $request);
+        $query = $query->latest('b.created_at');
+
+        // Jika export all, ambil semua data, else limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->anakPegawaiService->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->anakPegawaiService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "anak_pegawai_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }
