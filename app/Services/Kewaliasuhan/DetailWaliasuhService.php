@@ -222,30 +222,112 @@ class DetailWaliasuhService
             ]);
         }
 
-        // --- 7. Domisili ---
-        $dom = DB::table('riwayat_domisili as rd')
-            ->where('rd.santri_id', $santriId)
+        // Gabungkan domisili aktif dan riwayat
+        $domisiliAktif = DB::table('domisili_santri as ds')
+            ->join('santri AS s', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
+            ->join('biodata as b', 's.biodata_id', 'b.id')
+            ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
+            ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
+            ->join('kamar as km', 'ds.kamar_id', '=', 'km.id')
+            ->where('b.id', $bioId)
+            ->select([
+                'ds.id',
+                'km.nama_kamar',
+                'bl.nama_blok',
+                'w.nama_wilayah',
+                'ds.tanggal_masuk',
+                'ds.tanggal_keluar',
+                'ds.status',
+            ]);
+
+        $domisiliRiwayat = DB::table('riwayat_domisili as rd')
+            ->join('santri as s', 'rd.santri_id', 's.id')
+            ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
+            ->where('b.id', $bioId)
             ->select([
+                'rd.id',
                 'km.nama_kamar',
                 'bl.nama_blok',
                 'w.nama_wilayah',
                 'rd.tanggal_masuk',
                 'rd.tanggal_keluar',
-            ])
-            ->get();
+                'rd.status',
+            ]);
 
-        if ($dom->isNotEmpty()) {
-            $data['Domisili'] = $dom->map(fn ($d) => [
-                'kamar' => $d->nama_kamar,
-                'blok' => $d->nama_blok,
+        $domisiliGabungan = $domisiliAktif->unionAll($domisiliRiwayat)->get();
+
+        // Map dan urutkan berdasarkan tanggal masuk desc
+        $data['Domisili'] = collect($domisiliGabungan)
+            ->map(fn($d) => [
+                'id' => $d->id,
                 'wilayah' => $d->nama_wilayah,
+                'blok' => $d->nama_blok,
+                'kamar' => $d->nama_kamar,
                 'tanggal_ditempati' => $d->tanggal_masuk,
                 'tanggal_pindah' => $d->tanggal_keluar ?? '-',
+                'status' => $d->status,
+            ])
+            ->sortByDesc('tanggal_masuk')
+            ->values();
+
+        // Gabungkan pendidikan aktif dan riwayat
+        $pendidikanAktif = DB::table('pendidikan as pd')
+            ->join('lembaga as l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas as k', 'pd.kelas_id', '=', 'k.id')
+            ->leftJoin('rombel as r', 'pd.rombel_id', '=', 'r.id')
+            ->where('pd.biodata_id', $bioId)
+            ->whereIn('pd.status', ['aktif', 'cuti'])
+            ->select([
+                'pd.id',
+                'pd.no_induk',
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'k.nama_kelas',
+                'r.nama_rombel',
+                'pd.tanggal_masuk',
+                'pd.tanggal_keluar',
+                'pd.status',
             ]);
-        }
+
+        $riwayatPendidikan = DB::table('riwayat_pendidikan as rp')
+            ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
+            ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
+            ->leftJoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
+            ->where('rp.biodata_id', $bioId)
+            ->select([
+                'rp.id',
+                'rp.no_induk',
+                'l.nama_lembaga',
+                'j.nama_jurusan',
+                'k.nama_kelas',
+                'r.nama_rombel',
+                'rp.tanggal_masuk',
+                'rp.tanggal_keluar',
+                'rp.status',
+            ]);
+
+        $pendidikanGabungan = $pendidikanAktif->unionAll($riwayatPendidikan)->get();
+
+        // Map dan urutkan berdasarkan tanggal masuk desc
+        $data['Pendidikan'] = collect($pendidikanGabungan)
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'no_induk' => $p->no_induk,
+                'nama_lembaga' => $p->nama_lembaga,
+                'nama_jurusan' => $p->nama_jurusan ?? '-',
+                'nama_kelas' => $p->nama_kelas ?? '-',
+                'nama_rombel' => $p->nama_rombel ?? '-',
+                'tahun_masuk' => $p->tanggal_masuk,
+                'tahun_lulus' => $p->tanggal_keluar ?? '-',
+                'status' => $p->status,
+            ])
+            ->sortByDesc('tanggal_masuk')
+            ->values();
 
         // Wali asuh
         $ks = DB::table('wali_asuh as ws')
@@ -257,36 +339,6 @@ class DetailWaliasuhService
             $data['Wali_Asuh'] = $ks->map(fn ($k) => [
                 'tanggal_mulai' => $k->tanggal_mulai,
                 'tanggal_akhir' => $k->tanggal_berakhir,
-            ]);
-        }
-
-        // --- 8. Pendidikan ---
-        $pend = DB::table('riwayat_pendidikan as rp')
-            ->join('santri as s','s.id','=','rp.santri_id')
-            ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
-            ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
-            ->leftJoin('rombel as r', 'rp.rombel_id', '=', 'r.id')
-            ->select([
-                'rp.no_induk',
-                'l.nama_lembaga',
-                'j.nama_jurusan',
-                'k.nama_kelas',
-                'r.nama_rombel',
-                'rp.tanggal_masuk',
-                'rp.tanggal_keluar',
-            ])
-            ->get();
-
-        if ($pend->isNotEmpty()) {
-            $data['Pendidikan'] = $pend->map(fn ($p) => [
-                'no_induk' => $p->no_induk,
-                'nama_lembaga' => $p->nama_lembaga,
-                'nama_jurusan' => $p->nama_jurusan,
-                'nama_kelas' => $p->nama_kelas ?? '-',
-                'nama_rombel' => $p->nama_rombel ?? '-',
-                'tahun_masuk' => $p->tanggal_masuk,
-                'tahun_lulus' => $p->tanggal_keluar ?? '-',
             ]);
         }
 

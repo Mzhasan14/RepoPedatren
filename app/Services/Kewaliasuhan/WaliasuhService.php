@@ -35,12 +35,12 @@ class WaliasuhService
         return DB::table('wali_asuh AS ws')
             ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_domisili AS rd', fn ($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
-            ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
-            ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
-            ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn ($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
+            ->leftJoin('domisili_santri AS ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
+            ->leftjoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
@@ -58,7 +58,7 @@ class WaliasuhService
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                // ambil updated_at terbaru antar s, rp, rd
+                // ambil updated_at terbaru antar s, pd, rd
                 DB::raw('
                    GREATEST(
                        s.updated_at,
