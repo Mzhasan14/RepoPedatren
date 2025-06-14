@@ -66,21 +66,22 @@ class FilterGrupWaliasuhService
             return $query;
         }
 
-        if ($request === 'tidak_ada_wali_dan_anak') {
-            $query->whereNull('wali_asuh.id')->whereNull('anak_asuh.id');
-        } elseif ($request === 'tidak_ada_wali') {
-            $query->whereNull('wali_asuh.id');
-        } elseif ($request === 'tidak_ada_anak') {
-            $query->whereNull('anak_asuh.id');
-        } elseif ($request === 'wali_ada_tapi_tidak_ada_anak') {
-            $query->whereNotNull('wali_asuh.id')->whereNull('anak_asuh.id');
-        } elseif ($request === 'anak_ada_tapi_tidak_ada_wali') {
-            $query->whereNotNull('anak_asuh.id')->whereNull('wali_asuh.id');
+        $jenis = $request->grup_wali_asuh;
+
+        if ($jenis === 'tidak_ada_wali_dan_anak') {
+            $query->whereNull('ws.id')->havingRaw('COUNT(aa.id) = 0');
+        } elseif ($jenis === 'tidak_ada_wali') {
+            $query->whereNull('ws.id');
+        } elseif ($jenis === 'tidak_ada_anak') {
+            $query->havingRaw('COUNT(aa.id) = 0');
+        } elseif ($jenis === 'wali_ada_tapi_tidak_ada_anak') {
+            $query->whereNotNull('ws.id')->havingRaw('COUNT(aa.id) = 0');
+        } elseif ($jenis === 'anak_ada_tapi_tidak_ada_wali') {
+            $query->whereNull('ws.id')->havingRaw('COUNT(aa.id) > 0');
         }
 
         return $query;
     }
-
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('nama')) {

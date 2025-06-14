@@ -15,9 +15,9 @@ class GrupWaliasuhService
     public function getAllGrupWaliasuh(Request $request)
     {
         return DB::table('grup_wali_asuh AS gs')
-            ->join('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
-            ->join('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
-            ->join('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
+            ->leftjoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
+            ->leftjoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
+            ->leftjoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
             ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')

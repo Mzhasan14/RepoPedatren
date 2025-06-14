@@ -276,7 +276,8 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-    // Route::put('/anakasuh/{id}', [AnakasuhController::class, 'update']);
+    Route::post('/anakasuh', [AnakasuhController::class, 'store']);
+    Route::put('/anakasuh/{id}', [AnakasuhController::class, 'update']);
     // Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
     // lembaga
