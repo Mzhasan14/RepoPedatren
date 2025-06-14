@@ -31,6 +31,10 @@ class Santri extends Model
         'deleted_by',
     ];
 
+    protected $casts = [
+        'tanggal_keluar' => 'date',
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -57,7 +61,7 @@ class Santri extends Model
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());
-        static::updating(fn ($model) => $model->updated_by = Auth::id());
+        static::updating(fn($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
