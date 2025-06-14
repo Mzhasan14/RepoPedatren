@@ -32,7 +32,7 @@ class AnakasuhService
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('Anak_asuh AS as')
+        return DB::table('anak_asuh AS as')
             ->join('santri AS s', 'as.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'as.id')

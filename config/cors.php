@@ -15,7 +15,7 @@ return [
     'allowed_methods' => ['*'],
 
     // Domain mana saja yang diizinkan mengakses API Laravel
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174'],
 
     // Untuk pola regex yang cocok dengan asal permintaan (biasanya kosong kalau pakai allowed_origins saja)
     'allowed_origins_patterns' => [],
