@@ -2,14 +2,18 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
-
-class BaseExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
+class BaseExport implements FromCollection, WithColumnFormatting, WithEvents, WithHeadings
 {
     protected $data;
     protected $headings;
@@ -29,6 +33,7 @@ class BaseExport implements FromCollection, WithHeadings, WithEvents, WithColumn
     {
         return $this->headings;
     }
+
     public function columnFormats(): array
     {
         $colFormats = [];
@@ -36,10 +41,11 @@ class BaseExport implements FromCollection, WithHeadings, WithEvents, WithColumn
         foreach ($asText as $label) {
             $idx = array_search($label, $this->headings);
             if ($idx !== false) {
-                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
-                $colFormats[$colLetter] = \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT;
+                $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
+                $colFormats[$colLetter] = NumberFormat::FORMAT_TEXT;
             }
         }
+
         return $colFormats;
     }
 
@@ -48,49 +54,64 @@ class BaseExport implements FromCollection, WithHeadings, WithEvents, WithColumn
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
-                $sheet->getDelegate()->freezePane('A2');
-                foreach (range('A', $sheet->getDelegate()->getHighestColumn()) as $col) {
-                    $sheet->getDelegate()->getColumnDimension($col)->setAutoSize(true);
+                $sheetDelegate = $sheet->getDelegate();
+
+                // Freeze header
+                $sheetDelegate->freezePane('A2');
+
+                // Dapatkan kolom terakhir sebagai indeks
+                $lastCol = $sheetDelegate->getHighestColumn();
+                $lastColIndex = Coordinate::columnIndexFromString($lastCol);
+
+                // Set auto size tiap kolom (ganti foreach -> for)
+                for ($col = 1; $col <= $lastColIndex; $col++) {
+                    $colLetter = Coordinate::stringFromColumnIndex($col);
+                    $sheetDelegate->getColumnDimension($colLetter)->setAutoSize(true);
                 }
-                $cellRange = 'A1:' . $sheet->getDelegate()->getHighestColumn() . '1';
-                $sheet->getDelegate()->getStyle($cellRange)->applyFromArray([
+
+                // Style header
+                $cellRange = 'A1:' . $lastCol . '1';
+                $sheetDelegate->getStyle($cellRange)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'size' => 12,
                         'color' => ['rgb' => 'FFFFFF'],
                     ],
                     'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                        'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
                     ],
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'fillType' => Fill::FILL_SOLID,
                         'startColor' => [
-                            'rgb' => '318CE7'
-                        ]
-                    ]
-                ]);
-                $dataRange = 'A2:' . $sheet->getDelegate()->getHighestColumn() . $sheet->getDelegate()->getHighestRow();
-                $sheet->getDelegate()->getStyle($dataRange)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
-                        'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
+                            'rgb' => '318CE7',
+                        ],
                     ],
                 ]);
-                $lastRow = $sheet->getDelegate()->getHighestRow();
-                $lastCol = $sheet->getDelegate()->getHighestColumn();
+
+                // Style data
+                $lastRow = $sheetDelegate->getHighestRow();
+                $dataRange = 'A2:' . $lastCol . $lastRow;
+                $sheetDelegate->getStyle($dataRange)->applyFromArray([
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_LEFT,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
+                    ],
+                ]);
+
+                // Border all cells
                 $allCell = 'A1:' . $lastCol . $lastRow;
-                $sheet->getDelegate()->getStyle($allCell)->applyFromArray([
+                $sheetDelegate->getStyle($allCell)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'borderStyle' => Border::BORDER_THIN,
                             'color' => ['argb' => 'FFBBBBBB'],
                         ],
                     ],
                 ]);
-            }
+            },
         ];
     }
 }

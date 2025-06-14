@@ -2,15 +2,11 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
-use App\Models\Santri;
 use App\Models\Pendidikan;
-use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
 use App\Models\RiwayatPendidikan;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class PendidikanService
 {
@@ -44,23 +40,23 @@ class PendidikanService
 
         $data = $gabungan->map(function ($item) {
             return [
-                'id'             => $item->id,
-                'biodata_id'     => $item->biodata_id,
-                'no_induk'       => $item->no_induk ?? null,
-                'nama_lembaga'   => $item->lembaga->nama_lembaga ?? null,
-                'nama_jurusan'   => $item->jurusan->nama_jurusan ?? null,
-                'nama_kelas'     => $item->kelas->nama_kelas ?? null,
-                'nama_rombel'    => $item->rombel->nama_rombel ?? null,
-                'angkatan_id'    => $item->angkatan_id ?? null,
-                'tanggal_masuk'  => $item->tanggal_masuk ?? null,
+                'id' => $item->id,
+                'biodata_id' => $item->biodata_id,
+                'no_induk' => $item->no_induk ?? null,
+                'nama_lembaga' => $item->lembaga->nama_lembaga ?? null,
+                'nama_jurusan' => $item->jurusan->nama_jurusan ?? null,
+                'nama_kelas' => $item->kelas->nama_kelas ?? null,
+                'nama_rombel' => $item->rombel->nama_rombel ?? null,
+                'angkatan_id' => $item->angkatan_id ?? null,
+                'tanggal_masuk' => $item->tanggal_masuk ?? null,
                 'tanggal_keluar' => $item->tanggal_keluar ?? null,
-                'status'         => $item->status ?? null,
+                'status' => $item->status ?? null,
             ];
         });
 
         return [
             'status' => true,
-            'data'   => $data,
+            'data' => $data,
         ];
     }
 
@@ -85,21 +81,21 @@ class PendidikanService
             if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat pendidikan terakhir (' . $riwayatTerakhir->tanggal_masuk->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat pendidikan terakhir ('.$riwayatTerakhir->tanggal_masuk->format('Y-m-d').'). Harap periksa kembali tanggal yang Anda input.',
                 ];
             }
 
             $pendidikan = Pendidikan::create([
-                'biodata_id'     => $bioId,
-                'no_induk'       => $input['no_induk'] ?? null,
-                'lembaga_id'     => $input['lembaga_id'],
-                'jurusan_id'     => $input['jurusan_id'],
-                'kelas_id'       => $input['kelas_id'],
-                'rombel_id'      => $input['rombel_id'],
-                'angkatan_id'    => $input['angkatan_id'] ?? null,
-                'tanggal_masuk'  => isset($input['tanggal_masuk']) ? Carbon::parse($input['tanggal_masuk']) : now(),
-                'status'         => $input['status'] ?? 'aktif',
-                'created_by'     => Auth::id(),
+                'biodata_id' => $bioId,
+                'no_induk' => $input['no_induk'] ?? null,
+                'lembaga_id' => $input['lembaga_id'],
+                'jurusan_id' => $input['jurusan_id'],
+                'kelas_id' => $input['kelas_id'],
+                'rombel_id' => $input['rombel_id'],
+                'angkatan_id' => $input['angkatan_id'] ?? null,
+                'tanggal_masuk' => isset($input['tanggal_masuk']) ? Carbon::parse($input['tanggal_masuk']) : now(),
+                'status' => $input['status'] ?? 'aktif',
+                'created_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $pendidikan];
@@ -122,18 +118,18 @@ class PendidikanService
 
         return [
             'status' => true,
-            'data'   => [
-                'id'             => $pendidikan->id,
-                'biodata_id'     => $pendidikan->biodata_id,
-                'no_induk'       => $pendidikan->no_induk ?? null,
-                'nama_lembaga'   => $pendidikan->lembaga_id ?? '-',
-                'nama_jurusan'   => $pendidikan->jurusan_id ?? '-',
-                'nama_kelas'     => $pendidikan->kelas_id ?? '-',
-                'nama_rombel'    => $pendidikan->rombel_id ?? '-',
-                'nama_angkatan'  => $pendidikan->angkatan_id ?? '-',
-                'tanggal_masuk'  => $pendidikan->tanggal_masuk,
+            'data' => [
+                'id' => $pendidikan->id,
+                'biodata_id' => $pendidikan->biodata_id,
+                'no_induk' => $pendidikan->no_induk ?? null,
+                'nama_lembaga' => $pendidikan->lembaga_id ?? '-',
+                'nama_jurusan' => $pendidikan->jurusan_id ?? '-',
+                'nama_kelas' => $pendidikan->kelas_id ?? '-',
+                'nama_rombel' => $pendidikan->rombel_id ?? '-',
+                'nama_angkatan' => $pendidikan->angkatan_id ?? '-',
+                'tanggal_masuk' => $pendidikan->tanggal_masuk,
                 'tanggal_keluar' => $pendidikan->tanggal_keluar ?? ($source === 'riwayat' ? '-' : '-'),
-                'status'         => $pendidikan->status,
+                'status' => $pendidikan->status,
             ],
         ];
     }
@@ -154,42 +150,42 @@ class PendidikanService
                 return ['status' => false, 'message' => 'Tanggal masuk tidak valid.'];
             }
 
-            $today  = Carbon::now();
+            $today = Carbon::now();
             $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
             $tanggalLama = Carbon::parse($aktif->tanggal_masuk);
 
             if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya ('.$tanggalLama->format('Y-m-d').'). Silakan periksa kembali tanggal yang Anda input.',
                 ];
             }
 
             // Arsipkan ke riwayat
             RiwayatPendidikan::create([
-                'biodata_id'    => $aktif->biodata_id,
-                'no_induk'      => $aktif->no_induk ?? null,
-                'lembaga_id'    => $aktif->lembaga_id,
-                'jurusan_id'    => $aktif->jurusan_id ?? null,
-                'kelas_id'      => $aktif->kelas_id ?? null,
-                'rombel_id'     => $aktif->rombel_id ?? null,
-                'angkatan_id'   => $aktif->angkatan_id ?? null,
+                'biodata_id' => $aktif->biodata_id,
+                'no_induk' => $aktif->no_induk ?? null,
+                'lembaga_id' => $aktif->lembaga_id,
+                'jurusan_id' => $aktif->jurusan_id ?? null,
+                'kelas_id' => $aktif->kelas_id ?? null,
+                'rombel_id' => $aktif->rombel_id ?? null,
+                'angkatan_id' => $aktif->angkatan_id ?? null,
                 'tanggal_masuk' => $aktif->tanggal_masuk,
                 'tanggal_keluar' => $today,
-                'status'        => 'pindah',
-                'created_by'    => $aktif->created_by,
+                'status' => 'pindah',
+                'created_by' => $aktif->created_by,
             ]);
 
             // Update data aktif baru
             $aktif->update([
-                'lembaga_id'     => $input['lembaga_id'],
-                'jurusan_id'     => $input['jurusan_id'] ?? null,
-                'kelas_id'       => $input['kelas_id'] ?? null,
-                'rombel_id'      => $input['rombel_id'] ?? null,
-                'tanggal_masuk'  => $tanggalBaru,
-                'status'         => 'aktif',
-                'updated_by'     => Auth::id(),
-                'updated_at'     => now()
+                'lembaga_id' => $input['lembaga_id'],
+                'jurusan_id' => $input['jurusan_id'] ?? null,
+                'kelas_id' => $input['kelas_id'] ?? null,
+                'rombel_id' => $input['rombel_id'] ?? null,
+                'tanggal_masuk' => $tanggalBaru,
+                'status' => 'aktif',
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
             ]);
 
             return ['status' => true, 'data' => $aktif];
@@ -219,17 +215,17 @@ class PendidikanService
 
             // Simpan ke riwayat
             RiwayatPendidikan::create([
-                'biodata_id'    => $aktif->biodata_id,
-                'no_induk'      => $aktif->no_induk ?? null,
-                'lembaga_id'    => $aktif->lembaga_id,
-                'jurusan_id'    => $aktif->jurusan_id ?? null,
-                'kelas_id'      => $aktif->kelas_id ?? null,
-                'rombel_id'     => $aktif->rombel_id ?? null,
-                'angkatan_id'   => $aktif->angkatan_id ?? null,
+                'biodata_id' => $aktif->biodata_id,
+                'no_induk' => $aktif->no_induk ?? null,
+                'lembaga_id' => $aktif->lembaga_id,
+                'jurusan_id' => $aktif->jurusan_id ?? null,
+                'kelas_id' => $aktif->kelas_id ?? null,
+                'rombel_id' => $aktif->rombel_id ?? null,
+                'angkatan_id' => $aktif->angkatan_id ?? null,
                 'tanggal_masuk' => $aktif->tanggal_masuk,
                 'tanggal_keluar' => $input['tanggal_keluar'],
-                'status'        => $input['status'],
-                'created_by'    => $aktif->created_by,
+                'status' => $input['status'],
+                'created_by' => $aktif->created_by,
             ]);
 
             // Hapus data aktif
@@ -259,7 +255,7 @@ class PendidikanService
             // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
             if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
                 ];
             }
@@ -270,24 +266,24 @@ class PendidikanService
             // Validasi: jika status 'aktif', tanggal_keluar tidak boleh diisi
             if (strtolower($status) === 'aktif' && isset($input['tanggal_keluar'])) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tanggal keluar tidak boleh diisi jika status santri masih aktif.',
                 ];
             }
 
             // Update data aktif
             $pendidikan->update([
-                'no_induk'       => $input['no_induk'] ?? $pendidikan->no_induk,
-                'lembaga_id'     => $input['lembaga_id'],
-                'jurusan_id'     => $input['jurusan_id'] ?? null,
-                'kelas_id'       => $input['kelas_id'] ?? null,
-                'rombel_id'      => $input['rombel_id'] ?? null,
-                'angkatan_id'    => $input['angkatan_id'] ?? null,
-                'status'         => $status,
-                'tanggal_masuk'  => $tanggalMasuk,
+                'no_induk' => $input['no_induk'] ?? $pendidikan->no_induk,
+                'lembaga_id' => $input['lembaga_id'],
+                'jurusan_id' => $input['jurusan_id'] ?? null,
+                'kelas_id' => $input['kelas_id'] ?? null,
+                'rombel_id' => $input['rombel_id'] ?? null,
+                'angkatan_id' => $input['angkatan_id'] ?? null,
+                'status' => $status,
+                'tanggal_masuk' => $tanggalMasuk,
                 'tanggal_keluar' => $tanggalKeluar ?? null,
-                'updated_by'     => Auth::id(),
-                'updated_at'     => now()
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
             ]);
 
             return ['status' => true, 'data' => $pendidikan];

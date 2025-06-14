@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class KategoriGolonganRequest extends FormRequest
@@ -27,13 +27,14 @@ class KategoriGolonganRequest extends FormRequest
             'nama_kategori_golongan' => 'required|string|max:255',
         ];
     }
-        protected function failedValidation(Validator $validator)
+
+    protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

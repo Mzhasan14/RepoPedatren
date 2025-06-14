@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik\formulir;
+namespace App\Http\Controllers\api\PesertaDidik\Formulir;
 
-use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\Formulir\DomisiliService;
 use App\Http\Requests\PesertaDidik\formulir\CreateDomisiliRequest;
 use App\Http\Requests\PesertaDidik\formulir\KeluarDomisiliRequest;
 use App\Http\Requests\PesertaDidik\formulir\PindahDomisiliRequest;
 use App\Http\Requests\PesertaDidik\formulir\UpdateDomisiliRequest;
+use App\Services\PesertaDidik\Formulir\DomisiliService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class DomisiliController extends Controller
 {
@@ -29,22 +28,22 @@ class DomisiliController extends Controller
         try {
             $result = $this->domisili->index($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data domisili: ' . $e->getMessage());
+            Log::error('Gagal ambil data domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -58,22 +57,22 @@ class DomisiliController extends Controller
             $validated = $request->validated();
             $result = $this->domisili->store($validated, $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah domisili: ' . $e->getMessage());
+            Log::error('Gagal tambah domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -86,22 +85,22 @@ class DomisiliController extends Controller
         try {
             $result = $this->domisili->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail domisili: ' . $e->getMessage());
+            Log::error('Gagal ambil detail domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -115,22 +114,22 @@ class DomisiliController extends Controller
             $validated = $request->validated();
             $result = $this->domisili->update($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update domisili: ' . $e->getMessage());
+            Log::error('Gagal update domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -144,22 +143,22 @@ class DomisiliController extends Controller
             $validated = $request->validated();
             $result = $this->domisili->pindahDomisili($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Domisili baru berhasil dibuat',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah domisili: ' . $e->getMessage());
+            Log::error('Gagal pindah domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -173,9 +172,9 @@ class DomisiliController extends Controller
             $validated = $request->validated();
             $result = $this->domisili->keluarDomisili($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
@@ -183,11 +182,11 @@ class DomisiliController extends Controller
                 'message' => $result['message'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar domisili: ' . $e->getMessage());
+            Log::error('Gagal keluar domisili: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

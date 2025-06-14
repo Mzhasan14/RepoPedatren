@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\api\Administrasi;
 
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Perizinan;
-use App\Services\Administrasi\PerizinanService;
 use App\Services\Administrasi\DetailPerizinanService;
+use Illuminate\Support\Facades\Log;
 
 class DetailPerizinanController extends Controller
 {
@@ -21,11 +20,11 @@ class DetailPerizinanController extends Controller
     {
         try {
             $perizinan = Perizinan::find($id);
-            if (!$perizinan) {
+            if (! $perizinan) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'ID Perizinan tidak ditemukan',
-                    'data' => []
+                    'data' => [],
                 ], 404);
             }
 
@@ -33,12 +32,13 @@ class DetailPerizinanController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data'    => $data,
+                'data' => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error DetailPerizinan: " . $e->getMessage());
+            Log::error('Error DetailPerizinan: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }

@@ -9,12 +9,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Kamar extends Model
 {
     use HasFactory;
-
     use SoftDeletes;
+
     protected $table = 'kamar';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $incrementing = true;
+
     protected $guarded = ['id'];
     // public function scopeActive($query)
     // {

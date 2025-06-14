@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class UpdateSantriRequest extends FormRequest
 {
@@ -43,7 +42,7 @@ class UpdateSantriRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

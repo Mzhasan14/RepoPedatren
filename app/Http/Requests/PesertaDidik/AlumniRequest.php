@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\PesertaDidik;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class AlumniRequest extends FormRequest
@@ -25,7 +25,7 @@ class AlumniRequest extends FormRequest
     {
         return [
             'santri_ids' => 'required',
-            'santri_ids.*' => 'string|exists:santri,id'
+            'santri_ids.*' => 'string|exists:santri,id',
         ];
     }
 
@@ -35,7 +35,7 @@ class AlumniRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

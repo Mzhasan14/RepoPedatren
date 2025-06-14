@@ -19,7 +19,6 @@ class FilterPengunjungMahromService
         return $query;
     }
 
-
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('negara')) {
@@ -62,10 +61,10 @@ class FilterPengunjungMahromService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(bp.nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(bp.nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -78,7 +77,7 @@ class FilterPengunjungMahromService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);

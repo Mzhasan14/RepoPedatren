@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\PindahKamarRequest;
 use App\Services\PesertaDidik\Fitur\PindahKamarService;
@@ -10,6 +9,7 @@ use App\Services\PesertaDidik\Fitur\PindahKamarService;
 class PindahKamarController extends Controller
 {
     private PindahKamarService $pindah;
+
     public function __construct(PindahKamarService $pindah)
     {
         $this->pindah = $pindah;
@@ -28,7 +28,7 @@ class PindahKamarController extends Controller
                 'data' => [
                     'berhasil' => $result['data_baru'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Santri;
 use App\Models\Catatan_afektif;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Santri;
 use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Catatan_afektif>
@@ -13,6 +13,7 @@ use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 class CatatanAfektifFactory extends Factory
 {
     protected $model = Catatan_afektif::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,13 +21,14 @@ class CatatanAfektifFactory extends Factory
      */
     public function definition(): array
     {
-            $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
         $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
+
         return [
-            'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_wali_asuh' => (new Wali_asuhFactory())->create()->id,
+            'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
+            'id_wali_asuh' => (new Wali_asuhFactory)->create()->id,
             'kepedulian_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'kepedulian_tindak_lanjut' => $this->faker->sentence(),
             'kebersihan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),

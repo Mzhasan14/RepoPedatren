@@ -19,7 +19,7 @@ class WargaPesantrenFactory extends Factory
     {
         return [
             'biodata_id' => Biodata::inRandomOrder()->first()?->id,
-            'niup' =>  $this->faker->unique()->numerify('###########'),
+            'niup' => $this->faker->unique()->numerify('###########'),
             'created_by' => 1,
             'updated_by' => null,
             'status' => true,

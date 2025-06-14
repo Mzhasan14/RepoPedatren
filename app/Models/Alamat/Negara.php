@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Negara extends Model
 {
     protected $table = 'negara';
+
     protected $fillable = [
         'nama_negara',
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     public function provinsi()

@@ -18,9 +18,8 @@ return new class extends Migration
             $table->boolean('status');
             $table->timestamps();
 
-
             $table->foreign('negara_id')->references('id')->on('negara')->onDelete('cascade');
-            
+
         });
     }
 

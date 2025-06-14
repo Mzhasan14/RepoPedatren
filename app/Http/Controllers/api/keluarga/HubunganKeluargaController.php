@@ -2,21 +2,17 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
-use Illuminate\Http\Request;
-use App\Models\HubunganKeluarga;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use App\Services\Keluarga\HubunganKeluargaService;
 use App\Http\Requests\Keluarga\HubunganKeluargaRequest;
-
-
+use App\Models\HubunganKeluarga;
+use App\Services\Keluarga\HubunganKeluargaService;
+use Illuminate\Http\JsonResponse;
 
 class HubunganKeluargaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-
     private HubunganKeluargaService $service;
 
     public function __construct(HubunganKeluargaService $service)
@@ -24,17 +20,20 @@ class HubunganKeluargaController extends Controller
         $this->service = $service;
     }
 
-    public function getHubungan() {
+    public function getHubungan()
+    {
         $hk = HubunganKeluarga::select('id', 'nama_status')->get();
+
         return response()->json($hk);
     }
+
     public function index(): JsonResponse
     {
         $result = $this->service->index();
 
         return response()->json([
             'status' => true,
-            'data'   => $result['data']
+            'data' => $result['data'],
         ]);
     }
 
@@ -46,22 +45,22 @@ class HubunganKeluargaController extends Controller
         try {
             $validated = $request->validated();
             $result = $this->service->store($validated);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 404);
             }
 
             return response()->json([
                 'message' => 'Data berhasil disimpan',
-                'data'    => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Terjadi kesalahan saat memproses data',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -71,7 +70,7 @@ class HubunganKeluargaController extends Controller
     {
         $result = $this->service->show($id);
 
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json(['message' => $result['message']], 404);
         }
 
@@ -86,13 +85,13 @@ class HubunganKeluargaController extends Controller
         $validated = $request->validated();
         $result = $this->service->update($validated, $id);
 
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json(['message' => $result['message']], 404);
         }
 
         return response()->json([
             'message' => 'Data berhasil diperbarui',
-            'data'    => $result['data'],
+            'data' => $result['data'],
         ]);
     }
 
@@ -103,14 +102,14 @@ class HubunganKeluargaController extends Controller
     {
         $result = $this->service->delete($id);
 
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json([
-                'message' => $result['message']
+                'message' => $result['message'],
             ], 404);
         }
 
         return response()->json([
-            'message' => $result['message']
+            'message' => $result['message'],
         ]);
     }
 }

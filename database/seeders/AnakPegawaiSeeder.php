@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Santri;
 use App\Models\Biodata;
 use App\Models\Pegawai\Pegawai;
 use Illuminate\Database\Seeder;
@@ -63,7 +61,7 @@ class AnakPegawaiSeeder extends Seeder
         if (empty($available)) {
             return null;
         }
+
         return $available[array_rand($available)];
     }
 }
-

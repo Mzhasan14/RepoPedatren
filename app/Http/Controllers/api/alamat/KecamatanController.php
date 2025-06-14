@@ -16,53 +16,56 @@ class KecamatanController extends Controller
     public function index()
     {
         $kecamatan = Kecamatan::Active()->get();
-        return new PdResource(true,'Data berhasil ditampilkan',$kecamatan);
+
+        return new PdResource(true, 'Data berhasil ditampilkan', $kecamatan);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            'nama_kecamatan' => 'required|string|max:255', 
+        $validator = Validator::make($request->all(), [
+            'nama_kecamatan' => 'required|string|max:255',
             'id_kabupaten' => 'required|integer|exists:kabupaten,id',
-            'created_by' => 'required|integer', 
-            'status' => 'required|boolean'
+            'created_by' => 'required|integer',
+            'status' => 'required|boolean',
         ]);
-        if ($validator->fails())
-        {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'data gagal dibuat',
-                'data' => $validator->errors()
+                'data' => $validator->errors(),
             ]);
         }
         $kecamatan = Kecamatan::create($validator->validated());
-        return new PdResource(true,'data berhasil dibuat',$kecamatan);
+
+        return new PdResource(true, 'data berhasil dibuat', $kecamatan);
     }
 
     public function show(string $id)
     {
         $kecamatan = Kecamatan::findOrFail($id);
-        return new PdResource(true,'Data berhasil di tampilkan',$kecamatan);
+
+        return new PdResource(true, 'Data berhasil di tampilkan', $kecamatan);
     }
+
     public function update(Request $request, string $id)
     {
         $kecamatan = Kecamatan::findOrFail($id);
-        $validator = Validator::make($request->all(),[
-            'nama_kecamatan' => 'required|string|max:255', 
+        $validator = Validator::make($request->all(), [
+            'nama_kecamatan' => 'required|string|max:255',
             'id_kabupaten' => 'required|integer|exists:kabupaten,id',
             'updated_by' => 'nullable|integer',
-            'status' => 'required|boolean'
+            'status' => 'required|boolean',
         ]);
-        if ($validator->fails())
-        {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'data gagal dibuat',
-                'data' => $validator->errors()
+                'data' => $validator->errors(),
             ]);
         }
         $kecamatan->update($validator->validated());
-        return new PdResource(true,'Data berhasil diupdate',$kecamatan);
+
+        return new PdResource(true, 'Data berhasil diupdate', $kecamatan);
     }
 
     /**
@@ -72,6 +75,7 @@ class KecamatanController extends Controller
     {
         $kecamatan = Kecamatan::findOrFail($id);
         $kecamatan->delete();
-        return new PdResource(true,'Data berhasil dihapus',$kecamatan);
+
+        return new PdResource(true, 'Data berhasil dihapus', $kecamatan);
     }
 }

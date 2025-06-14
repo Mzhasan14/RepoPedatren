@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Database\Factories\BerkasPerizinanFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class BerkasPerizinanSeeder extends Seeder
@@ -13,6 +12,6 @@ class BerkasPerizinanSeeder extends Seeder
      */
     public function run(): void
     {
-        (new BerkasPerizinanFactory())->count(50)->create();
+        (new BerkasPerizinanFactory)->count(50)->create();
     }
 }

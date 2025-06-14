@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\api\formulir;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PesertaDidikFormulir extends Controller
 {
     // Tampilan Formulir Biodata Santri By Id
     public function getBiodata($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -64,63 +64,64 @@ class PesertaDidikFormulir extends Controller
                 )
                 ->first();
         } catch (\Exception $e) {
-            Log::error("Error in getBiodata: " . $e->getMessage());
+            Log::error('Error in getBiodata: '.$e->getMessage());
+
             return response()->json([
-                "status"  => "error",
-                "message" => "Terjadi kesalahan pada server"
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
-        if (!$biodata) {
+        if (! $biodata) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
         return response()->json([
-            "status"  => "success",
-            "message" => "Data ditemukan",
-            "data"    => [
+            'status' => 'success',
+            'message' => 'Data ditemukan',
+            'data' => [
                 'data_santri' => [
-                    "kewarganegaraan"             => $biodata->kewarganegaraan,
-                    "no_kk"                       => $biodata->no_kk,
-                    "no_passport"                 => $biodata->no_passport,
-                    "nik"                         => $biodata->nik,
-                    "nama_santri"                 => $biodata->nama_anak,
-                    "jenis_kelamin"               => $biodata->jenis_kelamin,
-                    "tempat_lahir"                => $biodata->tempat_lahir,
-                    "tanggal_lahir"               => $biodata->tanggal_lahir,
-                    "umur"                        => $biodata->umur,
-                    "anak_keberapa"               => $biodata->anak_keberapa,
-                    "dari_saudara"                => $biodata->dari_saudara,
-                    "tinggal_bersama"             => $biodata->tinggal_bersama,
-                    "jenjang_pendidikan_terakhir" => $biodata->jenjang_pendidikan_terakhir,
-                    "nama_pendidikan_terakhir"    => $biodata->nama_pendidikan_terakhir,
+                    'kewarganegaraan' => $biodata->kewarganegaraan,
+                    'no_kk' => $biodata->no_kk,
+                    'no_passport' => $biodata->no_passport,
+                    'nik' => $biodata->nik,
+                    'nama_santri' => $biodata->nama_anak,
+                    'jenis_kelamin' => $biodata->jenis_kelamin,
+                    'tempat_lahir' => $biodata->tempat_lahir,
+                    'tanggal_lahir' => $biodata->tanggal_lahir,
+                    'umur' => $biodata->umur,
+                    'anak_keberapa' => $biodata->anak_keberapa,
+                    'dari_saudara' => $biodata->dari_saudara,
+                    'tinggal_bersama' => $biodata->tinggal_bersama,
+                    'jenjang_pendidikan_terakhir' => $biodata->jenjang_pendidikan_terakhir,
+                    'nama_pendidikan_terakhir' => $biodata->nama_pendidikan_terakhir,
                 ],
                 'data_ortu' => [
-                    "no_telp_ortu"   => $biodata->no_telepon,
-                    "no_telp_ortu_2" => $biodata->no_telepon_2,
-                    "email_ortu"     => $biodata->email,
-                    "pekerjaan"      => $biodata->pekerjaan,
-                    "penghasilan"    => $biodata->penghasilan,
-                    "negara"         => $biodata->negara_ortu,
-                    "provinsi"       => $biodata->provinsi_ortu,
-                    "kabupaten"      => $biodata->kabupaten_ortu,
-                    "kecamatan"      => $biodata->kecamatan_ortu,
-                    "jalan"          => $biodata->jalan,
-                    "kode_pos"       => $biodata->kode_pos,
-                    "wafat"          => $biodata->wafat,
-                ]
-            ]
+                    'no_telp_ortu' => $biodata->no_telepon,
+                    'no_telp_ortu_2' => $biodata->no_telepon_2,
+                    'email_ortu' => $biodata->email,
+                    'pekerjaan' => $biodata->pekerjaan,
+                    'penghasilan' => $biodata->penghasilan,
+                    'negara' => $biodata->negara_ortu,
+                    'provinsi' => $biodata->provinsi_ortu,
+                    'kabupaten' => $biodata->kabupaten_ortu,
+                    'kecamatan' => $biodata->kecamatan_ortu,
+                    'jalan' => $biodata->jalan,
+                    'kode_pos' => $biodata->kode_pos,
+                    'wafat' => $biodata->wafat,
+                ],
+            ],
         ]);
     }
 
     // Tampilan Formulir Keluarga Santri By Id
     public function getKeluarga($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -132,11 +133,11 @@ class PesertaDidikFormulir extends Controller
                 ->where('s.id', $id)
                 ->first();
 
-            if (!$santri) {
+            if (! $santri) {
                 return response()->json([
-                    "status"  => "success",
-                    "message" => "Data Kosong",
-                    "data"    => []
+                    'status' => 'success',
+                    'message' => 'Data Kosong',
+                    'data' => [],
                 ], 200);
             }
 
@@ -159,51 +160,52 @@ class PesertaDidikFormulir extends Controller
                 ->get();
 
             if ($siblings->isEmpty()) {
-                $data = $ortu->map(fn($item) => [
-                    'nama'       => $item->nama,
-                    'nik'        => $item->nik,
+                $data = $ortu->map(fn ($item) => [
+                    'nama' => $item->nama,
+                    'nik' => $item->nik,
                     'keterangan' => $item->keterangan,
                 ]);
             } else {
-                $siblingsData = $siblings->map(fn($item) => [
-                    'nama'       => $item->nama,
-                    'nik'        => $item->nik,
+                $siblingsData = $siblings->map(fn ($item) => [
+                    'nama' => $item->nama,
+                    'nik' => $item->nik,
                     'keterangan' => 'Saudara Kandung',
                 ]);
-                $ortuData = $ortu->map(fn($item) => [
-                    'nama'       => $item->nama,
-                    'nik'        => $item->nik,
+                $ortuData = $ortu->map(fn ($item) => [
+                    'nama' => $item->nama,
+                    'nik' => $item->nik,
                     'keterangan' => $item->keterangan,
                 ]);
                 $data = $ortuData->merge($siblingsData);
             }
         } catch (\Exception $e) {
-            Log::error('Error getKeluarga: ' . $e->getMessage());
+            Log::error('Error getKeluarga: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($data->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data Kosong',
-                'data'    => []
+                'data' => [],
             ], 200);
         }
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $data,
+            'data' => $data,
         ]);
     }
 
     // Tampilan Formulir Status Santri By Id
     public function getSantri($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -218,35 +220,36 @@ class PesertaDidikFormulir extends Controller
                 )
                 ->get();
         } catch (\Exception $e) {
-            Log::error("Error in getSantri: " . $e->getMessage());
+            Log::error('Error in getSantri: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($santriData->isEmpty()) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
         return response()->json([
-            "status"  => "success",
-            "message" => "Data ditemukan",
-            "data"    => $santriData->map(fn($item) => [
-                'nis'     => $item->nis,
+            'status' => 'success',
+            'message' => 'Data ditemukan',
+            'data' => $santriData->map(fn ($item) => [
+                'nis' => $item->nis,
                 'periode' => $item->periode,
-            ])
+            ]),
         ]);
     }
 
     // Tampilan Formulir Domisili Santri By Id
     public function getDomisiliSantri($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -265,39 +268,40 @@ class PesertaDidikFormulir extends Controller
                 )
                 ->get();
         } catch (\Exception $e) {
-            Log::error("Error in getDomisiliSantri: " . $e->getMessage());
+            Log::error('Error in getDomisiliSantri: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($domisiliData->isEmpty()) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
-        $formatted = $domisiliData->map(fn($item) => [
+        $formatted = $domisiliData->map(fn ($item) => [
             'wilayah' => $item->nama_wilayah,
-            'blok'    => $item->nama_blok,
-            'kamar'   => $item->nama_kamar,
+            'blok' => $item->nama_blok,
+            'kamar' => $item->nama_kamar,
             'periode' => $item->periode,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $formatted
+            'data' => $formatted,
         ]);
     }
 
     // Tampilan Formulir Pendidikan Santri By Id
     public function getPendidikan($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -316,38 +320,39 @@ class PesertaDidikFormulir extends Controller
                 )
                 ->get();
         } catch (\Exception $e) {
-            Log::error("Error in getPendidikan: " . $e->getMessage());
+            Log::error('Error in getPendidikan: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($pendidikanData->isEmpty()) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
-        $data = $pendidikanData->map(fn($item) => [
+        $data = $pendidikanData->map(fn ($item) => [
             'lembaga' => $item->nama_lembaga,
             'jurusan' => $item->nama_jurusan,
             'periode' => $item->periode,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $data,
+            'data' => $data,
         ]);
     }
 
     // Tampilan Formulir Berkas Santri By Id
     public function getBerkas($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -360,37 +365,38 @@ class PesertaDidikFormulir extends Controller
                 ->select('jb.nama_jenis_berkas', 'br.file_path')
                 ->get();
         } catch (\Exception $e) {
-            Log::error("Error in getBerkas: " . $e->getMessage());
+            Log::error('Error in getBerkas: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($berkasData->isEmpty()) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
-        $data = $berkasData->map(fn($item) => [
+        $data = $berkasData->map(fn ($item) => [
             'nama_berkas' => $item->nama_jenis_berkas,
-            'file_path'   => $item->file_path,
+            'file_path' => $item->file_path,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $data,
+            'data' => $data,
         ]);
     }
 
     // Tampilan Formulir Status Warga Pesantren Santri By Id
     public function getWargaPesantren($id)
     {
-        if (!Str::isUuid($id)) {
+        if (! Str::isUuid($id)) {
             return response()->json(['error' => 'Invalid UUID'], 400);
         }
 
@@ -405,30 +411,31 @@ class PesertaDidikFormulir extends Controller
                 ->select('wp.niup', 'wp.status')
                 ->get();
         } catch (\Exception $e) {
-            Log::error("Error in getWargaPesantren: " . $e->getMessage());
+            Log::error('Error in getWargaPesantren: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server'
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($wargaPesantrenData->isEmpty()) {
             return response()->json([
-                "status"  => "success",
-                "message" => "Data Kosong",
-                "data"    => []
+                'status' => 'success',
+                'message' => 'Data Kosong',
+                'data' => [],
             ], 200);
         }
 
-        $data = $wargaPesantrenData->map(fn($item) => [
-            'niup'   => $item->niup,
+        $data = $wargaPesantrenData->map(fn ($item) => [
+            'niup' => $item->niup,
             'status' => $item->status,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Data ditemukan',
-            'data'    => $data,
+            'data' => $data,
         ]);
     }
 }

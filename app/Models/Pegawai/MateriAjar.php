@@ -15,10 +15,10 @@ class MateriAjar extends Model
     protected $table = 'materi_ajar';
 
     protected $guarded = [
-        'id'
+        'id',
     ];
 
-        public function getActivitylogOptions(): LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('materi_ajar')
@@ -26,15 +26,14 @@ class MateriAjar extends Model
             ->logOnly([
                 'pengajar_id', 'nama_materi', 'jumlah_menit', 'tahun_masuk', 'tahun_akhir', 'status_aktif',
             ])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Materi Ajar {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Materi Ajar {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
     }
 
     public function Pengajar()

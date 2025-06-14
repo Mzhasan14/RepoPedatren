@@ -34,7 +34,7 @@ return new class extends Migration
                 'dibatalkan',
                 'telat(sudah kembali)',
                 'telat(belum kembali)',
-                'kembali tepat waktu'
+                'kembali tepat waktu',
             ]);
             $table->text('keterangan');
             $table->unsignedBigInteger('created_by');

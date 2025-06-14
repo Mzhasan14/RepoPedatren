@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik\formulir;
+namespace App\Http\Controllers\api\PesertaDidik\Formulir;
 
-use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\formulir\BerkasRequest;
 use App\Services\PesertaDidik\Formulir\BerkasService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class BerkasController extends Controller
 {
@@ -26,22 +26,22 @@ class BerkasController extends Controller
         try {
             $result = $this->berkas->index($bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], Response::HTTP_OK);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error("Gagal ambil data berkas: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -52,25 +52,25 @@ class BerkasController extends Controller
     public function store(BerkasRequest $request, string $bioId): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->berkas->store($data, $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], Response::HTTP_OK);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             Log::error("Gagal tambah berkas: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -83,22 +83,22 @@ class BerkasController extends Controller
         try {
             $result = $this->berkas->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], Response::HTTP_OK);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error("Gagal ambil detail berkas: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -109,25 +109,25 @@ class BerkasController extends Controller
     public function update(BerkasRequest $request, int $id): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->berkas->update($data, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], Response::HTTP_OK);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error("Gagal memperbarui berkas: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -2,36 +2,36 @@
 
 namespace App\Http\Controllers\api\wilayah;
 
-use Illuminate\Http\Request;
-use App\Models\Kewilayahan\Kamar;
-use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use App\Models\Kewilayahan\Kamar;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class KamarController extends Controller
 {
     public function index()
     {
         $kamars = Kamar::with('blok')->where('status', true)->get();
+
         return response()->json($kamars);
     }
 
     public function show($id)
     {
         $kamar = Kamar::with('blok')->findOrFail($id);
+
         return response()->json($kamar);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'blok_id'    => 'required|exists:blok,id',
+            'blok_id' => 'required|exists:blok,id',
             'nama_kamar' => 'required|string|max:255',
         ]);
 
         $kamar = Kamar::create([
-            'blok_id'    => $request->blok_id,
+            'blok_id' => $request->blok_id,
             'nama_kamar' => $request->nama_kamar,
             'created_by' => Auth::id(),
         ]);
@@ -42,9 +42,9 @@ class KamarController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'blok_id'    => 'sometimes|required|exists:blok,id',
+            'blok_id' => 'sometimes|required|exists:blok,id',
             'nama_kamar' => 'sometimes|required|string|max:255',
-            'status'     => 'sometimes|required|boolean',
+            'status' => 'sometimes|required|boolean',
         ]);
 
         $kamar = Kamar::findOrFail($id);

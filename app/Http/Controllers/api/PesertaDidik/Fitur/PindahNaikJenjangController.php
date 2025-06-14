@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik\fitur;
+namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\PindahNaikJenjangRequest;
 use App\Services\PesertaDidik\Fitur\PindahNaikJenjangService;
-use Illuminate\Http\Request;
 
 class PindahNaikJenjangController extends Controller
 {
     private PindahNaikJenjangService $pindah;
+
     public function __construct(PindahNaikJenjangService $pindah)
     {
         $this->pindah = $pindah;
@@ -28,7 +28,7 @@ class PindahNaikJenjangController extends Controller
                 'data' => [
                     'berhasil' => $result['data_baru'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -51,7 +51,7 @@ class PindahNaikJenjangController extends Controller
                 'data' => [
                     'berhasil' => $result['data_baru'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

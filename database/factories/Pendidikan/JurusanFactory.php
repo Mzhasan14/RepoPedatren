@@ -3,7 +3,6 @@
 namespace Database\Factories\Pendidikan;
 
 use App\Models\Pendidikan\Jurusan;
-use Database\Factories\LembagaFactory;
 use Database\Factories\Pendidikan\LembagaFactory as PendidikanLembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +22,7 @@ class JurusanFactory extends Factory
     {
         return [
             'nama_jurusan' => $this->faker->word(),
-            'lembaga_id' => (new PendidikanLembagaFactory())->create()->id,
+            'lembaga_id' => (new PendidikanLembagaFactory)->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
         ];

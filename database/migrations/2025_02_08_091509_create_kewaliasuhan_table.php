@@ -87,7 +87,7 @@ return new class extends Migration
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
-    
+
     /**
      * Reverse the migrations.
      */
@@ -99,4 +99,3 @@ return new class extends Migration
         Schema::dropIfExists('kewaliasuhan');
     }
 };
-      

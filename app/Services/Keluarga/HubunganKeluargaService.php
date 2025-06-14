@@ -2,45 +2,42 @@
 
 namespace App\Services\Keluarga;
 
-use App\Models\Keluarga;
 use App\Models\HubunganKeluarga;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class HubunganKeluargaService
 {
-
     public function index(): array
     {
         $data = HubunganKeluarga::orderBy('id', 'asc')->get();
 
         return [
             'status' => true,
-            'data'   => $data->map(fn($item) => [
-                'id'           => $item->id,
-                'nama_status'  => $item->nama_status,
-                'created_by'    => $item->created_by,
-                'created_at'   => $item->created_at,
-                'updated_by'   => $item->updated_by,
-                'updated_at'   => $item->updated_at,
-                'deleted_by'   => $item->deleted_by,
-                'deleted_at'   => $item->deleted_at
+            'data' => $data->map(fn ($item) => [
+                'id' => $item->id,
+                'nama_status' => $item->nama_status,
+                'created_by' => $item->created_by,
+                'created_at' => $item->created_at,
+                'updated_by' => $item->updated_by,
+                'updated_at' => $item->updated_at,
+                'deleted_by' => $item->deleted_by,
+                'deleted_at' => $item->deleted_at,
             ]),
         ];
     }
+
     public function store(array $input)
     {
         $hubungan = HubunganKeluarga::create([
             'nama_status' => $input['nama_status'],
-            'created_by'  => Auth::id(),
-            'created_at'  => now(),
-            'status'      => true,
+            'created_by' => Auth::id(),
+            'created_at' => now(),
+            'status' => true,
         ]);
 
         return [
             'status' => true,
-            'data'   => $hubungan,
+            'data' => $hubungan,
         ];
     }
 
@@ -48,16 +45,16 @@ class HubunganKeluargaService
     {
         $hubungan = HubunganKeluarga::find($id);
 
-        if (!$hubungan) {
+        if (! $hubungan) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan',
             ];
         }
 
         return [
             'status' => true,
-            'data'   => $hubungan,
+            'data' => $hubungan,
         ];
     }
 
@@ -65,22 +62,22 @@ class HubunganKeluargaService
     {
         $hubungan = HubunganKeluarga::find($id);
 
-        if (!$hubungan) {
+        if (! $hubungan) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'data tidak ditemukan',
             ];
         }
 
         $hubungan->update([
             'nama_status' => $input['nama_status'],
-            'updated_by'  => Auth::id(),
-            'updated_at'  => now(),
+            'updated_by' => Auth::id(),
+            'updated_at' => now(),
         ]);
 
         return [
             'status' => true,
-            'data'   => $hubungan,
+            'data' => $hubungan,
         ];
     }
 
@@ -88,9 +85,9 @@ class HubunganKeluargaService
     {
         $hubungan = HubunganKeluarga::find($id);
 
-        if (!$hubungan) {
+        if (! $hubungan) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan',
             ];
         }
@@ -98,7 +95,7 @@ class HubunganKeluargaService
         $hubungan->delete();
 
         return [
-            'status'  => true,
+            'status' => true,
             'message' => 'Data berhasil dihapus',
         ];
     }

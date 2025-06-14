@@ -2,15 +2,16 @@
 
 namespace App\Models\Biometric;
 
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class BiometricDevice extends Model
 {
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -22,14 +23,13 @@ class BiometricDevice extends Model
         'is_active',
     ];
 
-       protected static function boot()
+    protected static function boot()
     {
         parent::boot();
         static::creating(function ($model) {
             $model->id = (string) Str::uuid();
         });
     }
-
 
     public function logs()
     {

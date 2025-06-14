@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class WilayahSeeder extends Seeder
 {
@@ -21,40 +20,40 @@ class WilayahSeeder extends Seeder
             'Wilayah K (Maliki)' => [
                 'Asrama Al-Farabi',
                 'Asrama Ibnu Sina',
-                'Asrama Ar-Razi'
+                'Asrama Ar-Razi',
             ],
             'Wilayah K (Zaid Bin Tsabit)' => [
                 'Asrama Aisyah',
                 'Asrama Hafsah',
-                'Asrama Zainab'
+                'Asrama Zainab',
             ],
             'Wilayah J (Al-Amin)' => [
                 'Asrama Al-Kindi',
-                'Asrama Al-Jurjani'
+                'Asrama Al-Jurjani',
             ],
             'Wilayah J (Al‑Lathifiyyah)' => [
                 'Asrama Fatimah',
-                'Asrama Maryam'
+                'Asrama Maryam',
             ],
             'Dalbar (Az‑Zainiyah)' => [
                 'Asrama Imam Syafi’i',
-                'Asrama Imam Malik'
+                'Asrama Imam Malik',
             ],
             'Daltim (Al‑Hasyimiyah)' => [
                 'Asrama Al-Ghazali',
-                'Asrama Asy-Syathibi'
+                'Asrama Asy-Syathibi',
             ],
             'Dalsel (Fatimatuzzahro)' => [
                 'Asrama Ummu Salamah',
-                'Asrama Rabi’ah Adawiyah'
+                'Asrama Rabi’ah Adawiyah',
             ],
             'Wilayah Al‑Mawaddah' => [
                 'Asrama Al-Mawaddah 1',
-                'Asrama Al-Mawaddah 2'
+                'Asrama Al-Mawaddah 2',
             ],
             'Ma’had Aly' => [
                 'Asrama Al-Hikam',
-                'Asrama Al-Munawwir'
+                'Asrama Al-Munawwir',
             ],
         ];
 

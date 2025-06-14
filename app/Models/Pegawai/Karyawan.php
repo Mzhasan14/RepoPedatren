@@ -11,41 +11,43 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Karyawan extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'karyawan';
 
     protected $guarded = [
-        'id'
+        'id',
     ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('karyawan')
             ->logOnlyDirty()
             ->logOnly([
-                'pegawai_id', 'golongan_jabatan_id', 'lembaga_id', 'jabatan', 'keterangan_jabatan', 
+                'pegawai_id', 'golongan_jabatan_id', 'lembaga_id', 'jabatan', 'keterangan_jabatan',
                 'tanggal_mulai', 'tanggal_selesai', 'status_aktif',
-                'created_by', 'updated_by', 'deleted_by'
+                'created_by', 'updated_by', 'deleted_by',
             ])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Karyawan {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Karyawan {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
         });
     }
+
     public function ScopeActive($query)
     {
-        return $query->where('karyawan.status_aktif','aktif');
+        return $query->where('karyawan.status_aktif', 'aktif');
     }
+
     public function pegawai()
     {
         return $this->belongsTo(Pegawai::class);

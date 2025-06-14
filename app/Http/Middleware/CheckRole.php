@@ -17,7 +17,7 @@ class CheckRole
         // Jika pengguna tidak terautentikasi, kita bisa mengembalikan respon 403
         if (! $request->user() || ! $request->user()->hasRole($role)) {
             return response()->json([
-                'message' => 'Akses ditolak. Anda tidak memiliki izin untuk mengakses resource ini.'
+                'message' => 'Akses ditolak. Anda tidak memiliki izin untuk mengakses resource ini.',
             ], 403);
         }
 

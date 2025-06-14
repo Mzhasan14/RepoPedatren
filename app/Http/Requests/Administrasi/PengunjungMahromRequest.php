@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Administrasi;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PengunjungMahromRequest extends FormRequest
@@ -33,7 +33,7 @@ class PengunjungMahromRequest extends FormRequest
             'hubungan_id' => 'required|exists:hubungan_keluarga,id',
             'jumlah_rombongan' => 'required|integer|min:1',
             'tanggal_kunjungan' => 'required|date|after_or_equal:today',
-            'status' => 'required|in:menunggu,berlangsung,selesai,ditolak'
+            'status' => 'required|in:menunggu,berlangsung,selesai,ditolak',
         ];
     }
 
@@ -43,7 +43,7 @@ class PengunjungMahromRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

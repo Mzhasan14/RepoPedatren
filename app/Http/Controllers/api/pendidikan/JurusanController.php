@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers\api\pendidikan;
 
-use Illuminate\Http\Request;
-use App\Http\Resources\PdResource;
-use App\Models\Pendidikan\Jurusan;
 use App\Http\Controllers\Controller;
+use App\Models\Pendidikan\Jurusan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class JurusanController extends Controller
 {
     public function index()
     {
         $jurusans = Jurusan::with('lembaga')->where('status', true)->get();
+
         return response()->json($jurusans);
     }
 
     public function show($id)
     {
         $jurusan = Jurusan::with('lembaga')->findOrFail($id);
+
         return response()->json($jurusan);
     }
 
@@ -27,13 +27,13 @@ class JurusanController extends Controller
     {
         $request->validate([
             'nama_jurusan' => 'required|string|max:255',
-            'lembaga_id'   => 'required|exists:lembaga,id',
+            'lembaga_id' => 'required|exists:lembaga,id',
         ]);
 
         $jurusan = Jurusan::create([
             'nama_jurusan' => $request->nama_jurusan,
-            'lembaga_id'   => $request->lembaga_id,
-            'created_by'   => Auth::id(),
+            'lembaga_id' => $request->lembaga_id,
+            'created_by' => Auth::id(),
         ]);
 
         return response()->json($jurusan, 201);
@@ -43,8 +43,8 @@ class JurusanController extends Controller
     {
         $request->validate([
             'nama_jurusan' => 'sometimes|required|string|max:255',
-            'lembaga_id'   => 'sometimes|required|exists:lembaga,id',
-            'status'       => 'sometimes|required|boolean',
+            'lembaga_id' => 'sometimes|required|exists:lembaga,id',
+            'status' => 'sometimes|required|boolean',
         ]);
 
         $jurusan = Jurusan::findOrFail($id);

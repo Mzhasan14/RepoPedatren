@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class WargaPesantrenRequest extends FormRequest
 {
@@ -25,6 +25,7 @@ class WargaPesantrenRequest extends FormRequest
     public function rules(): array
     {
         $id = $this->route('id');
+
         return [
             'niup' => [
                 'required',
@@ -41,7 +42,7 @@ class WargaPesantrenRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

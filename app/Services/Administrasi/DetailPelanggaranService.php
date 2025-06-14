@@ -25,14 +25,14 @@ class DetailPelanggaranService
             ->leftjoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
-            ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+            ->leftjoin('riwayat_domisili as rd', fn ($j) => $j->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftjoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('kamar as km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn ($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('users as pencatat', 'pl.created_by', '=', 'pencatat.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->where('pl.id', $pelanggaranId)
             ->select([
@@ -57,23 +57,23 @@ class DetailPelanggaranService
 
         if ($pelanggaran) {
             $data['pelanggaran'] = [
-                'id'                   => $pelanggaran->id,
-                'nama_santri'          => $pelanggaran->nama,
-                'provinsi'             => $pelanggaran->nama_provinsi ?? '-',
-                'kabupaten'            => $pelanggaran->nama_kabupaten ?? '-',
-                'kecamatan'            => $pelanggaran->nama_kecamatan ?? '-',
-                'wilayah'              => $pelanggaran->nama_wilayah ?? '-',
-                'blok'                 => $pelanggaran->nama_blok     ?? '-',
-                'kamar'                => $pelanggaran->nama_kamar    ?? '-',
-                'lembaga'              => $pelanggaran->nama_lembaga  ?? '-',
-                'status_pelanggaran'   => $pelanggaran->status_pelanggaran,
-                'jenis_pelanggaran'    => $pelanggaran->jenis_pelanggaran,
-                'jenis_putusan'        => $pelanggaran->jenis_putusan,
-                'diproses_mahkamah'    => (bool) $pelanggaran->diproses_mahkamah,
-                'keterangan'           => $pelanggaran->keterangan    ?? '-',
-                'pencatat'             => $pelanggaran->pencatat,
-                'foto_profil'          => url($pelanggaran->foto_profil),
-                'tgl_input'            => Carbon::parse($pelanggaran->created_at)
+                'id' => $pelanggaran->id,
+                'nama_santri' => $pelanggaran->nama,
+                'provinsi' => $pelanggaran->nama_provinsi ?? '-',
+                'kabupaten' => $pelanggaran->nama_kabupaten ?? '-',
+                'kecamatan' => $pelanggaran->nama_kecamatan ?? '-',
+                'wilayah' => $pelanggaran->nama_wilayah ?? '-',
+                'blok' => $pelanggaran->nama_blok ?? '-',
+                'kamar' => $pelanggaran->nama_kamar ?? '-',
+                'lembaga' => $pelanggaran->nama_lembaga ?? '-',
+                'status_pelanggaran' => $pelanggaran->status_pelanggaran,
+                'jenis_pelanggaran' => $pelanggaran->jenis_pelanggaran,
+                'jenis_putusan' => $pelanggaran->jenis_putusan,
+                'diproses_mahkamah' => (bool) $pelanggaran->diproses_mahkamah,
+                'keterangan' => $pelanggaran->keterangan ?? '-',
+                'pencatat' => $pelanggaran->pencatat,
+                'foto_profil' => url($pelanggaran->foto_profil),
+                'tgl_input' => Carbon::parse($pelanggaran->created_at)
                     ->translatedFormat('d F Y H:i:s'),
             ];
         }

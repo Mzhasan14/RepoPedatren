@@ -26,9 +26,9 @@ class DetailWaliasuhService
             return ['error' => 'Wali asuh tidak ditemukan'];
         }
 
-        $santriId  = $base->santri_id;
-        $bioId     = $base->biodata_id;
-        $noKk      = $base->no_kk;
+        $santriId = $base->santri_id;
+        $bioId = $base->biodata_id;
+        $noKk = $base->no_kk;
 
         // --- 2. Biodata detail ---
         $biodata = DB::table('biodata as b')
@@ -73,24 +73,24 @@ class DetailWaliasuhService
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                "COALESCE(br.file_path,'default.jpg') as foto"
+                "COALESCE(br.file_path,'default.jpg') as foto",
             ]))
             ->first();
 
         $data['Biodata'] = [
-            'nokk'               => $noKk ?? '-',
-            'nik_nopassport'     => $biodata->identitas,
-            'niup'               => $biodata->niup ?? '-',
-            'nama'               => $biodata->nama,
-            'jenis_kelamin'      => $biodata->jenis_kelamin,
+            'nokk' => $noKk ?? '-',
+            'nik_nopassport' => $biodata->identitas,
+            'niup' => $biodata->niup ?? '-',
+            'nama' => $biodata->nama,
+            'jenis_kelamin' => $biodata->jenis_kelamin,
             'tempat_tanggal_lahir' => $biodata->ttl,
-            'anak_ke'            => $biodata->anak_ke,
-            'umur'               => $biodata->umur,
-            'kecamatan'          => $biodata->nama_kecamatan ?? '-',
-            'kabupaten'          => $biodata->nama_kabupaten ?? '-',
-            'provinsi'           => $biodata->nama_provinsi ?? '-',
-            'warganegara'        => $biodata->nama_negara ?? '-',
-            'foto_profil'        => URL::to($biodata->foto),
+            'anak_ke' => $biodata->anak_ke,
+            'umur' => $biodata->umur,
+            'kecamatan' => $biodata->nama_kecamatan ?? '-',
+            'kabupaten' => $biodata->nama_kabupaten ?? '-',
+            'provinsi' => $biodata->nama_provinsi ?? '-',
+            'warganegara' => $biodata->nama_negara ?? '-',
+            'foto_profil' => URL::to($biodata->foto),
         ];
 
         // --- 3. Data Keluarga (Orang tua/wali & saudara) ---
@@ -103,8 +103,8 @@ class DetailWaliasuhService
             ->select([
                 'bo.nama',
                 'bo.nik',
-                DB::raw("hk.nama_status as status"),
-                'ow.wali'
+                DB::raw('hk.nama_status as status'),
+                'ow.wali',
             ])
             ->get();
 
@@ -119,17 +119,17 @@ class DetailWaliasuhService
                 'bs.nama',
                 'bs.nik',
                 DB::raw("'Saudara Kandung' as status"),
-                DB::raw("NULL as wali")
+                DB::raw('NULL as wali'),
             ])
             ->get();
 
         $keluarga = $ortu->merge($saudara);
         if ($keluarga->isNotEmpty()) {
-            $data['Keluarga'] = $keluarga->map(fn($i) => [
-                'nama'   => $i->nama,
-                'nik'    => $i->nik,
+            $data['Keluarga'] = $keluarga->map(fn ($i) => [
+                'nama' => $i->nama,
+                'nik' => $i->nik,
                 'status' => $i->status,
-                'sebagai_wali'   => $i->wali,
+                'sebagai_wali' => $i->wali,
             ]);
         }
 
@@ -142,8 +142,8 @@ class DetailWaliasuhService
 
         if ($santriInfo) {
             if ($keluarga->isNotEmpty()) {
-                $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
-                    'NIS'           => $s->nis,
+                $data['Status_Santri']['Santri'] = $santriInfo->map(fn ($s) => [
+                    'NIS' => $s->nis,
                     'Tanggal_Mulai' => $s->tanggal_masuk,
                     'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
                 ]);
@@ -209,15 +209,15 @@ class DetailWaliasuhService
                             THEN CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/86400),' Hari | Bermalam')
                             ELSE CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/3600),' Jam')
                      END as lama_waktu"),
-                'status'
+                'status',
             ])
             ->get();
 
         if ($izin->isNotEmpty()) {
-            $data['Status_Santri']['Info_Perizinan'] = $izin->map(fn($z) => [
-                'tanggal'        => $z->tanggal,
-                'keterangan'     => $z->keterangan,
-                'lama_waktu'     => $z->lama_waktu,
+            $data['Status_Santri']['Info_Perizinan'] = $izin->map(fn ($z) => [
+                'tanggal' => $z->tanggal,
+                'keterangan' => $z->keterangan,
+                'lama_waktu' => $z->lama_waktu,
                 'status_kembali' => $z->status,
             ]);
         }
@@ -233,17 +233,17 @@ class DetailWaliasuhService
                 'bl.nama_blok',
                 'w.nama_wilayah',
                 'rd.tanggal_masuk',
-                'rd.tanggal_keluar'
+                'rd.tanggal_keluar',
             ])
             ->get();
 
         if ($dom->isNotEmpty()) {
-            $data['Domisili'] = $dom->map(fn($d) => [
-                'kamar'            => $d->nama_kamar,
-                'blok'             => $d->nama_blok,
-                'wilayah'          => $d->nama_wilayah,
+            $data['Domisili'] = $dom->map(fn ($d) => [
+                'kamar' => $d->nama_kamar,
+                'blok' => $d->nama_blok,
+                'wilayah' => $d->nama_wilayah,
                 'tanggal_ditempati' => $d->tanggal_masuk,
-                'tanggal_pindah'   => $d->tanggal_keluar ?? '-',
+                'tanggal_pindah' => $d->tanggal_keluar ?? '-',
             ]);
         }
 
@@ -254,12 +254,11 @@ class DetailWaliasuhService
             ->get();
 
         if ($ks->isNotEmpty()) {
-            $data['Wali_Asuh'] = $ks->map(fn($k) => [
+            $data['Wali_Asuh'] = $ks->map(fn ($k) => [
                 'tanggal_mulai' => $k->tanggal_mulai,
                 'tanggal_akhir' => $k->tanggal_berakhir,
             ]);
         }
-
 
         // --- 8. Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
@@ -275,19 +274,19 @@ class DetailWaliasuhService
                 'k.nama_kelas',
                 'r.nama_rombel',
                 'rp.tanggal_masuk',
-                'rp.tanggal_keluar'
+                'rp.tanggal_keluar',
             ])
             ->get();
 
         if ($pend->isNotEmpty()) {
-            $data['Pendidikan'] = $pend->map(fn($p) => [
-                'no_induk'     => $p->no_induk,
+            $data['Pendidikan'] = $pend->map(fn ($p) => [
+                'no_induk' => $p->no_induk,
                 'nama_lembaga' => $p->nama_lembaga,
                 'nama_jurusan' => $p->nama_jurusan,
-                'nama_kelas'   => $p->nama_kelas ?? '-',
-                'nama_rombel'  => $p->nama_rombel ?? '-',
-                'tahun_masuk'  => $p->tanggal_masuk,
-                'tahun_lulus'  => $p->tanggal_keluar ?? '-',
+                'nama_kelas' => $p->nama_kelas ?? '-',
+                'nama_rombel' => $p->nama_rombel ?? '-',
+                'tahun_masuk' => $p->tanggal_masuk,
+                'tahun_lulus' => $p->tanggal_keluar ?? '-',
             ]);
         }
 
@@ -299,12 +298,12 @@ class DetailWaliasuhService
 
         if ($af) {
             $data['Catatan_Progress']['Afektif'] = [
-                'kebersihan'               => $af->kebersihan_nilai ?? '-',
+                'kebersihan' => $af->kebersihan_nilai ?? '-',
                 'tindak_lanjut_kebersihan' => $af->kebersihan_tindak_lanjut ?? '-',
-                'kepedulian'               => $af->kepedulian_nilai ?? '-',
+                'kepedulian' => $af->kepedulian_nilai ?? '-',
                 'tindak_lanjut_kepedulian' => $af->kepedulian_tindak_lanjut ?? '-',
-                'akhlak'                   => $af->akhlak_nilai ?? '-',
-                'tindak_lanjut_akhlak'     => $af->akhlak_tindak_lanjut ?? '-',
+                'akhlak' => $af->akhlak_nilai ?? '-',
+                'tindak_lanjut_akhlak' => $af->akhlak_tindak_lanjut ?? '-',
             ];
         }
 
@@ -315,37 +314,37 @@ class DetailWaliasuhService
 
         if ($kg) {
             $data['Catatan_Progress']['Kognitif'] = [
-                'kebahasaan'                      => $kg->kebahasaan_nilai ?? '-',
-                'tindak_lanjut_kebahasaan'        => $kg->kebahasaan_tindak_lanjut ?? '-',
-                'baca_kitab_kuning'               => $kg->baca_kitab_kuning_nilai ?? '-',
+                'kebahasaan' => $kg->kebahasaan_nilai ?? '-',
+                'tindak_lanjut_kebahasaan' => $kg->kebahasaan_tindak_lanjut ?? '-',
+                'baca_kitab_kuning' => $kg->baca_kitab_kuning_nilai ?? '-',
                 'tindak_lanjut_baca_kitab_kuning' => $kg->baca_kitab_kuning_tindak_lanjut ?? '-',
-                'hafalan_tahfidz'                 => $kg->hafalan_tahfidz_nilai ?? '-',
-                'tindak_lanjut_hafalan_tahfidz'   => $kg->hafalan_tahfidz_tindak_lanjut ?? '-',
-                'furudul_ainiyah'                 => $kg->furudul_ainiyah_nilai ?? '-',
-                'tindak_lanjut_furudul_ainiyah'   => $kg->furudul_ainiyah_tindak_lanjut ?? '-',
-                'tulis_alquran'                   => $kg->tulis_alquran_nilai ?? '-',
-                'tindak_lanjut_tulis_alquran'     => $kg->tindak_lanjut_tulis_alquran ?? '-',
-                'baca_alquran'                    => $kg->baca_alquran_nilai ?? '-',
-                'tindak_lanjut_baca_alquran'      => $kg->baca_alquran_tindak_lanjut ?? '-',
+                'hafalan_tahfidz' => $kg->hafalan_tahfidz_nilai ?? '-',
+                'tindak_lanjut_hafalan_tahfidz' => $kg->hafalan_tahfidz_tindak_lanjut ?? '-',
+                'furudul_ainiyah' => $kg->furudul_ainiyah_nilai ?? '-',
+                'tindak_lanjut_furudul_ainiyah' => $kg->furudul_ainiyah_tindak_lanjut ?? '-',
+                'tulis_alquran' => $kg->tulis_alquran_nilai ?? '-',
+                'tindak_lanjut_tulis_alquran' => $kg->tindak_lanjut_tulis_alquran ?? '-',
+                'baca_alquran' => $kg->baca_alquran_nilai ?? '-',
+                'tindak_lanjut_baca_alquran' => $kg->baca_alquran_tindak_lanjut ?? '-',
             ];
         }
 
         // --- 10. Kunjungan Mahrom ---
         $kun = DB::table('pengunjung_mahrom as pm')
-            ->join('santri as s','s.id','=','pm.santri_id')
-            ->join('biodata as b','b.id','=','pm.biodata_id')
-            ->leftjoin('orang_tua_wali as ow','ow.id_biodata','=','b.id')
-            ->join('hubungan_keluarga as hk','pm.hubungan_id','=','hk.id')
+            ->join('santri as s', 's.id', '=', 'pm.santri_id')
+            ->join('biodata as b', 'b.id', '=', 'pm.biodata_id')
+            ->leftjoin('orang_tua_wali as ow', 'ow.id_biodata', '=', 'b.id')
+            ->join('hubungan_keluarga as hk', 'pm.hubungan_id', '=', 'hk.id')
             ->where('pm.santri_id', $santriId)
             ->select([
-                'b.nama', 
+                'b.nama',
                 'hk.nama_status as hubungan',
                 'pm.tanggal_kunjungan'])
             ->get();
 
         if ($kun->isNotEmpty()) {
-            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
-                'nama_pengunjung'    => $k->nama,
+            $data['Kunjungan_Mahrom'] = $kun->map(fn ($k) => [
+                'nama_pengunjung' => $k->nama,
                 'hubungan' => $k->hubungan,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ]);

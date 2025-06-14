@@ -3,17 +3,16 @@
 namespace App\Models\Biometric;
 
 use App\Models\Santri;
-use Illuminate\Support\Str;
-use App\Models\Biometric\BiometricLog;
-use Illuminate\Database\Eloquent\Model;
-use App\Models\Biometric\BiometricFingerPosition;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class BiometricProfile extends Model
 {
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -21,6 +20,7 @@ class BiometricProfile extends Model
         'santri_id',
         'card_uid',
     ];
+
     protected static function boot()
     {
         parent::boot();
@@ -28,7 +28,6 @@ class BiometricProfile extends Model
             $model->id = (string) Str::uuid();
         });
     }
-
 
     public function santri()
     {

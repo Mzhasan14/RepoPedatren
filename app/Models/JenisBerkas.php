@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class JenisBerkas extends Model
 {
@@ -17,11 +17,11 @@ class JenisBerkas extends Model
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     public function berkas()
     {
-        return $this->hasMany(Berkas::class,'jenis_berkas_id','id');
+        return $this->hasMany(Berkas::class, 'jenis_berkas_id', 'id');
     }
 }

@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class CatatanKognitifService
 {
-     public function index(string $bioId): array
+    public function index(string $bioId): array
     {
         // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
@@ -19,16 +19,16 @@ class CatatanKognitifService
 
         // Ambil data kognitif dengan relasi lengkap
         $kognitif = Catatan_kognitif::whereHas('santri.biodata', function ($query) use ($bioId) {
-                $query->where('id', $bioId);
-            })
+            $query->where('id', $bioId);
+        })
             ->with([
-                'santri.biodata',
-                'waliAsuh.santri.biodata.berkas' => function ($query) use ($pasFotoId) {
-                    $query->where('jenis_berkas_id', $pasFotoId)
-                        ->latest('id')
-                        ->limit(1);
-                }
-            ])
+            'santri.biodata',
+            'waliAsuh.santri.biodata.berkas' => function ($query) use ($pasFotoId) {
+                $query->where('jenis_berkas_id', $pasFotoId)
+                    ->latest('id')
+                    ->limit(1);
+            },
+        ])
             ->get()
             ->map(function ($item) {
                 $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);
@@ -53,7 +53,7 @@ class CatatanKognitifService
                     'tanggal_selesai' => $item->tanggal_selesai,
                     'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
-                    'status' => 'Wali Asuh', 
+                    'status' => 'Wali Asuh',
                 ];
             });
 
@@ -63,26 +63,26 @@ class CatatanKognitifService
     public function edit($id): array
     {
         $kognitif = Catatan_kognitif::select(
-                'id',
-                'id_wali_asuh',
-                'kebahasaan_nilai',
-                'kebahasaan_tindak_lanjut',
-                'baca_kitab_kuning_nilai',
-                'baca_kitab_kuning_tindak_lanjut',
-                'hafalan_tahfidz_nilai',
-                'hafalan_tahfidz_tindak_lanjut',
-                'furudul_ainiyah_nilai',
-                'furudul_ainiyah_tindak_lanjut',
-                'tulis_alquran_nilai',
-                'tulis_alquran_tindak_lanjut',
-                'baca_alquran_nilai',
-                'baca_alquran_tindak_lanjut',
-                'tanggal_buat',
-                'tanggal_selesai',
-                DB::raw("CASE WHEN status = 1 THEN 'aktif' ELSE 'tidak aktif' END AS status_aktif")
+            'id',
+            'id_wali_asuh',
+            'kebahasaan_nilai',
+            'kebahasaan_tindak_lanjut',
+            'baca_kitab_kuning_nilai',
+            'baca_kitab_kuning_tindak_lanjut',
+            'hafalan_tahfidz_nilai',
+            'hafalan_tahfidz_tindak_lanjut',
+            'furudul_ainiyah_nilai',
+            'furudul_ainiyah_tindak_lanjut',
+            'tulis_alquran_nilai',
+            'tulis_alquran_tindak_lanjut',
+            'baca_alquran_nilai',
+            'baca_alquran_tindak_lanjut',
+            'tanggal_buat',
+            'tanggal_selesai',
+            DB::raw("CASE WHEN status = 1 THEN 'aktif' ELSE 'tidak aktif' END AS status_aktif")
         )->find($id);
-        
-        if (!$kognitif) {
+
+        if (! $kognitif) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -101,7 +101,7 @@ class CatatanKognitifService
             // 2. Larangan update jika sudah memiliki tanggal_selesai
             if (! is_null($kognitif->tanggal_selesai)) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Catatan kognitif ini telah memiliki tanggal selesai dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
@@ -109,30 +109,29 @@ class CatatanKognitifService
             // 3. Update data
             $kognitif->update([
                 'id_wali_asuh' => $input['id_wali_asuh'] ?? null,
-                'kebahasaan_nilai'                => $input['kebahasaan_nilai'],
-                'kebahasaan_tindak_lanjut'       => $input['kebahasaan_tindak_lanjut'],
-                'baca_kitab_kuning_nilai'        => $input['baca_kitab_kuning_nilai'],
-                'baca_kitab_kuning_tindak_lanjut'=> $input['baca_kitab_kuning_tindak_lanjut'],
-                'hafalan_tahfidz_nilai'          => $input['hafalan_tahfidz_nilai'],
-                'hafalan_tahfidz_tindak_lanjut'  => $input['hafalan_tahfidz_tindak_lanjut'],
-                'furudul_ainiyah_nilai'          => $input['furudul_ainiyah_nilai'],
-                'furudul_ainiyah_tindak_lanjut'  => $input['furudul_ainiyah_tindak_lanjut'],
-                'tulis_alquran_nilai'             => $input['tulis_alquran_nilai'],
-                'tulis_alquran_tindak_lanjut'     => $input['tulis_alquran_tindak_lanjut'],
-                'baca_alquran_nilai'              => $input['baca_alquran_nilai'],
-                'baca_alquran_tindak_lanjut'      => $input['baca_alquran_tindak_lanjut'],
-                'tanggal_buat'                    => Carbon::parse($input['tanggal_buat']),
-                'updated_by'                     => Auth::id(),
+                'kebahasaan_nilai' => $input['kebahasaan_nilai'],
+                'kebahasaan_tindak_lanjut' => $input['kebahasaan_tindak_lanjut'],
+                'baca_kitab_kuning_nilai' => $input['baca_kitab_kuning_nilai'],
+                'baca_kitab_kuning_tindak_lanjut' => $input['baca_kitab_kuning_tindak_lanjut'],
+                'hafalan_tahfidz_nilai' => $input['hafalan_tahfidz_nilai'],
+                'hafalan_tahfidz_tindak_lanjut' => $input['hafalan_tahfidz_tindak_lanjut'],
+                'furudul_ainiyah_nilai' => $input['furudul_ainiyah_nilai'],
+                'furudul_ainiyah_tindak_lanjut' => $input['furudul_ainiyah_tindak_lanjut'],
+                'tulis_alquran_nilai' => $input['tulis_alquran_nilai'],
+                'tulis_alquran_tindak_lanjut' => $input['tulis_alquran_tindak_lanjut'],
+                'baca_alquran_nilai' => $input['baca_alquran_nilai'],
+                'baca_alquran_tindak_lanjut' => $input['baca_alquran_tindak_lanjut'],
+                'tanggal_buat' => Carbon::parse($input['tanggal_buat']),
+                'updated_by' => Auth::id(),
             ]);
 
             // 4. Return hasil
             return [
                 'status' => true,
-                'data'   => $kognitif,
+                'data' => $kognitif,
             ];
         });
     }
-
 
     public function keluarKognitif(array $input, int $id): array
     {
@@ -144,7 +143,7 @@ class CatatanKognitifService
 
             if ($kognitif->tanggal_selesai) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data kognitif sudah ditandai selesai/nonaktif.',
                 ];
             }
@@ -153,32 +152,30 @@ class CatatanKognitifService
 
             if ($tglSelesai->lt(Carbon::parse($kognitif->tanggal_buat))) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tanggal selesai tidak boleh sebelum tanggal buat.',
                 ];
             }
 
             $kognitif->update([
-                'status'          => 0,
+                'status' => 0,
                 'tanggal_selesai' => $tglSelesai,
-                'updated_by'      => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $kognitif,
+                'data' => $kognitif,
             ];
         });
     }
-
 
     public function store(array $data, string $bioId): array
     {
         return DB::transaction(function () use ($data, $bioId) {
             // 1. Cek apakah santri sudah memiliki catatan kognitif aktif
-            $existing = Catatan_kognitif::whereHas('santri', fn($q) =>
-                    $q->where('biodata_id', $bioId)
-                )
+            $existing = Catatan_kognitif::whereHas('santri', fn ($q) => $q->where('biodata_id', $bioId)
+            )
                 ->whereNull('tanggal_selesai')
                 ->where('status', 1)
                 ->first();
@@ -186,28 +183,28 @@ class CatatanKognitifService
             if ($existing) {
                 return [
                     'status' => false,
-                    'message' => 'Santri masih memiliki Catatan Kognitif aktif'
+                    'message' => 'Santri masih memiliki Catatan Kognitif aktif',
                 ];
             }
 
-                // 2. Cari santri berdasarkan biodata_id (tanpa cek status dulu)
-                $santri = Santri::where('biodata_id', $bioId)
-                    ->latest()
-                    ->first();
+            // 2. Cari santri berdasarkan biodata_id (tanpa cek status dulu)
+            $santri = Santri::where('biodata_id', $bioId)
+                ->latest()
+                ->first();
 
-                if (!$santri) {
-                    return [
-                        'status' => false,
-                        'message' => 'Santri tidak ditemukan.'
-                    ];
-                }
+            if (! $santri) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri tidak ditemukan.',
+                ];
+            }
 
-                if ($santri->status !== 'aktif') {
-                    return [
-                        'status' => false,
-                        'message' => 'Santri tersebut sudah tidak aktif lagi.'
-                    ];
-                }
+            if ($santri->status !== 'aktif') {
+                return [
+                    'status' => false,
+                    'message' => 'Santri tersebut sudah tidak aktif lagi.',
+                ];
+            }
 
             // 3. Buat Catatan Kognitif baru
             $kognitif = Catatan_kognitif::create([
@@ -234,9 +231,8 @@ class CatatanKognitifService
 
             return [
                 'status' => true,
-                'data' => $kognitif->fresh()
+                'data' => $kognitif->fresh(),
             ];
         });
     }
-
 }

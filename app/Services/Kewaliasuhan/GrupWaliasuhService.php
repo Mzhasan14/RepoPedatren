@@ -2,13 +2,13 @@
 
 namespace App\Services\Kewaliasuhan;
 
-use Illuminate\Support\Str;
+use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class GrupWaliasuhService
 {
@@ -28,7 +28,7 @@ class GrupWaliasuhService
                 's.nis',
                 'b.nama',
                 'w.nama_wilayah',
-                DB::raw("COUNT(aa.id) as jumlah_anak_asuh"),
+                DB::raw('COUNT(aa.id) as jumlah_anak_asuh'),
                 'gs.updated_at',
                 'gs.created_at',
             ])
@@ -42,19 +42,19 @@ class GrupWaliasuhService
                 'gs.created_at'
             )
             ->orderBy('gs.id');
-        }
+    }
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "id" => $item->id,
-            "group" => $item->group,
-            "nis_wali_asuh" => $item->nis,
-            "nama_wali_asuh" => $item->nama,
-            "wilayah" => $item->nama_wilayah,
-            "jumlah_anak_asuh" => $item->jumlah_anak_asuh,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+        return collect($results->items())->map(fn ($item) => [
+            'id' => $item->id,
+            'group' => $item->group,
+            'nis_wali_asuh' => $item->nis,
+            'nama_wali_asuh' => $item->nama,
+            'wilayah' => $item->nama_wilayah,
+            'jumlah_anak_asuh' => $item->jumlah_anak_asuh,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
         ]);
     }
 
@@ -64,18 +64,18 @@ class GrupWaliasuhService
 
         return [
             'status' => true,
-            'data'   => $data->map(fn($item) => [
-                'id'           => $item->id,
-                'nama_grup'  => $item->nama_status,
-                'wilayah'       =>$item->wilayah->nama_wilayah,
+            'data' => $data->map(fn ($item) => [
+                'id' => $item->id,
+                'nama_grup' => $item->nama_status,
+                'wilayah' => $item->wilayah->nama_wilayah,
                 'jenis_kelamin' => $item->jenis_kelamin,
-                'status'         =>$item->status,
-                'created_by'    => $item->created_by,
-                'created_at'   => $item->created_at,
-                'updated_by'   => $item->updated_by,
-                'updated_at'   => $item->updated_at,
-                'deleted_by'   => $item->deleted_by,
-                'deleted_at'   => $item->deleted_at
+                'status' => $item->status,
+                'created_by' => $item->created_by,
+                'created_at' => $item->created_at,
+                'updated_by' => $item->updated_by,
+                'updated_at' => $item->updated_at,
+                'deleted_by' => $item->deleted_by,
+                'deleted_at' => $item->deleted_at,
             ]),
         ];
     }
@@ -84,16 +84,16 @@ class GrupWaliasuhService
     {
         $hubungan = Grup_WaliAsuh::find($id);
 
-        if (!$hubungan) {
+        if (! $hubungan) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan',
             ];
         }
 
         return [
             'status' => true,
-            'data'   => $hubungan,
+            'data' => $hubungan,
         ];
     }
 
@@ -101,11 +101,11 @@ class GrupWaliasuhService
     {
         return DB::transaction(function () use ($data) {
 
-            if (!Auth::id()) {
+            if (! Auth::id()) {
                 return [
                     'status' => false,
                     'message' => 'Pengguna tidak terautentikasi',
-                    'data' => null
+                    'data' => null,
                 ];
             }
 
@@ -117,7 +117,7 @@ class GrupWaliasuhService
                 'created_by' => Auth::id(),
                 'status' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
             ]);
 
             // Log activity
@@ -134,7 +134,7 @@ class GrupWaliasuhService
             return [
                 'status' => true,
                 'message' => 'Grup wali asuh berhasil dibuat',
-                'data' => $grup
+                'data' => $grup,
             ];
         });
     }
@@ -144,7 +144,7 @@ class GrupWaliasuhService
         return DB::transaction(function () use ($data, $id) {
             $grup = Grup_WaliAsuh::find($id);
 
-            if (!$grup) {
+            if (! $grup) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
@@ -154,14 +154,14 @@ class GrupWaliasuhService
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'updated_by' => Auth::id(),
                 'status' => $data['status'] ?? true,
-                'updated_at' => now()
+                'updated_at' => now(),
             ];
 
             $before = $grup->getOriginal();
 
             $grup->fill($updateData);
 
-            if (!$grup->isDirty()) {
+            if (! $grup->isDirty()) {
                 return ['status' => false, 'message' => 'Tidak ada perubahan'];
             }
 
@@ -172,7 +172,7 @@ class GrupWaliasuhService
             activity('grup_update')
                 ->performedOn($grup)
                 ->withProperties(['before' => $before, 'after' => $grup->getChanges()])
-                ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
+                ->tap(fn ($activity) => $activity->batch_uuid = $batchUuid)
                 ->event('update_grup')
                 ->log('Data Grup waliasuh diperbarui');
 
@@ -183,26 +183,26 @@ class GrupWaliasuhService
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (!Auth::id()) {
+            if (! Auth::id()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi'
+                    'message' => 'Pengguna tidak terautentikasi',
                 ], 401);
             }
 
             $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
-            if (!$grup) {
+            if (! $grup) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data grup wali asuh tidak ditemukan'
+                    'message' => 'Data grup wali asuh tidak ditemukan',
                 ], 404);
             }
 
             if ($grup->trashed()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data grup sudah dihapus sebelumnya'
+                    'message' => 'Data grup sudah dihapus sebelumnya',
                 ], 410);
             }
 
@@ -214,7 +214,7 @@ class GrupWaliasuhService
             if ($hasActiveMembers) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif'
+                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif',
                 ], 400);
             }
 
@@ -226,7 +226,7 @@ class GrupWaliasuhService
                 ->performedOn($grup)
                 ->withProperties([
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ])
                 ->event('delete_grup_wali_asuh')
                 ->log('Grup wali asuh berhasil dihapus (soft delete)');
@@ -235,8 +235,8 @@ class GrupWaliasuhService
                 'status' => true,
                 'message' => 'Grup wali asuh berhasil dihapus',
                 'data' => [
-                    'deleted_at' => $grup->deleted_at
-                ]
+                    'deleted_at' => $grup->deleted_at,
+                ],
             ]);
         });
     }

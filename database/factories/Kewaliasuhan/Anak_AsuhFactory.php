@@ -3,8 +3,6 @@
 namespace Database\Factories\Kewaliasuhan;
 
 use App\Models\Santri;
-use Illuminate\Support\Str;
-use Database\Factories\Peserta_didikFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,8 +18,8 @@ class Anak_AsuhFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_santri' =>  Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_grup_wali_asuh' => (new Grup_WaliAsuhhFactory())->create()->id,
+            'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
+            'id_grup_wali_asuh' => (new Grup_WaliAsuhhFactory)->create()->id,
             'created_by' => 1,
             'updated_by' => null,
             'status' => true,

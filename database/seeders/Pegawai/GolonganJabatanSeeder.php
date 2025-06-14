@@ -3,7 +3,6 @@
 namespace Database\Seeders\Pegawai;
 
 use Database\Factories\Pegawai\GolonganJabatanFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class GolonganJabatanSeeder extends Seeder
@@ -13,7 +12,7 @@ class GolonganJabatanSeeder extends Seeder
      */
     public function run(): void
     {
-        (new GolonganJabatanFactory())->count(300)->create();
+        (new GolonganJabatanFactory)->count(300)->create();
 
     }
 }

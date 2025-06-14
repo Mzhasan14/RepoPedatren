@@ -4,8 +4,6 @@ namespace Database\Seeders\Pegawai;
 
 use App\Models\Biodata;
 use App\Models\Pegawai\Pegawai;
-use Database\Factories\Pegawai\PegawaiFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PegawaiSeeder extends Seeder

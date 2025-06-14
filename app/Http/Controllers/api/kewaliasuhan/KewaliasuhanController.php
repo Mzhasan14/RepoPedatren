@@ -1,18 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\api\Kewaliasuhan;
+namespace App\Http\Controllers\api\kewaliasuhan;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Kewaliasuhan\KewaliasuhanService;
+use Illuminate\Http\Request;
 
 class KewaliasuhanController extends Controller
 {
     private KewaliasuhanService $service;
 
-    public function __construct(KewaliasuhanService $service){
+    public function __construct(KewaliasuhanService $service)
+    {
         $this->service = $service;
     }
+
     /**
      * Display a listing of the resource.
      */

@@ -15,16 +15,14 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class WaliKelas extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'wali_kelas';
 
-
     protected $guarded = [
-        'created_at'
+        'created_at',
     ];
 
-    
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -32,17 +30,16 @@ class WaliKelas extends Model
             ->logOnlyDirty()
             ->logOnly([
                 'pegawai_id', 'lembaga_id', 'jurusan_id', 'kelas_id', 'rombel_id', 'jumlah_murid', 'status_aktif',
-                'created_by', 'updated_by', 'deleted_by'
+                'created_by', 'updated_by', 'deleted_by',
             ])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Wali Kelas {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Wali Kelas {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
@@ -76,6 +73,6 @@ class WaliKelas extends Model
 
     public function ScopeActive($query)
     {
-        return $query->where('wali_kelas.status_aktif','aktif');
+        return $query->where('wali_kelas.status_aktif', 'aktif');
     }
 }

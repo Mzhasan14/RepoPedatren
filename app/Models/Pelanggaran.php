@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Santri;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Pelanggaran extends Model
@@ -14,9 +13,13 @@ class Pelanggaran extends Model
     use HasFactory, LogsActivity;
 
     protected $table = 'pelanggaran';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $timestamps = true;
+
     public $incrementing = true;
 
     protected $fillable = [
@@ -28,9 +31,8 @@ class Pelanggaran extends Model
         'keterangan',
         'created_by',
         'updated_by',
-        'deleted_by'
+        'deleted_by',
     ];
-
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -58,7 +60,7 @@ class Pelanggaran extends Model
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();

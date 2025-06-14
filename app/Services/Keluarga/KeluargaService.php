@@ -4,12 +4,10 @@ namespace App\Services\Keluarga;
 
 use App\Models\Keluarga;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class KeluargaService
 {
-
     public function show(int $id): array
     {
         $kel = Keluarga::with(['biodata', 'orangTua.hubunganKeluarga'])->find($id);
@@ -19,13 +17,13 @@ class KeluargaService
 
         return [
             'status' => true,
-            'data'   => [
-                'id'             => $kel->id,
-                'biodata_id'    => $kel->biodata->id,
-                'no_kk'       => $kel->no_kk,
-                'nama'   => $kel->biodata->nama,
-                'hubungan'   => optional(optional($kel->orangTua)->hubunganKeluarga)->nama_status,
-                'status'     => $kel->status
+            'data' => [
+                'id' => $kel->id,
+                'biodata_id' => $kel->biodata->id,
+                'no_kk' => $kel->no_kk,
+                'nama' => $kel->biodata->nama,
+                'hubungan' => optional(optional($kel->orangTua)->hubunganKeluarga)->nama_status,
+                'status' => $kel->status,
             ],
         ];
     }
@@ -40,7 +38,7 @@ class KeluargaService
             }
 
             $keluarga->update([
-                'no_kk'     => $input['no_kk'],
+                'no_kk' => $input['no_kk'],
                 'updated_by' => Auth::id(),
                 'updated_at' => now(),
             ]);
@@ -74,10 +72,10 @@ class KeluargaService
 
     public function pindahkanSeluruhKk(array $input, int $id): array
     {
-        if (!isset($input['no_kk'])) {
+        if (! isset($input['no_kk'])) {
             return [
                 'status' => false,
-                'message' => 'Kolom no_kk harus diisi.'
+                'message' => 'Kolom no_kk harus diisi.',
             ];
         }
 
@@ -87,7 +85,7 @@ class KeluargaService
             return [
                 'status' => false,
                 'message' => 'Data keluarga tidak ditemukan.',
-                'data'  => null
+                'data' => null,
             ];
         }
 
@@ -108,7 +106,7 @@ class KeluargaService
         return [
             'status' => true,
             'message' => 'Seluruh anggota keluarga berhasil dipindahkan ke KK baru.',
-            'data' => $new
+            'data' => $new,
         ];
     }
 }

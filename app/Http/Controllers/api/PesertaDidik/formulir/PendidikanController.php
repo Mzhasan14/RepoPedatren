@@ -1,18 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik\formulir;
+namespace App\Http\Controllers\api\PesertaDidik\Formulir;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\PendidikanRequest;
-use App\Services\PesertaDidik\Formulir\PendidikanService;
 use App\Http\Requests\PesertaDidik\formulir\CreatePendidikanRequest;
 use App\Http\Requests\PesertaDidik\formulir\KeluarPendidikanRequest;
 use App\Http\Requests\PesertaDidik\formulir\PindahPendidikanRequest;
 use App\Http\Requests\PesertaDidik\formulir\UpdatePendidikanRequest;
+use App\Services\PesertaDidik\Formulir\PendidikanService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class PendidikanController extends Controller
 {
@@ -31,22 +28,22 @@ class PendidikanController extends Controller
         try {
             $result = $this->pendidikan->index($bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal ambil data pendidikan: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -57,25 +54,25 @@ class PendidikanController extends Controller
     public function store(CreatePendidikanRequest $request, $bioId): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->pendidikan->store($data, $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal tambah pendidikan: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -88,22 +85,22 @@ class PendidikanController extends Controller
         try {
             $result = $this->pendidikan->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal ambil detail pendidikan: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -114,25 +111,25 @@ class PendidikanController extends Controller
     public function update(UpdatePendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->pendidikan->update($data, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal update pendidikan: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -143,25 +140,25 @@ class PendidikanController extends Controller
     public function pindahPendidikan(PindahPendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->pendidikan->pindahPendidikan($data, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Pendidikan baru berhasil dibuat',
-                'data'    => $result['data'],
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal pindah pendidikan: {$e->getMessage()}");
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -172,12 +169,12 @@ class PendidikanController extends Controller
     public function keluarPendidikan(KeluarPendidikanRequest $request, $id): JsonResponse
     {
         try {
-            $data   = $request->validated();
+            $data = $request->validated();
             $result = $this->pendidikan->keluarPendidikan($data, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
@@ -189,7 +186,7 @@ class PendidikanController extends Controller
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

@@ -4,8 +4,6 @@ namespace Database\Seeders\Pegawai;
 
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengurus;
-use Database\Factories\Pegawai\PengurusFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PengurusSeeder extends Seeder

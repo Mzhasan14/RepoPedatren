@@ -85,10 +85,10 @@ class FilterPerizinanService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -101,7 +101,7 @@ class FilterPerizinanService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -174,9 +174,9 @@ class FilterPerizinanService
         }
 
         if ($request->bermalam === 'bermalam') {
-            return $query->whereRaw("TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) > 24");
+            return $query->whereRaw('TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) > 24');
         } elseif ($request->bermalam === 'tidak bermalam') {
-            return $query->whereRaw("TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) <= 24");
+            return $query->whereRaw('TIMESTAMPDIFF(HOUR, pr.tanggal_mulai, pr.tanggal_akhir) <= 24');
         }
 
         return $query;
@@ -189,11 +189,11 @@ class FilterPerizinanService
         }
 
         if ($request->masa_telat === 'lebih  dari seminggu') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 7");
+            return $query->whereRaw('DATEDIFF(NOW(), pr.tanggal_akhir) > 7');
         } elseif ($request->masa_telat === 'lebih dari 2 minggu') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 14");
+            return $query->whereRaw('DATEDIFF(NOW(), pr.tanggal_akhir) > 14');
         } elseif ($request->masa_telat === 'lebih dari satu bulan') {
-            return $query->whereRaw("DATEDIFF(NOW(), pr.tanggal_akhir) > 30");
+            return $query->whereRaw('DATEDIFF(NOW(), pr.tanggal_akhir) > 30');
         }
 
         return $query;

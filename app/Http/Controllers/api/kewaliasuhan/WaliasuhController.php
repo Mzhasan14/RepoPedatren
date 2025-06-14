@@ -2,74 +2,72 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use App\Models\Santri;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Kewaliasuhan\KeluarWaliasuhRequest;
+use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
 use App\Models\Biodata;
-use Illuminate\Http\Request;
-use App\Models\Peserta_didik;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Services\Kewaliasuhan\DetailWaliasuhService;
+use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
+use App\Services\Kewaliasuhan\WaliasuhService;
 use Illuminate\Http\JsonResponse;
-use App\Http\Resources\PdResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use Database\Seeders\PesertaDidikSeeder;
-use App\Models\Kewaliasuhan\Kewaliasuhan;
-use Illuminate\Support\Facades\Validator;
-use App\Services\Kewaliasuhan\WaliasuhService;
-use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
-use App\Services\Kewaliasuhan\DetailWaliasuhService;
-use App\Http\Requests\Kewaliasuhan\KeluarWaliasuhRequest;
-use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
 class WaliasuhController extends Controller
 {
-
     private WaliasuhService $waliasuhService;
+
     private FilterWaliasuhService $filterWaliasuhService;
+
     private DetailWaliasuhService $detailWaliasuhService;
 
-    public function __construct(WaliasuhService $waliasuhService, FilterWaliasuhService $filterWaliasuhService, DetailWaliasuhService $detailWaliasuhService){
+    public function __construct(WaliasuhService $waliasuhService, FilterWaliasuhService $filterWaliasuhService, DetailWaliasuhService $detailWaliasuhService)
+    {
         $this->waliasuhService = $waliasuhService;
         $this->filterWaliasuhService = $filterWaliasuhService;
         $this->detailWaliasuhService = $detailWaliasuhService;
     }
 
-    public function getAllWaliasuh(Request $request) {
+    public function getAllWaliasuh(Request $request)
+    {
         $query = $this->waliasuhService->getAllWaliasuh($request);
         $query = $this->filterWaliasuhService->WaliasuhFilters($query, $request);
 
-        $perPage     = (int) $request->input('limit', 25);
+        $perPage = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->waliasuhService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
     public function getDetailWaliasuh(string $bioId)
     {
         $waliasuh = Biodata::find($bioId);
-        if (!$waliasuh) {
+        if (! $waliasuh) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'ID wali asuh tidak ditemukan',
-                'data' => []
+                'data' => [],
             ], 404);
         }
 
@@ -77,7 +75,7 @@ class WaliasuhController extends Controller
 
         return response()->json([
             'status' => true,
-            'data'    => $data,
+            'data' => $data,
         ], 200);
     }
 
@@ -86,22 +84,22 @@ class WaliasuhController extends Controller
         try {
             $result = $this->waliasuhService->index($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data khadam: ' . $e->getMessage());
+            Log::error('Gagal ambil data khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -112,22 +110,22 @@ class WaliasuhController extends Controller
             $validated = $request->validated();
             $result = $this->waliasuhService->store($validated, $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah khadam: ' . $e->getMessage());
+            Log::error('Gagal tambah khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -137,37 +135,39 @@ class WaliasuhController extends Controller
         try {
             $result = $this->waliasuhService->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail khadam: ' . $e->getMessage());
+            Log::error('Gagal ambil detail khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function update(waliAsuhRequest $request, $id) {
-        $result = $this->waliasuhService->update($request->validated(),$id);
-        if (!$result['status']) {
+    public function update(waliAsuhRequest $request, $id)
+    {
+        $result = $this->waliasuhService->update($request->validated(), $id);
+        if (! $result['status']) {
             return response()->json([
                 'message' => $result['message'] ??
-                    'Data tidak ditemukan.'
+                    'Data tidak ditemukan.',
             ], 200);
         }
+
         return response()->json([
             'message' => 'waliasuh berhasil diperbarui',
-            'data' => $result['data']
+            'data' => $result['data'],
         ]);
     }
 
@@ -177,33 +177,34 @@ class WaliasuhController extends Controller
             $validated = $request->validated();
             $result = $this->waliasuhService->keluarWaliasuh($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar khadam: ' . $e->getMessage());
+            Log::error('Gagal keluar khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function destroy($id) {
+    public function destroy($id)
+    {
         DB::transaction(function () use ($id) {
             $waliasuh = Wali_Asuh::findOrFail($id);
-            if (!$waliasuh) {
+            if (! $waliasuh) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'wali asuh tidak ditemukan'
+                    'message' => 'wali asuh tidak ditemukan',
                 ], 404);
             }
             $originalAttributes = $waliasuh->getAttributes();
@@ -211,10 +212,10 @@ class WaliasuhController extends Controller
             // 1. Nonaktifkan semua relasi
             Kewaliasuhan::where('id_wali_asuh', $id)
                 ->update([
-                    'tanggal_berakhir' =>now(),
+                    'tanggal_berakhir' => now(),
                     'status' => false,
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ]);
 
             // 2. Nonaktifkan wali asuh
@@ -223,7 +224,7 @@ class WaliasuhController extends Controller
                     'id_grup_wali_asuh' => null,
                     'status' => false,
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ]);
 
             activity('anak_asuh_delete')
@@ -233,7 +234,7 @@ class WaliasuhController extends Controller
                     'deleted_by' => Auth::id(),
                     'ip' => request()->ip(),
                     'user_agent' => request()->userAgent(),
-                    'affected_relations' => $relations->pluck('id') // ID relasi yang dinonaktifkan
+                    'affected_relations' => $relations->pluck('id'), // ID relasi yang dinonaktifkan
                 ])
                 ->event('nonaktif_wali_asuh')
                 ->log('Wali asuh dinonaktifkan beserta semua relasinya');
@@ -245,7 +246,7 @@ class WaliasuhController extends Controller
                     ->withProperties([
                         'id_wali_asuh' => $relation->id_wali_asuh,
                         'id_anak_asuh' => $relation->id_anak_asuh,
-                        'deleted_by' => Auth::id()
+                        'deleted_by' => Auth::id(),
                     ])
                     ->event('nonaktif_relasi_wali_asuh')
                     ->log('Relasi kewaliasuhan dinonaktifkan karena wali asuh dinonaktifkan');
@@ -260,7 +261,7 @@ class WaliasuhController extends Controller
     {
         $data = Wali_Asuh::with([
             'santri.biodata:id,nama',
-            'grupWaliAsuh:id,nama_grup'
+            'grupWaliAsuh:id,nama_grup',
         ])
             ->select('id', 'id_santri', 'id_grup_wali_asuh')
             ->get()

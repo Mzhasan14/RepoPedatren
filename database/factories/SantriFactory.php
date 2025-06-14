@@ -3,13 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Biodata;
-use Illuminate\Support\Str;
-use App\Models\PesertaDidik;
-use App\Models\Peserta_didik;
-use Database\Factories\Kewilayahan\BlokFactory;
-use Database\Factories\Kewilayahan\KamarFactory;
-use Database\Factories\Kewilayahan\WilayahFactory;
-use Database\Factories\Kewilayahan\DomisiliFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -32,7 +25,7 @@ class SantriFactory extends Factory
             'created_by' => 1,
             'updated_by' => null,
             'status' => $this->faker->randomElement([
-                'aktif'
+                'aktif',
             ]),
         ];
     }

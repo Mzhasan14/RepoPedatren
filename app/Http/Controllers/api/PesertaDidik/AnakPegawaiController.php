@@ -3,19 +3,20 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Exports\BaseExport;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\CreateAnakPegawaiRequest;
+use App\Services\PesertaDidik\AnakPegawaiService;
+use App\Services\PesertaDidik\Filters\FilterAnakPegawaiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\PesertaDidik\AnakPegawaiService;
-use App\Http\Requests\PesertaDidik\CreateAnakPegawaiRequest;
-use App\Services\PesertaDidik\Filters\FilterAnakPegawaiService;
 
 class AnakPegawaiController extends Controller
 {
     private AnakPegawaiService $anakPegawaiService;
+
     private FilterAnakPegawaiService $filterController;
 
     public function __construct(AnakPegawaiService $anakPegawaiService, FilterAnakPegawaiService $filterController)
@@ -31,33 +32,34 @@ class AnakPegawaiController extends Controller
             $query = $this->filterController->anakPegawaiFilters($query, $request);
             $query = $query->latest('b.created_at');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[AnakPegawaiController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->anakPegawaiService->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
+            'total_data' => $results->total(),
             'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -70,13 +72,13 @@ class AnakPegawaiController extends Controller
             // Response sukses dengan status 201
             return response()->json([
                 'message' => 'Peserta Didik berhasil disimpan.',
-                'data' => $pesertaDidik
+                'data' => $pesertaDidik,
             ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             // Tangani error umum (misalnya database, validasi, dll)
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menyimpan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -120,7 +122,7 @@ class AnakPegawaiController extends Controller
             'rombel',
             'angkatan_pelajar',
             'ibu_kandung',
-            'ayah_kandung'
+            'ayah_kandung',
         ];
 
         $optionalFields = $request->input('fields', []);
@@ -141,7 +143,7 @@ class AnakPegawaiController extends Controller
 
         $addNumber = true;
         $formatted = $this->anakPegawaiService->formatDataExport($results, $fields, $addNumber);
-        $headings  = $this->anakPegawaiService->getFieldExportHeadings($fields, $addNumber);
+        $headings = $this->anakPegawaiService->getFieldExportHeadings($fields, $addNumber);
 
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "anak_pegawai_{$now}.xlsx";

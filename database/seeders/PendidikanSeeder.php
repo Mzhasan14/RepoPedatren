@@ -2,14 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Pendidikan\Kelas;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Rombel;
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Lembaga;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PendidikanSeeder extends Seeder
 {
@@ -96,7 +92,7 @@ class PendidikanSeeder extends Seeder
 
                     foreach (['putra', 'putri'] as $gender) {
                         DB::table('rombel')->insert([
-                            'nama_rombel' => $kelasName . ' ' . ucfirst($gender),
+                            'nama_rombel' => $kelasName.' '.ucfirst($gender),
                             'gender_rombel' => $gender,
                             'kelas_id' => $kelasId,
                             'created_by' => $userId,

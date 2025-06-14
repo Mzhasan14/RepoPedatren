@@ -3,7 +3,6 @@
 namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Pegawai;
-use Illuminate\Support\Str;
 use App\Models\Pegawai\Pengurus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -13,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PengurusFactory extends Factory
 {
     protected $model = Pengurus::class;
+
     /**
      * Define the model's default state.
      *
@@ -24,11 +24,12 @@ class PengurusFactory extends Factory
         $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
+
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
+            'golongan_jabatan_id' => (new GolonganJabatanFactory)->create()->id,
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'satuan_kerja' => $this->faker->randomElement([
                 'Madrasah Tsanawiyah Al-Hikmah',
@@ -52,7 +53,7 @@ class PengurusFactory extends Factory
                 'Sekretaris Dewan Pengasuh',
                 'Anggota Dewan Pengasuh',
                 'Guru Pembimbing',
-                'Dosen Tamu'
+                'Dosen Tamu',
             ]),
             'tanggal_mulai' => $tanggalMulai,
             'tanggal_akhir' => $tanggalSelesai,

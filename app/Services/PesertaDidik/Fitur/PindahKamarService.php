@@ -2,12 +2,11 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
-use App\Models\Santri;
 use App\Models\DomisiliSantri;
 use App\Models\RiwayatDomisili;
-use App\Models\RiwayatPendidikan;
-use Illuminate\Support\Facades\DB;
+use App\Models\Santri;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PindahKamarService
 {
@@ -40,6 +39,7 @@ class PindahKamarService
                         'nama' => $nama,
                         'message' => 'Data domisili aktif tidak ditemukan.',
                     ];
+
                     continue;
                 }
 
@@ -77,6 +77,7 @@ class PindahKamarService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memindahkan domisili.',

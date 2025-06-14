@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Santri;
 use App\Models\Biodata;
-use Faker\Factory as Faker;
-use Illuminate\Database\Seeder;
 use App\Models\HubunganKeluarga;
 use App\Models\PengunjungMahrom;
+use App\Models\Santri;
+use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class PengunjungMahromSeeder extends Seeder
 {

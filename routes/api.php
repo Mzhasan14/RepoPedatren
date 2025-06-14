@@ -1,91 +1,60 @@
 <?php
 
+use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
+use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
+use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
+use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
+use App\Http\Controllers\api\Administrasi\PelanggaranController;
+use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
+use App\Http\Controllers\api\Administrasi\PerizinanController;
+use App\Http\Controllers\api\Auth\AuthController;
+use App\Http\Controllers\api\Auth\UserController;
+use App\Http\Controllers\api\Biometric\BiometricProfileController;
+use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
+use App\Http\Controllers\api\keluarga\KeluargaController;
+use App\Http\Controllers\api\keluarga\OrangTuaWaliController;
+use App\Http\Controllers\api\keluarga\WaliController;
+use App\Http\Controllers\api\kewaliasuhan\AnakasuhController;
+use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
+use App\Http\Controllers\api\kewaliasuhan\WaliasuhController;
+use App\Http\Controllers\api\Pegawai\DropdownController;
+use App\Http\Controllers\api\Pegawai\GolonganController;
+use App\Http\Controllers\api\Pegawai\GolonganJabatanController;
+use App\Http\Controllers\api\Pegawai\KaryawanController;
+use App\Http\Controllers\api\Pegawai\KategoriGolonganController;
+use App\Http\Controllers\api\Pegawai\PegawaiController;
+use App\Http\Controllers\api\Pegawai\PengajarController;
+use App\Http\Controllers\api\Pegawai\PengurusController;
+use App\Http\Controllers\api\Pegawai\WalikelasController;
+use App\Http\Controllers\api\Pendidikan\DropdownPendidikanController;
+use App\Http\Controllers\api\Pendidikan\JurusanController;
+use App\Http\Controllers\api\Pendidikan\KelasController;
+use App\Http\Controllers\api\Pendidikan\LembagaController;
+use App\Http\Controllers\api\Pendidikan\RombelController;
+use App\Http\Controllers\api\PesertaDidik\AlumniController;
+use App\Http\Controllers\api\PesertaDidik\AnakPegawaiController;
+use App\Http\Controllers\api\PesertaDidik\BersaudaraController;
+use App\Http\Controllers\api\PesertaDidik\DetailController;
+use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\BerkasController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\BiodataController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\DomisiliController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\KhadamFormController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
+use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\KhadamController;
+use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
+use App\Http\Controllers\api\PesertaDidik\PelajarController;
+use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
+use App\Http\Controllers\api\PesertaDidik\SantriController;
+use App\Http\Controllers\api\Wilayah\BlokController;
+use App\Http\Controllers\api\Wilayah\DropdownWilayahController;
+use App\Http\Controllers\api\Wilayah\KamarController;
+use App\Http\Controllers\api\Wilayah\WilayahController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\api\Auth\{
-    AuthController,
-    UserController
-};
-
-use App\Http\Controllers\Api\Administrasi\{
-    CatatanAfektifController as AdministrasiCatatanAfektifController,
-    CatatanKognitifController,
-    DetailPelanggaranController,
-    PerizinanController,
-    PelanggaranController,
-    DetailPerizinanController,
-    DetailPengunjungController,
-    PengunjungMahromController,
-};
-use App\Http\Controllers\Api\PesertaDidik\{
-    AnakPegawaiController,
-    PesertaDidikController,
-    PelajarController,
-    SantriController,
-    AlumniController,
-    DetailController,
-    KhadamController,
-    BersaudaraController,
-    NonDomisiliController,
-    DropDownAngkatanController
-};
-
-use App\Http\Controllers\api\PesertaDidik\formulir\{
-    DomisiliController,
-    PendidikanController,
-    BiodataController,
-    WargaPesantrenController,
-    BerkasController,
-    KhadamFormController,
-    StatusSantriController
-};
-
-use App\Http\Controllers\Api\keluarga\{
-    KeluargaController,
-    HubunganKeluargaController,
-    OrangTuaWaliController,
-    WaliController
-};
-
-use App\Http\Controllers\Api\Alamat\{
-    ProvinsiController,
-    KabupatenController,
-    KecamatanController
-};
-use App\Http\Controllers\api\Biometric\{
-    BiometricProfileController
-};
-use App\Http\Controllers\Api\Kewaliasuhan\{
-    GrupWaliAsuhController,
-    WaliasuhController,
-    AnakasuhController
-};
-use App\Http\Controllers\Api\Wilayah\{
-    WilayahController,
-    BlokController,
-    KamarController,
-    DropdownWilayahController
-};
-use App\Http\Controllers\Api\Pendidikan\{
-    DropdownPendidikanController,
-    LembagaController,
-    JurusanController,
-    KelasController,
-    RombelController
-};
-use App\Http\Controllers\Api\Pegawai\{
-    DetailKepegawaianController,
-    PegawaiController,
-    PengajarController,
-    WalikelasController,
-    KategoriGolonganController,
-    GolonganController,
-    PengurusController,
-    KaryawanController,
-    MateriAjarController,
-    DropdownController,
-    GolonganJabatanController
-};
 
 // Endpoint menampilkan log
 Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
@@ -95,7 +64,6 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
     });
-
 
 // Formulir Peserta Didik
 Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
@@ -221,12 +189,12 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
 });
 
 Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum', 'role:admin|superadmin');
-Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
-Route::post('forgot',   [AuthController::class, 'forgotPassword']);
-Route::post('reset',    [AuthController::class, 'resetPassword'])->name('password.reset');
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
+Route::post('forgot', [AuthController::class, 'forgotPassword']);
+Route::post('reset', [AuthController::class, 'resetPassword'])->name('password.reset');
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('logout',  [AuthController::class, 'logout']);
+    Route::post('logout', [AuthController::class, 'logout']);
     Route::patch('profile', [AuthController::class, 'updateProfile']);
     Route::post('password', [AuthController::class, 'changePassword']);
     Route::get('/user', function (Request $request) {
@@ -273,7 +241,7 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
 
-    //perizinan
+    // perizinan
     Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
     Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
@@ -281,14 +249,13 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
 
     Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
 
-    //pelanggaran
+    // pelanggaran
     Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
     Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
 
     Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
-
 
     // //pengunjung mahrom
     // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
@@ -303,7 +270,7 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
     Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
 
-    //Kewaliasuhan
+    // Kewaliasuhan
     Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
@@ -319,28 +286,28 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::put('{id}/lembaga', [LembagaController::class, 'update']);
     Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
 
-    //golongan
+    // golongan
     Route::get('golongan', [GolonganController::class, 'index']);
     Route::post('golongan', [GolonganController::class, 'store']);
     Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
     Route::put('{id}/golongan', [GolonganController::class, 'update']);
     Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
 
-    //kategori golongan
+    // kategori golongan
     Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
     Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
     Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
     Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
     Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
 
-    //golongan Jabatan
+    // golongan Jabatan
     Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
     Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
     Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
     Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
     Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
 
-    // Kepegawaian 
+    // Kepegawaian
     Route::post('/pegawai', [PegawaiController::class, 'store']);
     Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
@@ -348,32 +315,32 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
 
 Route::prefix('approve')->middleware('auth:sanctum')->group(function () {
     // Perizinan
-    Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
-    Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
-    Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\Api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
+    Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
+    Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
+    Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
 });
 
 Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
     // Pendidikan
-    Route::post('/pindah-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
-    Route::post('/naik-jenjang', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
+    Route::post('/pindah-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
+    Route::post('/naik-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
 
-    //domisili
-    Route::post('/pindah-kamar', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PindahKamarController::class, 'pindah']);
+    // domisili
+    Route::post('/pindah-kamar', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahKamarController::class, 'pindah']);
 
     // Proses lulus
-    Route::post('/proses-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'prosesLulus']);
-    Route::post('/batal-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'batalLulus']);
-    Route::get('/list-lulus', [\App\Http\Controllers\Api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'listDataLulus']);
+    Route::post('/proses-lulus', [\App\Http\Controllers\api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'prosesLulus']);
+    Route::post('/batal-lulus', [\App\Http\Controllers\api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'batalLulus']);
+    Route::get('/list-lulus', [\App\Http\Controllers\api\PesertaDidik\Fitur\ProsesLulusPendidikanController::class, 'listDataLulus']);
 
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
 
-    //presensi
-    Route::get('/presensi-santri', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);
-    Route::post('/presensi-santri', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'store']);
-    Route::put('/presensi-santri/{presensi}', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'update']);
-    Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\Api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
+    // presensi
+    Route::get('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);
+    Route::post('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'store']);
+    Route::put('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'update']);
+    Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
 });
 
 Route::get('/user', [UserController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin');
@@ -404,7 +371,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
     Route::get('/pengunjung/{id}', [DetailPengunjungController::class, 'getDetailPengunjung']);
 
-
     // 🚨 Administrasi
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
     Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
@@ -422,7 +388,6 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
     Route::get('/wali', [WaliController::class, 'getAllWali']);
     Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
-
 
     // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
     Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);

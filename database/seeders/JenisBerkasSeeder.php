@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Berkas;
-use App\Models\Biodata;
 use App\Models\JenisBerkas;
-use Illuminate\Database\Seeder;
 use Database\Factories\JenisBerkasFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
 class JenisBerkasSeeder extends Seeder
 {

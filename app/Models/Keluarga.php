@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Keluarga extends Model
 {
     use HasFactory;
-
     use SoftDeletes;
+
     //
     protected $dates = ['deleted_at'];
+
     protected $table = 'keluarga';
 
     protected $fillable = [
@@ -22,7 +23,7 @@ class Keluarga extends Model
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     // protected static function boot()
@@ -33,12 +34,11 @@ class Keluarga extends Model
     //     });
     // }
 
-  // Di model Keluarga
-public function biodataDetail()
-{
-    return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
-}
-
+    // Di model Keluarga
+    public function biodataDetail()
+    {
+        return $this->belongsTo(Biodata::class, 'id_biodata', 'id');
+    }
 
     public function biodata()
     {

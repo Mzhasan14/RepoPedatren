@@ -2,30 +2,29 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use id;
-use App\Models\Biodata;
-use Illuminate\Support\Arr;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Http\JsonResponse;
-use App\Http\Resources\PdResource;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use Illuminate\Support\Facades\Validator;
-use App\Models\Kewaliasuhan\Grup_WaliAsuh;
-use App\Services\Kewaliasuhan\GrupWaliasuhService;
 use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
+use App\Http\Resources\PdResource;
+use App\Models\Biodata;
+use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
+use App\Services\Kewaliasuhan\GrupWaliasuhService;
+use id;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class GrupWaliAsuhController extends Controller
 {
-
     private GrupWaliasuhService $grupWaliasuhService;
+
     private FilterGrupWaliasuhService $filterGrupWaliasuhService;
 
-    public function __construct(GrupWaliasuhService $grupWaliasuhService, FilterGrupWaliasuhService $filterGrupWaliasuhService){
+    public function __construct(GrupWaliasuhService $grupWaliasuhService, FilterGrupWaliasuhService $filterGrupWaliasuhService)
+    {
         $this->grupWaliasuhService = $grupWaliasuhService;
         $this->filterGrupWaliasuhService = $filterGrupWaliasuhService;
     }
@@ -35,47 +34,47 @@ class GrupWaliAsuhController extends Controller
         $query = $this->grupWaliasuhService->getAllGrupWaliasuh($request);
         $query = $this->filterGrupWaliasuhService->GrupWaliasuhFIlters($query, $request);
 
-        $perPage     = (int) $request->input('limit', 25);
+        $perPage = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->grupWaliasuhService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
     public function index(): JsonResponse
     {
         try {
-        $result = $this->grupWaliasuhService->index();
-            if (!$result['status']) {
+            $result = $this->grupWaliasuhService->index();
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 404);
             }
 
             return response()->json([
-            'status' => true,
-            'data'   => $result['data']
-        ]);
+                'status' => true,
+                'data' => $result['data'],
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -84,7 +83,7 @@ class GrupWaliAsuhController extends Controller
     {
         $result = $this->grupWaliasuhService->show($id);
 
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json(['message' => $result['message']], 404);
         }
 
@@ -96,19 +95,20 @@ class GrupWaliAsuhController extends Controller
         try {
             $validated = $request->validated();
             $result = $this->grupWaliasuhService->store($validated);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -117,15 +117,16 @@ class GrupWaliAsuhController extends Controller
     public function update(grupWaliasuhRequest $request, $id)
     {
         $result = $this->grupWaliasuhService->update($request->validated(), $id);
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json([
                 'message' => $result['message'] ??
-                    'Data tidak ditemukan.'
+                    'Data tidak ditemukan.',
             ], 200);
         }
+
         return response()->json([
             'message' => 'Grup waliasuh berhasil diperbarui',
-            'data' => $result['data']
+            'data' => $result['data'],
         ]);
     }
 
@@ -139,26 +140,26 @@ class GrupWaliAsuhController extends Controller
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (!Auth::id()) {
+            if (! Auth::id()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi'
+                    'message' => 'Pengguna tidak terautentikasi',
                 ], 401);
             }
 
             $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
-            if (!$grup) {
+            if (! $grup) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data grup wali asuh tidak ditemukan'
+                    'message' => 'Data grup wali asuh tidak ditemukan',
                 ], 404);
             }
 
             if ($grup->trashed()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data grup sudah dihapus sebelumnya'
+                    'message' => 'Data grup sudah dihapus sebelumnya',
                 ], 410);
             }
 
@@ -170,7 +171,7 @@ class GrupWaliAsuhController extends Controller
             if ($hasActiveMembers) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif'
+                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif',
                 ], 400);
             }
 
@@ -182,7 +183,7 @@ class GrupWaliAsuhController extends Controller
                 ->performedOn($grup)
                 ->withProperties([
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ])
                 ->event('delete_grup_wali_asuh')
                 ->log('Grup wali asuh berhasil dihapus (soft delete)');
@@ -191,8 +192,8 @@ class GrupWaliAsuhController extends Controller
                 'status' => true,
                 'message' => 'Grup wali asuh berhasil dihapus',
                 'data' => [
-                    'deleted_at' => $grup->deleted_at
-                ]
+                    'deleted_at' => $grup->deleted_at,
+                ],
             ]);
         });
     }
@@ -266,7 +267,6 @@ class GrupWaliAsuhController extends Controller
     //     return new PdResource(true,'Data berhasil dihapus',null);
     // }
 
-
     // public function kewaliasuhan() {
 
     //      $grupKewaliasuhan = Grup_WaliAsuh::join('wali_asuh as wa1','grup_wali_asuh.id','=','wa1.id_grup_wali_asuh')
@@ -274,7 +274,7 @@ class GrupWaliAsuhController extends Controller
     //      ->join('santri','santri.nis','=','wa1.nis')
     //      ->join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
     //      ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
-         
+
     //      ->select(
     //         'grup_wali_asuh.id',
     //         'grup_wali_asuh.nama_grup',

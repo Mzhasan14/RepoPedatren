@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Exports\BaseExport;
+use App\Http\Controllers\Controller;
+use App\Services\PesertaDidik\AlumniService;
+use App\Services\PesertaDidik\Filters\FilterAlumniService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PesertaDidik\AlumniExport;
-use App\Services\PesertaDidik\AlumniService;
-use App\Http\Requests\PesertaDidik\AlumniRequest;
-use App\Services\PesertaDidik\Filters\FilterAlumniService;
 
 class AlumniController extends Controller
 {
     private AlumniService $alumniService;
+
     private FilterAlumniService $filterController;
 
     public function __construct(AlumniService $alumniService, FilterAlumniService $filterController)
@@ -30,33 +29,34 @@ class AlumniController extends Controller
             $query = $this->filterController->alumniFilters($query, $request);
             $query = $query->latest('b.created_at');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[AlumniController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->alumniService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -99,7 +99,7 @@ class AlumniController extends Controller
             'rombel',
             'angkatan_pelajar',
             'tahun_keluar_pelajar',
-            'ibu_kandung'
+            'ibu_kandung',
         ];
 
         $optionalFields = $request->input('fields', []);
@@ -120,7 +120,7 @@ class AlumniController extends Controller
 
         $addNumber = true;
         $formatted = $this->alumniService->formatDataExport($results, $fields, $addNumber);
-        $headings  = $this->alumniService->getFieldExportHeadings($fields, $addNumber);
+        $headings = $this->alumniService->getFieldExportHeadings($fields, $addNumber);
 
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "alumni_{$now}.xlsx";

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Pegawai;
+namespace App\Http\Controllers\api\Pegawai;
 
 use App\Exports\Pegawai\WaliKelasExport;
 use App\Http\Controllers\Controller;
@@ -17,7 +17,9 @@ use Maatwebsite\Excel\Facades\Excel;
 class WalikelasController extends Controller
 {
     private WaliKelasService $walikelasService;
+
     private FiltersFilterWaliKelasService $filterController;
+
     private FormulirWaliKelasService $formulirwalikelas;
 
     public function __construct(
@@ -38,22 +40,22 @@ class WalikelasController extends Controller
         try {
             $result = $this->formulirwalikelas->index($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal ambil data Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -66,22 +68,22 @@ class WalikelasController extends Controller
         try {
             $result = $this->formulirwalikelas->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal ambil detail Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -94,22 +96,22 @@ class WalikelasController extends Controller
         try {
             $result = $this->formulirwalikelas->store($request->validated(), $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal tambah Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -122,22 +124,22 @@ class WalikelasController extends Controller
         try {
             $result = $this->formulirwalikelas->update($request->validated(), $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal update Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -174,11 +176,11 @@ class WalikelasController extends Controller
         $formatted = $this->walikelasService->formatData($results);
 
         return response()->json([
-            "total_data" => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page" => $results->perPage(),
-            "total_pages" => $results->lastPage(),
-            "data" => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -191,22 +193,22 @@ class WalikelasController extends Controller
             $validated = $request->validated();
             $result = $this->formulirwalikelas->pindahWalikelas($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Wali Kelas baru berhasil dibuat',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal pindah Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -220,22 +222,22 @@ class WalikelasController extends Controller
             $validated = $request->validated();
             $result = $this->formulirwalikelas->keluarWalikelas($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar Wali Kelas: ' . $e->getMessage());
+            Log::error('Gagal keluar Wali Kelas: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

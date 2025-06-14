@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\api\Administrasi;
 
-use App\Models\PengunjungMahrom;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\PengunjungMahrom;
 use App\Services\Administrasi\DetailPengunjungMahromService;
+use Illuminate\Support\Facades\Log;
 
 class DetailPengunjungController extends Controller
 {
@@ -20,11 +20,11 @@ class DetailPengunjungController extends Controller
     {
         try {
             $perizinan = PengunjungMahrom::find($id);
-            if (!$perizinan) {
+            if (! $perizinan) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'ID Pengunjung tidak ditemukan',
-                    'data' => []
+                    'data' => [],
                 ], 404);
             }
 
@@ -32,12 +32,13 @@ class DetailPengunjungController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data'    => $data,
+                'data' => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error DetailPengunjung: " . $e->getMessage());
+            Log::error('Error DetailPengunjung: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }

@@ -4,9 +4,9 @@ namespace App\Services\Keluarga;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+
 class DetailWaliService
 {
-
     public function getDetailWali(string $bioId): array
     {
         // --- 1. Ambil basic ortu + biodata_id + no_kk sekaligus ---
@@ -25,9 +25,9 @@ class DetailWaliService
             return ['error' => 'Orang tua tidak ditemukan'];
         }
 
-        $WaliId  = $base->ortu_id;
-        $bioId     = $base->biodata_id;
-        $noKk      = $base->no_kk;
+        $WaliId = $base->ortu_id;
+        $bioId = $base->biodata_id;
+        $noKk = $base->no_kk;
 
         // --- 2. Biodata detail ---
         $biodata = DB::table('biodata as b')
@@ -68,28 +68,28 @@ class DetailWaliService
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                "COALESCE(br.file_path,'default.jpg') as foto"
+                "COALESCE(br.file_path,'default.jpg') as foto",
             ]))
             ->first();
 
         $data['Biodata'] = [
-            'nokk'               => $noKk ?? '-',
-            'nik_nopassport'     => $biodata->identitas,
-            'nama'               => $biodata->nama,
-            'jenis_kelamin'      => $biodata->jenis_kelamin,
+            'nokk' => $noKk ?? '-',
+            'nik_nopassport' => $biodata->identitas,
+            'nama' => $biodata->nama,
+            'jenis_kelamin' => $biodata->jenis_kelamin,
             'tempat_tanggal_lahir' => $biodata->ttl,
-            'anak_ke'            => $biodata->anak_ke,
-            'umur'               => $biodata->umur,
+            'anak_ke' => $biodata->anak_ke,
+            'umur' => $biodata->umur,
             'email' => $biodata->email,
             'telepon_1' => $biodata->no_telepon,
             'telepon_2' => $biodata->no_telepon_2,
             'pekerjaan' => $biodata->pekerjaan,
             'penghasilan' => $biodata->penghasilan,
-            'kecamatan'          => $biodata->nama_kecamatan ?? '-',
-            'kabupaten'          => $biodata->nama_kabupaten ?? '-',
-            'provinsi'           => $biodata->nama_provinsi ?? '-',
-            'warganegara'        => $biodata->nama_negara ?? '-',
-            'foto_profil'        => URL::to($biodata->foto),
+            'kecamatan' => $biodata->nama_kecamatan ?? '-',
+            'kabupaten' => $biodata->nama_kabupaten ?? '-',
+            'provinsi' => $biodata->nama_provinsi ?? '-',
+            'warganegara' => $biodata->nama_negara ?? '-',
+            'foto_profil' => URL::to($biodata->foto),
         ];
 
         // --- 3. Data Keluarga (Orang tua/wali & saudara) ---
@@ -102,8 +102,8 @@ class DetailWaliService
             ->select([
                 'bo.nama',
                 'bo.nik',
-                DB::raw("hk.nama_status as status"),
-                'ow.wali'
+                DB::raw('hk.nama_status as status'),
+                'ow.wali',
             ])
             ->get();
         // Anak kandung
@@ -117,17 +117,17 @@ class DetailWaliService
                 'bs.nama',
                 'bs.nik',
                 DB::raw("'Anak Kandung' as status"),
-                DB::raw("NULL as wali")
+                DB::raw('NULL as wali'),
             ])
             ->get();
 
         $keluarga = $ortu->merge($saudara);
         if ($keluarga->isNotEmpty()) {
-            $data['Keluarga'] = $keluarga->map(fn($i) => [
-                'nama'   => $i->nama,
-                'nik'    => $i->nik,
+            $data['Keluarga'] = $keluarga->map(fn ($i) => [
+                'nama' => $i->nama,
+                'nik' => $i->nik,
                 'status' => $i->status,
-                'sebagai wali'   => $i->wali,
+                'sebagai wali' => $i->wali,
             ]);
         }
 
@@ -140,14 +140,14 @@ class DetailWaliService
                 's.id as santri_id',
                 'b.nama as nama_santri',
                 'hk.nama_status as hubungan',
-                'pm.tanggal_kunjungan'
+                'pm.tanggal_kunjungan',
             ])
             ->orderBy('pm.tanggal_kunjungan', 'desc')
             ->get();
 
         if ($kun->isNotEmpty()) {
-            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
-                'nama'    => $k->nama,
+            $data['Kunjungan_Mahrom'] = $kun->map(fn ($k) => [
+                'nama' => $k->nama,
                 'hubungan' => $k->hubungan,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ]);

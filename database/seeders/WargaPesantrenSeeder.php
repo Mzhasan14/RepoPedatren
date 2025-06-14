@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Database\Factories\WargaPesantrenFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class WargaPesantrenSeeder extends Seeder
@@ -13,6 +12,6 @@ class WargaPesantrenSeeder extends Seeder
      */
     public function run(): void
     {
-        (new WargaPesantrenFactory())->count(200)->create();
+        (new WargaPesantrenFactory)->count(200)->create();
     }
 }

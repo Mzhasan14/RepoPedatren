@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Kewaliasuhan;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class grupWaliasuhRequest extends FormRequest
@@ -26,7 +26,7 @@ class grupWaliasuhRequest extends FormRequest
         return [
             'id_wilayah' => 'required|exists:wilayah,id',
             'nama_grup' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:l,p'
+            'jenis_kelamin' => 'required|in:l,p',
         ];
     }
 
@@ -36,7 +36,7 @@ class grupWaliasuhRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

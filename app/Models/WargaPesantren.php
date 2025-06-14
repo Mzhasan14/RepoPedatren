@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
-use App\Models\Biodata;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class WargaPesantren extends Model
 {
-    use SoftDeletes, HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
+
     protected $table = 'warga_pesantren';
+
     protected $fillable = [
         'biodata_id',
         'niup',
@@ -46,7 +47,7 @@ class WargaPesantren extends Model
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();

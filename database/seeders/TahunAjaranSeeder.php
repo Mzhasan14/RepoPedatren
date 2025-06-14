@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class TahunAjaranSeeder extends Seeder
 {
@@ -18,7 +17,7 @@ class TahunAjaranSeeder extends Seeder
         $data = [];
 
         for ($i = 0; $i < 10; $i++) {
-            $tahunAjaran = ($startYear + $i) . '/' . ($startYear + $i + 1);
+            $tahunAjaran = ($startYear + $i).'/'.($startYear + $i + 1);
             $data[] = [
                 'tahun_ajaran' => $tahunAjaran,
                 'tanggal_mulai' => Carbon::create($startYear + $i, 7, 1),

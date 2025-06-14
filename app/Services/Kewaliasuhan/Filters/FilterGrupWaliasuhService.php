@@ -1,12 +1,14 @@
-<?php 
+<?php
 
 namespace App\Services\Kewaliasuhan\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
-class FilterGrupWaliasuhService {
-    public function GrupWaliasuhFIlters(Builder $query, Request $request): Builder {
+class FilterGrupWaliasuhService
+{
+    public function GrupWaliasuhFIlters(Builder $query, Request $request): Builder
+    {
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyJenisGrupWaliAsuhFilter($query, $request);
@@ -14,7 +16,6 @@ class FilterGrupWaliasuhService {
 
         return $query;
     }
-
 
     public function applyJenisKelaminFilter(Builder $query, Request $request): Builder
     {
@@ -43,7 +44,7 @@ class FilterGrupWaliasuhService {
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -64,7 +65,7 @@ class FilterGrupWaliasuhService {
         if (! $request->filled('grup_wali_asuh')) {
             return $query;
         }
-        
+
         if ($request === 'tidak_ada_wali_dan_anak') {
             $query->whereNull('wali_asuh.id')->whereNull('anak_asuh.id');
         } elseif ($request === 'tidak_ada_wali') {
@@ -77,7 +78,6 @@ class FilterGrupWaliasuhService {
             $query->whereNotNull('anak_asuh.id')->whereNull('wali_asuh.id');
         }
 
-
         return $query;
     }
 
@@ -88,10 +88,10 @@ class FilterGrupWaliasuhService {
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(gs.nama_grup) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(gs.nama_grup) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }

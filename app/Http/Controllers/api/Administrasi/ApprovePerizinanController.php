@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\api\Administrasi;
 
-use App\Models\Perizinan;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Perizinan;
 use Illuminate\Support\Facades\Auth;
 
 class ApprovePerizinanController extends Controller
@@ -13,7 +12,7 @@ class ApprovePerizinanController extends Controller
     {
         $perizinan = Perizinan::find($id);
 
-        if (!$perizinan) {
+        if (! $perizinan) {
             return response()->json(['message' => 'Perizinan tidak ditemukan']);
         }
 
@@ -34,7 +33,7 @@ class ApprovePerizinanController extends Controller
     {
         $perizinan = Perizinan::find($id);
 
-        if (!$perizinan) {
+        if (! $perizinan) {
             return response()->json(['message' => 'Perizinan tidak ditemukan']);
         }
 
@@ -54,7 +53,7 @@ class ApprovePerizinanController extends Controller
     {
         $perizinan = Perizinan::find($id);
 
-        if (!$perizinan) {
+        if (! $perizinan) {
             return response()->json(['message' => 'Perizinan tidak ditemukan']);
         }
 

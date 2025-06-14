@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Administrasi;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CreateCatatanAfektifRequest extends FormRequest
@@ -35,13 +35,14 @@ class CreateCatatanAfektifRequest extends FormRequest
             'tanggal_buat' => 'nullable|date',
         ];
     }
+
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

@@ -4,8 +4,6 @@ namespace Database\Seeders\Pegawai;
 
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
-use Database\Factories\Pegawai\KaryawanFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class KaryawanSeeder extends Seeder

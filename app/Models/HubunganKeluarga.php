@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Keluarga;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class HubunganKeluarga extends Model
 {
@@ -19,7 +18,7 @@ class HubunganKeluarga extends Model
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     protected static function boot()

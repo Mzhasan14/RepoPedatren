@@ -6,6 +6,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('santri', function() {
+Route::get('santri', function () {
     return view('index');
 });

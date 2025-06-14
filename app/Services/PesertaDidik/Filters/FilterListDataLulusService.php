@@ -4,7 +4,6 @@ namespace App\Services\PesertaDidik\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
-use SebastianBergmann\Type\FalseType;
 
 class FilterListDataLulusService
 {
@@ -27,8 +26,8 @@ class FilterListDataLulusService
         }
 
         $allowed = ['id', 'nama', 'niup', 'jenis_kelamin'];
-        $by      = strtolower($request->sort_by);
-        $order   = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';
+        $by = strtolower($request->sort_by);
+        $order = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';
 
         if (in_array($by, $allowed, true)) {
             $query->orderBy($by, $order);
@@ -46,10 +45,10 @@ class FilterListDataLulusService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -76,6 +75,7 @@ class FilterListDataLulusService
                 }
             }
         }
+
         return $query;
     }
 }

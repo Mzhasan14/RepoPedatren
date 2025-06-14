@@ -11,16 +11,20 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class GolonganJabatan extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'golongan_jabatan';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $timestamps = true;
+
     public $incrementing = true;
 
     protected $guarded = [
-        'id'
+        'id',
     ];
 
     public function karyawan()
@@ -33,21 +37,20 @@ class GolonganJabatan extends Model
         return $this->hasMany(Pengurus::class, 'golongan_jabatan_id');
     }
 
-        public function getActivitylogOptions(): LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('golongan_jabatan')
             ->logOnlyDirty()
             ->logOnly(['nama_golongan_jabatan', 'status', 'created_by', 'updated_by', 'deleted_by'])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Golongan Jabatan {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Golongan Jabatan {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();

@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Santri;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class PengunjungMahrom extends Model
@@ -14,6 +13,7 @@ class PengunjungMahrom extends Model
     use HasFactory, LogsActivity;
 
     protected $table = 'pengunjung_mahrom';
+
     protected $fillable = [
         'biodata_id',
         'santri_id',
@@ -53,7 +53,7 @@ class PengunjungMahrom extends Model
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
@@ -69,6 +69,7 @@ class PengunjungMahrom extends Model
     {
         return $this->belongsTo(Biodata::class, 'biodata_id');
     }
+
     public function hubungan()
     {
         return $this->belongsTo(HubunganKeluarga::class, 'hubungan_id');

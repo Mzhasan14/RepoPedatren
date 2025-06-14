@@ -2,12 +2,13 @@
 
 namespace App\Services\Keluarga\Filters;
 
-
-use Illuminate\Http\Request;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\Request;
 
-class FilterWaliService {
-    public function waliFilters(Builder $query, Request $request): Builder {
+class FilterWaliService
+{
+    public function waliFilters(Builder $query, Request $request): Builder
+    {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
@@ -123,10 +124,10 @@ class FilterWaliService {
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -142,7 +143,7 @@ class FilterWaliService {
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }
@@ -152,7 +153,7 @@ class FilterWaliService {
 
     public function applyWafatFilter(Builder $query, Request $request): Builder
     {
-        if (!$request->filled('wafat')) {
+        if (! $request->filled('wafat')) {
             return $query;
         }
 
@@ -169,5 +170,4 @@ class FilterWaliService {
 
         return $query;
     }
-
 }

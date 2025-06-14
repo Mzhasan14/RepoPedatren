@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\ProsesLulusPendidikanRequest;
 use App\Services\PesertaDidik\Filters\FilterListDataLulusService;
 use App\Services\PesertaDidik\Fitur\ProsesLulusPendidikanService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProsesLulusPendidikanController extends Controller
 {
     private ProsesLulusPendidikanService $data;
+
     private FilterListDataLulusService $filters;
+
     public function __construct(ProsesLulusPendidikanService $data, FilterListDataLulusService $filters)
     {
         $this->data = $data;
@@ -33,7 +35,7 @@ class ProsesLulusPendidikanController extends Controller
                 'data' => [
                     'berhasil' => $result['data_berhasil'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -57,7 +59,7 @@ class ProsesLulusPendidikanController extends Controller
                 'data' => [
                     'berhasil' => $result['data_berhasil'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -74,34 +76,35 @@ class ProsesLulusPendidikanController extends Controller
             $query = $this->data->listDataLulus($request);
             $query = $this->filters->listDataLulusFilters($query, $request);
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
 
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[ProsesLulusPendidikanController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->data->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
+            'total_data' => $results->total(),
             'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 }

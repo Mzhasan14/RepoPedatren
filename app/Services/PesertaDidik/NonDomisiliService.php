@@ -30,17 +30,17 @@ class NonDomisiliService
         // Query utama: data peserta_didik all
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
-            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftjoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftjoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('s.status', 'aktif')
-            ->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
+            ->where(fn ($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'))
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'))
             ->select([
                 'b.id as biodata_id',
@@ -53,31 +53,31 @@ class NonDomisiliService
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
                 // ambil updated_at terbaru antar s, pd, ds
-                DB::raw("
+                DB::raw('
                   GREATEST(
                       s.updated_at,
                       COALESCE(pd.updated_at, s.updated_at),
                       COALESCE(ds.updated_at, s.updated_at)
                   ) AS updated_at
-              "),
+              '),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ]);
     }
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
-            "nis" => $item->nis,
-            "nama" => $item->nama,
-            "niup" => $item->niup ?? '-',
-            "lembaga" => $item->nama_lembaga ?? '-',
-            "angkatan" => $item->angkatan,
-            "kota_asal" => $item->kota_asal,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nis' => $item->nis,
+            'nama' => $item->nama,
+            'niup' => $item->niup ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'angkatan' => $item->angkatan,
+            'kota_asal' => $item->kota_asal,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 }

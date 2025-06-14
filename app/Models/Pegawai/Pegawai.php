@@ -4,21 +4,20 @@ namespace App\Models\Pegawai;
 
 use App\Models\Biodata;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Pegawai extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'pegawai';
 
-
     protected $guarded = [
-        'id'
+        'id',
     ];
 
     // Logging
@@ -53,23 +52,24 @@ class Pegawai extends Model
             $model->created_by ??= Auth::id();
         });
 
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
 
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save(); // perlu simpan sebelum soft delete
         });
     }
-    
+
     public function ScopeActive($query)
     {
-        return $query->where('pegawai.status_aktif','aktif');
+        return $query->where('pegawai.status_aktif', 'aktif');
     }
 
     public function karyawan()
     {
         return $this->hasMany(Karyawan::class);
     }
+
     public function pengajar()
     {
         return $this->hasMany(Pengajar::class);
@@ -79,14 +79,14 @@ class Pegawai extends Model
     {
         return $this->belongsTo(Biodata::class);
     }
+
     public function pengurus()
     {
         return $this->hasMany(Pengurus::class);
     }
+
     public function wali_kelas()
     {
         return $this->hasMany(WaliKelas::class); // atau ->hasOne() jika satu-satu
     }
-
-
 }

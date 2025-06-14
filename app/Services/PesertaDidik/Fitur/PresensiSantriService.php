@@ -2,15 +2,14 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
-use Exception;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use App\Models\PresensiSantri;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PresensiSantriService
 {
-
     public function basePresensiSantriQuery(Request $request)
     {
         $query = DB::table('presensi_santri as ps')
@@ -41,15 +40,15 @@ class PresensiSantriService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            'id'             => $item->id,
-            'nama_santri'    => $item->nama_santri,
-            'nama_presensi'  => $item->nama_presensi,
-            'tanggal'        => Carbon::parse($item->tanggal)->translatedFormat('d F Y'), // Misal: 13 Juni 2025
+        return collect($results->items())->map(fn ($item) => [
+            'id' => $item->id,
+            'nama_santri' => $item->nama_santri,
+            'nama_presensi' => $item->nama_presensi,
+            'tanggal' => Carbon::parse($item->tanggal)->translatedFormat('d F Y'), // Misal: 13 Juni 2025
             'waktu_presensi' => $item->waktu_presensi ?? '-',
-            'status'         => ucfirst($item->status), // Hadir/Izin/Sakit/Alfa
-            'lokasi'         => $item->lokasi ?? '-',
-            'metode'         => strtoupper($item->metode ?? '-'),
+            'status' => ucfirst($item->status), // Hadir/Izin/Sakit/Alfa
+            'lokasi' => $item->lokasi ?? '-',
+            'metode' => strtoupper($item->metode ?? '-'),
         ]);
     }
 
@@ -95,8 +94,9 @@ class PresensiSantriService
         }
         $data['updated_by'] = $userId;
         $data['updated_at'] = now();
-        
+
         $presensi->update($data);
+
         return $presensi;
     }
 

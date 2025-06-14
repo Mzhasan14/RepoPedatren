@@ -17,7 +17,7 @@ class Provinsi extends Model
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     public function scopeActive($query)
@@ -25,8 +25,9 @@ class Provinsi extends Model
         return $query->where('status', 1);
     }
 
-    public function kabupaten() {
-        return $this->hasMany(Kabupaten::class,'id_provinsi', 'id');
+    public function kabupaten()
+    {
+        return $this->hasMany(Kabupaten::class, 'id_provinsi', 'id');
     }
 
     public function negara()

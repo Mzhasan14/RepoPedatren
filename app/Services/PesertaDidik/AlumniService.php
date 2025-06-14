@@ -5,8 +5,6 @@ namespace App\Services\PesertaDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use PhpOffice\PhpSpreadsheet\Reader\Xls\RC4;
 
 class AlumniService
 {
@@ -42,20 +40,20 @@ class AlumniService
             ->groupBy('biodata_id');
 
         $query = DB::table('biodata as b')
-            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'alumni'))
-            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
-            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'alumni'))
+            ->leftJoinSub($rpLast, 'lr', fn ($j) => $j->on('lr.biodata_id', '=', 'b.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn ($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
             ->leftjoin('pendidikan as pd', 'pd.biodata_id', '=', 'b.id')
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($santriLast, 'ld', fn ($j) => $j->on('ld.id', '=', 's.id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('s.status', 'alumni')
+            ->where(fn ($q) => $q->where('s.status', 'alumni')
                 ->orWhere('rp.status', 'lulus'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('rp.deleted_at'));
 
@@ -77,12 +75,12 @@ class AlumniService
             'kb.nama_kabupaten AS kota_asal',
             'b.created_at',
             'rp.status',
-            DB::raw("
+            DB::raw('
                 GREATEST(
                     b.updated_at,
                     COALESCE(rp.updated_at, b.updated_at)
                 ) AS updated_at
-            "),
+            '),
             DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
         ];
 
@@ -91,19 +89,19 @@ class AlumniService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "nama" => $item->nama,
-            "niup" => $item->niup ?? '-',
-            "lembaga" => $item->nama_lembaga ?? '-',
-            "tahun_keluar_pendidikan" => $item->tahun_keluar_pelajar ?? '-',
-            "tahun_masuk_santri" => $item->tahun_masuk_santri ?? '-',
-            "tahun_keluar_santri" => $item->tahun_keluar_santri ?? '-',
-            "kota_asal" => $item->kota_asal,
-            "tgl_update"       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input"        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "status"           => $item->status,
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'nama' => $item->nama,
+            'niup' => $item->niup ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'tahun_keluar_pendidikan' => $item->tahun_keluar_pelajar ?? '-',
+            'tahun_masuk_santri' => $item->tahun_masuk_santri ?? '-',
+            'tahun_keluar_santri' => $item->tahun_keluar_santri ?? '-',
+            'kota_asal' => $item->kota_asal,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'status' => $item->status,
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
@@ -265,15 +263,19 @@ class AlumniService
                         break;
                     case 'jenis_kelamin':
                         $jk = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        if (strtolower($jk) === 'l') $data['Jenis Kelamin'] = 'Laki-laki';
-                        elseif (strtolower($jk) === 'p') $data['Jenis Kelamin'] = 'Perempuan';
-                        else $data['Jenis Kelamin'] = '';
+                        if (strtolower($jk) === 'l') {
+                            $data['Jenis Kelamin'] = 'Laki-laki';
+                        } elseif (strtolower($jk) === 'p') {
+                            $data['Jenis Kelamin'] = 'Perempuan';
+                        } else {
+                            $data['Jenis Kelamin'] = '';
+                        }
                         break;
                     case 'nis':
-                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -288,13 +290,13 @@ class AlumniService
                         $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -303,11 +305,11 @@ class AlumniService
                         $data['Jumlah Saudara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'alamat':
-                        $data['Jalan']     = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Jalan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kecamatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kabupaten'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Provinsi']  = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Negara']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Provinsi'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Negara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_santri':
                         $data['Angkatan Santri'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -331,6 +333,7 @@ class AlumniService
                         $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
+
             return $data;
         })->values();
     }
@@ -353,7 +356,7 @@ class AlumniService
             'niup' => 'NIUP',
             'anak_ke' => 'Anak ke',
             'jumlah_saudara' => 'Jumlah Saudara',
-            'alamat'   => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'alamat' => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
             'angkatan_santri' => 'Angkatan Santri',
             'angkatan_pelajar' => 'Angkatan Pelajar',
             'tahun_keluar_santri' => 'Tahun Keluar Santri',
@@ -365,7 +368,9 @@ class AlumniService
         foreach ($fields as $field) {
             if (isset($map[$field])) {
                 if (is_array($map[$field])) {
-                    foreach ($map[$field] as $h) $headings[] = $h;
+                    foreach ($map[$field] as $h) {
+                        $headings[] = $h;
+                    }
                 } else {
                     $headings[] = $map[$field];
                 }
@@ -376,6 +381,7 @@ class AlumniService
         if ($addNumber) {
             array_unshift($headings, 'No');
         }
+
         return $headings;
     }
 }

@@ -4,8 +4,6 @@ namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Golongan;
 use App\Models\Pegawai\KategoriGolongan;
-use Database\Factories\KategoriGolonganFactory;
-use Database\Factories\Pegawai\KategoriGolonganFactory as PegawaiKategoriGolonganFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

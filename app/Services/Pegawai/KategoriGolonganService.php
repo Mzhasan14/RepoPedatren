@@ -14,8 +14,8 @@ class KategoriGolonganService
             'nama_kategori_golongan',
             'status',
         ])
-        ->where('status', 1) // Hanya tampilkan yang aktif
-        ->get();
+            ->where('status', 1) // Hanya tampilkan yang aktif
+            ->get();
 
         if ($kategori->isEmpty()) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
@@ -31,7 +31,7 @@ class KategoriGolonganService
             'created_by' => Auth::id(),
             'status' => 1,
             'created_at' => now(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
 
         return ['status' => true, 'data' => $kategori];
@@ -45,7 +45,7 @@ class KategoriGolonganService
             'status',
         ])->find($id);
 
-        if (!$kategori) {
+        if (! $kategori) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -56,14 +56,14 @@ class KategoriGolonganService
     {
         $kategori = KategoriGolongan::find($id);
 
-        if (!$kategori) {
+        if (! $kategori) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
         $kategori->update([
             'nama_kategori_golongan' => $data['nama_kategori_golongan'],
             'updated_by' => Auth::id(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
 
         return ['status' => true, 'data' => $kategori];
@@ -73,16 +73,16 @@ class KategoriGolonganService
     {
         $kategori = KategoriGolongan::find($id);
 
-        if (!$kategori) {
+        if (! $kategori) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
         $kategori->update([
             'status' => 0,
             'updated_by' => Auth::id(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
 
-        return ['status' => true, 'data' => $kategori,'message' => 'Kategori berhasil dinonaktifkan'];
+        return ['status' => true, 'data' => $kategori, 'message' => 'Kategori berhasil dinonaktifkan'];
     }
 }

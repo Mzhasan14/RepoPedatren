@@ -27,20 +27,20 @@ class SantriService
             ->groupBy('biodata_id');
 
         $query = DB::table('santri AS s')
-            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('s.status', 'aktif')
-            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
 
         return $query;
     }
@@ -63,11 +63,11 @@ class SantriService
             DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
             'kb.nama_kabupaten AS kota_asal',
             's.created_at',
-            DB::raw("GREATEST(
+            DB::raw('GREATEST(
             s.updated_at,
             COALESCE(pd.updated_at, s.updated_at),
             COALESCE(ds.updated_at, s.updated_at)
-        ) AS updated_at"),
+        ) AS updated_at'),
             DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
         ];
 
@@ -76,21 +76,21 @@ class SantriService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
-            "nis" => $item->nis,
-            "nama" => $item->nama,
-            "niup" => $item->niup ?? '-',
-            "lembaga" => $item->nama_lembaga ?? '-',
-            "wilayah" => $item->nama_wilayah ?? '-',
-            "blok" => $item->nama_blok ?? '-',
-            "kamar" => $item->nama_kamar ?? '-',
-            "angkatan" => $item->angkatan,
-            "kota_asal" => $item->kota_asal,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nis' => $item->nis,
+            'nama' => $item->nama,
+            'niup' => $item->niup ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'wilayah' => $item->nama_wilayah ?? '-',
+            'blok' => $item->nama_blok ?? '-',
+            'kamar' => $item->nama_kamar ?? '-',
+            'angkatan' => $item->angkatan,
+            'kota_asal' => $item->kota_asal,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
@@ -109,7 +109,7 @@ class SantriService
             $query->leftJoin('negara as ng2', 'b.negara_id', '=', 'ng2.id');
         }
         if (in_array('domisili_santri', $fields)) {
-            $query->leftJoin('domisili_santri AS ds2', fn($join) => $join->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'));
+            $query->leftJoin('domisili_santri AS ds2', fn ($join) => $join->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'));
             $query->leftJoin('wilayah as w2', 'ds2.wilayah_id', '=', 'w2.id');
             $query->leftJoin('blok as bl2', 'ds2.blok_id', '=', 'bl2.id');
             $query->leftJoin('kamar as km2', 'ds2.kamar_id', '=', 'km2.id');
@@ -264,16 +264,16 @@ class SantriService
                         }
                         break;
                     case 'nis':
-                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -282,16 +282,16 @@ class SantriService
                         $data['Jumlah Saudara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'alamat':
-                        $data['Jalan']     = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Jalan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kecamatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kabupaten'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Provinsi']  = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Negara']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Provinsi'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Negara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'domisili_santri':
                         $data['Wilayah'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Blok']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Kamar']   = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Blok'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kamar'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_santri':
                         $data['Angkatan Santri'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -300,7 +300,7 @@ class SantriService
                         $data['Angkatan Pelajar'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'pendidikan':
-                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Jurusan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kelas'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -319,6 +319,7 @@ class SantriService
                         $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
+
             return $data;
         })->values();
     }
@@ -335,7 +336,7 @@ class SantriService
             'niup' => 'NIUP',
             'anak_ke' => 'Anak ke',
             'jumlah_saudara' => 'Jumlah Saudara',
-            'alamat'   => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'alamat' => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
             'domisili_santri' => ['Wilayah', 'Blok', 'Kamar'],
             'angkatan_santri' => 'Angkatan Santri',
             'angkatan_pelajar' => 'Angkatan Pelajar',
@@ -348,7 +349,9 @@ class SantriService
         foreach ($fields as $field) {
             if (isset($map[$field])) {
                 if (is_array($map[$field])) {
-                    foreach ($map[$field] as $h) $headings[] = $h;
+                    foreach ($map[$field] as $h) {
+                        $headings[] = $h;
+                    }
                 } else {
                     $headings[] = $map[$field];
                 }
@@ -359,6 +362,7 @@ class SantriService
         if ($addNumber) {
             array_unshift($headings, 'No');
         }
+
         return $headings;
     }
 }

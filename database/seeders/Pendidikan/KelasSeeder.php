@@ -2,8 +2,6 @@
 
 namespace Database\Seeders\Pendidikan;
 
-use Database\Factories\Pendidikan\KelasFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class KelasSeeder extends Seeder
@@ -11,8 +9,5 @@ class KelasSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
-    {
-        
-    }
+    public function run(): void {}
 }

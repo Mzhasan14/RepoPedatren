@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Exports\BaseExport;
+use App\Http\Controllers\Controller;
+use App\Services\PesertaDidik\Filters\FilterSantriService;
+use App\Services\PesertaDidik\SantriService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\PesertaDidik\SantriService;
-use App\Services\PesertaDidik\Filters\FilterSantriService;
 
 class SantriController extends Controller
 {
     private SantriService $santriService;
+
     private FilterSantriService $filterController;
 
     public function __construct(SantriService $santriService, FilterSantriService $filterController)
@@ -30,33 +31,34 @@ class SantriController extends Controller
 
             $query = $query->latest('b.created_at');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[SantriController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->santriService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -89,7 +91,7 @@ class SantriController extends Controller
             'pendidikan',
             'angkatan_pelajar',
             'ibu_kandung',
-            'ayah_kandung'
+            'ayah_kandung',
         ];
 
         // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
@@ -113,7 +115,7 @@ class SantriController extends Controller
         // Format data sesuai urutan dan field export
         $addNumber = true; // Supaya kolom No selalu muncul
         $formatted = $this->santriService->formatDataExport($results, $fields, $addNumber);
-        $headings  = $this->santriService->getFieldExportHeadings($fields, $addNumber);
+        $headings = $this->santriService->getFieldExportHeadings($fields, $addNumber);
 
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "santri_{$now}.xlsx";

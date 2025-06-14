@@ -3,7 +3,6 @@
 namespace Database\Seeders\Kewilayahan;
 
 use Database\Factories\Kewilayahan\BlokFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class BlokSeeder extends Seeder
@@ -13,7 +12,7 @@ class BlokSeeder extends Seeder
      */
     public function run(): void
     {
-        (new BlokFactory())->count(5)->create();
-        
+        (new BlokFactory)->count(5)->create();
+
     }
 }

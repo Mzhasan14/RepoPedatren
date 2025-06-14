@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 
 class FilterOrangtuaService
 {
-
     public function orangTuaFilters(Builder $query, Request $request): Builder
     {
         $query = $this->applyAlamatFilter($query, $request);
@@ -71,7 +70,6 @@ class FilterOrangtuaService
         //     $query->whereRaw('0 = 1');
         // }
 
-
         if (in_array($jenis_kelamin, ['laki-laki', 'l', 'ayah'])) {
             $query->where('b.jenis_kelamin', 'l');
         } elseif (in_array($jenis_kelamin, ['perempuan', 'p', 'ibu'])) {
@@ -128,10 +126,10 @@ class FilterOrangtuaService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -147,7 +145,7 @@ class FilterOrangtuaService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }
@@ -157,7 +155,7 @@ class FilterOrangtuaService
 
     public function applyWafatFilter(Builder $query, Request $request): Builder
     {
-        if (!$request->filled('wafat')) {
+        if (! $request->filled('wafat')) {
             return $query;
         }
 

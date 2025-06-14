@@ -2,13 +2,13 @@
 
 namespace App\Services\Administrasi;
 
-use App\Models\Santri;
+use App\Models\BerkasPerizinan;
 use App\Models\Perizinan;
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Models\BerkasPerizinan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PerizinanService
@@ -27,11 +27,11 @@ class PerizinanService
         return DB::table('perizinan as pr')
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('domisili_santri as ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftjoin('domisili_santri as ds', fn ($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftjoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftjoin('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
             ->leftjoin('kelas as kls', 'pd.kelas_id', '=', 'kls.id')
@@ -40,9 +40,9 @@ class PerizinanService
             ->leftjoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftjoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
-            ->leftjoin('users as pengasuh',  'pr.pengasuh_id',  '=', 'pengasuh.id')
-            ->leftjoin('users as kamtib',  'pr.kamtib_id',  '=', 'kamtib.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftjoin('users as pengasuh', 'pr.pengasuh_id', '=', 'pengasuh.id')
+            ->leftjoin('users as kamtib', 'pr.kamtib_id', '=', 'kamtib.id')
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
     }
 
@@ -111,55 +111,55 @@ class PerizinanService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            'id'                => $item->id,
-            'nama_santri'       => $item->nama_santri,
-            'jenis_kelamin'     => $item->jenis_kelamin,
-            'wilayah'           => $item->nama_wilayah ?? '-',
-            'blok'         => $item->nama_blok ?? '-',
-            'kamar'        => $item->nama_kamar ?? '-',
-            'lembaga'      => $item->nama_lembaga ?? '-',
-            'jurusan'      => $item->nama_jurusan ?? '-',
-            'kelas'        => $item->nama_kelas ?? '-',
-            'rombel'       => $item->nama_rombel ?? '-',
-            'provinsi'     => $item->nama_provinsi ?? '-',
-            'kabupaten'    => $item->nama_kabupaten ?? '-',
-            'kecamatan'    => $item->nama_kecamatan ?? '-',
-            'alasan_izin'       => $item->alasan_izin,
-            'alamat_tujuan'     => $item->alamat_tujuan,
-            'tanggal_mulai'     => Carbon::parse($item->tanggal_mulai)
+        return collect($results->items())->map(fn ($item) => [
+            'id' => $item->id,
+            'nama_santri' => $item->nama_santri,
+            'jenis_kelamin' => $item->jenis_kelamin,
+            'wilayah' => $item->nama_wilayah ?? '-',
+            'blok' => $item->nama_blok ?? '-',
+            'kamar' => $item->nama_kamar ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'jurusan' => $item->nama_jurusan ?? '-',
+            'kelas' => $item->nama_kelas ?? '-',
+            'rombel' => $item->nama_rombel ?? '-',
+            'provinsi' => $item->nama_provinsi ?? '-',
+            'kabupaten' => $item->nama_kabupaten ?? '-',
+            'kecamatan' => $item->nama_kecamatan ?? '-',
+            'alasan_izin' => $item->alasan_izin,
+            'alamat_tujuan' => $item->alamat_tujuan,
+            'tanggal_mulai' => Carbon::parse($item->tanggal_mulai)
                 ->translatedFormat('d F Y H:i:s'),
-            'tanggal_akhir'     => Carbon::parse($item->tanggal_akhir)
+            'tanggal_akhir' => Carbon::parse($item->tanggal_akhir)
                 ->translatedFormat('d F Y H:i:s'),
-            'bermalam'          => $item->bermalam,
-            'lama_izin'         => $item->lama_izin,
-            'tanggal_kembali'   => Carbon::parse($item->tanggal_kembali)
+            'bermalam' => $item->bermalam,
+            'lama_izin' => $item->lama_izin,
+            'tanggal_kembali' => Carbon::parse($item->tanggal_kembali)
                 ->translatedFormat('d F Y H:i:s') ?? '-',
-            'jenis_izin'        => $item->jenis_izin,
-            'status'       => $item->status,
-            'pembuat'           => $item->pembuat,
-            'nama_pengasuh'    => $item->nama_pengasuh ?? '-',
-            'nama_biktren'      => $item->nama_biktren ?? '-',
-            'nama_kamtib'       => $item->nama_kamtib ?? '-',
+            'jenis_izin' => $item->jenis_izin,
+            'status' => $item->status,
+            'pembuat' => $item->pembuat,
+            'nama_pengasuh' => $item->nama_pengasuh ?? '-',
+            'nama_biktren' => $item->nama_biktren ?? '-',
+            'nama_kamtib' => $item->nama_kamtib ?? '-',
             'approved_by_biktren' => (bool) $item->approved_by_biktren,
             'approved_by_kamtib' => (bool) $item->approved_by_kamtib,
             'approved_by_pengasuh' => (bool) $item->approved_by_pengasuh,
-            'keterangan'        => $item->keterangan ?? '-',
-            'tgl_input'         => Carbon::parse($item->created_at)
+            'keterangan' => $item->keterangan ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)
                 ->translatedFormat('d F Y H:i:s'),
-            'tgl_update'        => Carbon::parse($item->updated_at)
+            'tgl_update' => Carbon::parse($item->updated_at)
                 ->translatedFormat('d F Y H:i:s') ?? '-',
-            'foto_profil'       => url($item->foto_profil),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
     public function index(string $bioId): array
     {
         $perizinan = Perizinan::with('santri.biodata:id')
-            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
+            ->whereHas('santri.biodata', fn ($q) => $q->where('id', $bioId))
             ->latest()
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id' => $item->id,
                 'alasan_izin' => $item->alasan_izin,
                 'alamat_tujuan' => $item->alamat_tujuan,
@@ -180,25 +180,25 @@ class PerizinanService
         return DB::transaction(function () use ($data, $bioId) {
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
 
-            if (!$santri) {
+            if (! $santri) {
                 return ['status' => false, 'message' => 'Santri tidak ditemukan untuk biodata ini'];
             }
 
             $izin = Perizinan::create([
-                'santri_id'        => $santri->id,
-                'pengasuh_id'      => $data['pengasuh_id'] ?? null,
-                'biktren_id'       => $data['biktren_id'] ?? null,
-                'kamtib_id'        => $data['kamtib_id'] ?? null,
-                'alasan_izin'      => $data['alasan_izin'],
-                'alamat_tujuan'    => $data['alamat_tujuan'],
-                'tanggal_mulai'    => $data['tanggal_mulai'],
-                'tanggal_akhir'    => $data['tanggal_akhir'],
-                'jenis_izin'       => $data['jenis_izin'],
-                'status'           => $data['status'],
-                'keterangan'       => $data['keterangan'] ?? null,
-                'created_by'       => Auth::id(),
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'santri_id' => $santri->id,
+                'pengasuh_id' => $data['pengasuh_id'] ?? null,
+                'biktren_id' => $data['biktren_id'] ?? null,
+                'kamtib_id' => $data['kamtib_id'] ?? null,
+                'alasan_izin' => $data['alasan_izin'],
+                'alamat_tujuan' => $data['alamat_tujuan'],
+                'tanggal_mulai' => $data['tanggal_mulai'],
+                'tanggal_akhir' => $data['tanggal_akhir'],
+                'jenis_izin' => $data['jenis_izin'],
+                'status' => $data['status'],
+                'keterangan' => $data['keterangan'] ?? null,
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             return ['status' => true, 'data' => $izin];
@@ -209,7 +209,7 @@ class PerizinanService
     {
         $izin = Perizinan::find($id);
 
-        if (!$izin) {
+        if (! $izin) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -238,7 +238,7 @@ class PerizinanService
         return DB::transaction(function () use ($data, $id) {
             $izin = Perizinan::find($id);
 
-            if (!$izin) {
+            if (! $izin) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
@@ -255,19 +255,19 @@ class PerizinanService
             // }
 
             $izin->update([
-                'pengasuh_id'      => $data['pengasuh_id'] ?? null,
-                'biktren_id'       => $data['biktren_id'] ?? null,
-                'kamtib_id'        => $data['kamtib_id'] ?? null,
-                'alasan_izin'      => $data['alasan_izin'],
-                'alamat_tujuan'    => $data['alamat_tujuan'],
-                'tanggal_mulai'    => $data['tanggal_mulai'],
-                'tanggal_akhir'    => $data['tanggal_akhir'],
-                'tanggal_kembali'  => $data['tanggal_kembali'] ?? null,
-                'jenis_izin'       => $data['jenis_izin'],
-                'status'           => $data['status'],
-                'keterangan'       => $data['keterangan'] ?? null,
-                'updated_by'       => Auth::id(),
-                'updated_at'       => now(),
+                'pengasuh_id' => $data['pengasuh_id'] ?? null,
+                'biktren_id' => $data['biktren_id'] ?? null,
+                'kamtib_id' => $data['kamtib_id'] ?? null,
+                'alasan_izin' => $data['alasan_izin'],
+                'alamat_tujuan' => $data['alamat_tujuan'],
+                'tanggal_mulai' => $data['tanggal_mulai'],
+                'tanggal_akhir' => $data['tanggal_akhir'],
+                'tanggal_kembali' => $data['tanggal_kembali'] ?? null,
+                'jenis_izin' => $data['jenis_izin'],
+                'status' => $data['status'],
+                'keterangan' => $data['keterangan'] ?? null,
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
             ]);
 
             return ['status' => true, 'data' => $izin];
@@ -277,10 +277,10 @@ class PerizinanService
     public function addBerkasPerizinan(array $data, int $id)
     {
         $perizinan = Perizinan::find($id);
-        if (!$perizinan) {
+        if (! $perizinan) {
             return [
                 'status' => false,
-                'message' => 'Perizinan tidak ditemukan'
+                'message' => 'Perizinan tidak ditemukan',
             ];
         }
 
@@ -297,7 +297,7 @@ class PerizinanService
 
         return [
             'status' => true,
-            'data' => $berkas
+            'data' => $berkas,
         ];
     }
 
@@ -307,7 +307,7 @@ class PerizinanService
 
         // Join dinamis sesuai kebutuhan export
         if (in_array('wilayah', $fields) || in_array('blok', $fields) || in_array('kamar', $fields)) {
-            $query->leftJoin('domisili_santri as ds2', fn($j) => $j->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'))
+            $query->leftJoin('domisili_santri as ds2', fn ($j) => $j->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'))
                 ->leftJoin('wilayah AS w2', 'ds2.wilayah_id', '=', 'w2.id')
                 ->leftJoin('blok AS bl2', 'ds2.blok_id', '=', 'bl2.id')
                 ->leftJoin('kamar AS km2', 'ds2.kamar_id', '=', 'km2.id');
@@ -318,7 +318,7 @@ class PerizinanService
             in_array('kelas', $fields) ||
             in_array('rombel', $fields)
         ) {
-            $query->leftJoin('pendidikan AS pd2', fn($j) => $j->on('b.id', '=', 'pd2.biodata_id')->where('pd2.status', 'aktif'))
+            $query->leftJoin('pendidikan AS pd2', fn ($j) => $j->on('b.id', '=', 'pd2.biodata_id')->where('pd2.status', 'aktif'))
                 ->leftJoin('lembaga AS l2', 'pd2.lembaga_id', '=', 'l2.id')
                 ->leftJoin('jurusan as j2', 'pd2.jurusan_id', '=', 'j2.id')
                 ->leftJoin('kelas as kls2', 'pd2.kelas_id', '=', 'kls2.id')
@@ -461,15 +461,17 @@ class PerizinanService
                     break;
             }
         }
+
         return $query->select($select);
     }
-
 
     public function formatDataExport($results, $fields, $addNumber = false)
     {
         return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
             $data = [];
-            if ($addNumber) $data['No'] = $idx + 1;
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
             $itemArr = (array) $item;
             $i = 0;
 
@@ -582,6 +584,7 @@ class PerizinanService
                         break;
                 }
             }
+
             return $data;
         })->values();
     }
@@ -589,43 +592,48 @@ class PerizinanService
     public function getFieldExportHeadings($fields, $addNumber = false)
     {
         $map = [
-            'nama_santri'   => 'Nama Santri',
-            'nis'           => 'NIS',
+            'nama_santri' => 'Nama Santri',
+            'nis' => 'NIS',
             'jenis_kelamin' => 'Jenis Kelamin',
-            'wilayah'       => 'Wilayah',
-            'blok'          => 'Blok',
-            'kamar'         => 'Kamar',
-            'lembaga'       => 'Lembaga',
-            'jurusan'       => 'Jurusan',
-            'kelas'         => 'Kelas',
-            'rombel'        => 'Rombel',
-            'provinsi'      => 'Provinsi',
-            'kabupaten'     => 'Kabupaten',
-            'kecamatan'     => 'Kecamatan',
-            'alasan_izin'   => 'Alasan Izin',
+            'wilayah' => 'Wilayah',
+            'blok' => 'Blok',
+            'kamar' => 'Kamar',
+            'lembaga' => 'Lembaga',
+            'jurusan' => 'Jurusan',
+            'kelas' => 'Kelas',
+            'rombel' => 'Rombel',
+            'provinsi' => 'Provinsi',
+            'kabupaten' => 'Kabupaten',
+            'kecamatan' => 'Kecamatan',
+            'alasan_izin' => 'Alasan Izin',
             'alamat_tujuan' => 'Alamat Tujuan',
             'tanggal_mulai' => 'Tanggal Mulai',
             'tanggal_akhir' => 'Tanggal Akhir',
-            'bermalam'      => 'Bermalam',
-            'lama_izin'     => 'Lama Izin',
+            'bermalam' => 'Bermalam',
+            'lama_izin' => 'Lama Izin',
             'tanggal_kembali' => 'Tanggal Kembali',
-            'jenis_izin'    => 'Jenis Izin',
-            'status'        => 'Status',
-            'pembuat'       => 'Pembuat',
+            'jenis_izin' => 'Jenis Izin',
+            'status' => 'Status',
+            'pembuat' => 'Pembuat',
             'nama_pengasuh' => 'Nama Pengasuh',
-            'nama_biktren'  => 'Nama Biktren',
-            'nama_kamtib'   => 'Nama Kamtib',
+            'nama_biktren' => 'Nama Biktren',
+            'nama_kamtib' => 'Nama Kamtib',
             'approved_by_biktren' => 'Approved By Biktren',
-            'approved_by_kamtib'  => 'Approved By Kamtib',
+            'approved_by_kamtib' => 'Approved By Kamtib',
             'approved_by_pengasuh' => 'Approved By Pengasuh',
-            'keterangan'    => 'Keterangan',
-            'created_at'    => 'Dibuat',
-            'updated_at'    => 'Update Terakhir',
-            'foto_profil'   => 'Foto Profil',
+            'keterangan' => 'Keterangan',
+            'created_at' => 'Dibuat',
+            'updated_at' => 'Update Terakhir',
+            'foto_profil' => 'Foto Profil',
         ];
         $headings = [];
-        foreach ($fields as $f) $headings[] = $map[$f] ?? $f;
-        if ($addNumber) array_unshift($headings, 'No');
+        foreach ($fields as $f) {
+            $headings[] = $map[$f] ?? $f;
+        }
+        if ($addNumber) {
+            array_unshift($headings, 'No');
+        }
+
         return $headings;
     }
 }

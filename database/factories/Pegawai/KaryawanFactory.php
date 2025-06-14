@@ -2,11 +2,9 @@
 
 namespace Database\Factories\Pegawai;
 
-use Illuminate\Support\Str;
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pendidikan\Lembaga;
-use Database\Factories\Pendidikan\LembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KaryawanFactory extends Factory
 {
     protected $model = Karyawan::class;
+
     /**
      * Define the model's default state.
      *
@@ -26,11 +25,12 @@ class KaryawanFactory extends Factory
         $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
+
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'golongan_jabatan_id' => (new GolonganJabatanFactory())->create()->id,
+            'golongan_jabatan_id' => (new GolonganJabatanFactory)->create()->id,
             'lembaga_id' => function () {
                 return Lembaga::inRandomOrder()->first()->id;
             },

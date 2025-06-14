@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Santri;
 use App\Models\HubunganKeluarga;
+use App\Models\Santri;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

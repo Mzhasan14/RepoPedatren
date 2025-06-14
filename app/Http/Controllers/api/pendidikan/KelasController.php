@@ -2,32 +2,32 @@
 
 namespace App\Http\Controllers\api\pendidikan;
 
-use Illuminate\Http\Request;
-use App\Models\Pendidikan\Kelas;
-use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use App\Models\Pendidikan\Kelas;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class KelasController extends Controller
 {
     public function index()
     {
         $kelases = Kelas::with('jurusan')->where('status', true)->get();
+
         return response()->json($kelases);
     }
 
     public function show($id)
     {
         $kelas = Kelas::with('jurusan')->findOrFail($id);
+
         return response()->json($kelas);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_kelas'  => 'required|string|max:255',
-            'jurusan_id'  => 'required|exists:jurusan,id',
+            'nama_kelas' => 'required|string|max:255',
+            'jurusan_id' => 'required|exists:jurusan,id',
         ]);
 
         $kelas = Kelas::create([
@@ -42,9 +42,9 @@ class KelasController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_kelas'  => 'sometimes|required|string|max:255',
-            'jurusan_id'  => 'sometimes|required|exists:jurusan,id',
-            'status'      => 'sometimes|required|boolean',
+            'nama_kelas' => 'sometimes|required|string|max:255',
+            'jurusan_id' => 'sometimes|required|exists:jurusan,id',
+            'status' => 'sometimes|required|boolean',
         ]);
 
         $kelas = Kelas::findOrFail($id);

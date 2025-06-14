@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class OrangTuaWali extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $dates = ['deleted_at'];
+
     protected $table = 'orang_tua_wali';
 
     protected $fillable = [
@@ -23,7 +24,7 @@ class OrangTuaWali extends Model
         'created_by',
         'updated_by',
         'deleted_by',
-        'status'
+        'status',
     ];
 
     // protected static function boot()

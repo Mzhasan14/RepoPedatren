@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Pegawai;
+namespace App\Http\Controllers\api\Pegawai;
 
 use App\Exports\Pegawai\PengurusExport;
 use App\Http\Controllers\Controller;
@@ -17,7 +17,9 @@ use Maatwebsite\Excel\Facades\Excel;
 class PengurusController extends Controller
 {
     private PengurusService $pengurusService;
+
     private FiltersFilterPengurusService $filterController;
+
     private FormulirPengurusService $formulirPengurus;
 
     public function __construct(
@@ -35,22 +37,22 @@ class PengurusController extends Controller
         try {
             $result = $this->formulirPengurus->index($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data Pengurus: ' . $e->getMessage());
+            Log::error('Gagal ambil data Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -60,22 +62,22 @@ class PengurusController extends Controller
         try {
             $result = $this->formulirPengurus->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail Pengurus: ' . $e->getMessage());
+            Log::error('Gagal ambil detail Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -85,22 +87,22 @@ class PengurusController extends Controller
         try {
             $result = $this->formulirPengurus->store($request->validated(), $bioId);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah Pengurus: ' . $e->getMessage());
+            Log::error('Gagal tambah Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -110,22 +112,22 @@ class PengurusController extends Controller
         try {
             $result = $this->formulirPengurus->update($request->validated(), $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update Pengurus: ' . $e->getMessage());
+            Log::error('Gagal update Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -159,11 +161,11 @@ class PengurusController extends Controller
         $formatted = $this->pengurusService->formatData($results);
 
         return response()->json([
-            "total_data" => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page" => $results->perPage(),
-            "total_pages" => $results->lastPage(),
-            "data" => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -173,22 +175,22 @@ class PengurusController extends Controller
             $validated = $request->validated();
             $result = $this->formulirPengurus->pindahPengurus($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Pengurus baru berhasil dibuat',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah Pengurus: ' . $e->getMessage());
+            Log::error('Gagal pindah Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -199,22 +201,22 @@ class PengurusController extends Controller
             $validated = $request->validated();
             $result = $this->formulirPengurus->keluarPengurus($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar Pengurus: ' . $e->getMessage());
+            Log::error('Gagal keluar Pengurus: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

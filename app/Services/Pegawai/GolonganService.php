@@ -15,8 +15,8 @@ class GolonganService
             'kategori_golongan_id',
             'status',
         ])
-        ->where('status', 1) // Hanya tampilkan yang aktif
-        ->get(); // Tambahkan get() untuk eksekusi query
+            ->where('status', 1) // Hanya tampilkan yang aktif
+            ->get(); // Tambahkan get() untuk eksekusi query
 
         if ($golongan->isEmpty()) { // Perbaikan pengecekan data kosong
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
@@ -33,7 +33,7 @@ class GolonganService
             'created_by' => Auth::id(),
             'status' => 1,
             'created_at' => now(),
-            'updated_at' => now() // Tambahkan updated_at
+            'updated_at' => now(), // Tambahkan updated_at
         ]);
 
         return ['status' => true, 'data' => $golongan];
@@ -48,7 +48,7 @@ class GolonganService
             'status',
         ])->find($id); // find() sudah tepat untuk mencari by ID
 
-        if (!$golongan) {
+        if (! $golongan) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -59,7 +59,7 @@ class GolonganService
     {
         $golongan = Golongan::find($id); // Hapus ->first() karena find() sudah return single object
 
-        if (!$golongan) {
+        if (! $golongan) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -67,7 +67,7 @@ class GolonganService
             'nama_golongan' => $data['nama_golongan'],
             'kategori_golongan_id' => $data['kategori_golongan_id'],
             'updated_by' => Auth::id(),
-            'updated_at' => now()
+            'updated_at' => now(),
             // Status tidak diupdate karena mungkin ingin mempertahankan status sebelumnya
         ]);
 
@@ -78,16 +78,16 @@ class GolonganService
     {
         $golongan = Golongan::find($id); // Hapus ->first()
 
-        if (!$golongan) {
+        if (! $golongan) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
         $golongan->update([
             'status' => 0,
             'updated_by' => Auth::id(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
 
-        return ['status' => true,'data' => $golongan ,'message' => 'Data berhasil dinonaktifkan'];
+        return ['status' => true, 'data' => $golongan, 'message' => 'Data berhasil dinonaktifkan'];
     }
 }

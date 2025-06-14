@@ -1,20 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Api\PesertaDidik;
+namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Exports\BaseExport;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\CreateKhadamRequest;
+use App\Services\PesertaDidik\Filters\FilterKhadamService;
+use App\Services\PesertaDidik\KhadamService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\PesertaDidik\KhadamService;
-use App\Http\Requests\PesertaDidik\CreateKhadamRequest;
-use App\Services\PesertaDidik\Filters\FilterKhadamService;
 
 class KhadamController extends Controller
 {
     private KhadamService $khadamService;
+
     private FilterKhadamService $filterController;
 
     public function __construct(KhadamService $khadamService, FilterKhadamService $filterController)
@@ -30,33 +31,34 @@ class KhadamController extends Controller
             $query = $this->filterController->khadamFilters($query, $request);
             $query = $query->latest('b.created_at');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[KhadamController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->khadamService->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
+            'total_data' => $results->total(),
             'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -69,13 +71,13 @@ class KhadamController extends Controller
             // Response sukses dengan status 201
             return response()->json([
                 'message' => 'Khadam berhasil disimpan.',
-                'data' => $khadamService
+                'data' => $khadamService,
             ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             // Tangani error umum (misalnya database, validasi, dll)
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menyimpan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -122,7 +124,7 @@ class KhadamController extends Controller
             'kelas',
             'rombel',
             'angkatan_pelajar',
-            'ibu_kandung'
+            'ibu_kandung',
         ];
 
         $optionalFields = $request->input('fields', []);
@@ -143,7 +145,7 @@ class KhadamController extends Controller
 
         $addNumber = true;
         $formatted = $this->khadamService->formatDataExport($results, $fields, $addNumber);
-        $headings  = $this->khadamService->getFieldExportHeadings($fields, $addNumber);
+        $headings = $this->khadamService->getFieldExportHeadings($fields, $addNumber);
 
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "khadam_{$now}.xlsx";

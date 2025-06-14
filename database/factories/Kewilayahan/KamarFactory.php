@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KamarFactory extends Factory
 {
     protected $model = Kamar::class;
+
     /**
      * Define the model's default state.
      *
@@ -19,7 +20,7 @@ class KamarFactory extends Factory
     public function definition(): array
     {
         return [
-            'blok_id' => (new BlokFactory())->create()->id,
+            'blok_id' => (new BlokFactory)->create()->id,
             'nama_kamar' => $this->faker->word,
             'created_by' => 1,
             'updated_by' => null,

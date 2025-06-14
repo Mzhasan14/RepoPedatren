@@ -10,11 +10,12 @@ class RiwayatPengurus extends Model
     use HasFactory;
 
     protected $table = 'riwayat_jabatan_pengurus';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
-
     protected $guarded = [
-        'created_at'
+        'created_at',
     ];
 }

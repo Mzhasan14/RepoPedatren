@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class BiometricFingerprint extends Model
 {
     use SoftDeletes;
 
     protected $table = 'biometric_fingerprints';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -19,7 +21,7 @@ class BiometricFingerprint extends Model
         'biometric_profile_id',
         'finger_position',
         'template',
-        'scan_order'
+        'scan_order',
     ];
 
     public function profile()

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CreatePegawaiRequest extends FormRequest
@@ -70,7 +70,7 @@ class CreatePegawaiRequest extends FormRequest
             'tanggal_mulai_pengajar' => 'nullable|required_if:pengajar,1|date',
 
             // ===== Materi Ajar =====
-            'materi_ajar.*.nama_materi' => 'nullable|string|max:255', 
+            'materi_ajar.*.nama_materi' => 'nullable|string|max:255',
             'materi_ajar.*.jumlah_menit' => 'nullable|integer|min:0',
             'tanggal_mulai_materi' => 'nullable|date',
 
@@ -96,6 +96,7 @@ class CreatePegawaiRequest extends FormRequest
             'berkas.*.file_path' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
         ];
     }
+
     public function messages()
     {
         return [
@@ -208,13 +209,14 @@ class CreatePegawaiRequest extends FormRequest
             'berkas.*.file_path.max' => 'Ukuran file maksimal 2MB.',
         ];
     }
+
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

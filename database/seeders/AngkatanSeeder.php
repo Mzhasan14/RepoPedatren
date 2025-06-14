@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class AngkatanSeeder extends Seeder
 {
@@ -25,6 +24,7 @@ class AngkatanSeeder extends Seeder
         // Pastikan ada minimal 10 tahun ajaran (5 santri + 5 pelajar)
         if ($tahunList->count() < 10) {
             echo "Seeder error: jumlah tahun ajaran minimal harus 10 untuk membuat 5 angkatan santri dan 5 angkatan pelajar.\n";
+
             return;
         }
 
@@ -33,7 +33,7 @@ class AngkatanSeeder extends Seeder
         // 5 angkatan santri
         for ($i = 0; $i < 5; $i++) {
             $angkatanData[] = [
-                'angkatan' => 'Angkatan ' . substr($tahunList[$i]->tahun_ajaran, 0, 4),
+                'angkatan' => 'Angkatan '.substr($tahunList[$i]->tahun_ajaran, 0, 4),
                 'kategori' => 'santri',
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,
@@ -45,7 +45,7 @@ class AngkatanSeeder extends Seeder
         // 5 angkatan pelajar
         for ($i = 5; $i < 10; $i++) {
             $angkatanData[] = [
-                'angkatan' => 'Angkatan ' . substr($tahunList[$i]->tahun_ajaran, 0, 4),
+                'angkatan' => 'Angkatan '.substr($tahunList[$i]->tahun_ajaran, 0, 4),
                 'kategori' => 'pelajar',
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,

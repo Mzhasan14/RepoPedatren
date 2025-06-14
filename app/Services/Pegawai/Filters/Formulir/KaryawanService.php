@@ -7,17 +7,15 @@ use App\Models\Pegawai\Pegawai;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-
 
 class KaryawanService
 {
     public function index(string $bioId): array
     {
-        $karyawan = Karyawan::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
+        $karyawan = Karyawan::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
             ->with(['pegawai.biodata'])
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id' => $item->id,
                 'jabatan_kontrak' => $item->jabatan,
                 'keterangan_jabatan' => $item->keterangan_jabatan,
@@ -28,48 +26,48 @@ class KaryawanService
 
         return [
             'status' => true,
-            'data' => $karyawan
+            'data' => $karyawan,
         ];
     }
 
     public function show($id): array
     {
         $karyawan = Karyawan::select([
-                'id',
-                'golongan_jabatan_id',
-                'lembaga_id',
-                'jabatan as jabatan_kontrak',
-                'keterangan_jabatan',
-                'tanggal_mulai as tanggal_masuk',
-                'tanggal_selesai as tanggal_keluar',
-                'status_aktif as status'
-            ])
+            'id',
+            'golongan_jabatan_id',
+            'lembaga_id',
+            'jabatan as jabatan_kontrak',
+            'keterangan_jabatan',
+            'tanggal_mulai as tanggal_masuk',
+            'tanggal_selesai as tanggal_keluar',
+            'status_aktif as status',
+        ])
             ->find($id);
 
-        if (!$karyawan) {
+        if (! $karyawan) {
             return [
                 'status' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ];
         }
 
         return [
             'status' => true,
-            'data' => $karyawan
+            'data' => $karyawan,
         ];
     }
 
     public function store(array $data, string $bioId): array
     {
         // Periksa apakah Pegawai sudah memiliki karyawan aktif
-        $exist = Karyawan::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
+        $exist = Karyawan::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 
         if ($exist) {
             return [
                 'status' => false,
-                'message' => 'Pegawai masih memiliki Karyawan aktif'
+                'message' => 'Pegawai masih memiliki Karyawan aktif',
             ];
         }
 
@@ -78,10 +76,10 @@ class KaryawanService
             ->latest()
             ->first();
 
-        if (!$pegawai) {
+        if (! $pegawai) {
             return [
                 'status' => false,
-                'message' => 'Pegawai tidak ditemukan untuk biodata ini'
+                'message' => 'Pegawai tidak ditemukan untuk biodata ini',
             ];
         }
 
@@ -101,7 +99,7 @@ class KaryawanService
 
         return [
             'status' => true,
-            'data' => $karyawan->fresh()
+            'data' => $karyawan->fresh(),
         ];
     }
 
@@ -117,7 +115,7 @@ class KaryawanService
             // 2. Jika sudah ada tanggal_selesai dan statusnya tidak aktif, larang update
             if (! is_null($karyawan->tanggal_selesai) && $karyawan->status_aktif === 'tidak aktif') {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data karyawan ini telah memiliki tanggal selesai dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
@@ -125,21 +123,20 @@ class KaryawanService
             // 3. Update data tanpa validasi tanggal selesai
             $karyawan->update([
                 'golongan_jabatan_id' => $input['golongan_jabatan_id'],
-                'lembaga_id'          => $input['lembaga_id'],
-                'jabatan'             => $input['jabatan'] ?? $karyawan->jabatan,
-                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $karyawan->keterangan_jabatan,
-                'tanggal_mulai'       => Carbon::parse($input['tanggal_mulai']),
-                'updated_by'          => Auth::id(),
+                'lembaga_id' => $input['lembaga_id'],
+                'jabatan' => $input['jabatan'] ?? $karyawan->jabatan,
+                'keterangan_jabatan' => $input['keterangan_jabatan'] ?? $karyawan->keterangan_jabatan,
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
+                'updated_by' => Auth::id(),
             ]);
 
             // 4. Return hasil
             return [
                 'status' => true,
-                'data'   => $karyawan,
+                'data' => $karyawan,
             ];
         });
     }
-
 
     public function pindahKaryawan(array $input, int $id): array
     {
@@ -168,26 +165,26 @@ class KaryawanService
 
             // Tutup jabatan lama
             $old->update([
-                'status_aktif'     => 'tidak aktif',
-                'tanggal_selesai'  => $hariIni,
-                'updated_by'       => Auth::id(),
+                'status_aktif' => 'tidak aktif',
+                'tanggal_selesai' => $hariIni,
+                'updated_by' => Auth::id(),
             ]);
 
             // Buat jabatan baru
             $new = Karyawan::create([
-                'pegawai_id'          => $old->pegawai_id,
+                'pegawai_id' => $old->pegawai_id,
                 'golongan_jabatan_id' => $input['golongan_jabatan_id'],
-                'lembaga_id'          => $input['lembaga_id'],
-                'jabatan'             => $input['jabatan'] ?? $old->jabatan,
-                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
-                'tanggal_mulai'       => $tanggalMulaiBaru,
-                'status_aktif'        => 'aktif',
-                'created_by'          => Auth::id(),
+                'lembaga_id' => $input['lembaga_id'],
+                'jabatan' => $input['jabatan'] ?? $old->jabatan,
+                'keterangan_jabatan' => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
+                'tanggal_mulai' => $tanggalMulaiBaru,
+                'status_aktif' => 'aktif',
+                'created_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $new,
+                'data' => $new,
             ];
         });
     }
@@ -202,7 +199,7 @@ class KaryawanService
 
             if ($karyawan->tanggal_selesai) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data karyawan sudah ditandai selesai/nonaktif.',
                 ];
             }
@@ -210,24 +207,21 @@ class KaryawanService
             $tglSelesai = Carbon::parse($input['tanggal_selesai'] ?? '');
             if ($tglSelesai->lt(Carbon::parse($karyawan->tanggal_mulai))) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
                 ];
             }
 
             $karyawan->update([
-                'status_aktif'     => 'tidak aktif',
-                'tanggal_selesai'  => $tglSelesai,
-                'updated_by'       => Auth::id(),
+                'status_aktif' => 'tidak aktif',
+                'tanggal_selesai' => $tglSelesai,
+                'updated_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $karyawan,
+                'data' => $karyawan,
             ];
         });
     }
-
-
-
 }

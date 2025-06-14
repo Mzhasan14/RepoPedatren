@@ -2,11 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Biodata;
 use App\Models\HubunganKeluarga;
 use App\Models\Keluarga;
-use App\Models\Status_keluarga;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KeluargaFactory extends Factory
 {
     protected $model = Keluarga::class;
+
     /**
      * Define the model's default state.
      *

@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
-use App\Models\Biodata;
-use App\Models\Keluarga;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use App\Http\Resources\PdResource;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Keluarga\KeluargaRequest;
-use Illuminate\Support\Facades\Auth;;
+use App\Http\Resources\PdResource;
+use App\Models\Biodata;
+use App\Models\Keluarga;
 use App\Services\Keluarga\KeluargaService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class KeluargaController extends Controller
 {
@@ -25,6 +24,7 @@ class KeluargaController extends Controller
     {
         $this->service = $service;
     }
+
     public function index($idBio)
     {
         // 1. Cari no_kk berdasarkan id_biodata yang dipilih
@@ -32,10 +32,10 @@ class KeluargaController extends Controller
             ->where('id_biodata', $idBio)
             ->value('no_kk');
 
-        if (!$noKk) {
+        if (! $noKk) {
             return response()->json([
                 'status' => false,
-                'message' => 'Data keluarga tidak ditemukan'
+                'message' => 'Data keluarga tidak ditemukan',
             ], 404);
         }
 
@@ -50,9 +50,9 @@ class KeluargaController extends Controller
                 'k.id',
                 'bo.nama',
                 'bo.nik',
-                DB::raw("hk.nama_status as status"),
+                DB::raw('hk.nama_status as status'),
                 'ow.wali',
-                'bo.id as id_biodata' // Tambahkan id_biodata untuk identifikasi
+                'bo.id as id_biodata', // Tambahkan id_biodata untuk identifikasi
             ])
             ->get();
 
@@ -69,14 +69,15 @@ class KeluargaController extends Controller
                 'bs.nama',
                 'bs.nik',
                 DB::raw("'Anak Kandung' as status"),
-                DB::raw("NULL as wali"),
-                'bs.id as id_biodata' // Tambahkan id_biodata untuk identifikasi
+                DB::raw('NULL as wali'),
+                'bs.id as id_biodata', // Tambahkan id_biodata untuk identifikasi
             ])
             ->get();
 
         // Gabungkan dan urutkan
         $anggota = $ortu->merge($saudara)->sortBy(function ($i) {
             $status = strtolower($i->status ?? '');
+
             return match ($status) {
                 'ayah' => 1,
                 'ibu' => 2,
@@ -87,6 +88,7 @@ class KeluargaController extends Controller
         // Tambahkan penanda untuk biodata yang dipilih
         $anggota = $anggota->map(function ($item) use ($idBio) {
             $item->is_selected = ($item->id_biodata == $idBio);
+
             return $item;
         });
 
@@ -113,12 +115,12 @@ class KeluargaController extends Controller
 
                     if (
                         strtolower($status) === 'anak kandung' &&
-                        !$i->is_selected &&
+                        ! $i->is_selected &&
                         $adaAnakKandungTerpilih
                     ) {
                         $status = 'Saudara Kandung';
                     }
-                    if ($selectedIsAyah OR $selectedIsIbu) {
+                    if ($selectedIsAyah or $selectedIsIbu) {
                         if (in_array(strtolower($status), ['ayah', 'ayah kandung', 'ayah sambung'])) {
                             $status = 'suami';
                         } elseif (in_array(strtolower($status), ['ibu', 'ibu kandung', 'ibu sambung'])) {
@@ -135,7 +137,7 @@ class KeluargaController extends Controller
                         'is_selected' => $i->is_selected ?? false,
                     ];
                 }),
-            ]
+            ],
         ]);
     }
 
@@ -144,22 +146,22 @@ class KeluargaController extends Controller
         try {
             $result = $this->service->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail khadam: ' . $e->getMessage());
+            Log::error('Gagal ambil detail khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -167,28 +169,28 @@ class KeluargaController extends Controller
     // /**
     //  * Update the specified resource in storage.
     //  */
-     public function update(KeluargaRequest $request, $id)
+    public function update(KeluargaRequest $request, $id)
     {
         try {
             $validated = $request->validated();
             $result = $this->service->update($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update Keluarga: ' . $e->getMessage());
+            Log::error('Gagal update Keluarga: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -199,26 +201,25 @@ class KeluargaController extends Controller
             $validated = $request->validated();
             $result = $this->service->pindahKKbaru($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'KK baru berhasil dibuat',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah KK: ' . $e->getMessage());
+            Log::error('Gagal pindah KK: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 
     public function pindahkanSeluruhKK(KeluargaRequest $request, $id): JsonResponse
     {
@@ -226,26 +227,25 @@ class KeluargaController extends Controller
             $validated = $request->validated();
             $result = $this->service->pindahkanSeluruhKk($validated, $id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'KK baru berhasil dibuat',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah KK: ' . $e->getMessage());
+            Log::error('Gagal pindah KK: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 
     public function getAllKeluarga()
     {
@@ -296,8 +296,8 @@ class KeluargaController extends Controller
                         'k.id',
                         'bo.nama',
                         'bo.nik',
-                        DB::raw("hk.nama_status as status"),
-                        'ow.wali'
+                        DB::raw('hk.nama_status as status'),
+                        'ow.wali',
                     ])
                     ->get();
 
@@ -314,13 +314,14 @@ class KeluargaController extends Controller
                         'bs.nama',
                         'bs.nik',
                         DB::raw("'Anak Kandung' as status"),
-                        DB::raw("NULL as wali")
+                        DB::raw('NULL as wali'),
                     ])
                     ->get();
 
                 // Gabungkan dan urutkan
                 $anggota = $ortu->merge($saudara)->sortBy(function ($i) {
                     $status = strtolower($i->status ?? '');
+
                     return match ($status) {
                         'ayah_kandung' => 1,
                         'ibu_kandung' => 2,
@@ -330,25 +331,26 @@ class KeluargaController extends Controller
 
                 return [
                     'no_kk' => $noKk,
-                    'relasi_keluarga' => $anggota->map(fn($i) => [
+                    'relasi_keluarga' => $anggota->map(fn ($i) => [
                         'id_keluarga' => $i->id,
                         'nik' => $i->nik,
                         'nama' => $i->nama,
                         'status_keluarga' => $i->status,
                         'sebagai_wali' => $i->wali,
-                    ])
+                    ]),
                 ];
             });
 
             return response()->json([
                 'status' => true,
-                'data' => $data
+                'data' => $data,
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal mendapatkan data keluarga: ' . $e->getMessage());
+            Log::error('Gagal mendapatkan data keluarga: '.$e->getMessage());
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -383,7 +385,6 @@ class KeluargaController extends Controller
     //     return new PdResource(true, 'detail data', $keluarga);
     // }
 
-    
     // /**
     //  * Remove the specified resource from storage.
     //  */
@@ -394,6 +395,5 @@ class KeluargaController extends Controller
     //     $keluarga->delete();
     //     return new PdResource(true, 'Data berhasil dihapus', null);
     // }
-
 
 }

@@ -2,18 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use App\Models\Alamat\Negara;
-use App\Models\Alamat\Provinsi;
 use App\Models\Alamat\Kabupaten;
 use App\Models\Alamat\Kecamatan;
-use Database\Factories\Alamat\NegaraFactory;
-use Database\Factories\Alamat\ProvinsiFactory;
-use Database\Factories\Alamat\KabupatenFactory;
-use Database\Factories\Alamat\KecamatanFactory;
+use App\Models\Alamat\Negara;
+use App\Models\Alamat\Provinsi;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Biodata>
@@ -49,8 +43,8 @@ class BiodataFactory extends Factory
             'kecamatan_id' => function (array $attributes) {
                 return Kecamatan::where('kabupaten_id', $attributes['kabupaten_id'])->inRandomOrder()->first()->id;
             },
-            'jalan' =>  $this->faker->streetAddress,
-            'kode_pos' =>  $this->faker->postcode,
+            'jalan' => $this->faker->streetAddress,
+            'kode_pos' => $this->faker->postcode,
             'nama' => $this->faker->name(),
             'jenis_kelamin' => $this->faker->randomElement(['l', 'p']),
             'tanggal_lahir' => $this->faker->date(),
@@ -67,7 +61,7 @@ class BiodataFactory extends Factory
                 'D3',
                 'S1',
                 'S2',
-                'S3'
+                'S3',
             ]),
             'anak_keberapa' => rand(1, 5),
             'dari_saudara' => rand(1, 5),

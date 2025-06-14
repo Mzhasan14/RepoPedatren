@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+
 class KaryawanFormulirRequest extends FormRequest
 {
     /**
@@ -24,7 +25,7 @@ class KaryawanFormulirRequest extends FormRequest
     {
 
         return [
-            'golongan_jabatan_id' => 'nullable|exists:golongan_jabatan,id', 
+            'golongan_jabatan_id' => 'nullable|exists:golongan_jabatan,id',
             'lembaga_id' => 'nullable|exists:lembaga,id',
             'jabatan' => 'nullable|string|max:255',
             'keterangan_jabatan' => 'nullable|string|max:255',
@@ -32,17 +33,15 @@ class KaryawanFormulirRequest extends FormRequest
         ];
     }
 
-
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);
     }
-    
 }

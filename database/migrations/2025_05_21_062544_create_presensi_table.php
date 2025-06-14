@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('jenis_presensi', function (Blueprint $table) {
             $table->id();
-            $table->string('kode', 30)->unique(); 
+            $table->string('kode', 30)->unique();
             $table->string('nama', 100);
             $table->text('deskripsi')->nullable();
             $table->boolean('aktif')->default(true);
@@ -28,8 +28,8 @@ return new class extends Migration
             $table->string('keterangan', 255)->nullable();
             $table->string('lokasi', 100)->nullable();
             $table->enum('metode', ['manual', 'qr', 'rfid', 'fingerprint'])->nullable();
-            $table->uuid('biometric_log_id')->nullable(); 
-            $table->uuid('device_id')->nullable(); 
+            $table->uuid('biometric_log_id')->nullable();
+            $table->uuid('device_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -74,7 +74,6 @@ return new class extends Migration
             $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
         });
     }
-
 
     public function down(): void
     {

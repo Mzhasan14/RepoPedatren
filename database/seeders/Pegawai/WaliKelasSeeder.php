@@ -4,8 +4,6 @@ namespace Database\Seeders\Pegawai;
 
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\WaliKelas;
-use Database\Factories\Pegawai\WaliKelasFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class WaliKelasSeeder extends Seeder

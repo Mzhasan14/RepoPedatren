@@ -2,17 +2,16 @@
 
 namespace App\Exports\PesertaDidik;
 
-
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-
-class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColumnFormatting
+class SantriExport implements FromCollection, WithColumnFormatting, WithEvents, WithHeadings
 {
     protected $data;
+
     protected $headings;
 
     public function __construct($data, $headings)
@@ -30,6 +29,7 @@ class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColu
     {
         return $this->headings;
     }
+
     public function columnFormats(): array
     {
         $colFormats = [];
@@ -41,6 +41,7 @@ class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColu
                 $colFormats[$colLetter] = \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT;
             }
         }
+
         return $colFormats;
     }
 
@@ -53,7 +54,7 @@ class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColu
                 foreach (range('A', $sheet->getDelegate()->getHighestColumn()) as $col) {
                     $sheet->getDelegate()->getColumnDimension($col)->setAutoSize(true);
                 }
-                $cellRange = 'A1:' . $sheet->getDelegate()->getHighestColumn() . '1';
+                $cellRange = 'A1:'.$sheet->getDelegate()->getHighestColumn().'1';
                 $sheet->getDelegate()->getStyle($cellRange)->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -62,27 +63,27 @@ class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColu
                     ],
                     'alignment' => [
                         'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                        'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
                     ],
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                         'startColor' => [
-                            'rgb' => '318CE7'
-                        ]
-                    ]
+                            'rgb' => '318CE7',
+                        ],
+                    ],
                 ]);
-                $dataRange = 'A2:' . $sheet->getDelegate()->getHighestColumn() . $sheet->getDelegate()->getHighestRow();
+                $dataRange = 'A2:'.$sheet->getDelegate()->getHighestColumn().$sheet->getDelegate()->getHighestRow();
                 $sheet->getDelegate()->getStyle($dataRange)->applyFromArray([
                     'alignment' => [
                         'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
-                        'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                        'wrapText' => true,
                     ],
                 ]);
                 $lastRow = $sheet->getDelegate()->getHighestRow();
                 $lastCol = $sheet->getDelegate()->getHighestColumn();
-                $allCell = 'A1:' . $lastCol . $lastRow;
+                $allCell = 'A1:'.$lastCol.$lastRow;
                 $sheet->getDelegate()->getStyle($allCell)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -91,7 +92,7 @@ class SantriExport implements FromCollection, WithHeadings, WithEvents, WithColu
                         ],
                     ],
                 ]);
-            }
+            },
         ];
     }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\api\wilayah;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\Kewilayahan\Blok;
 use App\Models\Kewilayahan\Kamar;
 use App\Models\Kewilayahan\Wilayah;
-use App\Http\Controllers\Controller;
 
 class DropdownWilayahController extends Controller
 {

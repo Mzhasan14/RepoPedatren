@@ -43,7 +43,7 @@ return new class extends Migration
                 'left_index',
                 'left_middle',
                 'left_ring',
-                'left_little'
+                'left_little',
             ]);
             $table->text('template');
             $table->unsignedTinyInteger('scan_order')->default(1); // urutan scan ke berapa, default 1

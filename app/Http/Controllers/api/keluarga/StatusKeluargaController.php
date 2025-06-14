@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
-use Illuminate\Http\Request;
-use App\Models\HubunganKeluarga;
-use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PdResource;
+use App\Models\HubunganKeluarga;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class StatusKeluargaController extends Controller
@@ -16,6 +16,7 @@ class StatusKeluargaController extends Controller
     public function index()
     {
         $statusKeluarga = HubunganKeluarga::Active()->latest()->paginate(5);
+
         return new PdResource(true, 'List Status Keluarga', $statusKeluarga);
     }
 
@@ -27,7 +28,7 @@ class StatusKeluargaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_status' => 'required',
             'created_by' => 'required',
-            'status' => 'nullable'
+            'status' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -35,6 +36,7 @@ class StatusKeluargaController extends Controller
         }
 
         $statusKeluarga = HubunganKeluarga::create($validator->validated());
+
         return new PdResource(true, 'Data berhasil Ditambah', $statusKeluarga);
     }
 
@@ -44,6 +46,7 @@ class StatusKeluargaController extends Controller
     public function show(string $id)
     {
         $statusKeluarga = HubunganKeluarga::findOrFail($id);
+
         return new PdResource(true, 'detail data', $statusKeluarga);
     }
 
@@ -57,7 +60,7 @@ class StatusKeluargaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_status' => 'required',
             'updated_by' => 'nullable',
-            'status' => 'nullable'
+            'status' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -65,8 +68,10 @@ class StatusKeluargaController extends Controller
         }
 
         $statusKeluarga->update($validator->validated());
+
         return new PdResource(true, 'data berhasil diubah', $statusKeluarga);
     }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -75,6 +80,7 @@ class StatusKeluargaController extends Controller
         $statusKeluarga = HubunganKeluarga::findOrFail($id);
 
         $statusKeluarga->delete();
+
         return new PdResource(true, 'Data berhasil dihapus', null);
     }
 }

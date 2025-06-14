@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KabupatenFactory extends Factory
 {
     protected $model = Kabupaten::class;
+
     /**
      * Define the model's default state.
      *
@@ -19,7 +20,7 @@ class KabupatenFactory extends Factory
     public function definition(): array
     {
         return [
-            'provinsi_id' => (new ProvinsiFactory())->create()->id,
+            'provinsi_id' => (new ProvinsiFactory)->create()->id,
             'nama_kabupaten' => $this->faker->city,
             'created_by' => 1,
             'updated_by' => null,

@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests\PesertaDidik;
 
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PresensiSantriRequest extends FormRequest
 {
@@ -26,9 +26,9 @@ class PresensiSantriRequest extends FormRequest
     public function rules()
     {
         return [
-            'santri_id'         => 'required|exists:santri,id',
+            'santri_id' => 'required|exists:santri,id',
             'jenis_presensi_id' => 'required|exists:jenis_presensi,id',
-            'tanggal'           => [
+            'tanggal' => [
                 'required',
                 'date',
                 function ($attribute, $value, $fail) {
@@ -36,30 +36,30 @@ class PresensiSantriRequest extends FormRequest
                     if (Carbon::parse($value)->gt(Carbon::today())) {
                         $fail('Tanggal presensi tidak boleh di masa depan.');
                     }
-                }
+                },
             ],
-            'waktu_presensi'    => 'nullable|date_format:H:i:s',
-            'status'            => ['required', Rule::in(['hadir', 'izin', 'sakit', 'alfa'])],
-            'keterangan'        => 'nullable|string|max:255',
-            'lokasi'            => 'nullable|string|max:50',
-            'metode'            => ['required', Rule::in(['qr', 'manual', 'rfid', 'fingerprint'])],
+            'waktu_presensi' => 'nullable|date_format:H:i:s',
+            'status' => ['required', Rule::in(['hadir', 'izin', 'sakit', 'alfa'])],
+            'keterangan' => 'nullable|string|max:255',
+            'lokasi' => 'nullable|string|max:50',
+            'metode' => ['required', Rule::in(['qr', 'manual', 'rfid', 'fingerprint'])],
         ];
     }
 
     public function messages()
     {
         return [
-            'santri_id.required'         => 'Santri wajib diisi.',
-            'santri_id.exists'           => 'Santri tidak ditemukan.',
+            'santri_id.required' => 'Santri wajib diisi.',
+            'santri_id.exists' => 'Santri tidak ditemukan.',
             'jenis_presensi_id.required' => 'Jenis presensi wajib diisi.',
-            'jenis_presensi_id.exists'   => 'Jenis presensi tidak ditemukan.',
-            'tanggal.required'           => 'Tanggal presensi wajib diisi.',
-            'tanggal.date'               => 'Format tanggal tidak valid.',
+            'jenis_presensi_id.exists' => 'Jenis presensi tidak ditemukan.',
+            'tanggal.required' => 'Tanggal presensi wajib diisi.',
+            'tanggal.date' => 'Format tanggal tidak valid.',
             'waktu_presensi.date_format' => 'Format waktu harus HH:MM:SS.',
-            'status.required'            => 'Status wajib diisi.',
-            'status.in'                  => 'Status hanya boleh: hadir, izin, sakit, alfa.',
-            'metode.required'            => 'Metode presensi wajib diisi.',
-            'metode.in'                  => 'Metode hanya boleh: qr, manual, rfid, fingerprint.',
+            'status.required' => 'Status wajib diisi.',
+            'status.in' => 'Status hanya boleh: hadir, izin, sakit, alfa.',
+            'metode.required' => 'Metode presensi wajib diisi.',
+            'metode.in' => 'Metode hanya boleh: qr, manual, rfid, fingerprint.',
         ];
     }
 
@@ -69,7 +69,7 @@ class PresensiSantriRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'error' => $errors
+            'error' => $errors,
         ], 422);
 
         throw new HttpResponseException($response);

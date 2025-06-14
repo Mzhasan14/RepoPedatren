@@ -4,23 +4,17 @@ namespace App\Exports\PesertaDidik;
 
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class KhadamExport implements
-    FromCollection,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    WithEvents,
-    ShouldAutoSize
+class KhadamExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
     protected $index = 1;
 
@@ -34,24 +28,24 @@ class KhadamExport implements
         return DB::table('khadam AS kh')
             ->join('biodata AS b', 'kh.biodata_id', '=', 'b.id')
             ->leftjoin('santri AS s', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn ($j) => $j->on('s.id', '=', 'rp.santri_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+            ->leftjoin('riwayat_domisili AS rd', fn ($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftJoin('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
             ->leftJoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
             ->leftJoin('kamar as km', 'rd.kamar_id', '=', 'km.id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->where('kh.status', true)
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('kh.deleted_at'))
             ->select([
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS nik'),
                 's.nis',
                 'wp.niup',
                 'kh.keterangan',

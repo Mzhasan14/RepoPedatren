@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers\api\wilayah;
 
-use Illuminate\Http\Request;
-use App\Models\Kewilayahan\Blok;
-use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use App\Models\Kewilayahan\Blok;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class BlokController extends Controller
 {
     public function index()
     {
         $bloks = Blok::with('wilayah')->where('status', true)->get();
+
         return response()->json($bloks);
     }
 
     public function show($id)
     {
         $blok = Blok::with('wilayah')->findOrFail($id);
+
         return response()->json($blok);
     }
 
@@ -27,12 +27,12 @@ class BlokController extends Controller
     {
         $request->validate([
             'wilayah_id' => 'required|exists:wilayah,id',
-            'nama_blok'  => 'required|string|max:255',
+            'nama_blok' => 'required|string|max:255',
         ]);
 
         $blok = Blok::create([
             'wilayah_id' => $request->wilayah_id,
-            'nama_blok'  => $request->nama_blok,
+            'nama_blok' => $request->nama_blok,
             'created_by' => Auth::id(),
         ]);
 
@@ -43,8 +43,8 @@ class BlokController extends Controller
     {
         $request->validate([
             'wilayah_id' => 'sometimes|required|exists:wilayah,id',
-            'nama_blok'  => 'sometimes|required|string|max:255',
-            'status'     => 'sometimes|required|boolean',
+            'nama_blok' => 'sometimes|required|string|max:255',
+            'status' => 'sometimes|required|boolean',
         ]);
 
         $blok = Blok::findOrFail($id);

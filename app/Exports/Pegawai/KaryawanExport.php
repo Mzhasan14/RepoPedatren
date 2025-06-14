@@ -2,22 +2,21 @@
 
 namespace App\Exports\Pegawai;
 
-use App\Models\Pegawai\Karyawan;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents, ShouldAutoSize
+class KaryawanExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
- protected $index = 1;
+    protected $index = 1;
 
     public function collection()
     {
@@ -50,11 +49,11 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithS
                     ->whereNull('pegawai.deleted_at');
             })
             ->join('biodata as b', 'b.id', '=', 'pegawai.biodata_id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($kkLast, 'kk_sub', fn($j) => $j->on('kk_sub.id_biodata', '=', 'b.id'))
+            ->leftJoinSub($kkLast, 'kk_sub', fn ($j) => $j->on('kk_sub.id_biodata', '=', 'b.id'))
             ->leftJoin('keluarga as kk', 'kk.id', '=', 'kk_sub.last_id')
             ->leftJoin('golongan_jabatan as g', function ($join) {
                 $join->on('karyawan.golongan_jabatan_id', '=', 'g.id')
@@ -66,7 +65,7 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithS
             ->leftJoin('provinsi as prov', 'prov.id', '=', 'b.provinsi_id')
             ->select(
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS nik'),
                 DB::raw("COALESCE(kk.no_kk, '-') AS no_kk"),
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
@@ -147,7 +146,6 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping, WithS
             'Status Aktif',
         ];
     }
-
 
     public function styles(Worksheet $sheet)
     {

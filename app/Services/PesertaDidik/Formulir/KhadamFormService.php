@@ -2,11 +2,11 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
-use App\Models\Khadam;
 use App\Models\Biodata;
+use App\Models\Khadam;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class KhadamFormService
 {
@@ -16,12 +16,12 @@ class KhadamFormService
 
         return [
             'status' => true,
-            'data'   => $list->map(fn($item) => [
-                'id'             => $item->id,
-                'keterangan'     => $item->keterangan,
-                'tanggal_mulai'  => $item->tanggal_mulai,
-                'tanggal_akhir'  => $item->tanggal_akhir,
-                'status'         => $item->status,
+            'data' => $list->map(fn ($item) => [
+                'id' => $item->id,
+                'keterangan' => $item->keterangan,
+                'tanggal_mulai' => $item->tanggal_mulai,
+                'tanggal_akhir' => $item->tanggal_akhir,
+                'status' => $item->status,
             ]),
         ];
     }
@@ -29,7 +29,7 @@ class KhadamFormService
     public function store(array $input, string $bioId): array
     {
         return DB::transaction(function () use ($input, $bioId) {
-            if (!Biodata::find($bioId)) {
+            if (! Biodata::find($bioId)) {
                 return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
             }
 
@@ -42,11 +42,11 @@ class KhadamFormService
             }
 
             $kh = Khadam::create([
-                'biodata_id'     => $bioId,
-                'keterangan'     => $input['keterangan'],
-                'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
-                'status'         => true,
-                'created_by'     => Auth::id(),
+                'biodata_id' => $bioId,
+                'keterangan' => $input['keterangan'],
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
+                'status' => true,
+                'created_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $kh];
@@ -57,7 +57,7 @@ class KhadamFormService
     {
         $kh = Khadam::find($id);
 
-        if (!$kh) {
+        if (! $kh) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
@@ -68,24 +68,24 @@ class KhadamFormService
     {
         return DB::transaction(function () use ($input, $id) {
             $kh = Khadam::find($id);
-            if (!$kh) {
+            if (! $kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
             // Jika data sudah memiliki tanggal keluar sebelumnya, larang perubahan
             if (! is_null($kh->tanggal_keluar)) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data riwayat ini telah memiliki tanggal akhir dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
 
             $kh->update([
-                'keterangan'     => $input['keterangan'],
-                'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
-                'status'         => $input['status'] ?? true,
-                'updated_at'    => now(),
-                'updated_by'     => Auth::id(),
+                'keterangan' => $input['keterangan'],
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
+                'status' => $input['status'] ?? true,
+                'updated_at' => now(),
+                'updated_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $kh];
@@ -96,7 +96,7 @@ class KhadamFormService
     {
         return DB::transaction(function () use ($input, $id) {
             $old = Khadam::find($id);
-            if (!$old) {
+            if (! $old) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
@@ -104,28 +104,28 @@ class KhadamFormService
                 return ['status' => false, 'message' => 'Khadam sudah ditandai selesai.'];
             }
 
-            $today  = Carbon::now();
+            $today = Carbon::now();
             $tanggalBaru = Carbon::parse($input['tanggal_mulai']);
             $tanggalLama = Carbon::parse($old->tanggal_mulai);
 
             if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya ('.$tanggalLama->format('Y-m-d').'). Silakan periksa kembali tanggal yang Anda input.',
                 ];
             }
             $old->update([
-                'status'         => false,
-                'tanggal_akhir'  => $today,
-                'updated_by'     => Auth::id(),
+                'status' => false,
+                'tanggal_akhir' => $today,
+                'updated_by' => Auth::id(),
             ]);
 
             $new = Khadam::create([
-                'biodata_id'     => $old->biodata_id,
-                'keterangan'     => $input['keterangan'],
-                'tanggal_mulai'  => $tanggalBaru,
-                'status'         => true,
-                'created_by'     => Auth::id(),
+                'biodata_id' => $old->biodata_id,
+                'keterangan' => $input['keterangan'],
+                'tanggal_mulai' => $tanggalBaru,
+                'status' => true,
+                'created_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $new];
@@ -136,7 +136,7 @@ class KhadamFormService
     {
         return DB::transaction(function () use ($input, $id) {
             $kh = Khadam::find($id);
-            if (!$kh) {
+            if (! $kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
@@ -147,9 +147,9 @@ class KhadamFormService
             }
 
             $kh->update([
-                'tanggal_akhir'  => $tglKeluar,
-                'status'         => false,
-                'updated_by'     => Auth::id(),
+                'tanggal_akhir' => $tglKeluar,
+                'status' => false,
+                'updated_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $kh];

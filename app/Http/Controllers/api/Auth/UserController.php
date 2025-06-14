@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\api\Auth;
 
-use Exception;
-use App\Models\User;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 
 class UserController extends Controller
 {
@@ -16,10 +14,10 @@ class UserController extends Controller
         return response()->json([
             'data' => $users->map(function ($user) {
                 return [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
+                    'id' => $user->id,
+                    'name' => $user->name,
                     'email' => $user->email,
-                    'roles' => $user->roles->pluck('name'), 
+                    'roles' => $user->roles->pluck('name'),
                 ];
             }),
         ]);

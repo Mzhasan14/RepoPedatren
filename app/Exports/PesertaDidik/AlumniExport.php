@@ -4,23 +4,17 @@ namespace App\Exports\PesertaDidik;
 
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AlumniExport implements
-    FromCollection,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    WithEvents,
-    ShouldAutoSize
+class AlumniExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
     protected $index = 1;
 
@@ -50,34 +44,34 @@ class AlumniExport implements
 
         return DB::table('biodata as b')
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
-            ->leftJoinSub($rdLast, 'lrd', fn($j) => $j->on('lrd.santri_id', '=', 'b.id'))
-            ->leftjoin('riwayat_domisili as rd', fn($j) => $j->on('rd.santri_id', '=', 'lrd.santri_id')->on('rd.tanggal_keluar', '=', 'lrd.max_tanggal_keluar'))
+            ->leftJoinSub($rdLast, 'lrd', fn ($j) => $j->on('lrd.santri_id', '=', 'b.id'))
+            ->leftjoin('riwayat_domisili as rd', fn ($j) => $j->on('rd.santri_id', '=', 'lrd.santri_id')->on('rd.tanggal_keluar', '=', 'lrd.max_tanggal_keluar'))
             ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
             ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('angkatan AS as', 's.angkatan_id', '=', 'as.id')
-            ->leftJoinSub($rpLast, 'lr', fn($j) => $j->on('lr.biodata_id', '=', 'b.id'))
-            ->leftjoin('riwayat_pendidikan as rp', fn($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
+            ->leftJoinSub($rpLast, 'lr', fn ($j) => $j->on('lr.biodata_id', '=', 'b.id'))
+            ->leftjoin('riwayat_pendidikan as rp', fn ($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
             ->leftjoin('angkatan AS ap', 'rp.angkatan_id', '=', 'ap.id')
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftjoin('jurusan AS j', 'rp.jurusan_id', '=', 'j.id')
             ->leftjoin('kelas AS kls', 'rp.kelas_id', '=', 'kls.id')
             ->leftjoin('rombel AS r', 'rp.rombel_id', '=', 'r.id')
-            ->leftJoinSub($santriLast, 'ld', fn($j) => $j->on('ld.id', '=', 's.id'))
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($santriLast, 'ld', fn ($j) => $j->on('ld.id', '=', 's.id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftJoin('negara as n', 'b.negara_id', '=', 'n.id')
-            ->where(fn($q) => $q->where('s.status', 'alumni')
+            ->where(fn ($q) => $q->where('s.status', 'alumni')
                 ->orWhere('rp.status', 'lulus'))
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('rp.deleted_at'))
             ->select([
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS nik'),
                 's.nis',
                 'rp.no_induk',
                 'wp.niup',

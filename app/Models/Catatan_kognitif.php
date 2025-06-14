@@ -11,18 +11,22 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Catatan_kognitif extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     protected $table = 'catatan_kognitif';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $timestamps = true;
+
     public $incrementing = true;
 
     protected $guarded = [
-        'id'
+        'id',
     ];
-    
+
     protected $dates = [
         'tanggal_buat',
         'tanggal_selesai',
@@ -49,25 +53,26 @@ class Catatan_kognitif extends Model
                 'status',
                 'created_by', 'updated_by', 'deleted_by',
             ])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Catatan Kognitif {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Catatan Kognitif {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     // Auto set created_by, updated_by, deleted_by
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
         });
     }
+
     public function ScopeActive($query)
     {
-        return $query->where('catatan_kognitif.status',true);
+        return $query->where('catatan_kognitif.status', true);
     }
+
     public function santri()
     {
         return $this->belongsTo(Santri::class, 'id_santri');

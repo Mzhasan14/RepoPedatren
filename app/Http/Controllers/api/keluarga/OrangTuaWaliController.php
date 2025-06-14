@@ -2,30 +2,28 @@
 
 namespace App\Http\Controllers\api\keluarga;
 
-use Illuminate\Support\Str;
-use App\Models\OrangTuaWali;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
 use App\Http\Resources\PdResource;
-use Illuminate\Support\Collection;
+use App\Models\Biodata;
+use App\Models\OrangTuaWali;
+use App\Services\Keluarga\DetailOrangtuaService;
+use App\Services\Keluarga\FIlters\FilterOrangtuaService;
+use App\Services\Keluarga\OrangtuaWaliService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use App\Services\Keluarga\OrangtuaWaliService;
-use App\Services\Keluarga\DetailOrangtuaService;
-use App\Http\Requests\Keluarga\OrangtuaWaliRequest;
-use App\Models\Biodata;
-use App\Services\Keluarga\FIlters\FilterOrangtuaService;
 
 class OrangTuaWaliController extends Controller
 {
     private OrangtuaWaliService $orangtuaWaliService;
-    private DetailOrangtuaService $detailOrangtuaService;
-    private FilterOrangtuaService $filterController;
 
+    private DetailOrangtuaService $detailOrangtuaService;
+
+    private FilterOrangtuaService $filterController;
 
     public function __construct(OrangtuaWaliService $orangtuaWaliService, FilterOrangtuaService $filterController, DetailOrangtuaService $detailOrangtuaService)
     {
@@ -37,46 +35,44 @@ class OrangTuaWaliController extends Controller
     /**
      * Get all Orang Tua with filters and pagination
      *
-     * @param Request $request
      * @return JsonResponse
      */
-
     public function getAllOrangtua(Request $request)
     {
         $query = $this->orangtuaWaliService->getAllOrangtua($request);
         $query = $this->filterController->OrangtuaFilters($query, $request);
 
-        $perPage     = (int) $request->input('limit', 25);
+        $perPage = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->orangtuaWaliService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
     public function getDetailOrangtua(string $bioId)
     {
         $ortu = Biodata::find($bioId);
-        if (!$ortu) {
+        if (! $ortu) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'ID Orangtua tidak ditemukan',
-                'data' => []
+                'data' => [],
             ], 404);
         }
 
@@ -84,32 +80,31 @@ class OrangTuaWaliController extends Controller
 
         return response()->json([
             'status' => true,
-            'data'    => $data,
+            'data' => $data,
         ], 200);
     }
-
 
     public function index($id): JsonResponse
     {
         try {
             $result = $this->orangtuaWaliService->index($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data khadam: ' . $e->getMessage());
+            Log::error('Gagal ambil data khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -122,20 +117,20 @@ class OrangTuaWaliController extends Controller
         try {
             $validated = $request->validated();
             $result = $this->orangtuaWaliService->store($validated);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
+
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
-        }
-         catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -145,22 +140,22 @@ class OrangTuaWaliController extends Controller
         try {
             $result = $this->orangtuaWaliService->show($id);
 
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail khadam: ' . $e->getMessage());
+            Log::error('Gagal ambil detail khadam: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -168,30 +163,33 @@ class OrangTuaWaliController extends Controller
     public function edit($id)
     {
         $result = $this->orangtuaWaliService->edit($id);
-        if (!$result['status']) {
+        if (! $result['status']) {
             return response()->json([
                 'message' => $result['message'] ?? 'Data tidak ditemukan.',
             ], 200);
         }
+
         return response()->json(
             [
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]
         );
     }
 
-    public function update(OrangtuaWaliRequest $request, $id) {
-        $result = $this->orangtuaWaliService->update($request->validated(),$id);
-        if (!$result['status']) {
+    public function update(OrangtuaWaliRequest $request, $id)
+    {
+        $result = $this->orangtuaWaliService->update($request->validated(), $id);
+        if (! $result['status']) {
             return response()->json([
                 'message' => $result['message'] ??
-                'Data tidak ditemukan.'
-            ],200);
+                'Data tidak ditemukan.',
+            ], 200);
         }
+
         return response()->json([
             'message' => 'Orang tua berhasil diperbarui',
-            'data' => $result['data']
+            'data' => $result['data'],
         ]);
     }
 
@@ -234,12 +232,12 @@ class OrangTuaWaliController extends Controller
     //  * Remove the specified resource from storage.
     //  */
     public function destroy(string $id)
-    {    
+    {
         $ortu = OrangTuaWali::findOrFail($id);
-        if (!$ortu) {
+        if (! $ortu) {
             return response()->json([
                 'success' => false,
-                'message' => 'Orang tua tidak ditemukan'
+                'message' => 'Orang tua tidak ditemukan',
             ], 404);
         }
         // $ortu->delete();
@@ -247,15 +245,14 @@ class OrangTuaWaliController extends Controller
             ->update([
                 'status' => false,
                 'deleted_at' => now(),
-                'deleted_by' => Auth::id()
+                'deleted_by' => Auth::id(),
             ]);
-            
+
         return response()->json([
             'status' => true,
-            'message' => 'data orang tua berhasil dihapus.'
+            'message' => 'data orang tua berhasil dihapus.',
         ]);
     }
-
 
     // public function orangTuaWali(Request $request)
     // {
@@ -287,7 +284,6 @@ class OrangTuaWaliController extends Controller
     //             'tanggal_update',
     //             'tanggal_input'
     //         );
-
 
     //     // Ambil jumlah data per halaman (default 10 jika tidak diisi)
     //     $perPage = $request->input('limit', 25);
@@ -361,7 +357,6 @@ class OrangTuaWaliController extends Controller
     //             'tanggal_update',
     //             'tanggal_input'
     //         )->where('orang_tua_wali.wali', true);
-
 
     //     // Ambil jumlah data per halaman (default 10 jika tidak diisi)
     //     $perPage = $request->input('limit', 25);

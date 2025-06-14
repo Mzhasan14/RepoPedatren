@@ -23,7 +23,7 @@ class GolonganJabatanFactory extends Factory
             'nama_golongan_jabatan' => $this->faker->randomElement([
                 'Grade A1', 'Grade A2', 'Grade A3', 'Grade A4',
                 'Grade B1', 'Grade B2', 'Grade B3', 'Grade B4',
-                'Grade C1', 'Grade C2', 'Grade C3'
+                'Grade C1', 'Grade C2', 'Grade C3',
             ]),
             'created_by' => 1, // Bisa kamu ubah sesuai user login/pengguna awal
             'updated_by' => null,

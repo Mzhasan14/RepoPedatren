@@ -2,12 +2,10 @@
 
 namespace Database\Seeders;
 
-
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class UserSeeder extends Seeder
 {
@@ -25,7 +23,7 @@ class UserSeeder extends Seeder
             'santri',
             'kamtib',
             'biktren',
-            'pengasuh'
+            'pengasuh',
         ];
 
         foreach ($roles as $role) {
@@ -73,22 +71,22 @@ class UserSeeder extends Seeder
         $santri->assignRole('santri');
 
         $kamtib = User::create([
-            'name' => "Kamtib",
-            'email' => "kamtib@example.com",
+            'name' => 'Kamtib',
+            'email' => 'kamtib@example.com',
             'password' => Hash::make('password'),
         ]);
         $kamtib->assignRole('kamtib');
 
         $biktren = User::create([
-            'name' => "Biktren",
-            'email' => "biktren@example.com",
+            'name' => 'Biktren',
+            'email' => 'biktren@example.com',
             'password' => Hash::make('password'),
         ]);
         $biktren->assignRole('biktren');
 
         $pengasuh = User::create([
-            'name' => "Pengasuh",
-            'email' => "pengasuh@example.com",
+            'name' => 'Pengasuh',
+            'email' => 'pengasuh@example.com',
             'password' => Hash::make('password'),
         ]);
         $pengasuh->assignRole('pengasuh');

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class TambahMateriAjarRequest extends FormRequest
@@ -26,7 +26,7 @@ class TambahMateriAjarRequest extends FormRequest
         return [
             'tahun_masuk' => 'nullable|date',
             'materi_ajar' => 'required|array|min:1',
-            'materi_ajar.*.nama_materi'  => 'required|string|max:255',
+            'materi_ajar.*.nama_materi' => 'required|string|max:255',
             'materi_ajar.*.jumlah_menit' => 'nullable|integer|min:0',
         ];
     }
@@ -39,13 +39,14 @@ class TambahMateriAjarRequest extends FormRequest
             'materi_ajar.*.jumlah_menit.integer' => 'Jumlah menit harus berupa angka.',
         ];
     }
+
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

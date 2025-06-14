@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
-use App\Models\Santri;
-use App\Models\Biodata;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\DetailService;
+use Illuminate\Support\Facades\Log;
 
 class DetailController extends Controller
 {
-
     private DetailService $detail;
+
     public function __construct(DetailService $detail)
     {
         $this->detail = $detail;
@@ -22,14 +20,16 @@ class DetailController extends Controller
     {
         try {
             $data = $this->detail->getDetail($bioId);
+
             return response()->json([
                 'status' => true,
-                'data'   => $data,
+                'data' => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error Detail : " . $e->getMessage());
+            Log::error('Error Detail : '.$e->getMessage());
+
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan atau ID tidak valid.',
             ], 404);
         }

@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PresensiSantriSeeder extends Seeder
 {
@@ -89,7 +88,7 @@ class PresensiSantriSeeder extends Seeder
                 $tanggal = Carbon::today()->subDays(rand(0, 60))->toDateString();
                 $uniqueKey = "{$santriId}-{$jenisId}-{$tanggal}";
 
-                if (!isset($used[$uniqueKey])) {
+                if (! isset($used[$uniqueKey])) {
                     $used[$uniqueKey] = true;
                     DB::table('presensi_santri')->insert([
                         'santri_id' => $santriId,

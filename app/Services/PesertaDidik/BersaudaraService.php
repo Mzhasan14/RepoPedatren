@@ -31,7 +31,7 @@ class BersaudaraService
             ->leftjoin('santri as s', 's.biodata_id', '=', 'b.id')
             ->join('keluarga AS k', 'k.id_biodata', '=', 's.biodata_id')
             ->leftJoin('pendidikan AS pd', 'b.id', '=', 'pd.biodata_id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')->orWhere('pd.status', 'aktif'))
+            ->where(fn ($q) => $q->where('s.status', 'aktif')->orWhere('pd.status', 'aktif'))
             ->whereNull('s.deleted_at')
             ->groupBy('k.no_kk')
             ->havingRaw('COUNT(k.id_biodata) > 1')
@@ -50,20 +50,20 @@ class BersaudaraService
             ->groupBy('k2.no_kk');
 
         $query = DB::table('biodata as b')
-            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
+            ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
             ->join('keluarga AS k', 'k.id_biodata', '=', 'b.id')
             ->whereIn('k.no_kk', $noKkBersaudara)
-            ->leftJoinSub($parents, 'parents', fn($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
-            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoinSub($parents, 'parents', fn ($j) => $j->on('k.no_kk', '=', 'parents.no_kk'))
+            ->leftJoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where(fn($q) => $q->where('s.status', 'aktif')
+            ->where(fn ($q) => $q->where('s.status', 'aktif')
                 ->orWhere('pd.status', 'aktif'))
             ->whereNull('b.deleted_at')
             ->whereNull('s.deleted_at');
@@ -80,7 +80,7 @@ class BersaudaraService
         $fields = $fields ?? [
             'b.id as biodata_id',
             's.id',
-            DB::raw("COALESCE(b.nik, b.no_passport) AS identitas"),
+            DB::raw('COALESCE(b.nik, b.no_passport) AS identitas'),
             'k.no_kk',
             'b.nama',
             'wp.niup',
@@ -89,11 +89,11 @@ class BersaudaraService
             'br.file_path AS foto_profil',
             'kb.nama_kabupaten AS kota_asal',
             's.created_at',
-            DB::raw("GREATEST(
+            DB::raw('GREATEST(
                 s.updated_at,
                 COALESCE(pd.updated_at, s.updated_at),
                 COALESCE(ds.updated_at, s.updated_at)
-            ) AS updated_at"),
+            ) AS updated_at'),
             DB::raw("COALESCE(parents.nama_ibu, 'Tidak Diketahui') AS nama_ibu"),
             DB::raw("COALESCE(parents.nama_ayah, 'Tidak Diketahui') AS nama_ayah"),
         ];
@@ -101,24 +101,23 @@ class BersaudaraService
         return $query->select($fields);
     }
 
-
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
-            "nik_nopassport"   => $item->identitas,
-            "no_kk"             => $item->no_kk,
-            "nama"             => $item->nama,
-            "niup"             => $item->niup ?? '-',
-            "lembaga"          => $item->nama_lembaga ?? '-',
-            "wilayah"          => $item->nama_wilayah ?? '-',
-            "kota_asal"        => $item->kota_asal,
-            "ibu_kandung"      => $item->nama_ibu,
-            "ayah_kandung"     => $item->nama_ayah,
-            "tgl_update"       => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input"        => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil"      => url($item->foto_profil),
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nik_nopassport' => $item->identitas,
+            'no_kk' => $item->no_kk,
+            'nama' => $item->nama,
+            'niup' => $item->niup ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'wilayah' => $item->nama_wilayah ?? '-',
+            'kota_asal' => $item->kota_asal,
+            'ibu_kandung' => $item->nama_ibu,
+            'ayah_kandung' => $item->nama_ayah,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
@@ -277,15 +276,19 @@ class BersaudaraService
                         break;
                     case 'jenis_kelamin':
                         $jk = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        if (strtolower($jk) === 'l') $data['Jenis Kelamin'] = 'Laki-laki';
-                        elseif (strtolower($jk) === 'p') $data['Jenis Kelamin'] = 'Perempuan';
-                        else $data['Jenis Kelamin'] = '';
+                        if (strtolower($jk) === 'l') {
+                            $data['Jenis Kelamin'] = 'Laki-laki';
+                        } elseif (strtolower($jk) === 'p') {
+                            $data['Jenis Kelamin'] = 'Perempuan';
+                        } else {
+                            $data['Jenis Kelamin'] = '';
+                        }
                         break;
                     case 'nis':
-                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -300,13 +303,13 @@ class BersaudaraService
                         $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -315,16 +318,16 @@ class BersaudaraService
                         $data['Jumlah Saudara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'alamat':
-                        $data['Jalan']     = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Jalan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kecamatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kabupaten'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Provinsi']  = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Negara']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Provinsi'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Negara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'domisili_santri':
                         $data['Wilayah Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Blok Domisili']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Kamar Domisili']   = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Blok Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kamar Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_santri':
                         $data['Angkatan Santri'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -342,6 +345,7 @@ class BersaudaraService
                         $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
+
             return $data;
         })->values();
     }
@@ -364,7 +368,7 @@ class BersaudaraService
             'niup' => 'NIUP',
             'anak_ke' => 'Anak ke',
             'jumlah_saudara' => 'Jumlah Saudara',
-            'alamat'   => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'alamat' => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
             'domisili_santri' => ['Wilayah Domisili', 'Blok Domisili', 'Kamar Domisili'],
             'angkatan_santri' => 'Angkatan Santri',
             'angkatan_pelajar' => 'Angkatan Pelajar',
@@ -375,7 +379,9 @@ class BersaudaraService
         foreach ($fields as $field) {
             if (isset($map[$field])) {
                 if (is_array($map[$field])) {
-                    foreach ($map[$field] as $h) $headings[] = $h;
+                    foreach ($map[$field] as $h) {
+                        $headings[] = $h;
+                    }
                 } else {
                     $headings[] = $map[$field];
                 }
@@ -386,6 +392,7 @@ class BersaudaraService
         if ($addNumber) {
             array_unshift($headings, 'No');
         }
+
         return $headings;
     }
 }

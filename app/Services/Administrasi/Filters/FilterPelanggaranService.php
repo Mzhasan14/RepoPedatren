@@ -19,7 +19,7 @@ class FilterPelanggaranService
         $query = $this->applyJenisPutusanFilter($query, $request);
         $query = $this->applyJenisPelanggaranFilter($query, $request);
         $query = $this->applyStatusPelanggaranFilter($query, $request);
-        
+
         return $query;
     }
 
@@ -49,10 +49,10 @@ class FilterPelanggaranService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -65,7 +65,7 @@ class FilterPelanggaranService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -141,8 +141,4 @@ class FilterPelanggaranService
 
         return $query;
     }
-
-
-
-   
 }

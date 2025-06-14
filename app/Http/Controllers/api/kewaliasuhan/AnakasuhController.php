@@ -2,68 +2,73 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use App\Models\Santri;
-use Illuminate\Http\Request;
-use App\Models\Peserta_didik;
-use App\Http\Resources\PdResource;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
+use App\Http\Resources\PdResource;
+use App\Models\Biodata;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
-use Illuminate\Support\Facades\Validator;
+use App\Models\Peserta_didik;
+use App\Models\Santri;
 use App\Services\Kewaliasuhan\AnakasuhService;
-use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
-use App\Models\Biodata;
 use App\Services\Kewaliasuhan\DetailAnakasuhService;
 use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class AnakasuhController extends Controller
 {
     private AnakasuhService $anakasuhService;
+
     private FilterAnakasuhService $filterAnakasuhService;
+
     private DetailAnakasuhService $detailAnakasuhService;
 
-    public function __construct(AnakasuhService $anakasuhService, FilterAnakasuhService $filterAnakasuhService, DetailAnakasuhService $detailAnakasuhService){
+    public function __construct(AnakasuhService $anakasuhService, FilterAnakasuhService $filterAnakasuhService, DetailAnakasuhService $detailAnakasuhService)
+    {
         $this->anakasuhService = $anakasuhService;
         $this->filterAnakasuhService = $filterAnakasuhService;
         $this->detailAnakasuhService = $detailAnakasuhService;
     }
 
-    public function getAllAnakasuh(Request $request) {
+    public function getAllAnakasuh(Request $request)
+    {
         $query = $this->anakasuhService->getAllAnakasuh($request);
         $query = $this->filterAnakasuhService->AnakasuhFilters($query, $request);
 
-        $perPage     = (int) $request->input('limit', 25);
+        $perPage = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);
-        $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->anakasuhService->formatData($results);
 
         return response()->json([
-            "total_data"   => $results->total(),
-            "current_page" => $results->currentPage(),
-            "per_page"     => $results->perPage(),
-            "total_pages"  => $results->lastPage(),
-            "data"         => $formatted
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
-    public function getDetailAnakasuh(string $bioId) {
+    public function getDetailAnakasuh(string $bioId)
+    {
         $Anakasuh = Biodata::find($bioId);
-        if (!$Anakasuh) {
+        if (! $Anakasuh) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'ID anak asuh tidak ditemukan',
-                'data' => []
+                'data' => [],
             ], 404);
         }
 
@@ -71,7 +76,7 @@ class AnakasuhController extends Controller
 
         return response()->json([
             'status' => true,
-            'data'    => $data,
+            'data' => $data,
         ], 200);
     }
 
@@ -87,7 +92,7 @@ class AnakasuhController extends Controller
                 'data' => [
                     'berhasil' => $result['data_baru'],
                     'gagal' => $result['data_gagal'],
-                ]
+                ],
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -102,10 +107,10 @@ class AnakasuhController extends Controller
     {
         DB::transaction(function () use ($id) {
             $anakasuh = Anak_Asuh::findOrFail($id);
-            if (!$anakasuh) {
+            if (! $anakasuh) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'anak asuh tidak ditemukan'
+                    'message' => 'anak asuh tidak ditemukan',
                 ], 404);
             }
             $originalAttributes = $anakasuh->getAttributes();
@@ -116,7 +121,7 @@ class AnakasuhController extends Controller
                     'tanggal_berakhir' => now(),
                     'status' => false,
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ]);
 
             // 2. Nonaktifkan wali asuh
@@ -124,7 +129,7 @@ class AnakasuhController extends Controller
                 ->update([
                     'status' => false,
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ]);
 
             activity('anak_asuh_delete')
@@ -134,7 +139,7 @@ class AnakasuhController extends Controller
                     'deleted_by' => Auth::id(),
                     'ip' => request()->ip(),
                     'user_agent' => request()->userAgent(),
-                    'affected_relations' => $relations->pluck('id') // ID relasi yang dinonaktifkan
+                    'affected_relations' => $relations->pluck('id'), // ID relasi yang dinonaktifkan
                 ])
                 ->event('nonaktif_wali_asuh')
                 ->log('Wali asuh dinonaktifkan beserta semua relasinya');
@@ -146,7 +151,7 @@ class AnakasuhController extends Controller
                     ->withProperties([
                         'id_wali_asuh' => $relation->id_wali_asuh,
                         'id_anak_asuh' => $relation->id_anak_asuh,
-                        'deleted_by' => Auth::id()
+                        'deleted_by' => Auth::id(),
                     ])
                     ->event('nonaktif_relasi_wali_asuh')
                     ->log('Relasi kewaliasuhan dinonaktifkan karena wali asuh dinonaktifkan');

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Keluarga;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class KeluargaRequest extends FormRequest
@@ -24,7 +24,7 @@ class KeluargaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'no_kk'  => 'required|digits:16',
+            'no_kk' => 'required|digits:16',
         ];
     }
 
@@ -34,7 +34,7 @@ class KeluargaRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

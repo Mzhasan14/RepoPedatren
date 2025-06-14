@@ -5,8 +5,8 @@ namespace App\Services\PesertaDidik\Formulir;
 use App\Models\Berkas;
 use App\Models\JenisBerkas;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class BerkasService
@@ -19,21 +19,21 @@ class BerkasService
 
         if ($br->isEmpty()) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Biodata tidak memiliki berkas.',
             ];
         }
 
-        $data = $br->map(fn(Berkas $br) => [
-            'id'                 => $br->id,
-            'file_path'          => url($br->file_path),
-            'jenis_berkas_id'    => $br->jenis_berkas_id,
-            'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // null-safe
+        $data = $br->map(fn (Berkas $br) => [
+            'id' => $br->id,
+            'file_path' => url($br->file_path),
+            'jenis_berkas_id' => $br->jenis_berkas_id,
+            'nama_jenis_berkas' => $br->jenisBerkas?->nama_jenis_berkas, // null-safe
         ])->toArray();
 
         return [
             'status' => true,
-            'data'   => $data,
+            'data' => $data,
         ];
     }
 
@@ -43,18 +43,18 @@ class BerkasService
 
         if (! $br) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => "Berkas dengan ID #{$id} tidak ditemukan.",
             ];
         }
 
         return [
             'status' => true,
-            'data'   => [
-                'id'                 => $br->id,
-                'file_path'          =>  url($br->file_path),
-                'jenis_berkas_id'    => $br->jenis_berkas_id,
-                'nama_jenis_berkas'  => $br->jenisBerkas?->nama_jenis_berkas, // aman dari null
+            'data' => [
+                'id' => $br->id,
+                'file_path' => url($br->file_path),
+                'jenis_berkas_id' => $br->jenis_berkas_id,
+                'nama_jenis_berkas' => $br->jenisBerkas?->nama_jenis_berkas, // aman dari null
             ],
         ];
     }
@@ -63,9 +63,9 @@ class BerkasService
     {
         return DB::transaction(function () use ($input, $biodataId) {
             // Validasi berkas
-            if (empty($input['file_path']) || !$input['file_path'] instanceof UploadedFile) {
+            if (empty($input['file_path']) || ! $input['file_path'] instanceof UploadedFile) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'File tidak valid.',
                 ];
             }
@@ -74,7 +74,7 @@ class BerkasService
             $jenisId = $input['jenis_berkas_id'] ?? null;
             if (! $jenisId || ! JenisBerkas::where('id', $jenisId)->exists()) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Jenis berkas tidak ditemukan.',
                 ];
             }
@@ -85,16 +85,16 @@ class BerkasService
 
             // Buat record
             $br = Berkas::create([
-                'biodata_id'        => $biodataId,
-                'jenis_berkas_id'   => $jenisId,
-                'file_path'         => Storage::url($path),
-                'status'            => true,
-                'created_by'        => Auth::id(),
+                'biodata_id' => $biodataId,
+                'jenis_berkas_id' => $jenisId,
+                'file_path' => Storage::url($path),
+                'status' => true,
+                'created_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $br,
+                'data' => $br,
             ];
         });
     }
@@ -105,7 +105,7 @@ class BerkasService
             $br = Berkas::find($id);
             if (! $br) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => "Berkas dengan ID #{$id} tidak ditemukan.",
                 ];
             }
@@ -113,7 +113,7 @@ class BerkasService
             // Validasi berkas baru
             if (empty($input['file_path']) || ! $input['file_path'] instanceof UploadedFile) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'File tidak valid.',
                 ];
             }
@@ -122,7 +122,7 @@ class BerkasService
             $jenisId = $input['jenis_berkas_id'] ?? $br->jenis_berkas_id;
             if (! JenisBerkas::where('id', $jenisId)->exists()) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Jenis berkas tidak ditemukan.',
                 ];
             }
@@ -138,14 +138,14 @@ class BerkasService
             $path = $uploadedFile->store('formulir', 'public');
 
             // Update record
-            $br->file_path        = Storage::url($path);
-            $br->jenis_berkas_id  = $jenisId;
-            $br->updated_by       = Auth::id();
+            $br->file_path = Storage::url($path);
+            $br->jenis_berkas_id = $jenisId;
+            $br->updated_by = Auth::id();
             $br->save();
 
             return [
                 'status' => true,
-                'data'   => $br,
+                'data' => $br,
             ];
         });
     }

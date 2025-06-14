@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use League\CommonMark\Reference\Reference;
 
 return new class extends Migration
 {
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
-            $table->unsignedBigInteger('golongan_id')->nullable();  
+            $table->unsignedBigInteger('golongan_id')->nullable();
             $table->string('jabatan');
             $table->date('tahun_masuk')->nullable();
             $table->date('tahun_akhir')->nullable();

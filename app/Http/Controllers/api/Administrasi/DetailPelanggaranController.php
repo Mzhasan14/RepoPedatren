@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\api\Administrasi;
 
-use App\Models\Pelanggaran;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\Pelanggaran;
 use App\Services\Administrasi\DetailPelanggaranService;
+use Illuminate\Support\Facades\Log;
 
 class DetailPelanggaranController extends Controller
 {
@@ -20,11 +20,11 @@ class DetailPelanggaranController extends Controller
     {
         try {
             $pelanggaran = Pelanggaran::find($id);
-            if (!$pelanggaran) {
+            if (! $pelanggaran) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'ID Pelanggaran tidak ditemukan',
-                    'data' => []
+                    'data' => [],
                 ], 404);
             }
 
@@ -32,12 +32,13 @@ class DetailPelanggaranController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data'    => $data,
+                'data' => $data,
             ], 200);
         } catch (\Exception $e) {
-            Log::error("Error DetailPelanggaran: " . $e->getMessage());
+            Log::error('Error DetailPelanggaran: '.$e->getMessage());
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }

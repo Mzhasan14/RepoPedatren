@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UpdatePengajarRequest extends FormRequest
@@ -24,20 +24,21 @@ class UpdatePengajarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id'   => 'nullable|exists:lembaga,id',
-            'golongan_id'  => 'nullable|exists:golongan,id',
-            'jabatan'      => 'nullable|string|max:255',
-            'tahun_masuk'  => 'nullable|date',
+            'lembaga_id' => 'nullable|exists:lembaga,id',
+            'golongan_id' => 'nullable|exists:golongan,id',
+            'jabatan' => 'nullable|string|max:255',
+            'tahun_masuk' => 'nullable|date',
         ];
 
     }
+
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

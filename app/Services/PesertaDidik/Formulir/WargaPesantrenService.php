@@ -3,8 +3,8 @@
 namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\WargaPesantren;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class WargaPesantrenService
 {
@@ -15,20 +15,20 @@ class WargaPesantrenService
 
         if ($wp->isEmpty()) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan.',
             ];
         }
 
-        $data = $wp->map(fn(WargaPesantren $wp) => [
-            'id'     => $wp->id,
-            'niup'   => $wp->niup,
+        $data = $wp->map(fn (WargaPesantren $wp) => [
+            'id' => $wp->id,
+            'niup' => $wp->niup,
             'status' => (bool) $wp->status,
         ])->toArray();
 
         return [
             'status' => true,
-            'data'   => $data,
+            'data' => $data,
         ];
     }
 
@@ -42,7 +42,7 @@ class WargaPesantrenService
 
             if ($exists) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Biodata sudah memiliki NIUP aktif.',
                 ];
             }
@@ -50,21 +50,21 @@ class WargaPesantrenService
             // Validasi input minimal
             if (empty($input['niup'])) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'NIUP wajib diisi.',
                 ];
             }
 
             $wp = WargaPesantren::create([
                 'biodata_id' => $biodataId,
-                'niup'       => $input['niup'],
-                'status'     => (bool) ($input['status'] ?? true),
+                'niup' => $input['niup'],
+                'status' => (bool) ($input['status'] ?? true),
                 'created_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $wp,
+                'data' => $wp,
             ];
         });
     }
@@ -75,16 +75,16 @@ class WargaPesantrenService
 
         if (! $wp) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => "Data WargaPesantren ID #{$id} tidak ditemukan.",
             ];
         }
 
         return [
             'status' => true,
-            'data'   => [
-                'id'     => $wp->id,
-                'niup'   => $wp->niup,
+            'data' => [
+                'id' => $wp->id,
+                'niup' => $wp->niup,
                 'status' => (bool) $wp->status,
             ],
         ];
@@ -96,7 +96,7 @@ class WargaPesantrenService
             $wp = WargaPesantren::find($id);
             if (! $wp) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data tidak ditemukan.',
                 ];
             }
@@ -104,7 +104,7 @@ class WargaPesantrenService
             // NIUP tidak boleh diubah
             if (isset($input['niup']) && $input['niup'] !== $wp->niup) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'NIUP tidak dapat diubah.',
                 ];
             }
@@ -113,7 +113,7 @@ class WargaPesantrenService
             $newStatus = (bool) ($input['status'] ?? $wp->status);
             if ($newStatus === (bool) $wp->status) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tidak ada perubahan status.',
                 ];
             }
@@ -121,18 +121,18 @@ class WargaPesantrenService
             $userId = Auth::id();
             if (! $userId) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Pengguna tidak terautentikasi.',
                 ];
             }
 
-            $wp->status     = $newStatus;
+            $wp->status = $newStatus;
             $wp->updated_by = $userId;
             $wp->save();
 
             return [
                 'status' => true,
-                'data'   => $wp,
+                'data' => $wp,
             ];
         });
     }
@@ -142,7 +142,7 @@ class WargaPesantrenService
         $wp = WargaPesantren::find($id);
         if (! $wp) {
             return [
-                'status'  => false,
+                'status' => false,
                 'message' => 'Data tidak ditemukan.',
             ];
         }
@@ -150,7 +150,7 @@ class WargaPesantrenService
         $wp->delete();
 
         return [
-            'status'  => true,
+            'status' => true,
             'message' => 'Data berhasil dihapus.',
         ];
     }

@@ -1,22 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Api\Administrasi;
+namespace App\Http\Controllers\api\Administrasi;
 
 use App\Exports\BaseExport;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Services\Administrasi\PerizinanService;
-use App\Http\Requests\Administrasi\PerizinanRequest;
 use App\Http\Requests\Administrasi\BerkasPerizinanRequest;
+use App\Http\Requests\Administrasi\PerizinanRequest;
 use App\Services\Administrasi\Filters\FilterPerizinanService;
+use App\Services\Administrasi\PerizinanService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PerizinanController extends Controller
 {
     private PerizinanService $perizinan;
+
     private FilterPerizinanService $filter;
 
     public function __construct(FilterPerizinanService $filter, PerizinanService $perizinan)
@@ -32,33 +31,34 @@ class PerizinanController extends Controller
             $query = $this->filter->perizinanFilters($query, $request);
             $query->latest('pr.created_at');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (\Throwable $e) {
             Log::error("[PerizinanController] Error: {$e->getMessage()}");
+
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->perizinan->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
+            'total_data' => $results->total(),
             'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
 
@@ -66,22 +66,22 @@ class PerizinanController extends Controller
     {
         try {
             $result = $this->perizinan->index($bioId);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data perizinan: ' . $e->getMessage());
+            Log::error('Gagal ambil data perizinan: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -90,22 +90,22 @@ class PerizinanController extends Controller
     {
         try {
             $result = $this->perizinan->store($request->validated(), $bioId);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah perizinan: ' . $e->getMessage());
+            Log::error('Gagal tambah perizinan: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -114,22 +114,22 @@ class PerizinanController extends Controller
     {
         try {
             $result = $this->perizinan->show($id);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Data tidak ditemukan.'
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Detail data berhasil ditampilkan',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail perizinan: ' . $e->getMessage());
+            Log::error('Gagal ambil detail perizinan: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -138,22 +138,22 @@ class PerizinanController extends Controller
     {
         try {
             $result = $this->perizinan->update($request->validated(), $id);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berhasil diperbarui',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update perizinan: ' . $e->getMessage());
+            Log::error('Gagal update perizinan: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -162,22 +162,22 @@ class PerizinanController extends Controller
     {
         try {
             $result = $this->perizinan->addBerkasPerizinan($request->validated(), $id);
-            if (!$result['status']) {
+            if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message']
+                    'message' => $result['message'],
                 ], 200);
             }
 
             return response()->json([
                 'message' => 'Data berkas berhasil ditambah',
-                'data' => $result['data']
+                'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah berkas perizinan: ' . $e->getMessage());
+            Log::error('Gagal tambah berkas perizinan: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -209,7 +209,7 @@ class PerizinanController extends Controller
             'nama_biktren',
             'nama_kamtib',
             'keterangan',
-            'created_at'
+            'created_at',
         ];
 
         $columnOrder = [
@@ -245,7 +245,7 @@ class PerizinanController extends Controller
             'keterangan',
             'created_at',
             'updated_at',
-            'foto_profil'
+            'foto_profil',
         ];
 
         $optionalFields = $request->input('fields', []);
@@ -264,10 +264,11 @@ class PerizinanController extends Controller
 
         $addNumber = true;
         $formatted = $this->perizinan->formatDataExport($results, $fields, $addNumber);
-        $headings  = $this->perizinan->getFieldExportHeadings($fields, $addNumber);
+        $headings = $this->perizinan->getFieldExportHeadings($fields, $addNumber);
 
         $now = now()->format('Y-m-d_H-i-s');
         $filename = "perizinan_{$now}.xlsx";
+
         return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

@@ -18,7 +18,6 @@ class DetailPengunjungMahromService
             ->where('pm.id', $id)
             ->value('no_kk');
 
-
         // --- Biodata Utama ---
         $biodata = DB::table('biodata as b')
             ->join('pengunjung_mahrom as pm', 'pm.biodata_id', 'b.id')
@@ -50,25 +49,25 @@ class DetailPengunjungMahromService
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                "COALESCE(br.file_path,'default.jpg') as foto"
+                "COALESCE(br.file_path,'default.jpg') as foto",
             ]))
             ->first();
 
         if ($biodata) {
             $data['Biodata'] = [
-                'id'                   => $biodata->id,
-                'nokk'                 => $noKk ?? '-',
-                'nik_nopassport'       => $biodata->identitas,
-                'nama'                 => $biodata->nama,
-                'jenis_kelamin'        => $biodata->jenis_kelamin,
+                'id' => $biodata->id,
+                'nokk' => $noKk ?? '-',
+                'nik_nopassport' => $biodata->identitas,
+                'nama' => $biodata->nama,
+                'jenis_kelamin' => $biodata->jenis_kelamin,
                 'tempat_tanggal_lahir' => $biodata->ttl,
-                'anak_ke'              => $biodata->anak_ke,
-                'umur'                 => $biodata->umur,
-                'kecamatan'            => $biodata->nama_kecamatan ?? '-',
-                'kabupaten'            => $biodata->nama_kabupaten ?? '-',
-                'provinsi'             => $biodata->nama_provinsi ?? '-',
-                'warganegara'          => $biodata->nama_negara ?? '-',
-                'foto_profil'          => URL::to($biodata->foto),
+                'anak_ke' => $biodata->anak_ke,
+                'umur' => $biodata->umur,
+                'kecamatan' => $biodata->nama_kecamatan ?? '-',
+                'kabupaten' => $biodata->nama_kabupaten ?? '-',
+                'provinsi' => $biodata->nama_provinsi ?? '-',
+                'warganegara' => $biodata->nama_negara ?? '-',
+                'foto_profil' => URL::to($biodata->foto),
             ];
         }
 
@@ -82,7 +81,7 @@ class DetailPengunjungMahromService
                 ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
                 ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
                 ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-                ->select(['bo.nama', 'bo.nik', DB::raw("hk.nama_status as status"), 'ow.wali'])
+                ->select(['bo.nama', 'bo.nik', DB::raw('hk.nama_status as status'), 'ow.wali'])
                 ->get();
 
             $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
@@ -96,17 +95,17 @@ class DetailPengunjungMahromService
                     'bs.nama',
                     'bs.nik',
                     DB::raw("'Saudara Kandung' as status"),
-                    DB::raw("NULL as wali")
+                    DB::raw('NULL as wali'),
                 ])
                 ->get();
         }
 
         $keluarga = $ortu->merge($saudara);
-        $data['Keluarga'] = $keluarga->map(fn($i) => [
-            'nama'   => $i->nama,
-            'nik'    => $i->nik,
+        $data['Keluarga'] = $keluarga->map(fn ($i) => [
+            'nama' => $i->nama,
+            'nik' => $i->nik,
             'status' => $i->status,
-            'wali'   => $i->wali,
+            'wali' => $i->wali,
         ])->toArray();
 
         // --- Kunjungan Mahrom ---
@@ -114,7 +113,7 @@ class DetailPengunjungMahromService
             ->join('santri as s', 'pm.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->join('hubungan_keluarga as hk', 'pm.hubungan_id', '=', 'hk.id')
-            ->join('biodata as bp', 'pm.biodata_id', '=', 'bp.id') 
+            ->join('biodata as bp', 'pm.biodata_id', '=', 'bp.id')
             ->where('pm.id', $id)
             ->select(['bp.nama', 'hk.nama_status', 'pm.tanggal_kunjungan'])
             ->get();

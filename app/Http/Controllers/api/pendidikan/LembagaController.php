@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\api\pendidikan;
 
-use Illuminate\Http\Request;
-use App\Models\Pendidikan\Lembaga;
 use App\Http\Controllers\Controller;
+use App\Models\Pendidikan\Lembaga;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LembagaController extends Controller
@@ -12,6 +12,7 @@ class LembagaController extends Controller
     public function index()
     {
         $lembagas = Lembaga::where('status', true)->get();
+
         return response()->json($lembagas);
     }
 
@@ -23,7 +24,7 @@ class LembagaController extends Controller
 
         $lembaga = Lembaga::create([
             'nama_lembaga' => $request->nama_lembaga,
-            'created_by'   => Auth::id(),
+            'created_by' => Auth::id(),
         ]);
 
         return response()->json($lembaga, 201);
@@ -33,7 +34,7 @@ class LembagaController extends Controller
     {
         $request->validate([
             'nama_lembaga' => 'sometimes|required|string|max:255',
-            'status'       => 'sometimes|required|boolean',
+            'status' => 'sometimes|required|boolean',
         ]);
 
         $lembaga = Lembaga::findOrFail($id);
@@ -50,6 +51,7 @@ class LembagaController extends Controller
         $lembaga->deleted_by = Auth::id();
         $lembaga->save();
         $lembaga->delete();
+
         return response()->json(null, 204);
     }
 }

@@ -2,14 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
-use App\Models\Biodata;
-use Illuminate\Support\Str;
 use App\Models\Pegawai\Pegawai;
-use Database\Factories\BiodataFactory;
-use Database\Factories\Pendidikan\KelasFactory;
-use Database\Factories\Pendidikan\RombelFactory;
-use Database\Factories\Pendidikan\JurusanFactory;
-use Database\Factories\Pendidikan\LembagaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -1,15 +1,16 @@
 <?php
+
 // app/Services/AuthService.php
+
 namespace App\Services\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class AuthService
 {
@@ -17,18 +18,18 @@ class AuthService
     {
         $authUser = Auth::user();
 
-        if (!($authUser instanceof User) || !$authUser->hasAnyRole(['admin', 'superadmin'])) {
+        if (! ($authUser instanceof User) || ! $authUser->hasAnyRole(['admin', 'superadmin'])) {
             throw new AuthorizationException('Anda tidak memiliki akses untuk mendaftarkan pengguna.');
         }
 
         $role = $data['role'] ?? 'santri';
-        if (!Role::where('name', $role)->exists()) {
+        if (! Role::where('name', $role)->exists()) {
             throw new \InvalidArgumentException("Role '{$role}' tidak ditemukan.");
         }
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
 
@@ -65,9 +66,9 @@ class AuthService
             ->performedOn($user)
             ->causedBy($user)
             ->withProperties([
-                'user_id'    => $user->id,
-                'email'      => $user->email,
-                'ip'         => request()->ip(),
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
             ->log("Pengguna '{$user->email}' berhasil login");
@@ -75,8 +76,8 @@ class AuthService
         return [
             'success' => true,
             'message' => 'Login successful.',
-            'data'    => $user,
-            'status'  => 200,
+            'data' => $user,
+            'status' => 200,
         ];
     }
 
@@ -91,9 +92,9 @@ class AuthService
             })
             ->causedBy($user)
             ->withProperties([
-                'user_id'    => $user->id,
-                'email'      => $user->email,
-                'ip'         => request()->ip(),
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
             ->log("Pengguna '{$user->email}' berhasil logout");
@@ -125,11 +126,11 @@ class AuthService
             ->performedOn($user)
             ->causedBy($user)
             ->withProperties([
-                'user_id'              => $user->id,
-                'email'                => $user->email,
+                'user_id' => $user->id,
+                'email' => $user->email,
                 'updated_profile_data' => $data,
-                'ip'                   => request()->ip(),
-                'user_agent'           => request()->userAgent(),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
             ])
             ->log("Profil pengguna '{$user->email}' diperbarui");
 
@@ -152,9 +153,9 @@ class AuthService
             ->performedOn($user)
             ->causedBy($user)
             ->withProperties([
-                'user_id'    => $user->id,
-                'email'      => $user->email,
-                'ip'         => request()->ip(),
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
             ->log("Password pengguna '{$user->email}' berhasil diubah");

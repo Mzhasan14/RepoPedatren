@@ -3,7 +3,6 @@
 namespace Database\Seeders\Alamat;
 
 use Database\Factories\Alamat\NegaraFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class NegaraSeeder extends Seeder
@@ -13,6 +12,6 @@ class NegaraSeeder extends Seeder
      */
     public function run(): void
     {
-        (new NegaraFactory())->count(5)->create();
+        (new NegaraFactory)->count(5)->create();
     }
 }

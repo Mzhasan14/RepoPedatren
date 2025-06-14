@@ -21,7 +21,7 @@ class RombelFactory extends Factory
     {
         return [
             'nama_rombel' => $this->faker->word(),
-            'kelas_id' => (new KelasFactory())->create()->id,
+            'kelas_id' => (new KelasFactory)->create()->id,
             'created_by' => 1,
             'status' => $this->faker->boolean(),
             'gender_rombel' => $this->faker->randomElement(['putra', 'putri']),

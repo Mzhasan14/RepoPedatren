@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class BiometricDevice extends Model
 {
     use SoftDeletes;
 
     protected $table = 'biometric_devices';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -20,7 +22,7 @@ class BiometricDevice extends Model
         'location',
         'ip_address',
         'type',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [

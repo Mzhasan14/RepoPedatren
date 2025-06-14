@@ -2,18 +2,17 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Support\Str;
 
 class BiometricSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
-   public function run()
+    public function run()
     {
         // 1. Tambah biometric_devices
         $devices = [
@@ -88,10 +87,10 @@ class BiometricSeeder extends Seeder
                     'id' => Str::uuid(),
                     'biometric_profile_id' => $profileId,
                     'device_id' => $devices[array_rand($devices)]['id'],
-                    'method' => ['fingerprint', 'card'][rand(0,1)],
+                    'method' => ['fingerprint', 'card'][rand(0, 1)],
                     'scanned_at' => Carbon::now()->subMinutes(rand(0, 500)),
-                    'success' => rand(0,1),
-                    'message' => rand(0,1) ? null : 'Gagal otentikasi',
+                    'success' => rand(0, 1),
+                    'message' => rand(0, 1) ? null : 'Gagal otentikasi',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

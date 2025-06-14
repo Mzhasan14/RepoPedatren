@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\PesertaDidik;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PindahKamarRequest extends FormRequest
@@ -38,7 +38,7 @@ class PindahKamarRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'error' => $errors
+            'error' => $errors,
         ], 422);
 
         throw new HttpResponseException($response);

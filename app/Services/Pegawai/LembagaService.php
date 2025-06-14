@@ -12,7 +12,7 @@ class LembagaService
         $lembaga = Lembaga::select([
             'id',
             'nama_lembaga',
-            'status'
+            'status',
         ])
             ->where('status', 1)
             ->get();
@@ -28,7 +28,7 @@ class LembagaService
             'status',
         ])->find($id);
 
-        if (!$lembaga) {
+        if (! $lembaga) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -38,7 +38,7 @@ class LembagaService
     public function update(array $data, $id): array
     {
         $lembaga = Lembaga::find($id);
-        if (!$lembaga) {
+        if (! $lembaga) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -64,7 +64,7 @@ class LembagaService
     public function destroy($id): array
     {
         $lembaga = Lembaga::find($id);
-        if (!$lembaga) {
+        if (! $lembaga) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
@@ -73,8 +73,6 @@ class LembagaService
             'updated_by' => Auth::id(),
         ]);
 
-        return ['status' => true, 'data' => $lembaga ,'message' =>'Lembaga berhasil dinonaktifkan'];
+        return ['status' => true, 'data' => $lembaga, 'message' => 'Lembaga berhasil dinonaktifkan'];
     }
-
-
 }

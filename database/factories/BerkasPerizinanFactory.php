@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Perizinan;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
@@ -20,7 +20,7 @@ class BerkasPerizinanFactory extends Factory
     {
         return [
             'perizinan_id' => Perizinan::inRandomOrder()->first()->id ?? Perizinan::factory(),
-            'file_path' => 'storage/berkas/' . Str::random(10) . '.png',
+            'file_path' => 'storage/berkas/'.Str::random(10).'.png',
             'created_by' => 1,
             'updated_by' => null,
             'deleted_by' => null,

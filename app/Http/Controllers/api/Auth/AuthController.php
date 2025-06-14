@@ -2,23 +2,17 @@
 
 namespace App\Http\Controllers\api\Auth;
 
-use App\Models\User;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use App\Services\Auth\AuthService;
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests\LoginRequest;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
-use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\RegisterRequest;
-use Illuminate\Support\Facades\Password;
-use App\Http\Requests\ResetPasswordRequest;
-use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ForgotPasswordRequest;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Resources\UserResource;
+use App\Services\Auth\AuthService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -28,8 +22,9 @@ class AuthController extends Controller
     {
         $user = $this->authService->register($req->validated());
         $token = $user->createToken('auth-token')->plainTextToken;
+
         return response()->json([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $token,
         ], 201);
     }
@@ -51,21 +46,22 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => $result['message'],
-            'user'    => new UserResource($user),
-            'token'   => $token,
+            'user' => new UserResource($user),
+            'token' => $token,
         ], $result['status']);
     }
-
 
     public function logout(): JsonResponse
     {
         $this->authService->logout(request()->user()->currentAccessToken());
+
         return response()->json(null, 204);
     }
 
     public function forgotPassword(ForgotPasswordRequest $req): JsonResponse
     {
         $status = $this->authService->sendResetLink($req->email);
+
         return $status === Password::RESET_LINK_SENT
             ? response()->json(['message' => 'Reset link terkirim.'])
             : response()->json(['message' => __($status)], 500);
@@ -74,6 +70,7 @@ class AuthController extends Controller
     public function resetPassword(ResetPasswordRequest $req): JsonResponse
     {
         $status = $this->authService->resetPassword($req->validated());
+
         return $status === Password::PASSWORD_RESET
             ? response()->json(['message' => 'Password berhasil direset.'])
             : response()->json(['message' => __($status)], 500);
@@ -82,6 +79,7 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $req): JsonResponse
     {
         $user = $this->authService->updateProfile($req->user(), $req->validated());
+
         return response()->json(['user' => new UserResource($user)]);
     }
 
@@ -92,6 +90,7 @@ class AuthController extends Controller
             $req->current_password,
             $req->new_password
         );
+
         return response()->json(['message' => 'Password telah diubah. Silakan login ulang.']);
     }
 }

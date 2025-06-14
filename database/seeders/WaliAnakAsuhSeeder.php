@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class WaliAnakAsuhSeeder extends Seeder
 {
@@ -33,7 +30,7 @@ class WaliAnakAsuhSeeder extends Seeder
         foreach ($waliAsuhList as $index => $santriId) {
             $grupWaliAsuhData[] = [
                 'id_wilayah' => $wilayahList[array_rand($wilayahList)],
-                'nama_grup' => 'Grup Wali ' . ($index + 1),
+                'nama_grup' => 'Grup Wali '.($index + 1),
                 'jenis_kelamin' => ['l', 'p'][array_rand(['l', 'p'])],
                 'created_by' => 1,
                 'status' => true,
@@ -106,7 +103,7 @@ class WaliAnakAsuhSeeder extends Seeder
 
             $tanggalBerakhir = rand(1, 100) > 80 ? now()->subMonths(rand(1, 12)) : null;
 
-            if (!$tanggalBerakhir) {
+            if (! $tanggalBerakhir) {
                 $santriWaliAktif[] = $santriId;
             }
 
@@ -160,7 +157,7 @@ class WaliAnakAsuhSeeder extends Seeder
 
             $tanggalBerakhir = rand(1, 100) > 80 ? now()->subMonths(rand(1, 12)) : null;
 
-            if (!$tanggalBerakhir) {
+            if (! $tanggalBerakhir) {
                 $relasiAktif[] = $anakAsuhId;
             }
 

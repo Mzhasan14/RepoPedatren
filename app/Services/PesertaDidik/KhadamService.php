@@ -4,13 +4,13 @@ namespace App\Services\PesertaDidik;
 
 use App\Models\Khadam;
 use App\Models\Santri;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class KhadamService
@@ -36,13 +36,13 @@ class KhadamService
 
         $query = DB::table('khadam as kh')
             ->join('biodata as b', 'kh.biodata_id', '=', 'b.id')
-            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->where('kh.status', true)
-            ->where(fn($q) => $q->whereNull('b.deleted_at')
+            ->where(fn ($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('kh.deleted_at'));
 
@@ -59,12 +59,12 @@ class KhadamService
             'b.id as biodata_id',
             'kh.id',
             'wp.niup',
-            DB::raw("COALESCE(b.nik, b.no_passport) as identitas"),
+            DB::raw('COALESCE(b.nik, b.no_passport) as identitas'),
             'b.nama',
             'kh.keterangan',
             'kh.created_at',
             'kh.updated_at',
-            DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil")
+            DB::raw("COALESCE(br.file_path, 'default.jpg') as foto_profil"),
         ];
 
         return $query->select($fields);
@@ -72,16 +72,16 @@ class KhadamService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id_khadam" => $item->id,
-            "niup" => $item->niup ?? '-',
-            "nik" => $item->identitas ?? '-',
-            "nama" => $item->nama,
-            "keterangan" => $item->keterangan,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id_khadam' => $item->id,
+            'niup' => $item->niup ?? '-',
+            'nik' => $item->identitas ?? '-',
+            'nama' => $item->nama,
+            'keterangan' => $item->keterangan,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
@@ -89,7 +89,7 @@ class KhadamService
     {
         return DB::transaction(function () use ($data) {
             $userId = Auth::id();
-            $now    = now();
+            $now = now();
 
             // Biodata
             $nik = $data['nik'] ?? null;
@@ -112,28 +112,28 @@ class KhadamService
 
             // Data biodata
             $biodataData = [
-                'nama'                         => $data['nama'],
-                'negara_id'                    => $data['negara_id'],
-                'provinsi_id'                  => $data['provinsi_id'] ?? null,
-                'kabupaten_id'                 => $data['kabupaten_id'] ?? null,
-                'kecamatan_id'                 => $data['kecamatan_id'] ?? null,
-                'jalan'                        => $data['jalan'] ?? null,
-                'kode_pos'                     => $data['kode_pos'] ?? null,
-                'no_passport'                  => $data['no_passport'] ?? null,
-                'jenis_kelamin'                => $data['jenis_kelamin'],
-                'tanggal_lahir'                => $data['tanggal_lahir'],
-                'tempat_lahir'                 => $data['tempat_lahir'],
-                'nik'                          => $nik,
-                'no_telepon'                   => $data['no_telepon'],
-                'no_telepon_2'                 => $data['no_telepon_2'] ?? null,
-                'email'                        => $data['email'],
-                'jenjang_pendidikan_terakhir'  => $data['jenjang_pendidikan_terakhir'] ?? null,
-                'nama_pendidikan_terakhir'     => $data['nama_pendidikan_terakhir'] ?? null,
-                'anak_keberapa'                => $data['anak_keberapa'] ?? null,
-                'dari_saudara'                 => $data['dari_saudara'] ?? null,
-                'tinggal_bersama'              => $data['tinggal_bersama'] ?? null,
-                'updated_by'                   => $userId,
-                'updated_at'                   => $now,
+                'nama' => $data['nama'],
+                'negara_id' => $data['negara_id'],
+                'provinsi_id' => $data['provinsi_id'] ?? null,
+                'kabupaten_id' => $data['kabupaten_id'] ?? null,
+                'kecamatan_id' => $data['kecamatan_id'] ?? null,
+                'jalan' => $data['jalan'] ?? null,
+                'kode_pos' => $data['kode_pos'] ?? null,
+                'no_passport' => $data['no_passport'] ?? null,
+                'jenis_kelamin' => $data['jenis_kelamin'],
+                'tanggal_lahir' => $data['tanggal_lahir'],
+                'tempat_lahir' => $data['tempat_lahir'],
+                'nik' => $nik,
+                'no_telepon' => $data['no_telepon'],
+                'no_telepon_2' => $data['no_telepon_2'] ?? null,
+                'email' => $data['email'],
+                'jenjang_pendidikan_terakhir' => $data['jenjang_pendidikan_terakhir'] ?? null,
+                'nama_pendidikan_terakhir' => $data['nama_pendidikan_terakhir'] ?? null,
+                'anak_keberapa' => $data['anak_keberapa'] ?? null,
+                'dari_saudara' => $data['dari_saudara'] ?? null,
+                'tinggal_bersama' => $data['tinggal_bersama'] ?? null,
+                'updated_by' => $userId,
+                'updated_at' => $now,
             ];
 
             if ($existingBiodata) {
@@ -141,7 +141,7 @@ class KhadamService
                 $biodataId = $existingBiodata->id;
             } else {
                 do {
-                    $smartcard = 'SC-' . strtoupper(Str::random(10));
+                    $smartcard = 'SC-'.strtoupper(Str::random(10));
                 } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
                 do {
@@ -149,9 +149,9 @@ class KhadamService
                 } while (DB::table('biodata')->where('id', $biodataId)->exists());
 
                 DB::table('biodata')->insert(array_merge($biodataData, [
-                    'id'         => $biodataId,
-                    'smartcard'  => $smartcard,
-                    'status'     => true,
+                    'id' => $biodataId,
+                    'smartcard' => $smartcard,
+                    'status' => true,
                     'created_by' => $userId,
                     'created_at' => $now,
                 ]));
@@ -159,31 +159,31 @@ class KhadamService
 
             // Insert ke tabel khadam
             $khadamId = DB::table('khadam')->insertGetId([
-                'biodata_id'    => $biodataId,
-                'keterangan'    => $data['keterangan'],
+                'biodata_id' => $biodataId,
+                'keterangan' => $data['keterangan'],
                 'tanggal_mulai' => $data['tanggal_mulai'],
-                'status'        => true,
-                'created_by'    => $userId,
-                'created_at'    => $now,
-                'updated_at'    => $now,
+                'status' => true,
+                'created_by' => $userId,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
 
             // Upload Berkas (jika ada)
-            if (!empty($data['berkas']) && is_array($data['berkas'])) {
+            if (! empty($data['berkas']) && is_array($data['berkas'])) {
                 foreach ($data['berkas'] as $item) {
-                    if (!($item['file_path'] instanceof UploadedFile)) {
+                    if (! ($item['file_path'] instanceof UploadedFile)) {
                         throw new \Exception('Berkas tidak valid');
                     }
 
                     $url = Storage::url($item['file_path']->store('Khadam', 'public'));
                     DB::table('berkas')->insert([
-                        'biodata_id'      => $biodataId,
+                        'biodata_id' => $biodataId,
                         'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
-                        'file_path'       => $url,
-                        'status'          => true,
-                        'created_by'      => $userId,
-                        'created_at'      => $now,
-                        'updated_at'      => $now,
+                        'file_path' => $url,
+                        'status' => true,
+                        'created_by' => $userId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ]);
                 }
             }
@@ -192,18 +192,18 @@ class KhadamService
                 ->causedBy(Auth::user())
                 ->performedOn(Khadam::find($khadamId))
                 ->withProperties([
-                    'khadam_id'     => $khadamId,
-                    'biodata_id'    => $biodataId,
-                    'berkas'        => collect($data['berkas'] ?? [])->pluck('jenis_berkas_id'),
-                    'ip'            => request()->ip(),
-                    'user_agent'    => request()->userAgent(),
+                    'khadam_id' => $khadamId,
+                    'biodata_id' => $biodataId,
+                    'berkas' => collect($data['berkas'] ?? [])->pluck('jenis_berkas_id'),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
                 ])
                 ->event('create_khadam')
                 ->log('Pendaftaran khadam baru berhasil disimpan.');
 
             return [
-                'khadam_id'     => $khadamId,
-                'biodata_id'    => $biodataId,
+                'khadam_id' => $khadamId,
+                'biodata_id' => $biodataId,
             ];
         });
     }
@@ -224,8 +224,8 @@ class KhadamService
             $query->leftJoin('negara as ng2', 'b.negara_id', '=', 'ng2.id');
         }
         if (in_array('domisili_santri', $fields)) {
-            // Tambahkan join domisili_santri, wilayah, blok, kamar, 
-            $query->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
+            // Tambahkan join domisili_santri, wilayah, blok, kamar,
+            $query->leftJoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
             $query->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id');
             $query->leftJoin('blok as bl2', 'ds.blok_id', '=', 'bl2.id');
             $query->leftJoin('kamar as km2', 'ds.kamar_id', '=', 'km2.id');
@@ -235,7 +235,7 @@ class KhadamService
             in_array('jurusan', $fields) || in_array('kelas', $fields) || in_array('rombel', $fields)
         ) {
             // JOIN pendidikan dan relasi pendukungnya
-            $query->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'));
+            $query->leftJoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'));
         }
         if (in_array('lembaga', $fields)) {
             $query->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id');
@@ -375,21 +375,25 @@ class KhadamService
                         break;
                     case 'jenis_kelamin':
                         $jk = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        if (strtolower($jk) === 'l') $data['Jenis Kelamin'] = 'Laki-laki';
-                        elseif (strtolower($jk) === 'p') $data['Jenis Kelamin'] = 'Perempuan';
-                        else $data['Jenis Kelamin'] = '';
+                        if (strtolower($jk) === 'l') {
+                            $data['Jenis Kelamin'] = 'Laki-laki';
+                        } elseif (strtolower($jk) === 'p') {
+                            $data['Jenis Kelamin'] = 'Perempuan';
+                        } else {
+                            $data['Jenis Kelamin'] = '';
+                        }
                         break;
                     case 'keterangan':
-                        $data['Keterangan'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['Keterangan'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'tanggal_mulai':
-                        $data['Tanggal Mulai'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['Tanggal Mulai'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nis':
-                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -404,13 +408,13 @@ class KhadamService
                         $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -419,16 +423,16 @@ class KhadamService
                         $data['Jumlah Saudara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'alamat':
-                        $data['Jalan']     = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Jalan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kecamatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         $data['Kabupaten'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Provinsi']  = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Negara']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Provinsi'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Negara'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'domisili_santri':
                         $data['Wilayah Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Blok Domisili']    = $itemArr[array_keys($itemArr)[$i++]] ?? '';
-                        $data['Kamar Domisili']   = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Blok Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
+                        $data['Kamar Domisili'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan_santri':
                         $data['Angkatan Santri'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -443,6 +447,7 @@ class KhadamService
                         $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
+
             return $data;
         })->values();
     }
@@ -467,7 +472,7 @@ class KhadamService
             'niup' => 'NIUP',
             'anak_ke' => 'Anak ke',
             'jumlah_saudara' => 'Jumlah Saudara',
-            'alamat'   => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'alamat' => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
             'domisili_santri' => ['Wilayah Domisili', 'Blok Domisili', 'Kamar Domisili'],
             'angkatan_santri' => 'Angkatan Santri',
             'angkatan_pelajar' => 'Angkatan Pelajar',
@@ -477,7 +482,9 @@ class KhadamService
         foreach ($fields as $field) {
             if (isset($map[$field])) {
                 if (is_array($map[$field])) {
-                    foreach ($map[$field] as $h) $headings[] = $h;
+                    foreach ($map[$field] as $h) {
+                        $headings[] = $h;
+                    }
                 } else {
                     $headings[] = $map[$field];
                 }
@@ -488,6 +495,7 @@ class KhadamService
         if ($addNumber) {
             array_unshift($headings, 'No');
         }
+
         return $headings;
     }
 }

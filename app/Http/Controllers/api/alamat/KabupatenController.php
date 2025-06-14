@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\api\alamat;
 
-use Illuminate\Http\Request;
-use App\Models\Alamat\Kabupaten;
-use App\Http\Resources\PdResource;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PdResource;
+use App\Models\Alamat\Kabupaten;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class KabupatenController extends Controller
@@ -16,6 +16,7 @@ class KabupatenController extends Controller
     public function index()
     {
         $kabupaten = Kabupaten::Active()->get();
+
         return new PdResource(true, 'Data berhasil ditampilkan', $kabupaten);
     }
 
@@ -28,16 +29,17 @@ class KabupatenController extends Controller
             'id_provinsi' => 'required|integer|exists:provinsi,id',
             'nama_kabupaten' => 'required|string|max:255',
             'created_by' => 'required|integer',
-            'status' => 'required|boolean'
+            'status' => 'required|boolean',
         ]);
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'data gagal dibuat',
-                'data' => $validator->errors()
+                'data' => $validator->errors(),
             ]);
         }
         $kabupaten = Kabupaten::create($validator->validated());
+
         return new PdResource(true, 'data berhasil dibuat', $kabupaten);
     }
 
@@ -47,6 +49,7 @@ class KabupatenController extends Controller
     public function show(string $id)
     {
         $kabupaten = Kabupaten::findOrFail($id);
+
         return new PdResource(true, 'Data berhasil di tampilkan', $kabupaten);
     }
 
@@ -60,16 +63,17 @@ class KabupatenController extends Controller
             'id_provinsi' => 'required|integer|exists:provinsi,id',
             'nama_kabupaten' => 'required|string|max:255',
             'updated_by' => 'nullable|integer',
-            'status' => 'required|boolean'
+            'status' => 'required|boolean',
         ]);
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'data gagal dibuat',
-                'data' => $validator->errors()
+                'data' => $validator->errors(),
             ]);
         }
         $kabupaten->update($validator->validated());
+
         return new PdResource(true, 'Data berhasil diupdate', $kabupaten);
     }
 
@@ -80,6 +84,7 @@ class KabupatenController extends Controller
     {
         $kabupaten = Kabupaten::findOrFail($id);
         $kabupaten->delete();
+
         return new PdResource(true, 'Data berhasil dihapus', $kabupaten);
     }
 }

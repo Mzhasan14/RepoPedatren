@@ -3,16 +3,11 @@
 namespace Database\Factories\Pegawai;
 
 use App\Models\Pegawai\Pegawai;
-use Illuminate\Support\Str;
 use App\Models\Pegawai\WaliKelas;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Lembaga;
 use App\Models\Pendidikan\Rombel;
-use Database\Factories\Pendidikan\JurusanFactory;
-use Database\Factories\Pendidikan\KelasFactory;
-use Database\Factories\Pendidikan\LembagaFactory;
-use Database\Factories\Pendidikan\RombelFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class WaliKelasFactory extends Factory
 {
     protected $model = WaliKelas::class;
+
     /**
      * Define the model's default state.
      *
@@ -32,20 +28,21 @@ class WaliKelasFactory extends Factory
         $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
             ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
             : null; // NULL jika masih menjabat
+
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'lembaga_id'  => function () {
+            'lembaga_id' => function () {
                 return Lembaga::inRandomOrder()->first()->id;
             },
-            'jurusan_id'  => function () {
+            'jurusan_id' => function () {
                 return Jurusan::inRandomOrder()->first()->id;
             },
-            'kelas_id'  => function () {
+            'kelas_id' => function () {
                 return Kelas::inRandomOrder()->first()->id;
             },
-            'rombel_id'  => function () {
+            'rombel_id' => function () {
                 return Rombel::inRandomOrder()->first()->id;
             },
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
@@ -54,7 +51,7 @@ class WaliKelasFactory extends Factory
             'created_by' => 1,
             'updated_by' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
-            
+
         ];
     }
 }

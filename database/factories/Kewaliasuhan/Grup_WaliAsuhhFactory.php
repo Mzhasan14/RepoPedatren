@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class Grup_WaliAsuhhFactory extends Factory
 {
     protected $model = Grup_WaliAsuh::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,7 +21,7 @@ class Grup_WaliAsuhhFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_wilayah'=> (new WilayahFactory())->create()->id,
+            'id_wilayah' => (new WilayahFactory)->create()->id,
             'nama_grup' => $this->faker->word,
             'created_by' => 1,
             'updated_by' => null,

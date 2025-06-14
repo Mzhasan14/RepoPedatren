@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Administrasi;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PerizinanRequest extends FormRequest
@@ -24,17 +24,17 @@ class PerizinanRequest extends FormRequest
     public function rules()
     {
         return [
-            'pengasuh_id'     => 'nullable|integer|exists:users,id',
-            'biktren_id'      => 'nullable|integer|exists:users,id',
-            'kamtib_id'       => 'nullable|integer|exists:users,id',
-            'alasan_izin'     => 'required|string',
-            'alamat_tujuan'   => 'required|string',
-            'tanggal_mulai'   => 'required|date',
-            'tanggal_akhir'   => 'required|date|after_or_equal:tanggal_mulai',
+            'pengasuh_id' => 'nullable|integer|exists:users,id',
+            'biktren_id' => 'nullable|integer|exists:users,id',
+            'kamtib_id' => 'nullable|integer|exists:users,id',
+            'alasan_izin' => 'required|string',
+            'alamat_tujuan' => 'required|string',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_akhir' => 'required|date|after_or_equal:tanggal_mulai',
             'tanggal_kembali' => 'nullable|date',
-            'jenis_izin'      => 'required|in:Personal,Rombongan',
-            'status'          => 'required|in:sedang proses izin,perizinan diterima,sudah berada diluar pondok,perizinan ditolak,dibatalkan,telat(sudah kembali),telat(belum kembali),kembali tepat waktu',
-            'keterangan'      => 'nullable|string',
+            'jenis_izin' => 'required|in:Personal,Rombongan',
+            'status' => 'required|in:sedang proses izin,perizinan diterima,sudah berada diluar pondok,perizinan ditolak,dibatalkan,telat(sudah kembali),telat(belum kembali),kembali tepat waktu',
+            'keterangan' => 'nullable|string',
         ];
     }
 
@@ -44,7 +44,7 @@ class PerizinanRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

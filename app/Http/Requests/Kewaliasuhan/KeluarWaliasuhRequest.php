@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Kewaliasuhan;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class KeluarWaliasuhRequest extends FormRequest
@@ -24,7 +24,7 @@ class KeluarWaliasuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal_berakhir'  => 'nullable|date|after_or_equal:tanggal_mulai',
+            'tanggal_berakhir' => 'nullable|date|after_or_equal:tanggal_mulai',
         ];
     }
 
@@ -34,7 +34,7 @@ class KeluarWaliasuhRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

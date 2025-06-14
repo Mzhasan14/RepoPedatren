@@ -106,10 +106,10 @@ class FilterAnakPegawaiService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $phrase = '"'.trim($request->nama).'"';
 
         return $query->whereRaw(
-            "MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)",
+            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
             [$phrase]
         );
     }
@@ -123,7 +123,7 @@ class FilterAnakPegawaiService
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
 
-            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
+            return $query->where(fn ($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -175,14 +175,14 @@ class FilterAnakPegawaiService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->where(fn($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
+                    ->where(fn ($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
                 break;
             case 'pelajar':
                 $query->where('pd.status', 'aktif');
                 break;
             case 'pelajar non santri':
                 $query->where('pd.status', 'aktif')
-                    ->where(fn($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
+                    ->where(fn ($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
@@ -220,8 +220,8 @@ class FilterAnakPegawaiService
             return $query;
         }
 
-
         $query->where('s.angkatan_id', $request->angkatan_santri);
+
         return $query;
     }
 
@@ -232,6 +232,7 @@ class FilterAnakPegawaiService
         }
 
         $query->where('pd.angkatan_id', $request->angkatan_pelajar);
+
         return $query;
     }
 
@@ -246,7 +247,7 @@ class FilterAnakPegawaiService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }
@@ -298,8 +299,8 @@ class FilterAnakPegawaiService
         }
 
         $allowed = ['id', 'nama', 'niup', 'jenis_kelamin'];
-        $by      = strtolower($request->sort_by);
-        $order   = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';
+        $by = strtolower($request->sort_by);
+        $order = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';
 
         if (in_array($by, $allowed, true)) {
             $query->orderBy($by, $order);

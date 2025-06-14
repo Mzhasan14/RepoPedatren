@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
-use Exception;
-use Illuminate\Http\Request;
-use App\Models\JenisPresensi;
-use App\Models\PresensiSantri;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\PesertaDidik\PresensiSantriRequest;
 use App\Models\Biometric\BiometricLog;
 use App\Models\Biometric\BiometricProfile;
-use App\Http\Requests\PesertaDidik\PresensiSantriRequest;
+use App\Models\JenisPresensi;
+use App\Models\PresensiSantri;
 use App\Services\PesertaDidik\Fitur\PresensiSantriService;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PresensiSantriController extends Controller
 {
@@ -29,12 +29,13 @@ class PresensiSantriController extends Controller
             $query = $this->service->getAllPresensiSantri($request);
             $query = $query->latest('ps.id');
 
-            $perPage     = (int) $request->input('limit', 25);
+            $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
 
-            $results     = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
         } catch (Exception $e) {
             Log::error('Error Presensi getAllPresensiSantri', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -43,22 +44,23 @@ class PresensiSantriController extends Controller
 
         if ($results->isEmpty()) {
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Data kosong',
-                'data'    => [],
+                'data' => [],
             ], 200);
         }
 
         $formatted = $this->service->formatData($results);
 
         return response()->json([
-            'total_data'   => $results->total(),
+            'total_data' => $results->total(),
             'current_page' => $results->currentPage(),
-            'per_page'     => $results->perPage(),
-            'total_pages'  => $results->lastPage(),
-            'data'         => $formatted,
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
         ]);
     }
+
     public function store(PresensiSantriRequest $request)
     {
         try {
@@ -67,16 +69,18 @@ class PresensiSantriController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Presensi berhasil dicatat.',
-                'data'    => $presensi
+                'data' => $presensi,
             ], 201);
         } catch (Exception $e) {
             Log::error('Error Presensi Santri STORE', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
         }
     }
+
     public function update(PresensiSantriRequest $request, PresensiSantri $presensi)
     {
         try {
@@ -85,10 +89,11 @@ class PresensiSantriController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Presensi berhasil diupdate.',
-                'data'    => $presensi
+                'data' => $presensi,
             ], 200);
         } catch (Exception $e) {
             Log::error('Error Presensi Santri UPDATE', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -107,6 +112,7 @@ class PresensiSantriController extends Controller
             ], 200);
         } catch (Exception $e) {
             Log::error('Error Presensi Santri DESTROY', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -123,21 +129,21 @@ class PresensiSantriController extends Controller
         $metode = $request->input('metode');
         $waktu = $request->input('waktu', now());
         $lokasi = $request->input('lokasi');
-        $jenis_presensi_kode = $request->input('jenis_presensi_kode'); 
+        $jenis_presensi_kode = $request->input('jenis_presensi_kode');
 
         // Cek dan ambil jenis presensi
         $jenisPresensi = JenisPresensi::where('kode', $jenis_presensi_kode)->first();
-        if (!$jenisPresensi) {
+        if (! $jenisPresensi) {
             return response()->json(['message' => 'Jenis presensi tidak ditemukan'], 404);
         }
 
         // Temukan profile santri
         $profile = BiometricProfile::where('card_uid', $card_uid)
             ->orWhereHas('fingerprints', function ($q) use ($finger_id) {
-                $q->where('template', $finger_id); 
+                $q->where('template', $finger_id);
             })->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json(['message' => 'Santri tidak ditemukan'], 404);
         }
 

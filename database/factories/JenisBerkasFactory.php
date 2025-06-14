@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\JenisBerkas;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class JenisBerkasFactory extends Factory
 {
-   /**
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
      */
     protected $model = JenisBerkas::class;
-    
+
     public function definition(): array
     {
         return [

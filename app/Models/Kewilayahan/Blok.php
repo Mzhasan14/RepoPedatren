@@ -9,12 +9,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Blok extends Model
 {
     use HasFactory;
-
     use SoftDeletes;
+
     protected $table = 'blok';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $incrementing = true;
+
     protected $guarded = ['id'];
     // public function scopeActive($query)
     // {

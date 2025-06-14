@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\api\Biometric;
 
+use App\Http\Controllers\Controller;
+use App\Models\Biometric\BiometricProfile;
+use App\Models\BiometricFingerprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use App\Models\BiometricFingerprint;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Biometric\BiometricProfile;
 
 class BiometricProfileController extends Controller
 {
@@ -20,7 +20,7 @@ class BiometricProfileController extends Controller
             'fingerprints' => 'required|array|min:1',
             'fingerprints.*.finger_position' => 'required|string|in:right_thumb,right_index,right_middle,right_ring,right_little,left_thumb,left_index,left_middle,left_ring,left_little',
             'fingerprints.*.template' => 'required|string',
-            'fingerprints.*.scan_order' => 'nullable|integer|min:1'
+            'fingerprints.*.scan_order' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -37,15 +37,17 @@ class BiometricProfileController extends Controller
             foreach ($request->fingerprints as $fp) {
                 BiometricFingerprint::create([
                     'biometric_profile_id' => $profile->id,
-                    'finger_position'      => $fp['finger_position'],
-                    'template'             => $fp['template'],
-                    'scan_order'           => $fp['scan_order'] ?? 1,
+                    'finger_position' => $fp['finger_position'],
+                    'template' => $fp['template'],
+                    'scan_order' => $fp['scan_order'] ?? 1,
                 ]);
             }
             DB::commit();
+
             return response()->json(['message' => 'Profil biometric berhasil dibuat', 'data' => $profile->load('fingerprints')], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => 'Terjadi error', 'error' => $e->getMessage()], 500);
         }
     }
@@ -56,12 +58,12 @@ class BiometricProfileController extends Controller
         $profile = BiometricProfile::with('fingerprints')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'card_uid' => 'nullable|string|unique:biometric_profiles,card_uid,' . $profile->id,
+            'card_uid' => 'nullable|string|unique:biometric_profiles,card_uid,'.$profile->id,
             'fingerprints' => 'nullable|array',
             'fingerprints.*.id' => 'nullable|exists:biometric_fingerprints,id',
             'fingerprints.*.finger_position' => 'required_with:fingerprints|string|in:right_thumb,right_index,right_middle,right_ring,right_little,left_thumb,left_index,left_middle,left_ring,left_little',
             'fingerprints.*.template' => 'required_with:fingerprints|string',
-            'fingerprints.*.scan_order' => 'nullable|integer|min:1'
+            'fingerprints.*.scan_order' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -99,9 +101,11 @@ class BiometricProfileController extends Controller
             }
 
             DB::commit();
+
             return response()->json(['message' => 'Profil biometric berhasil diupdate', 'data' => $profile->fresh('fingerprints')]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => 'Terjadi error', 'error' => $e->getMessage()], 500);
         }
     }
@@ -116,9 +120,11 @@ class BiometricProfileController extends Controller
             $profile->delete();
 
             DB::commit();
+
             return response()->json(['message' => 'Profil biometric berhasil dihapus']);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['message' => 'Terjadi error', 'error' => $e->getMessage()], 500);
         }
     }

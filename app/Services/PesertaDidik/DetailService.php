@@ -52,26 +52,26 @@ class DetailService
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                "COALESCE(br.file_path,'default.jpg') as foto"
+                "COALESCE(br.file_path,'default.jpg') as foto",
             ]))
             ->first();
 
         if ($biodata) {
             $data['Biodata'] = [
-                'id'                   => $biodata->id,
-                'nokk'                 => $noKk ?? '-',
-                'nik_nopassport'       => $biodata->identitas,
-                'niup'                 => $biodata->niup ?? '-',
-                'nama'                 => $biodata->nama,
-                'jenis_kelamin'        => $biodata->jenis_kelamin,
+                'id' => $biodata->id,
+                'nokk' => $noKk ?? '-',
+                'nik_nopassport' => $biodata->identitas,
+                'niup' => $biodata->niup ?? '-',
+                'nama' => $biodata->nama,
+                'jenis_kelamin' => $biodata->jenis_kelamin,
                 'tempat_tanggal_lahir' => $biodata->ttl,
-                'anak_ke'              => $biodata->anak_ke,
-                'umur'                 => $biodata->umur,
-                'kecamatan'            => $biodata->nama_kecamatan ?? '-',
-                'kabupaten'            => $biodata->nama_kabupaten ?? '-',
-                'provinsi'             => $biodata->nama_provinsi ?? '-',
-                'warganegara'          => $biodata->nama_negara ?? '-',
-                'foto_profil'          => URL::to($biodata->foto),
+                'anak_ke' => $biodata->anak_ke,
+                'umur' => $biodata->umur,
+                'kecamatan' => $biodata->nama_kecamatan ?? '-',
+                'kabupaten' => $biodata->nama_kabupaten ?? '-',
+                'provinsi' => $biodata->nama_provinsi ?? '-',
+                'warganegara' => $biodata->nama_negara ?? '-',
+                'foto_profil' => URL::to($biodata->foto),
             ];
         }
 
@@ -85,7 +85,7 @@ class DetailService
                 ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
                 ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
                 ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-                ->select(['bo.nama', 'bo.nik', DB::raw("hk.nama_status as status"), 'ow.wali'])
+                ->select(['bo.nama', 'bo.nik', DB::raw('hk.nama_status as status'), 'ow.wali'])
                 ->get();
 
             $excluded = DB::table('orang_tua_wali')->pluck('id_biodata')->toArray();
@@ -99,16 +99,16 @@ class DetailService
                     'bs.nama',
                     'bs.nik',
                     DB::raw("'Saudara Kandung' as status"),
-                    DB::raw("NULL as wali")
+                    DB::raw('NULL as wali'),
                 ])
                 ->get();
         }
         $keluarga = $ortu->merge($saudara);
-        $data['Keluarga'] = $keluarga->map(fn($i) => [
-            'nama'   => $i->nama,
-            'nik'    => $i->nik,
+        $data['Keluarga'] = $keluarga->map(fn ($i) => [
+            'nama' => $i->nama,
+            'nik' => $i->nik,
             'status' => $i->status,
-            'wali'   => $i->wali,
+            'wali' => $i->wali,
         ])->toArray();
 
         // --- Ambil ID Santri (jika ada) ---
@@ -123,8 +123,8 @@ class DetailService
                 ->get();
         }
 
-        $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
-            'NIS'           => $s->nis,
+        $data['Status_Santri']['Santri'] = $santriInfo->map(fn ($s) => [
+            'NIS' => $s->nis,
             'Tanggal_Mulai' => $s->tanggal_masuk,
             'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
         ])->toArray();
@@ -160,10 +160,9 @@ class DetailService
         }
 
         $data['Status_Santri']['Kewaliasuhan'] = $kew ? [[
-            'group'   => '-',
+            'group' => '-',
             'sebagai' => $kew->role,
-            $kew->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' =>
-            $kew->role === 'Anak Asuh' ? ($kew->nama_wali ?? '-') : ($kew->nama_anak ?? '-'),
+            $kew->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' => $kew->role === 'Anak Asuh' ? ($kew->nama_wali ?? '-') : ($kew->nama_anak ?? '-'),
             'tanggal_mulai' => $kew->tanggal_mulai,
             'tanggal_berakhir' => $kew->tanggal_berakhir ?? '-',
             'status' => $kew->status ? 'Aktif' : 'Tidak Aktif',
@@ -181,23 +180,22 @@ class DetailService
                             THEN CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/86400),' Hari | Bermalam')
                             ELSE CONCAT(FLOOR(TIMESTAMPDIFF(SECOND,tanggal_mulai,tanggal_akhir)/3600),' Jam')
                      END as lama_waktu"),
-                'pr.status'
+                'pr.status',
             ])
             ->get();
 
         $data['Status_Santri']['Info_Perizinan'] = $izin->isNotEmpty()
-            ? $izin->map(fn($z) => [
-                'tanggal'        => $z->tanggal,
-                'keterangan'     => $z->keterangan,
-                'lama_waktu'     => $z->lama_waktu,
+            ? $izin->map(fn ($z) => [
+                'tanggal' => $z->tanggal,
+                'keterangan' => $z->keterangan,
+                'lama_waktu' => $z->lama_waktu,
                 'status' => $z->status,
             ])
             : [];
 
-
         // Gabungkan domisili aktif dan riwayat
         $domisiliAktif = DB::table('domisili_santri as ds')
-            ->join('santri AS s', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
+            ->join('santri AS s', fn ($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
@@ -210,7 +208,7 @@ class DetailService
                 'w.nama_wilayah',
                 'ds.tanggal_masuk',
                 'ds.tanggal_keluar',
-                'ds.status'
+                'ds.status',
             ]);
 
         $domisiliRiwayat = DB::table('riwayat_domisili as rd')
@@ -227,25 +225,24 @@ class DetailService
                 'w.nama_wilayah',
                 'rd.tanggal_masuk',
                 'rd.tanggal_keluar',
-                'rd.status'
+                'rd.status',
             ]);
 
         $domisiliGabungan = $domisiliAktif->unionAll($domisiliRiwayat)->get();
 
         // Map dan urutkan berdasarkan tanggal masuk desc
         $data['Domisili'] = collect($domisiliGabungan)
-            ->map(fn($d) => [
-                'id'              => $d->id,
-                'wilayah'         => $d->nama_wilayah,
-                'blok'            => $d->nama_blok,
-                'kamar'           => $d->nama_kamar,
-                'tanggal_ditempati'   => $d->tanggal_masuk,
-                'tanggal_pindah'  => $d->tanggal_keluar ?? '-',
-                'status'          => $d->status,
+            ->map(fn ($d) => [
+                'id' => $d->id,
+                'wilayah' => $d->nama_wilayah,
+                'blok' => $d->nama_blok,
+                'kamar' => $d->nama_kamar,
+                'tanggal_ditempati' => $d->tanggal_masuk,
+                'tanggal_pindah' => $d->tanggal_keluar ?? '-',
+                'status' => $d->status,
             ])
             ->sortByDesc('tanggal_masuk')
             ->values();
-
 
         // Gabungkan pendidikan aktif dan riwayat
         $pendidikanAktif = DB::table('pendidikan as pd')
@@ -264,7 +261,7 @@ class DetailService
                 'r.nama_rombel',
                 'pd.tanggal_masuk',
                 'pd.tanggal_keluar',
-                'pd.status'
+                'pd.status',
             ]);
 
         $riwayatPendidikan = DB::table('riwayat_pendidikan as rp')
@@ -282,23 +279,23 @@ class DetailService
                 'r.nama_rombel',
                 'rp.tanggal_masuk',
                 'rp.tanggal_keluar',
-                'rp.status'
+                'rp.status',
             ]);
 
         $pendidikanGabungan = $pendidikanAktif->unionAll($riwayatPendidikan)->get();
 
         // Map dan urutkan berdasarkan tanggal masuk desc
         $data['Pendidikan'] = collect($pendidikanGabungan)
-            ->map(fn($p) => [
-                'id'             => $p->id,
-                'no_induk'       => $p->no_induk,
-                'nama_lembaga'   => $p->nama_lembaga,
-                'nama_jurusan'   => $p->nama_jurusan ?? '-',
-                'nama_kelas'     => $p->nama_kelas ?? '-',
-                'nama_rombel'    => $p->nama_rombel ?? '-',
-                'tahun_masuk'  => $p->tanggal_masuk,
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'no_induk' => $p->no_induk,
+                'nama_lembaga' => $p->nama_lembaga,
+                'nama_jurusan' => $p->nama_jurusan ?? '-',
+                'nama_kelas' => $p->nama_kelas ?? '-',
+                'nama_rombel' => $p->nama_rombel ?? '-',
+                'tahun_masuk' => $p->tanggal_masuk,
                 'tahun_lulus' => $p->tanggal_keluar ?? '-',
-                'status'         => $p->status,
+                'status' => $p->status,
             ])
             ->sortByDesc('tanggal_masuk')
             ->values();
@@ -313,12 +310,12 @@ class DetailService
 
         $data['Catatan_Progress']['Afektif'] = $af
             ? [
-                'kebersihan'               => $af->kebersihan_nilai ?? '-',
+                'kebersihan' => $af->kebersihan_nilai ?? '-',
                 'tindak_lanjut_kebersihan' => $af->kebersihan_tindak_lanjut ?? '-',
-                'kepedulian'               => $af->kepedulian_nilai ?? '-',
+                'kepedulian' => $af->kepedulian_nilai ?? '-',
                 'tindak_lanjut_kepedulian' => $af->kepedulian_tindak_lanjut ?? '-',
-                'akhlak'                   => $af->akhlak_nilai ?? '-',
-                'tindak_lanjut_akhlak'     => $af->akhlak_tindak_lanjut ?? '-',
+                'akhlak' => $af->akhlak_nilai ?? '-',
+                'tindak_lanjut_akhlak' => $af->akhlak_tindak_lanjut ?? '-',
             ]
             : [];
 
@@ -332,18 +329,18 @@ class DetailService
 
         $data['Catatan_Progress']['Kognitif'] = $kg
             ? [
-                'kebahasaan'                      => $kg->kebahasaan_nilai ?? '-',
-                'tindak_lanjut_kebahasaan'        => $kg->kebahasaan_tindak_lanjut ?? '-',
-                'baca_kitab_kuning'               => $kg->baca_kitab_kuning_nilai ?? '-',
+                'kebahasaan' => $kg->kebahasaan_nilai ?? '-',
+                'tindak_lanjut_kebahasaan' => $kg->kebahasaan_tindak_lanjut ?? '-',
+                'baca_kitab_kuning' => $kg->baca_kitab_kuning_nilai ?? '-',
                 'tindak_lanjut_baca_kitab_kuning' => $kg->baca_kitab_kuning_tindak_lanjut ?? '-',
-                'hafalan_tahfidz'                 => $kg->hafalan_tahfidz_nilai ?? '-',
-                'tindak_lanjut_hafalan_tahfidz'   => $kg->hafalan_tahfidz_tindak_lanjut ?? '-',
-                'furudul_ainiyah'                 => $kg->furudul_ainiyah_nilai ?? '-',
-                'tindak_lanjut_furudul_ainiyah'   => $kg->furudul_ainiyah_tindak_lanjut ?? '-',
-                'tulis_alquran'                   => $kg->tulis_alquran_nilai ?? '-',
-                'tindak_lanjut_tulis_alquran'     => $kg->tindak_lanjut_tulis_alquran ?? '-',
-                'baca_alquran'                    => $kg->baca_alquran_nilai ?? '-',
-                'tindak_lanjut_baca_alquran'      => $kg->baca_alquran_tindak_lanjut ?? '-',
+                'hafalan_tahfidz' => $kg->hafalan_tahfidz_nilai ?? '-',
+                'tindak_lanjut_hafalan_tahfidz' => $kg->hafalan_tahfidz_tindak_lanjut ?? '-',
+                'furudul_ainiyah' => $kg->furudul_ainiyah_nilai ?? '-',
+                'tindak_lanjut_furudul_ainiyah' => $kg->furudul_ainiyah_tindak_lanjut ?? '-',
+                'tulis_alquran' => $kg->tulis_alquran_nilai ?? '-',
+                'tindak_lanjut_tulis_alquran' => $kg->tindak_lanjut_tulis_alquran ?? '-',
+                'baca_alquran' => $kg->baca_alquran_nilai ?? '-',
+                'tindak_lanjut_baca_alquran' => $kg->baca_alquran_tindak_lanjut ?? '-',
             ]
             : [];
 
@@ -358,9 +355,9 @@ class DetailService
             ->get();
 
         $data['Kunjungan_Mahrom'] = $kun->isNotEmpty()
-            ? $kun->map(fn($k) => [
-                'nama_pengunjung'    => $k->nama,
-                'status'    => $k->nama_status,
+            ? $kun->map(fn ($k) => [
+                'nama_pengunjung' => $k->nama,
+                'status' => $k->nama_status,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,
             ])
             : [];
@@ -372,13 +369,12 @@ class DetailService
             ->get();
 
         $data['Khadam'] = $kh->isNotEmpty()
-            ? $kh->map(fn($kh) => [
-                'keterangan'    => $kh->keterangan,
+            ? $kh->map(fn ($kh) => [
+                'keterangan' => $kh->keterangan,
                 'tanggal_mulai' => $kh->tanggal_mulai,
-                'tanggal_akhir' => $kh->tanggal_akhir ?? "-",
+                'tanggal_akhir' => $kh->tanggal_akhir ?? '-',
             ])
             : [];
-
 
         // --- Riwayat Karyawan ---
         $karyawan = DB::table('karyawan')
@@ -396,11 +392,11 @@ class DetailService
             ->get();
 
         $data['Karyawan'] = $karyawan->isNotEmpty()
-            ? $karyawan->map(fn($item) => [
-                'lembaga'            => $item->nama_lembaga ?? '-',
+            ? $karyawan->map(fn ($item) => [
+                'lembaga' => $item->nama_lembaga ?? '-',
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
-                'tanggal_mulai'      => $item->tanggal_mulai ? date('d-m-Y', strtotime($item->tanggal_mulai)) : '-',
-                'tanggal_selesai'    => $item->tanggal_selesai ? date('d-m-Y', strtotime($item->tanggal_selesai)) : '-',
+                'tanggal_mulai' => $item->tanggal_mulai ? date('d-m-Y', strtotime($item->tanggal_mulai)) : '-',
+                'tanggal_selesai' => $item->tanggal_selesai ? date('d-m-Y', strtotime($item->tanggal_selesai)) : '-',
             ])
             : [];
 
@@ -455,33 +451,32 @@ class DetailService
             $pengajarMap = $pengajar->map(function ($item) {
                 return [
                     'pangkalan' => [
-                        'lembaga'           => $item->nama_lembaga ?? '-',
+                        'lembaga' => $item->nama_lembaga ?? '-',
                         'pekerjaan_kontrak' => $item->pekerjaan_kontrak ?? '-',
                         'kategori_golongan' => $item->nama_kategori_golongan ?? '-',
-                        'nama_golongan'     => $item->nama_golongan ?? '-',
-                        'sejak'             => $item->sejak ?? '-',
-                        'masa_kerja'        => $item->masa_kerja ?? '-',
+                        'nama_golongan' => $item->nama_golongan ?? '-',
+                        'sejak' => $item->sejak ?? '-',
+                        'masa_kerja' => $item->masa_kerja ?? '-',
                     ],
                     'materi' => [
-                        'lembaga'           => $item->nama_lembaga ?? '-',
-                        'daftar_materi'     => $item->daftar_materi_dengan_waktu ?? '-',
-                        'tanggal_mulai'     => $item->tanggal_masuk ?? null,
-                        'tanggal_akhir'     => $item->tanggal_akhir ?? null,
-                    ]
+                        'lembaga' => $item->nama_lembaga ?? '-',
+                        'daftar_materi' => $item->daftar_materi_dengan_waktu ?? '-',
+                        'tanggal_mulai' => $item->tanggal_masuk ?? null,
+                        'tanggal_akhir' => $item->tanggal_akhir ?? null,
+                    ],
                 ];
             });
 
             $data['Pengajar'] = [
-                'Pangkalan'    => $pengajarMap->pluck('pangkalan')->unique()->values()->all(),
-                'Materi_Ajar'  => $pengajarMap->pluck('materi')->filter()->values()->all(),
+                'Pangkalan' => $pengajarMap->pluck('pangkalan')->unique()->values()->all(),
+                'Materi_Ajar' => $pengajarMap->pluck('materi')->filter()->values()->all(),
             ];
         } else {
             $data['Pengajar'] = [
-                'Pangkalan'    => [],
-                'Materi_Ajar'  => [],
+                'Pangkalan' => [],
+                'Materi_Ajar' => [],
             ];
         }
-
 
         // --- Ambil data pengurus dan riwayat jabatan ---
         $pengurus = DB::table('pengurus')
@@ -496,10 +491,10 @@ class DetailService
             ->orderBy('pengurus.tanggal_mulai', 'asc')
             ->get();
         $data['Pengurus'] = $pengurus->isNotEmpty()
-            ? $pengurus->map(fn($item) => [
+            ? $pengurus->map(fn ($item) => [
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
-                'tanggal_mulai'       => $item->tanggal_mulai ?? '-',
-                'tanggal_akhir'       => $item->tanggal_akhir ?? '-',
+                'tanggal_mulai' => $item->tanggal_mulai ?? '-',
+                'tanggal_akhir' => $item->tanggal_akhir ?? '-',
             ])
             : [];
         // ambil data wali kelas dan riwayatnya
@@ -523,12 +518,12 @@ class DetailService
             ->get();
 
         $data['Wali_Kelas'] = $walikelas->isNotEmpty()
-            ? $walikelas->map(fn($item) => [
-                'Lembaga'       => $item->nama_lembaga ?? '-',
-                'Jurusan'       => $item->nama_jurusan ?? '-',
-                'Kelas'         => $item->nama_kelas ?? '-',
-                'Rombel'        => $item->nama_rombel ?? '-',
-                'Periode_awal'  => $item->periode_awal ?? '-',
+            ? $walikelas->map(fn ($item) => [
+                'Lembaga' => $item->nama_lembaga ?? '-',
+                'Jurusan' => $item->nama_jurusan ?? '-',
+                'Kelas' => $item->nama_kelas ?? '-',
+                'Rombel' => $item->nama_rombel ?? '-',
+                'Periode_awal' => $item->periode_awal ?? '-',
                 'Periode_akhir' => $item->periode_akhir ?? '-',
             ])
             : [];

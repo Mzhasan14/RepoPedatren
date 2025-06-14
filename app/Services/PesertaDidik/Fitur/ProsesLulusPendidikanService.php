@@ -4,10 +4,10 @@ namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Biodata;
 use App\Models\Pendidikan;
-use Illuminate\Http\Request;
 use App\Models\RiwayatPendidikan;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ProsesLulusPendidikanService
 {
@@ -37,6 +37,7 @@ class ProsesLulusPendidikanService
                     'nama' => $nama,
                     'message' => 'Pendidikan aktif tidak ditemukan.',
                 ];
+
                 continue;
             }
 
@@ -65,7 +66,7 @@ class ProsesLulusPendidikanService
                 $pd->update([
                     'status' => 'lulus',
                     'updated_by' => $userId,
-                    'updated_at' => $now
+                    'updated_at' => $now,
                 ]);
 
                 DB::commit();
@@ -79,7 +80,7 @@ class ProsesLulusPendidikanService
 
                 $dataGagal[] = [
                     'nama' => $nama,
-                    'message' => 'Gagal memproses lulus: ' . $e->getMessage(),
+                    'message' => 'Gagal memproses lulus: '.$e->getMessage(),
                 ];
             }
         }
@@ -132,19 +133,21 @@ class ProsesLulusPendidikanService
             $rp = $riwayatLulus->get($bioId);
             $pd = $pendidikanLulus->get($bioId);
 
-            if (!$rp) {
+            if (! $rp) {
                 $dataGagal->push([
                     'nama' => $nama,
                     'message' => 'Riwayat lulus tidak ditemukan.',
                 ]);
+
                 continue;
             }
 
-            if (!$pd) {
+            if (! $pd) {
                 $dataGagal->push([
                     'nama' => $nama,
                     'message' => 'Data pendidikan berstatus lulus tidak ditemukan.',
                 ]);
+
                 continue;
             }
 
@@ -155,6 +158,7 @@ class ProsesLulusPendidikanService
                     'nama' => $nama,
                     'message' => 'Pembatalan tidak dapat dilakukan karena tanggal keluar melebihi batas waktu 30 hari.',
                 ]);
+
                 continue;
             }
 
@@ -187,7 +191,7 @@ class ProsesLulusPendidikanService
 
                 $dataGagal->push([
                     'nama' => $nama,
-                    'message' => 'Gagal membatalkan lulus: ' . $e->getMessage(),
+                    'message' => 'Gagal membatalkan lulus: '.$e->getMessage(),
                 ]);
             }
         }
@@ -199,7 +203,6 @@ class ProsesLulusPendidikanService
             'data_gagal' => $dataGagal->all(),
         ];
     }
-
 
     public function listDataLulus(Request $request)
     {
@@ -215,13 +218,11 @@ class ProsesLulusPendidikanService
             ->leftJoinSub(
                 $rpLast,
                 'lr',
-                fn($j) =>
-                $j->on('lr.biodata_id', '=', 'b.id')
+                fn ($j) => $j->on('lr.biodata_id', '=', 'b.id')
             )
             ->leftJoin(
                 'riwayat_pendidikan as rp',
-                fn($j) =>
-                $j->on('rp.biodata_id', '=', 'lr.biodata_id')
+                fn ($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')
                     ->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar')
             )
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
@@ -242,14 +243,13 @@ class ProsesLulusPendidikanService
         return $query;
     }
 
-
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            'id'       => $item->riwayat_id,
-            'biodata_id'       => $item->biodata_id,
-            'no_induk'  => $item->no_induk ?? '-',
-            'nama'             => $item->nama,
+        return collect($results->items())->map(fn ($item) => [
+            'id' => $item->riwayat_id,
+            'biodata_id' => $item->biodata_id,
+            'no_induk' => $item->no_induk ?? '-',
+            'nama' => $item->nama,
             'status' => $item->status,
         ]);
     }

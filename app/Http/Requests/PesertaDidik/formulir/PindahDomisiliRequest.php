@@ -2,9 +2,8 @@
 
 namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Carbon\Carbon;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PindahDomisiliRequest extends FormRequest
@@ -28,7 +27,7 @@ class PindahDomisiliRequest extends FormRequest
             'wilayah_id' => 'required|exists:wilayah,id',
             'blok_id' => 'required|exists:blok,id',
             'kamar_id' => 'required|exists:kamar,id',
-            'tanggal_masuk' => 'required|date'
+            'tanggal_masuk' => 'required|date',
         ];
     }
 
@@ -38,7 +37,7 @@ class PindahDomisiliRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

@@ -2,15 +2,16 @@
 
 namespace App\Models\Biometric;
 
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class BiometricLog extends Model
 {
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -30,7 +31,6 @@ class BiometricLog extends Model
             $model->id = (string) Str::uuid();
         });
     }
-
 
     public function device()
     {

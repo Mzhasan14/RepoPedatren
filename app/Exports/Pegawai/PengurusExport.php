@@ -5,17 +5,17 @@ namespace App\Exports\Pegawai;
 use App\Models\Pegawai\Pengurus;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents, ShouldAutoSize
+class PengurusExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
     protected $index = 1;
 
@@ -45,9 +45,9 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
                     ->whereNull('pegawai.deleted_at');
             })
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren as wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
             ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
@@ -55,7 +55,7 @@ class PengurusExport implements FromCollection, WithHeadings, WithMapping, WithS
             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
             ->select(
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS nik'),
                 'k.no_kk',
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE '-' END as jenis_kelamin"),

@@ -4,8 +4,6 @@ namespace Database\Seeders\Pegawai;
 
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
-use Database\Factories\Pegawai\PengajarFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PengajarSeeder extends Seeder

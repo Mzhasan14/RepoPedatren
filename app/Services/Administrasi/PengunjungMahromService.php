@@ -2,19 +2,18 @@
 
 namespace App\Services\Administrasi;
 
-use App\Models\Santri;
 use App\Models\Biodata;
+use App\Models\HubunganKeluarga;
 use App\Models\Keluarga;
 use App\Models\OrangTuaWali;
-use Illuminate\Http\Request;
-use App\Models\HubunganKeluarga;
 use App\Models\PengunjungMahrom;
-use Illuminate\Support\Facades\DB;
+use App\Models\Santri;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PengunjungMahromService
 {
-
     public function getAllPengunjung(Request $request)
     {
         return DB::table('pengunjung_mahrom as pm')
@@ -41,28 +40,27 @@ class PengunjungMahromService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            'id'                => $item->id,
-            'wilayah'       => $item->nama_wilayah,
-            'nama_pengunjung'     => $item->nama_pengunjung,
-            'status'     => $item->nama_status,
-            'santri_dikunjungi'           => $item->nama_santri,
-            'blok'         => $item->nama_blok ?? '-',
-            'kamar'        => $item->nama_kamar ?? '-',
-            'lembaga'      => $item->nama_lembaga ?? '-',
-            'jurusan'      => $item->nama_jurusan ?? '-',
-            'jumlah_rombongan'        => $item->jumlah_rombongan ?? '-',
-            'tanggal_kunjungan'       => $item->tanggal_kunjungan ?? '-'
+        return collect($results->items())->map(fn ($item) => [
+            'id' => $item->id,
+            'wilayah' => $item->nama_wilayah,
+            'nama_pengunjung' => $item->nama_pengunjung,
+            'status' => $item->nama_status,
+            'santri_dikunjungi' => $item->nama_santri,
+            'blok' => $item->nama_blok ?? '-',
+            'kamar' => $item->nama_kamar ?? '-',
+            'lembaga' => $item->nama_lembaga ?? '-',
+            'jurusan' => $item->nama_jurusan ?? '-',
+            'jumlah_rombongan' => $item->jumlah_rombongan ?? '-',
+            'tanggal_kunjungan' => $item->tanggal_kunjungan ?? '-',
         ]);
     }
-
 
     public function store(array $data): array
     {
         return DB::transaction(function () use ($data) {
             $santri = Santri::find($data['santri_id']);
 
-            if (!$santri) {
+            if (! $santri) {
                 return ['status' => false, 'message' => 'Santri tidak ditemukan'];
             }
 
@@ -89,7 +87,7 @@ class PengunjungMahromService
 
                             return [
                                 'status' => false,
-                                'message' => 'Hubungan tidak sesuai. Di sistem tercatat sebagai: ' . $hubunganTercatat
+                                'message' => 'Hubungan tidak sesuai. Di sistem tercatat sebagai: '.$hubunganTercatat,
                             ];
                         }
                     }
@@ -128,13 +126,13 @@ class PengunjungMahromService
         $kunjungan = PengunjungMahrom::with([
             'biodata',
             'santri.biodata',
-            'hubungan' // pastikan relasi ini ada di model
+            'hubungan', // pastikan relasi ini ada di model
         ])->find($id);
 
-        if (!$kunjungan) {
+        if (! $kunjungan) {
             return [
                 'status' => false,
-                'message' => 'Data kunjungan tidak ditemukan'
+                'message' => 'Data kunjungan tidak ditemukan',
             ];
         }
 
@@ -153,7 +151,7 @@ class PengunjungMahromService
                 'jumlah_rombongan' => $kunjungan->jumlah_rombongan,
                 'tanggal_kunjungan' => $kunjungan->tanggal_kunjungan,
                 'status' => $kunjungan->status,
-            ]
+            ],
         ];
     }
 
@@ -162,21 +160,21 @@ class PengunjungMahromService
         return DB::transaction(function () use ($data, $id) {
             $kunjungan = PengunjungMahrom::find($id);
 
-            if (!$kunjungan) {
+            if (! $kunjungan) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
             if (in_array($kunjungan->status, ['selesai', 'ditolak'])) {
                 return [
                     'status' => false,
-                    'message' => 'Maaf, data dengan status "' . $kunjungan->status . '" tidak dapat diubah.'
+                    'message' => 'Maaf, data dengan status "'.$kunjungan->status.'" tidak dapat diubah.',
                 ];
             }
 
             // Cek atau buat biodata baru jika NIK berbeda
             $biodata = Biodata::where('nik', $data['nik'])->first();
 
-            if (!$biodata) {
+            if (! $biodata) {
                 $biodata = Biodata::create([
                     'nik' => $data['nik'],
                     'nama' => $data['nama'],

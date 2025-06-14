@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class WilayahFactory extends Factory
 {
     protected $model = Wilayah::class;
+
     /**
      * Define the model's default state.
      *

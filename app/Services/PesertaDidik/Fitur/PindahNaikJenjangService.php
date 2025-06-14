@@ -5,12 +5,11 @@ namespace App\Services\PesertaDidik\Fitur;
 use App\Models\Biodata;
 use App\Models\Pendidikan;
 use App\Models\RiwayatPendidikan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PindahNaikJenjangService
 {
-
     public function pindah(array $data)
     {
         $now = now();
@@ -36,6 +35,7 @@ class PindahNaikJenjangService
                         'nama' => $nama,
                         'message' => 'Data pendidikan aktif tidak ditemukan.',
                     ];
+
                     continue;
                 }
 
@@ -75,6 +75,7 @@ class PindahNaikJenjangService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memindahkan data.',
@@ -89,7 +90,6 @@ class PindahNaikJenjangService
             'data_gagal' => $dataGagal,
         ];
     }
-
 
     public function naik(array $data)
     {
@@ -116,6 +116,7 @@ class PindahNaikJenjangService
                         'nama' => $nama,
                         'message' => 'Data pendidikan aktif tidak ditemukan.',
                     ];
+
                     continue;
                 }
 
@@ -155,6 +156,7 @@ class PindahNaikJenjangService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memproses kenaikan kelas.',

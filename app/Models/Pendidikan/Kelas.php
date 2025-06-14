@@ -1,20 +1,23 @@
 <?php
 
 namespace App\Models\Pendidikan;
-use App\Models\PesertaDidik;
-use App\Models\Peserta_didik;
+
 use App\Models\RiwayatPendidikan;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Kelas extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
     protected $table = 'kelas';
+
     protected $primaryKey = 'id';
+
     protected $keyType = 'int';
+
     public $incrementing = true;
 
     protected $guarded = ['id'];

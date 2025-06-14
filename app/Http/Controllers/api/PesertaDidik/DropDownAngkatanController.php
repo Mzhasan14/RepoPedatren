@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
-use App\Models\Angkatan;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Angkatan;
 
 class DropDownAngkatanController extends Controller
 {
@@ -16,14 +15,14 @@ class DropDownAngkatanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Data angkatan santri tidak ditemukan.',
-                'data' => []
+                'data' => [],
             ], 200);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Data angkatan santri berhasil diambil.',
-            'data' => $angkatan
+            'data' => $angkatan,
         ], 200);
     }
 
@@ -35,14 +34,14 @@ class DropDownAngkatanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Data angkatan pelajar tidak ditemukan.',
-                'data' => []
+                'data' => [],
             ], 200);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Data angkatan pelajar berhasil diambil.',
-            'data' => $angkatan
+            'data' => $angkatan,
         ], 200);
     }
 }

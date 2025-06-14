@@ -3,7 +3,6 @@
 namespace Database\Seeders\Alamat;
 
 use Database\Factories\Alamat\ProvinsiFactory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ProvinsiSeeder extends Seeder
@@ -13,7 +12,7 @@ class ProvinsiSeeder extends Seeder
      */
     public function run(): void
     {
-        (new ProvinsiFactory())->count(5)->create();
-        
+        (new ProvinsiFactory)->count(5)->create();
+
     }
 }

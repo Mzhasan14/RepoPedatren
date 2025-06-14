@@ -12,10 +12,10 @@ class PengurusService
 {
     public function index(string $bioId): array
     {
-        $pengurus = Pengurus::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
+        $pengurus = Pengurus::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
             ->with(['pegawai.biodata'])
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id' => $item->id,
                 'jabatan_kontrak' => $item->jabatan,
                 'satuan_kerja' => $item->satuan_kerja,
@@ -27,35 +27,34 @@ class PengurusService
 
         return [
             'status' => true,
-            'data' => $pengurus
+            'data' => $pengurus,
         ];
     }
-
 
     public function show($id): array
     {
         $pengurus = Pengurus::select([
-                'id',
-                'golongan_jabatan_id',
-                'satuan_kerja',
-                'jabatan as jabatan_kontrak',
-                'keterangan_jabatan',
-                'tanggal_mulai as tanggal_masuk',
-                'tanggal_akhir as tanggal_keluar',
-                'status_aktif as status',
-            ])
+            'id',
+            'golongan_jabatan_id',
+            'satuan_kerja',
+            'jabatan as jabatan_kontrak',
+            'keterangan_jabatan',
+            'tanggal_mulai as tanggal_masuk',
+            'tanggal_akhir as tanggal_keluar',
+            'status_aktif as status',
+        ])
             ->find($id);
 
-        if (!$pengurus) {
+        if (! $pengurus) {
             return [
                 'status' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data tidak ditemukan',
             ];
         }
 
         return [
             'status' => true,
-            'data' => $pengurus
+            'data' => $pengurus,
         ];
     }
 
@@ -70,7 +69,7 @@ class PengurusService
             // Larangan update jika tanggal_akhir sudah ada
             if (! is_null($pengurus->tanggal_akhir) && $pengurus->status_aktif === 'tidak aktif') {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data pengurus ini telah memiliki tanggal akhir dan statusnya tidak aktif, tidak dapat diubah lagi demi menjaga keakuratan histori.',
                 ];
             }
@@ -78,39 +77,39 @@ class PengurusService
             // Update data
             $pengurus->update([
                 'golongan_jabatan_id' => $input['golongan_jabatan_id'],
-                'satuan_kerja'        => $input['satuan_kerja'] ?? $pengurus->satuan_kerja,
-                'jabatan'             => $input['jabatan'] ?? $pengurus->jabatan,
-                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $pengurus->keterangan_jabatan,
-                'tanggal_mulai'       => Carbon::parse($input['tanggal_mulai']),
-                'updated_by'          => Auth::id(),
+                'satuan_kerja' => $input['satuan_kerja'] ?? $pengurus->satuan_kerja,
+                'jabatan' => $input['jabatan'] ?? $pengurus->jabatan,
+                'keterangan_jabatan' => $input['keterangan_jabatan'] ?? $pengurus->keterangan_jabatan,
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
+                'updated_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $pengurus,
+                'data' => $pengurus,
             ];
         });
     }
 
     public function store(array $data, string $bioId): array
     {
-        $exist = Pengurus::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
+        $exist = Pengurus::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 
         if ($exist) {
             return [
                 'status' => false,
-                'message' => 'Pegawai masih memiliki Pengurus aktif'
+                'message' => 'Pegawai masih memiliki Pengurus aktif',
             ];
         }
 
         $pegawai = Pegawai::where('biodata_id', $bioId)->latest()->first();
 
-        if (!$pegawai) {
+        if (! $pegawai) {
             return [
                 'status' => false,
-                'message' => 'Pegawai tidak ditemukan untuk biodata ini'
+                'message' => 'Pegawai tidak ditemukan untuk biodata ini',
             ];
         }
 
@@ -129,7 +128,7 @@ class PengurusService
 
         return [
             'status' => true,
-            'data' => $pengurus->fresh()
+            'data' => $pengurus->fresh(),
         ];
     }
 
@@ -159,25 +158,25 @@ class PengurusService
             }
 
             $old->update([
-                'status_aktif'    => 'tidak aktif',
-                'tanggal_akhir'   => $hariIni,
-                'updated_by'      => Auth::id(),
+                'status_aktif' => 'tidak aktif',
+                'tanggal_akhir' => $hariIni,
+                'updated_by' => Auth::id(),
             ]);
 
             $new = Pengurus::create([
-                'pegawai_id'          => $old->pegawai_id,
+                'pegawai_id' => $old->pegawai_id,
                 'golongan_jabatan_id' => $input['golongan_jabatan_id'],
-                'satuan_kerja'        => $input['satuan_kerja'] ?? $old->satuan_kerja,
-                'jabatan'             => $input['jabatan'] ?? $old->jabatan,
-                'keterangan_jabatan'  => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
-                'tanggal_mulai'       => $tanggalMulaiBaru,
-                'status_aktif'        => 'aktif',
-                'created_by'          => Auth::id(),
+                'satuan_kerja' => $input['satuan_kerja'] ?? $old->satuan_kerja,
+                'jabatan' => $input['jabatan'] ?? $old->jabatan,
+                'keterangan_jabatan' => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
+                'tanggal_mulai' => $tanggalMulaiBaru,
+                'status_aktif' => 'aktif',
+                'created_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $new,
+                'data' => $new,
             ];
         });
     }
@@ -192,7 +191,7 @@ class PengurusService
 
             if ($pengurus->tanggal_akhir) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data pengurus sudah ditandai selesai/nonaktif.',
                 ];
             }
@@ -200,22 +199,21 @@ class PengurusService
             $tglAkhir = Carbon::parse($input['tanggal_akhir'] ?? '');
             if ($tglAkhir->lt(Carbon::parse($pengurus->tanggal_mulai))) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
                 ];
             }
 
             $pengurus->update([
-                'status_aktif'    => 'tidak aktif',
-                'tanggal_akhir'   => $tglAkhir,
-                'updated_by'      => Auth::id(),
+                'status_aktif' => 'tidak aktif',
+                'tanggal_akhir' => $tglAkhir,
+                'updated_by' => Auth::id(),
             ]);
 
             return [
                 'status' => true,
-                'data'   => $pengurus,
+                'data' => $pengurus,
             ];
         });
     }
-
 }

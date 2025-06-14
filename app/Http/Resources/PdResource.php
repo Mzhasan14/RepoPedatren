@@ -8,7 +8,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PdResource extends JsonResource
 {
     public $status;
+
     public $message;
+
     public $resource;
 
     public function __construct($status, $message, $resource)
@@ -23,7 +25,7 @@ class PdResource extends JsonResource
         return [
             'success' => $this->status,
             'message' => $this->message,
-            'data' => $this->resource
+            'data' => $this->resource,
         ];
     }
 }

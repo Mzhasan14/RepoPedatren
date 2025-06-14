@@ -6,23 +6,23 @@ use App\Models\Pegawai\Pegawai;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents, ShouldAutoSize
+class PegawaiExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
     protected $index = 1;
 
     public function collection()
     {
-        DB::statement("SET SESSION group_concat_max_len = 1000000;");
+        DB::statement('SET SESSION group_concat_max_len = 1000000;');
 
         $pasFotoId = DB::table('jenis_berkas')->where('nama_jenis_berkas', 'Pas foto')->value('id');
 
@@ -56,15 +56,15 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
         return Pegawai::active()
             ->join('biodata as b', 'b.id', 'pegawai.biodata_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($pengajarAktif, 'pa', fn($j) => $j->on('pegawai.id', '=', 'pa.pegawai_id'))
+            ->leftJoinSub($pengajarAktif, 'pa', fn ($j) => $j->on('pegawai.id', '=', 'pa.pegawai_id'))
             ->leftJoin('pengajar', 'pengajar.id', '=', 'pa.id')
-            ->leftJoinSub($karyawanAktif, 'ka', fn($j) => $j->on('pegawai.id', '=', 'ka.pegawai_id'))
+            ->leftJoinSub($karyawanAktif, 'ka', fn ($j) => $j->on('pegawai.id', '=', 'ka.pegawai_id'))
             ->leftJoin('karyawan', 'karyawan.id', '=', 'ka.id')
-            ->leftJoinSub($pengurusAktif, 'pg', fn($j) => $j->on('pegawai.id', '=', 'pg.pegawai_id'))
+            ->leftJoinSub($pengurusAktif, 'pg', fn ($j) => $j->on('pegawai.id', '=', 'pg.pegawai_id'))
             ->leftJoin('pengurus', 'pengurus.id', '=', 'pg.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('kecamatan as kec', 'kec.id', 'b.kecamatan_id')
             ->leftJoin('kabupaten as kab', 'kab.id', 'b.kabupaten_id')
@@ -73,14 +73,14 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
             ->whereNull('pegawai.deleted_at')
             ->select(
                 'b.nama as nama_lengkap',
-                DB::raw("COALESCE(b.nik, b.no_passport) AS nik"),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS nik'),
                 'k.no_kk',
                 DB::raw("COALESCE(wp.niup, '-') AS niup"),
                 DB::raw("CASE b.jenis_kelamin WHEN 'l' THEN 'Laki-laki' WHEN 'p' THEN 'Perempuan' ELSE b.jenis_kelamin END as jenis_kelamin"),
                 'b.jalan',
-                DB::raw("COALESCE(kec.nama_kecamatan, b.kecamatan_id) as kecamatan"),
-                DB::raw("COALESCE(kab.nama_kabupaten, b.kabupaten_id) as kabupaten"),
-                DB::raw("COALESCE(prov.nama_provinsi, b.provinsi_id) as provinsi"),
+                DB::raw('COALESCE(kec.nama_kecamatan, b.kecamatan_id) as kecamatan'),
+                DB::raw('COALESCE(kab.nama_kabupaten, b.kabupaten_id) as kabupaten'),
+                DB::raw('COALESCE(prov.nama_provinsi, b.provinsi_id) as provinsi'),
                 'b.tempat_lahir',
                 'b.tanggal_lahir',
                 'b.jenjang_pendidikan_terakhir',
@@ -170,7 +170,6 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
             'Tanggal Buat Pegawai',
         ];
     }
-
 
     public function styles(Worksheet $sheet)
     {

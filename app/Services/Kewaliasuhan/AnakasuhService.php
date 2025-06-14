@@ -2,14 +2,14 @@
 
 namespace App\Services\Kewaliasuhan;
 
+use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Kewaliasuhan\Anak_asuh;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Kewaliasuhan\Kewaliasuhan;
+use Illuminate\Support\Facades\DB;
 
 class AnakasuhService
 {
@@ -35,18 +35,18 @@ class AnakasuhService
         return DB::table('Anak_asuh AS as')
             ->join('santri AS s', 'as.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->join('kewaliasuhan as ks','ks.id_anak_asuh','=','as.id')
-            ->join('wali_asuh as ws','ks.id_wali_asuh','=','ws.id')
-            ->join('grup_wali_asuh as gs','ws.id_grup_wali_asuh','=','gs.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+            ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'as.id')
+            ->join('wali_asuh as ws', 'ks.id_wali_asuh', '=', 'ws.id')
+            ->join('grup_wali_asuh as gs', 'ws.id_grup_wali_asuh', '=', 'gs.id')
+            ->leftjoin('riwayat_domisili AS rd', fn ($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn ($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ws.status', true)
@@ -55,19 +55,19 @@ class AnakasuhService
                 'as.id',
                 's.nis',
                 'b.nama',
-                DB::raw("CONCAT(km.nama_kamar,' - ',w.nama_wilayah) As kamar"),                
+                DB::raw("CONCAT(km.nama_kamar,' - ',w.nama_wilayah) As kamar"),
                 'gs.nama_grup',
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
                 // ambil updated_at terbaru antar s, rp, rd
-                DB::raw("
+                DB::raw('
                    GREATEST(
                        s.updated_at,
                        COALESCE(as.updated_at, s.updated_at),
                        COALESCE(gs.updated_at, s.updated_at)
                    ) AS updated_at
-               "),
+               '),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->orderBy('as.id');
@@ -75,18 +75,18 @@ class AnakasuhService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
-            "nis" => $item->nis,
-            "nama" => $item->nama,
-            "kamar" => $item->kamar,
-            "Group_Waliasuh" =>$item->nama_grup,
-            "kota_asal" => $item->kota_asal,
-            "angkatan" => $item->angkatan,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nis' => $item->nis,
+            'nama' => $item->nama,
+            'kamar' => $item->kamar,
+            'Group_Waliasuh' => $item->nama_grup,
+            'kota_asal' => $item->kota_asal,
+            'angkatan' => $item->angkatan,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
@@ -101,18 +101,18 @@ class AnakasuhService
                 's.nis',
                 'ks.tanggal_mulai',
                 'ks.tanggal_berakhir',
-                'a.status'
+                'a.status',
             ])
             ->get();
 
         return [
             'status' => true,
-            'data'   => $list->map(fn($item) => [
-                'id'            => $item->id,
-                'nis'           => $item->nis,
+            'data' => $list->map(fn ($item) => [
+                'id' => $item->id,
+                'nis' => $item->nis,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
-                'status'        => $item->status,
+                'status' => $item->status,
             ]),
         ];
     }
@@ -141,6 +141,7 @@ class AnakasuhService
                         'santri_id' => $idSantri,
                         'message' => 'Santri sudah menjadi anak asuh aktif.',
                     ];
+
                     continue;
                 }
 
@@ -177,9 +178,10 @@ class AnakasuhService
             ];
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
                 'data_baru' => [],
                 'data_gagal' => $santriIds,
             ];
@@ -210,33 +212,33 @@ class AnakasuhService
             'created_by' => Auth::id(),
             'status' => true,
             'created_at' => now(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
     }
 
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (!Auth::id()) {
+            if (! Auth::id()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi'
+                    'message' => 'Pengguna tidak terautentikasi',
                 ], 401);
             }
 
             $anakAsuh = Anak_asuh::withTrashed()->find($id);
 
-            if (!$anakAsuh) {
+            if (! $anakAsuh) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data anak asuh tidak ditemukan'
+                    'message' => 'Data anak asuh tidak ditemukan',
                 ], 404);
             }
 
             if ($anakAsuh->trashed()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data anak asuh sudah dihapus sebelumnya'
+                    'message' => 'Data anak asuh sudah dihapus sebelumnya',
                 ], 410);
             }
 
@@ -248,7 +250,7 @@ class AnakasuhService
             if ($hasActiveRelation) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Tidak dapat menghapus anak asuh yang masih memiliki relasi aktif'
+                    'message' => 'Tidak dapat menghapus anak asuh yang masih memiliki relasi aktif',
                 ], 400);
             }
 
@@ -263,7 +265,7 @@ class AnakasuhService
                 ->performedOn($anakAsuh)
                 ->withProperties([
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ])
                 ->event('delete_anak_asuh')
                 ->log('Anak asuh berhasil dihapus (soft delete)');
@@ -272,8 +274,8 @@ class AnakasuhService
                 'status' => true,
                 'message' => 'Anak asuh berhasil dihapus',
                 'data' => [
-                    'deleted_at' => $anakAsuh->deleted_at
-                ]
+                    'deleted_at' => $anakAsuh->deleted_at,
+                ],
             ]);
         });
     }

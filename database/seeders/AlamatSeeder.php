@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Alamat\Kabupaten;
+use App\Models\Alamat\Kecamatan;
 use App\Models\Alamat\Negara;
 use App\Models\Alamat\Provinsi;
 use Illuminate\Database\Seeder;
-use App\Models\Alamat\Kabupaten;
-use App\Models\Alamat\Kecamatan;
 
 class AlamatSeeder extends Seeder
 {
@@ -20,7 +20,7 @@ class AlamatSeeder extends Seeder
             'Thailand',
             'Filipina',
             'Vietnam',
-            'Kamboja'
+            'Kamboja',
         ];
 
         $negaraMap = [];
@@ -36,44 +36,44 @@ class AlamatSeeder extends Seeder
         $indonesiaData = [
             'Aceh' => [
                 'Banda Aceh' => ['Meuraxa', 'Kuta Alam', 'Ulee Kareng'],
-                'Lhokseumawe' => ['Muara Dua', 'Muara Satu']
+                'Lhokseumawe' => ['Muara Dua', 'Muara Satu'],
             ],
             'Sumatera Utara' => [
                 'Medan' => ['Medan Petisah', 'Medan Maimun'],
-                'Binjai' => ['Binjai Barat', 'Binjai Timur']
+                'Binjai' => ['Binjai Barat', 'Binjai Timur'],
             ],
             'Sumatera Barat' => [
                 'Padang' => ['Padang Barat', 'Padang Timur'],
-                'Bukittinggi' => ['MKS', 'Guguk Panjang']
+                'Bukittinggi' => ['MKS', 'Guguk Panjang'],
             ],
             'Riau' => [
                 'Pekanbaru' => ['Sukajadi', 'Marpoyan Damai'],
-                'Dumai' => ['Dumai Kota', 'Bukit Kapur']
+                'Dumai' => ['Dumai Kota', 'Bukit Kapur'],
             ],
             'Jawa Barat' => [
                 'Bandung' => ['Coblong', 'Sukasari', 'Cibiru'],
-                'Bogor' => ['Bogor Utara', 'Bogor Selatan']
+                'Bogor' => ['Bogor Utara', 'Bogor Selatan'],
             ],
             'Jawa Tengah' => [
                 'Semarang' => ['Banyumanik', 'Tembalang'],
-                'Solo' => ['Banjarsari', 'Laweyan']
+                'Solo' => ['Banjarsari', 'Laweyan'],
             ],
             'Jawa Timur' => [
                 'Surabaya' => ['Wonokromo', 'Tegalsari', 'Rungkut'],
-                'Malang' => ['Klojen', 'Sukun']
+                'Malang' => ['Klojen', 'Sukun'],
             ],
             'Bali' => [
                 'Denpasar' => ['Denpasar Selatan', 'Denpasar Barat'],
-                'Gianyar' => ['Ubud', 'Tegallalang']
+                'Gianyar' => ['Ubud', 'Tegallalang'],
             ],
             'Kalimantan Timur' => [
                 'Balikpapan' => ['Balikpapan Selatan', 'Balikpapan Utara'],
-                'Samarinda' => ['Samarinda Ilir', 'Samarinda Ulu']
+                'Samarinda' => ['Samarinda Ilir', 'Samarinda Ulu'],
             ],
             'Sulawesi Selatan' => [
                 'Makassar' => ['Panakkukang', 'Rappocini'],
-                'Parepare' => ['Soreang', 'Ujung']
-            ]
+                'Parepare' => ['Soreang', 'Ujung'],
+            ],
         ];
 
         foreach ($indonesiaData as $provinsiName => $kabupatenList) {
@@ -105,34 +105,34 @@ class AlamatSeeder extends Seeder
             'Malaysia' => [
                 'Selangor' => [
                     'Shah Alam' => ['Seksyen 7', 'Seksyen 13'],
-                    'Petaling Jaya' => ['Damansara', 'Kelana Jaya']
-                ]
+                    'Petaling Jaya' => ['Damansara', 'Kelana Jaya'],
+                ],
             ],
             'Singapura' => [
                 'Central Region' => [
-                    'Singapore' => ['Orchard', 'Marina Bay']
-                ]
+                    'Singapore' => ['Orchard', 'Marina Bay'],
+                ],
             ],
             'Thailand' => [
                 'Bangkok' => [
-                    'Bangkok' => ['Pathum Wan', 'Chatuchak']
-                ]
+                    'Bangkok' => ['Pathum Wan', 'Chatuchak'],
+                ],
             ],
             'Filipina' => [
                 'Metro Manila' => [
-                    'Quezon City' => ['Diliman', 'Commonwealth']
-                ]
+                    'Quezon City' => ['Diliman', 'Commonwealth'],
+                ],
             ],
             'Vietnam' => [
                 'Hanoi' => [
-                    'Hoan Kiem' => ['Old Quarter', 'French Quarter']
-                ]
+                    'Hoan Kiem' => ['Old Quarter', 'French Quarter'],
+                ],
             ],
             'Kamboja' => [
                 'Phnom Penh' => [
-                    'Chamkar Mon' => ['Toul Tom Poung', 'Boeung Keng Kang']
-                ]
-            ]
+                    'Chamkar Mon' => ['Toul Tom Poung', 'Boeung Keng Kang'],
+                ],
+            ],
         ];
 
         foreach ($wilayahLain as $negaraName => $provList) {

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CreateSantriRequest extends FormRequest
@@ -23,10 +23,10 @@ class CreateSantriRequest extends FormRequest
      */
     public function rules(): array
     {
-         return [
+        return [
             'nis' => 'required|unique:santri,nis',
             'angkatan_id' => 'required|exists:angkatan,id',
-            'tanggal_masuk' => 'required|date'
+            'tanggal_masuk' => 'required|date',
         ];
     }
 
@@ -36,7 +36,7 @@ class CreateSantriRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

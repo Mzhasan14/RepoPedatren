@@ -11,51 +11,50 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Pengurus extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'pengurus';
 
     protected $guarded = [
-        'created_at'
+        'created_at',
     ];
-    
-    
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('pengurus')
             ->logOnlyDirty()
             ->logOnly([
-                'pegawai_id', 'golongan_jabatan_id', 'jabatan', 'satuan_kerja', 'keterangan_jabatan', 
+                'pegawai_id', 'golongan_jabatan_id', 'jabatan', 'satuan_kerja', 'keterangan_jabatan',
                 'tanggal_mulai', 'tanggal_akhir', 'status_aktif',
-                'created_by', 'updated_by', 'deleted_by'
+                'created_by', 'updated_by', 'deleted_by',
             ])
-            ->setDescriptionForEvent(fn(string $eventName) => 
-                "Pengurus {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn (string $eventName) => "Pengurus {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn($model) => $model->created_by ??= Auth::id());
-        static::updating(fn($model) => $model->updated_by = Auth::id());
+        static::creating(fn ($model) => $model->created_by ??= Auth::id());
+        static::updating(fn ($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
         });
     }
+
     public function scopeActive($query)
     {
-        return $query->where('pengurus.status_aktif','aktif');
+        return $query->where('pengurus.status_aktif', 'aktif');
     }
+
     public function PengurusGolongan()
     {
-        return $this->belongsTo(Golongan::class,'id_golongan','id');
+        return $this->belongsTo(Golongan::class, 'id_golongan', 'id');
     }
-        public function pegawai()
+
+    public function pegawai()
     {
         return $this->belongsTo(Pegawai::class);
     }
-
-
 }

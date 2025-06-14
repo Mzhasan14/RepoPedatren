@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class BiometricLog extends Model
 {
     use SoftDeletes;
 
     protected $table = 'biometric_logs';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -21,7 +23,7 @@ class BiometricLog extends Model
         'method',
         'scanned_at',
         'success',
-        'message'
+        'message',
     ];
 
     protected $casts = [
@@ -38,7 +40,7 @@ class BiometricLog extends Model
     {
         return $this->belongsTo(BiometricDevice::class, 'device_id');
     }
-    
+
     protected static function boot()
     {
         parent::boot();

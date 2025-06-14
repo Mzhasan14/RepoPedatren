@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Santri;
 use App\Models\Pelanggaran;
+use App\Models\Santri;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PelanggaranFactory extends Factory
 {
     protected $model = Pelanggaran::class;
+
     /**
      * Define the model's default state.
      *

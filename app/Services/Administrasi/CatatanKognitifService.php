@@ -2,34 +2,30 @@
 
 namespace App\Services\Administrasi;
 
-use App\Models\Catatan_afektif;
 use App\Models\Catatan_kognitif;
 use App\Models\Santri;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CatatanKognitifService
 {
-
     public function getAllCatatanKognitif(Request $request)
     {
-    try
-    {
-    // 1) Ambil ID untuk jenis berkas "Pas foto"
-    $pasFotoId = DB::table('jenis_berkas')
-            ->where('nama_jenis_berkas', 'Pas foto')
-            ->value('id');
+        try {
+            // 1) Ambil ID untuk jenis berkas "Pas foto"
+            $pasFotoId = DB::table('jenis_berkas')
+                ->where('nama_jenis_berkas', 'Pas foto')
+                ->value('id');
 
-    // 2) Subquery: foto terakhir per biodata
-    $fotoLast = DB::table('berkas')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('jenis_berkas_id', $pasFotoId)
-            ->groupBy('biodata_id');
-    return Catatan_kognitif::Active()
+            // 2) Subquery: foto terakhir per biodata
+            $fotoLast = DB::table('berkas')
+                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->groupBy('biodata_id');
+
+            return Catatan_kognitif::Active()
                 ->join('santri as CatatanSantri', 'CatatanSantri.id', '=', 'catatan_kognitif.id_santri')
                 ->join('biodata as CatatanBiodata', 'CatatanBiodata.id', '=', 'CatatanSantri.biodata_id')
                 ->leftJoin('riwayat_domisili as domisili_santri', 'domisili_santri.santri_id', '=', 'CatatanSantri.id')
@@ -44,13 +40,13 @@ class CatatanKognitifService
                 ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_kognitif.id_wali_asuh')
                 ->leftJoin('santri as PencatatSantri', 'PencatatSantri.id', '=', 'wali_asuh.id_santri')
                 ->leftJoin('biodata as PencatatBiodata', 'PencatatBiodata.id', '=', 'PencatatSantri.biodata_id')
-                // join foto CatatanSantri
-                ->leftJoinSub($fotoLast, 'fotoLastCatatan', function($join) {
+                        // join foto CatatanSantri
+                ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
                     $join->on('CatatanBiodata.id', '=', 'fotoLastCatatan.biodata_id');
                 })
                 ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
-                // join foto PencatatSantri
-                ->leftJoinSub($fotoLast, 'fotoLastPencatat', function($join) {
+                        // join foto PencatatSantri
+                ->leftJoinSub($fotoLast, 'fotoLastPencatat', function ($join) {
                     $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
                 })
                 ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
@@ -102,72 +98,72 @@ class CatatanKognitifService
                     'PencatatBiodata.nama',
                     'wali_asuh.id',
                     'catatan_kognitif.created_at',
-                    )
+                )
                 ->distinct();
-            }
-                catch (\Exception $e) {
-                    Log::error('Error fetching data Catatan Kognitif: ' . $e->getMessage());
-                    return response()->json([
-                        "status" => "error",
-                        "message" => "Terjadi kesalahan saat mengambil data Catatan Kognitif",
-                        "code" => 500
-                    ], 500);
-                }
+        } catch (\Exception $e) {
+            Log::error('Error fetching data Catatan Kognitif: '.$e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat mengambil data Catatan Kognitif',
+                'code' => 500,
+            ], 500);
+        }
     }
 
-public function formatData($results, $kategoriFilter = null)
-{
-    $kategoriMap = [
-        'kebahasaan' => ['field' => 'kebahasaan_nilai', 'tindak' => 'kebahasaan_tindak_lanjut'],
-        'baca kitab kuning' => ['field' => 'baca_kitab_kuning_nilai', 'tindak' => 'baca_kitab_kuning_tindak_lanjut'],
-        'hafalan tahfidz' => ['field' => 'hafalan_tahfidz_nilai', 'tindak' => 'hafalan_tahfidz_tindak_lanjut'],
-        'furudul ainiyah' => ['field' => 'furudul_ainiyah_nilai', 'tindak' => 'furudul_ainiyah_tindak_lanjut'],
-        'tulis al-quran' => ['field' => 'tulis_alquran_nilai', 'tindak' => 'tulis_alquran_tindak_lanjut'],
-        'baca al-quran' => ['field' => 'baca_alquran_nilai', 'tindak' => 'baca_alquran_tindak_lanjut'],
-    ];
+    public function formatData($results, $kategoriFilter = null)
+    {
+        $kategoriMap = [
+            'kebahasaan' => ['field' => 'kebahasaan_nilai', 'tindak' => 'kebahasaan_tindak_lanjut'],
+            'baca kitab kuning' => ['field' => 'baca_kitab_kuning_nilai', 'tindak' => 'baca_kitab_kuning_tindak_lanjut'],
+            'hafalan tahfidz' => ['field' => 'hafalan_tahfidz_nilai', 'tindak' => 'hafalan_tahfidz_tindak_lanjut'],
+            'furudul ainiyah' => ['field' => 'furudul_ainiyah_nilai', 'tindak' => 'furudul_ainiyah_tindak_lanjut'],
+            'tulis al-quran' => ['field' => 'tulis_alquran_nilai', 'tindak' => 'tulis_alquran_tindak_lanjut'],
+            'baca al-quran' => ['field' => 'baca_alquran_nilai', 'tindak' => 'baca_alquran_tindak_lanjut'],
+        ];
 
-    return collect($results->items())->flatMap(function ($item) use ($kategoriMap, $kategoriFilter) {
-        $entries = [];
+        return collect($results->items())->flatMap(function ($item) use ($kategoriMap, $kategoriFilter) {
+            $entries = [];
 
-        foreach ($kategoriMap as $kategori => $fields) {
-            if ($kategoriFilter && strtolower($kategoriFilter) !== strtolower($kategori)) {
-                continue;
+            foreach ($kategoriMap as $kategori => $fields) {
+                if ($kategoriFilter && strtolower($kategoriFilter) !== strtolower($kategori)) {
+                    continue;
+                }
+
+                $entries[] = [
+                    'Biodata_uuid' => $item->Biodata_uuid,
+                    'Pencatat_uuid' => $item->Pencatat_uuid,
+                    'id_santri' => $item->id,
+                    'nama_santri' => $item->nama,
+                    'blok' => $item->blok,
+                    'wilayah' => $item->wilayah,
+                    'pendidikan' => $item->jurusan,
+                    'lembaga' => $item->lembaga,
+                    'kategori' => $kategori,
+                    'nilai' => $item->{$fields['field']},
+                    'tindak_lanjut' => $item->{$fields['tindak']},
+                    'pencatat' => $item->pencatat,
+                    'jabatanPencatat' => $item->wali_asuh,
+                    'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                    'foto_catatan' => url($item->foto_catatan),
+                    'foto_pencatat' => url($item->foto_pencatat),
+                ];
             }
 
-            $entries[] = [
-                'Biodata_uuid' => $item->Biodata_uuid,
-                'Pencatat_uuid' => $item->Pencatat_uuid,
-                'id_santri' => $item->id,
-                'nama_santri' => $item->nama,
-                'blok' => $item->blok,
-                'wilayah' => $item->wilayah,
-                'pendidikan' => $item->jurusan,
-                'lembaga' => $item->lembaga,
-                'kategori' => $kategori,
-                'nilai' => $item->{$fields['field']},
-                'tindak_lanjut' => $item->{$fields['tindak']},
-                'pencatat' => $item->pencatat,
-                'jabatanPencatat' => $item->wali_asuh,
-                'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
-                'foto_catatan' => url($item->foto_catatan),
-                'foto_pencatat' => url($item->foto_pencatat),
-            ];
-        }
-
-        return $entries;
-    });
-}
+            return $entries;
+        });
+    }
 
     public function storeCatatanKognitif(array $input)
     {
         $santri = Santri::find($input['id_santri']);
 
         // Cek apakah santri ada dan status aktif = 'aktif'
-        if (!$santri || $santri->status !== 'aktif') {
+        if (! $santri || $santri->status !== 'aktif') {
             return [
                 'status' => false,
                 'message' => 'Santri tidak aktif. Tidak bisa menambahkan catatan kognitif.',
-                'data' => null
+                'data' => null,
             ];
         }
 
@@ -181,7 +177,7 @@ public function formatData($results, $kategoriFilter = null)
             return [
                 'status' => false,
                 'message' => 'Masih ada catatan kognitif aktif yang belum diselesaikan.',
-                'data' => null
+                'data' => null,
             ];
         }
 
@@ -210,8 +206,7 @@ public function formatData($results, $kategoriFilter = null)
         return [
             'status' => true,
             'message' => 'Catatan kognitif berhasil ditambahkan.',
-            'data' => $catatan
+            'data' => $catatan,
         ];
     }
-
 }

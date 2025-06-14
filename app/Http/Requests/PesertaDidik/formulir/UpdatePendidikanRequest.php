@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\PesertaDidik\formulir;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class UpdatePendidikanRequest extends FormRequest
 {
@@ -25,11 +25,12 @@ class UpdatePendidikanRequest extends FormRequest
     public function rules(): array
     {
         $id = $this->route('id');
+
         return [
             'no_induk' => [
                 'nullable',
                 'string',
-                Rule::unique('riwayat_pendidikan', 'no_induk')->ignore($id)
+                Rule::unique('riwayat_pendidikan', 'no_induk')->ignore($id),
             ],
             'lembaga_id' => 'required|exists:lembaga,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
@@ -52,7 +53,7 @@ class UpdatePendidikanRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors'  => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

@@ -2,20 +2,19 @@
 
 namespace App\Services\Kewaliasuhan;
 
-use App\Models\Santri;
 use App\Models\Biodata;
-use Illuminate\Support\Str;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Kewaliasuhan\Anak_asuh;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Models\Kewaliasuhan\Kewaliasuhan;
+use Illuminate\Support\Facades\DB;
 
 class WaliasuhService
 {
-    public function getAllWaliasuh(Request $request) {
+    public function getAllWaliasuh(Request $request)
+    {
         // 1) Ambil ID untuk jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
@@ -34,17 +33,17 @@ class WaliasuhService
             ->groupBy('biodata_id');
 
         return DB::table('wali_asuh AS ws')
-            ->join('santri AS s', 'ws.id_santri','=','s.id')
+            ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('riwayat_domisili AS rd', fn($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
+            ->leftjoin('riwayat_domisili AS rd', fn ($join) => $join->on('s.id', '=', 'rd.santri_id')->where('rd.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'rd.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'rd.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'rd.kamar_id', '=', 'km.id')
-            ->leftjoin('riwayat_pendidikan AS rp', fn($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
+            ->leftjoin('riwayat_pendidikan AS rp', fn ($j) => $j->on('b.id', '=', 'rp.biodata_id')->where('rp.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'rp.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ws.status', true)
@@ -60,13 +59,13 @@ class WaliasuhService
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
                 // ambil updated_at terbaru antar s, rp, rd
-                DB::raw("
+                DB::raw('
                    GREATEST(
                        s.updated_at,
                        COALESCE(ws.updated_at, s.updated_at),
                        COALESCE(ws.updated_at, s.updated_at)
                    ) AS updated_at
-               "),
+               '),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->orderBy('ws.id');
@@ -74,24 +73,25 @@ class WaliasuhService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn($item) => [
-            "biodata_id" => $item->biodata_id,
-            "id" => $item->id,
-            "nis" => $item->nis,
-            "nama" => $item->nama,
-            "kamar" => $item->nama_kamar ?? '-',
-            "blok" => $item->nama_blok ?? '-',
-            "wilayah" => $item->nama_wilayah ?? '-',
-            "kota_asal" => $item->kota_asal,
-            "angkatan" => $item->angkatan,
-            "tgl_update" => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            "tgl_input" =>  Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
-            "foto_profil" => url($item->foto_profil)
+        return collect($results->items())->map(fn ($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nis' => $item->nis,
+            'nama' => $item->nama,
+            'kamar' => $item->nama_kamar ?? '-',
+            'blok' => $item->nama_blok ?? '-',
+            'wilayah' => $item->nama_wilayah ?? '-',
+            'kota_asal' => $item->kota_asal,
+            'angkatan' => $item->angkatan,
+            'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'foto_profil' => url($item->foto_profil),
         ]);
     }
 
-    public function index(string $bioId) :array {
-         $list = DB::table('wali_asuh as w')
+    public function index(string $bioId): array
+    {
+        $list = DB::table('wali_asuh as w')
             ->join('santri as s', 'w.id_santri', '=', 's.id')
             ->where('s.biodata_id', $bioId)
             ->select([
@@ -99,18 +99,18 @@ class WaliasuhService
                 's.nis',
                 'w.tanggal_mulai',
                 'w.tanggal_berakhir',
-                'w.status'
+                'w.status',
             ])
             ->get();
 
         return [
             'status' => true,
-            'data'   => $list->map(fn($item) => [
-                'id'            => $item->id,
-                'nis'           => $item->nis,
+            'data' => $list->map(fn ($item) => [
+                'id' => $item->id,
+                'nis' => $item->nis,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
-                'status'        => $item->status,
+                'status' => $item->status,
             ]),
         ];
     }
@@ -120,13 +120,13 @@ class WaliasuhService
         return DB::transaction(function () use ($input, $bioId) {
             // 1. Validasi biodata
             $biodata = Biodata::find($bioId);
-            if (!$biodata) {
+            if (! $biodata) {
                 return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
             }
 
             // 2. Cek apakah santri sudah ada
             $santri = Santri::where('biodata_id', $bioId)->first();
-            if (!$santri) {
+            if (! $santri) {
                 return ['status' => false, 'message' => 'Data santri tidak ditemukan.'];
             }
 
@@ -143,7 +143,7 @@ class WaliasuhService
             $waliAsuh = Wali_asuh::create([
                 'id_santri' => $santri->id,
                 'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? null,
-                'tanggal_mulai'  => Carbon::parse($input['tanggal_mulai']),
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
                 'status' => true,
                 'created_by' => Auth::id(),
             ]);
@@ -154,32 +154,32 @@ class WaliasuhService
                 ->withProperties([
                     'biodata_id' => $bioId,
                     'santri_id' => $santri->id,
-                    'input' => $input
+                    'input' => $input,
                 ])
                 ->log('Wali asuh baru ditambahkan');
 
             return [
                 'status' => true,
                 'data' => $waliAsuh,
-                'message' => 'Wali asuh berhasil didaftarkan'
+                'message' => 'Wali asuh berhasil didaftarkan',
             ];
         });
     }
 
     public function show(int $id): array
     {
-        $wa = Wali_asuh::with(['santri','grupWaliAsuh'])->find($id);
+        $wa = Wali_asuh::with(['santri', 'grupWaliAsuh'])->find($id);
 
-        if (!$wa) {
+        if (! $wa) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
         return ['status' => true, 'data' => [
-            'id'    =>$wa->id,
-            'nis'   =>$wa->santri->nis,
-            'grup'  =>$wa->grupWaliAsuh->nama_grup,
-            'tanggal_mulai' =>$wa->tanggal_mulai,
-            'tanggal_akhir' =>$wa->tanggal_berakhir
+            'id' => $wa->id,
+            'nis' => $wa->santri->nis,
+            'grup' => $wa->grupWaliAsuh->nama_grup,
+            'tanggal_mulai' => $wa->tanggal_mulai,
+            'tanggal_akhir' => $wa->tanggal_berakhir,
         ]];
     }
 
@@ -195,7 +195,7 @@ class WaliasuhService
             // Cegah perubahan jika sudah punya tanggal berakhir
             if (! is_null($waliAsuh->tanggal_berakhir)) {
                 return [
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'Data ini sudah memiliki tanggal berakhir dan tidak dapat diubah lagi demi menjaga histori.',
                 ];
             }
@@ -208,18 +208,18 @@ class WaliasuhService
                 Kewaliasuhan::where('id_wali_asuh', $waliAsuh->id)
                     ->where('status', true)
                     ->update([
-                        'status'      => false,
+                        'status' => false,
                         'tanggal_berakhir' => Carbon::now(),
-                        'updated_by'  => Auth::id(),
-                        'updated_at'  => now(),
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
                     ]);
 
                 activity('kewaliasuhan_update')
                     ->performedOn($waliAsuh)
                     ->withProperties([
-                        'action'     => 'nonaktif_relasi_lama',
-                        'grup_lama'  => $waliAsuh->id_grup_wali_asuh,
-                        'grup_baru'  => $input['id_grup_wali_asuh'],
+                        'action' => 'nonaktif_relasi_lama',
+                        'grup_lama' => $waliAsuh->id_grup_wali_asuh,
+                        'grup_baru' => $input['id_grup_wali_asuh'],
                     ])
                     ->log('Nonaktifkan relasi karena perubahan grup wali asuh');
             }
@@ -228,10 +228,10 @@ class WaliasuhService
             $updateData = [
                 'id_santri' => $input['id_santri'] ?? $waliAsuh->id_santri,
                 'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? $waliAsuh->id_grup_wali_asuh,
-                'tanggal_berakhir'  => isset($input['tanggal_berakhir']) ? Carbon::parse($input['tanggal_berakhir']) : $waliAsuh->tanggal_berakhir,
-                'status'            => $input['status'] ?? $waliAsuh->status,
-                'updated_by'        => Auth::id(),
-                'updated_at'        => now(),
+                'tanggal_berakhir' => isset($input['tanggal_berakhir']) ? Carbon::parse($input['tanggal_berakhir']) : $waliAsuh->tanggal_berakhir,
+                'status' => $input['status'] ?? $waliAsuh->status,
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
             ];
 
             $waliAsuh->update($updateData);
@@ -241,14 +241,14 @@ class WaliasuhService
                 ->performedOn($waliAsuh)
                 ->withProperties([
                     'before' => $before,
-                    'after'  => $waliAsuh->getChanges(),
+                    'after' => $waliAsuh->getChanges(),
                 ])
                 ->log('Data wali asuh diperbarui');
 
             return [
-                'status'  => true,
+                'status' => true,
                 'message' => 'waliasuh berhasil diperbarui',
-                'data'    => $waliAsuh,
+                'data' => $waliAsuh,
             ];
         });
     }
@@ -257,7 +257,7 @@ class WaliasuhService
     {
         return DB::transaction(function () use ($input, $id) {
             $kh = Wali_asuh::find($id);
-            if (!$kh) {
+            if (! $kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
@@ -268,39 +268,38 @@ class WaliasuhService
             }
 
             $kh->update([
-                'tanggal_berakhir'  => $tglKeluar,
-                'status'         => false,
-                'updated_by'     => Auth::id(),
+                'tanggal_berakhir' => $tglKeluar,
+                'status' => false,
+                'updated_by' => Auth::id(),
             ]);
 
             return ['status' => true, 'data' => $kh];
         });
     }
 
-
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (!Auth::id()) {
+            if (! Auth::id()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Pengguna tidak terautentikasi'
+                    'message' => 'Pengguna tidak terautentikasi',
                 ], 401);
             }
 
             $waliAsuh = Wali_asuh::withTrashed()->find($id);
 
-            if (!$waliAsuh) {
+            if (! $waliAsuh) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data wali asuh tidak ditemukan'
+                    'message' => 'Data wali asuh tidak ditemukan',
                 ], 404);
             }
 
             if ($waliAsuh->trashed()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data wali asuh sudah dihapus sebelumnya'
+                    'message' => 'Data wali asuh sudah dihapus sebelumnya',
                 ], 410);
             }
 
@@ -312,7 +311,7 @@ class WaliasuhService
             if ($hasActiveRelation) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Tidak dapat menghapus wali asuh yang masih memiliki anak asuh aktif'
+                    'message' => 'Tidak dapat menghapus wali asuh yang masih memiliki anak asuh aktif',
                 ], 400);
             }
 
@@ -327,7 +326,7 @@ class WaliasuhService
                 ->performedOn($waliAsuh)
                 ->withProperties([
                     'deleted_at' => now(),
-                    'deleted_by' => Auth::id()
+                    'deleted_by' => Auth::id(),
                 ])
                 ->event('delete_wali_asuh')
                 ->log('Wali asuh berhasil dihapus (soft delete)');
@@ -336,10 +335,9 @@ class WaliasuhService
                 'status' => true,
                 'message' => 'Wali asuh berhasil dihapus',
                 'data' => [
-                    'deleted_at' => $waliAsuh->deleted_at
-                ]
+                    'deleted_at' => $waliAsuh->deleted_at,
+                ],
             ]);
         });
     }
 }
-  

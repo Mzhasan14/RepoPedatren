@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\api\pendidikan;
 
-use Illuminate\Http\Request;
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Rombel;
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Lembaga;
 use App\Http\Controllers\Controller;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Lembaga;
+use App\Models\Pendidikan\Rombel;
 
 class DropdownPendidikanController extends Controller
 {
     public function getLembaga()
     {
         $lembaga = Lembaga::select('id', 'nama_lembaga')->get();
+
         return response()->json($lembaga);
     }
 

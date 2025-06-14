@@ -2,14 +2,13 @@
 
 namespace App\Services\Kewaliasuhan;
 
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
-class KewaliasuhanService {
+class KewaliasuhanService
+{
     public function update(array $data)
     {
         $userId = Auth::id();
@@ -25,17 +24,19 @@ class KewaliasuhanService {
             ]);
 
             DB::commit();
+
             return [
                 'success' => true,
                 'message' => 'Relasi anak asuh berhasil diperbarui.',
-                'data' => $relasi
+                'data' => $relasi,
             ];
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
                 'message' => 'Gagal memperbarui relasi anak asuh.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -53,16 +54,18 @@ class KewaliasuhanService {
             $relasi->delete();
 
             DB::commit();
+
             return [
                 'success' => true,
-                'message' => 'Relasi anak asuh berhasil dihapus.'
+                'message' => 'Relasi anak asuh berhasil dihapus.',
             ];
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
                 'message' => 'Gagal menghapus relasi anak asuh.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
