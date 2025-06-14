@@ -249,7 +249,7 @@ class DetailAnakasuhService
 
         // --- 8. Pendidikan ---
         $pend = DB::table('riwayat_pendidikan as rp')
-            ->where('rp.biodata_id', $bioId)
+            ->join('santri as s','rp.santri_id','=','s.id')
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
             ->leftJoin('kelas as k', 'rp.kelas_id', '=', 'k.id')
