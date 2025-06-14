@@ -393,6 +393,7 @@ class PesertaDidikService
             if (!empty($data['lembaga_id'])) {
                 DB::table('pendidikan')->insert([
                     'biodata_id' => $biodataId,
+                    'no_induk' => $data['no_induk'],
                     'lembaga_id' => $data['lembaga_id'],
                     'jurusan_id' => $data['jurusan_id'] ?? null,
                     'kelas_id' => $data['kelas_id'] ?? null,
