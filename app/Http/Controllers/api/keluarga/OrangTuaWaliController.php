@@ -8,7 +8,7 @@ use App\Http\Resources\PdResource;
 use App\Models\Biodata;
 use App\Models\OrangTuaWali;
 use App\Services\Keluarga\DetailOrangtuaService;
-use App\Services\Keluarga\FIlters\FilterOrangtuaService;
+use App\Services\Keluarga\Filters\FilterOrangtuaService;
 use App\Services\Keluarga\OrangtuaWaliService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
