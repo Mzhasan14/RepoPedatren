@@ -30,7 +30,7 @@ class UpdatePendidikanRequest extends FormRequest
             'no_induk' => [
                 'nullable',
                 'string',
-                Rule::unique('riwayat_pendidikan', 'no_induk')->ignore($id),
+                Rule::unique('pendidikan', 'no_induk')->ignore($id),
             ],
             'lembaga_id' => 'required|exists:lembaga,id',
             'jurusan_id' => 'nullable|exists:jurusan,id',
