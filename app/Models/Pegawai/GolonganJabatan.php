@@ -27,33 +27,36 @@ class GolonganJabatan extends Model
         'id',
     ];
 
-    public function karyawan()
-    {
-        return $this->hasMany(Karyawan::class, 'golongan_jabatan_id');
-    }
-
-    public function pengurus()
-    {
-        return $this->hasMany(Pengurus::class, 'golongan_jabatan_id');
-    }
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('golongan_jabatan')
             ->logOnlyDirty()
             ->logOnly(['nama_golongan_jabatan', 'status', 'created_by', 'updated_by', 'deleted_by'])
-            ->setDescriptionForEvent(fn (string $eventName) => "Golongan Jabatan {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
-            );
+            ->setDescriptionForEvent(function (string $eventName) {
+                $user = Auth::user();
+                $userName = $user ? $user->name : 'Sistem';
+                return "Golongan Jabatan {$eventName} oleh {$userName}";
+            });
     }
-
+    
     protected static function booted()
     {
-        static::creating(fn ($model) => $model->created_by ??= Auth::id());
-        static::updating(fn ($model) => $model->updated_by = Auth::id());
+        static::creating(fn($model) => $model->created_by ??= Auth::id());
+        static::updating(fn($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
         });
     }
+    public function karyawan()
+    {
+        return $this->hasMany(Karyawan::class, 'golongan_jabatan_id');
+    }
+    
+    public function pengurus()
+    {
+        return $this->hasMany(Pengurus::class, 'golongan_jabatan_id');
+    }
+
 }

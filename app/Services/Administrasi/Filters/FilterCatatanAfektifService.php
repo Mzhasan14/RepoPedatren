@@ -30,7 +30,7 @@ class FilterCatatanAfektifService
     {
         // Filter Search
         if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(CatatanBiodata.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+            $query->whereRaw('MATCH(bs.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
         }
 
         return $query;
@@ -41,16 +41,16 @@ class FilterCatatanAfektifService
     {
         // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
-            $query->leftJoin('negara', 'CatatanBiodata.negara_id', '=', 'negara.id')
+            $query->leftJoin('negara', 'bs.negara_id', '=', 'negara.id')
                 ->where('negara.nama_negara', $request->negara);
             if ($request->filled('provinsi')) {
-                $query->leftjoin('provinsi', 'CatatanBiodata.provinsi_id', '=', 'provinsi.id');
+                $query->leftjoin('provinsi', 'bs.provinsi_id', '=', 'provinsi.id');
                 $query->where('provinsi.nama_provinsi', $request->provinsi);
                 if ($request->filled('kabupaten')) {
-                    $query->leftjoin('kabupaten', 'CatatanBiodata.kabupaten_id', '=', 'kabupaten.id');
+                    $query->leftjoin('kabupaten', 'bs.kabupaten_id', '=', 'kabupaten.id');
                     $query->where('kabupaten.nama_kabupaten', $request->kabupaten);
                     if ($request->filled('kecamatan')) {
-                        $query->leftjoin('kecamatan', 'CatatanBiodata.kecamatan_id', '=', 'kecamatan.id');
+                        $query->leftjoin('kecamatan', 'bs.kecamatan_id', '=', 'kecamatan.id');
                         $query->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
                 }
@@ -107,9 +107,9 @@ class FilterCatatanAfektifService
         if ($request->filled('jenis_kelamin')) {
             $jenis_kelamin = strtolower($request->jenis_kelamin);
             if ($jenis_kelamin == 'laki-laki') {
-                $query->where('CatatanBiodata.jenis_kelamin', 'l');
+                $query->where('bs.jenis_kelamin', 'l');
             } elseif ($jenis_kelamin == 'perempuan') {
-                $query->where('CatatanBiodata.jenis_kelamin', 'p');
+                $query->where('bs.jenis_kelamin', 'p');
             }
         }
 
@@ -122,12 +122,12 @@ class FilterCatatanAfektifService
         if ($request->filled('phone_number')) {
             $query->where(function ($q) use ($request) {
                 if (strtolower($request->phone_number) === 'mempunyai') {
-                    $q->whereNotNull('CatatanBiodata.no_telepon')
-                        ->where('CatatanBiodata.no_telepon', '!=', '');
+                    $q->whereNotNull('bs.no_telepon')
+                        ->where('bs.no_telepon', '!=', '');
                 } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
                     $q->where(function ($q2) {
-                        $q2->whereNull('CatatanBiodata.no_telepon')
-                            ->orWhere('CatatanBiodata.no_telepon', '');
+                        $q2->whereNull('bs.no_telepon')
+                            ->orWhere('bs.no_telepon', '');
                     });
                 }
             });

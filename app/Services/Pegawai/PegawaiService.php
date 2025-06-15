@@ -11,7 +11,6 @@ use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
 use App\Models\Pegawai\WaliKelas;
-use App\Models\Pendidikan\Kelas;
 use App\Models\WargaPesantren;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -25,88 +24,88 @@ use Illuminate\Validation\ValidationException;
 
 class PegawaiService
 {
-    public function getAllPegawai(Request $request)
+    public function basePegawaiQuery(Request $request)
+    {
+        $pasFotoId = DB::table('jenis_berkas')
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
+
+        $fotoLast = DB::table('berkas')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('jenis_berkas_id', $pasFotoId)
+            ->groupBy('biodata_id');
+
+        $wpLast = DB::table('warga_pesantren')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('status', true)
+            ->groupBy('biodata_id');
+
+        $pengajarAktif = DB::table('pengajar')
+            ->select('pegawai_id', DB::raw('MAX(id) as id'))
+            ->where('status_aktif', 'aktif')
+            ->whereNull('deleted_at')
+            ->groupBy('pegawai_id');
+
+        $karyawanAktif = DB::table('karyawan')
+            ->select('pegawai_id', DB::raw('MAX(id) as id'))
+            ->where('status_aktif', 'aktif')
+            ->whereNull('deleted_at')
+            ->groupBy('pegawai_id');
+
+        $pengurusAktif = DB::table('pengurus')
+            ->select('pegawai_id', DB::raw('MAX(id) as id'))
+            ->where('status_aktif', 'aktif')
+            ->whereNull('deleted_at')
+            ->groupBy('pegawai_id');
+
+        $query = DB::table('pegawai')
+            ->join('biodata as b', 'b.id', 'pegawai.biodata_id')
+            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoinSub($pengajarAktif, 'pa', fn ($j) => $j->on('pegawai.id', '=', 'pa.pegawai_id'))
+            ->leftJoin('pengajar', 'pengajar.id', '=', 'pa.id')
+            ->leftJoinSub($karyawanAktif, 'ka', fn ($j) => $j->on('pegawai.id', '=', 'ka.pegawai_id'))
+            ->leftJoin('karyawan', 'karyawan.id', '=', 'ka.id')
+            ->leftJoinSub($pengurusAktif, 'pg', fn ($j) => $j->on('pegawai.id', '=', 'pg.pegawai_id'))
+            ->leftJoin('pengurus', 'pengurus.id', '=', 'pg.id')
+            ->leftJoin('wali_kelas', function ($join) {
+                $join->on('pegawai.id', '=', 'wali_kelas.pegawai_id')
+                    ->where('wali_kelas.status_aktif', 'aktif')
+                    ->whereNull('wali_kelas.deleted_at');
+            })
+            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+            ->whereNull('pegawai.deleted_at')
+            ->where('pegawai.status_aktif', 'aktif');
+
+        return $query;
+    }
+
+    public function getAllPegawai(Request $request, $fields = null)
     {
         try {
-            // 1) Ambil ID untuk jenis berkas "Pas foto"
-            $pasFotoId = DB::table('jenis_berkas')
-                ->where('nama_jenis_berkas', 'Pas foto')
-                ->value('id');
+            $query = $this->basePegawaiQuery($request);
 
-            // 2) Subquery: foto terakhir per biodata
-            $fotoLast = DB::table('berkas')
-                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                ->where('jenis_berkas_id', $pasFotoId)
-                ->groupBy('biodata_id');
-            // 3) Subquery: warga pesantren terakhir per biodata
-            $wpLast = DB::table('warga_pesantren')
-                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                ->where('status', true)
-                ->groupBy('biodata_id');
-            // 4) Subquery: Ambil 1 pengajar aktif terakhir per pegawai
-            $pengajarAktif = DB::table('pengajar')
-                ->select('pegawai_id', DB::raw('MAX(id) as id'))
-                ->where('status_aktif', 'aktif')
-                ->whereNull('deleted_at')
-                ->groupBy('pegawai_id');
+            $fields = $fields ?? [
+                'pegawai.biodata_id as biodata_uuid',
+                'b.nama',
+                'wp.niup',
+                'pengurus.id as pengurus',
+                'karyawan.id as karyawan',
+                'pengajar.id as pengajar',
+                DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
+                DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
+                            GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
+                            GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
+                            GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
+                        )) as status"),
+                'b.nama_pendidikan_terakhir as pendidikanTerkahir',
+                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil"),
+            ];
 
-            // 5) Subquery: Ambil 1 karyawan aktif terakhir per pegawai
-            $karyawanAktif = DB::table('karyawan')
-                ->select('pegawai_id', DB::raw('MAX(id) as id'))
-                ->where('status_aktif', 'aktif')
-                ->whereNull('deleted_at')
-                ->groupBy('pegawai_id');
-
-            // 6) Subquery: Ambil 1 pengurus aktif terakhir per pegawai
-            $pengurusAktif = DB::table('pengurus')
-                ->select('pegawai_id', DB::raw('MAX(id) as id'))
-                ->where('status_aktif', 'aktif')
-                ->whereNull('deleted_at')
-                ->groupBy('pegawai_id');
-
-            // 7) Query utama
-            return DB::table('pegawai')
-                ->join('biodata as b', 'b.id', 'pegawai.biodata_id')
-                            // join warga pesantren terakhir true (NIUP)
-                ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-                ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-                            // Join ke pengajar terakhir aktif
-                ->leftJoinSub($pengajarAktif, 'pa', fn ($join) => $join->on('pegawai.id', '=', 'pa.pegawai_id'))
-                ->leftJoin('pengajar', 'pengajar.id', '=', 'pa.id')
-                            // Join ke karyawan terakhir aktif
-                ->leftJoinSub($karyawanAktif, 'ka', fn ($join) => $join->on('pegawai.id', '=', 'ka.pegawai_id'))
-                ->leftJoin('karyawan', 'karyawan.id', '=', 'ka.id')
-                            // Join ke pengurus terakhir aktif
-                ->leftJoinSub($pengurusAktif, 'pg', fn ($join) => $join->on('pegawai.id', '=', 'pg.pegawai_id'))
-                ->leftJoin('pengurus', 'pengurus.id', '=', 'pg.id')
-                            // join wali kelas yang hanya berstatus aktif
-                ->leftJoin('wali_kelas', function ($join) {
-                    $join->on('pegawai.id', '=', 'wali_kelas.pegawai_id')
-                        ->where('wali_kelas.status_aktif', 'aktif')
-                        ->whereNull('wali_kelas.deleted_at');
-
-                })
-                            // join berkas pas foto terakhir
-                ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-                ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-                ->whereNull('pegawai.deleted_at')
-                ->where('pegawai.status_aktif', 'aktif')
-                ->select(
-                    'pegawai.biodata_id as biodata_uuid',
-                    'b.nama as nama',
-                    'wp.niup',
-                    'pengurus.id as pengurus',
-                    'karyawan.id as karyawan',
-                    'pengajar.id as pengajar',
-                    DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
-                    DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
-                                GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
-                                GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
-                                GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
-                            )) as status"),
-                    'b.nama_pendidikan_terakhir as pendidikanTerkahir',
-                    DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
-                )->groupBy(
+            return $query
+                ->select($fields)
+                ->groupBy(
                     'pegawai.biodata_id',
                     'b.nama',
                     'wp.niup',
@@ -126,7 +125,6 @@ class PegawaiService
                 'code' => 500,
             ], 500);
         }
-
     }
 
     public function formatData($results)
@@ -144,8 +142,6 @@ class PegawaiService
             'foto_profil' => $item->foto_profil
             ? asset($item->foto_profil)
             : null,
-
-            // "foto_profil" => $item->foto_profil ? asset('storage/' . $item->foto_profil) : null,
         ]);
     }
 
@@ -397,5 +393,176 @@ class PegawaiService
                 'error' => env('APP_DEBUG') ? $e->getMessage() : null,
             ];
         }
+    }
+    public function getExportPegawaiQuery($fields, $request)
+    {
+        $query = $this->basePegawaiQuery($request);
+
+        if (in_array('no_kk', $fields)) {
+            $query->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id');
+        }
+
+        if (in_array('niup', $fields)) {
+            $query->leftJoin('warga_pesantren as wp2', 'b.id', '=', 'wp2.biodata_id');
+        }
+
+        if (in_array('status_aktif', $fields)) {
+            $query->leftJoin('pengajar as pr', 'pegawai.id', '=', 'pr.pegawai_id');
+            $query->leftJoin('karyawan as kr', 'pegawai.id', '=', 'kr.pegawai_id');
+            $query->leftJoin('pengurus as ps', 'pegawai.id', '=', 'ps.pegawai_id');
+        }
+
+        if (in_array('alamat', $fields)) {
+            $query->leftJoin('kecamatan as kc2', 'b.kecamatan_id', '=', 'kc2.id');
+            $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');
+            $query->leftJoin('provinsi as pv2', 'b.provinsi_id', '=', 'pv2.id');
+            $query->leftJoin('negara as ng2', 'b.negara_id', '=', 'ng2.id');
+        }
+
+        $select = [];
+        foreach ($fields as $field) {
+            switch ($field) {
+                case 'nama_lengkap':
+                    $select[] = 'b.nama as nama_lengkap';
+                    break;
+                case 'nik':
+                    $select[] = DB::raw('COALESCE(b.nik, b.no_passport) as nik');
+                    break;
+                case 'niup':
+                    $select[] = 'wp2.niup';
+                    break;
+                case 'tempat_tanggal_lahir':
+                    $select[] = 'b.tempat_lahir';
+                    $select[] = 'b.tanggal_lahir';
+                    break;
+                case 'jenis_kelamin':
+                    $select[] = 'b.jenis_kelamin';
+                    break;
+                case 'no_kk':
+                    $select[] = 'k.no_kk';
+                    break;
+                case 'alamat':
+                    $select[] = 'b.jalan';
+                    $select[] = 'kc2.nama_kecamatan as kecamatan';
+                    $select[] = 'kb2.nama_kabupaten as kabupaten';
+                    $select[] = 'pv2.nama_provinsi as provinsi';
+                    $select[] = 'ng2.nama_negara as negara';
+                    break;
+                case 'status_aktif':
+                    $select[] = DB::raw("
+                        CASE
+                            WHEN pr.status_aktif = 'aktif' THEN 'Pengajar'
+                            WHEN kr.status_aktif = 'aktif' THEN 'Karyawan'
+                            WHEN ps.status_aktif = 'aktif' THEN 'Pengurus'
+                            ELSE '-'
+                        END as status_aktif
+                    ");
+                    break;
+                case 'pendidikan_terakhir':
+                    $select[] = 'b.jenjang_pendidikan_terakhir';
+                    $select[] = 'b.nama_pendidikan_terakhir';
+                    break;
+            }
+        }
+
+        return $query->select($select);
+    }
+
+    public function formatDataExport($results, $fields, $addNumber = false)
+    {
+        return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
+            $data = [];
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
+
+            $itemArr = array_values((array) $item);
+            $i = 0;
+
+            foreach ($fields as $field) {
+                switch ($field) {
+                    case 'nama_lengkap':
+                        $data['Nama Lengkap'] = $itemArr[$i++] ?? '';
+                        break;
+                    case 'nik':
+                        $data['NIK'] = ' ' . ($itemArr[$i++] ?? '');
+                        break;
+                    case 'niup':
+                        $data['NIUP'] = ' ' . ($itemArr[$i++] ?? '');
+                        break;
+                    case 'tempat_tanggal_lahir':
+                        $data['Tempat Lahir'] = $itemArr[$i++] ?? '';
+                        $tgl = $itemArr[$i++] ?? '';
+                        $data['Tanggal Lahir'] = $tgl ? \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y') : '';
+                        break;
+                    case 'jenis_kelamin':
+                        $jk = $itemArr[$i++] ?? '';
+                        $data['Jenis Kelamin'] = strtolower($jk) === 'l' ? 'Laki-laki' : (strtolower($jk) === 'p' ? 'Perempuan' : '');
+                        break;
+                    case 'no_kk':
+                        $data['No. KK'] = ' ' . ($itemArr[$i++] ?? '');
+                        break;
+                    case 'alamat':
+                        $data['Jalan'] = $itemArr[$i++] ?? '';
+                        $data['Kecamatan'] = $itemArr[$i++] ?? '';
+                        $data['Kabupaten'] = $itemArr[$i++] ?? '';
+                        $data['Provinsi'] = $itemArr[$i++] ?? '';
+                        $data['Negara'] = $itemArr[$i++] ?? '';
+                        break;
+                    case 'status_aktif':
+                        $data['Status Aktif'] = $itemArr[$i++] ?? '';
+                        break;
+                    case 'pendidikan_terakhir':
+                        $data['Jenjang Pendidikan Terakhir'] = $itemArr[$i++] ?? '';
+                        $data['Nama Pendidikan Terakhir'] = $itemArr[$i++] ?? '';
+                        break;
+                    default:
+                        $data[ucwords(str_replace('_', ' ', $field))] = $itemArr[$i++] ?? '';
+                }
+            }
+
+            return $data;
+        });
+    }
+
+    public function getFieldExportHeadings($fields, $addNumber = false)
+    {
+        $labels = [
+            'nama_lengkap' => 'Nama Lengkap',
+            'nik' => 'NIK / Passport',
+            'no_kk' => 'No. KK',
+            'niup' => 'NIUP',
+            'jenis_kelamin' => 'Jenis Kelamin',
+            'status_aktif' => 'Status Kepegawaian',
+        ];
+
+        $headings = [];
+        if ($addNumber) {
+            $headings[] = 'No';
+        }
+
+        foreach ($fields as $field) {
+            switch ($field) {
+                case 'tempat_tanggal_lahir':
+                    $headings[] = 'Tempat Lahir';
+                    $headings[] = 'Tanggal Lahir';
+                    break;
+                case 'alamat':
+                    $headings[] = 'Jalan';
+                    $headings[] = 'Kecamatan';
+                    $headings[] = 'Kabupaten';
+                    $headings[] = 'Provinsi';
+                    $headings[] = 'Negara';
+                    break;
+                case 'pendidikan_terakhir':
+                    $headings[] = 'Jenjang Pendidikan Terakhir';
+                    $headings[] = 'Nama Pendidikan Terakhir';
+                    break;
+                default:
+                    $headings[] = $labels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            }
+        }
+
+        return $headings;
     }
 }

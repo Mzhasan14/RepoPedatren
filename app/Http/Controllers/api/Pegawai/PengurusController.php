@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\Pegawai;
 
+use App\Exports\BaseExport;
 use App\Exports\Pegawai\PengurusExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\KeluarPengurusRequest;
@@ -221,8 +222,49 @@ class PengurusController extends Controller
         }
     }
 
-    public function pengurusExport()
+    public function pengurusExport(Request $request)
     {
-        return Excel::download(new PengurusExport, 'data_pengurus.xlsx');
+        $defaultExportFields = ['nama_lengkap', 'jenis_kelamin', 'status_aktif'];
+
+        $columnOrder = [
+            'no_kk',
+            'nik',
+            'niup',
+            'nama_lengkap',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'alamat',
+            'pendidikan_terakhir',
+            'email',
+            'no_hp',
+            'satuan_kerja',
+            'golongan_jabatan',
+            'jabatan',
+            'keterangan_jabatan',
+            'status_aktif',
+        ];
+
+        $optionalFields = $request->input('fields', []);
+        if (is_string($optionalFields)) {
+            $optionalFields = explode(',', $optionalFields);
+        }
+
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        $query = $this->pengurusService->getExportQuery($fields, $request);
+        $query = $this->filterController->applyAllFilters($query, $request);
+        $query = $query->latest('b.created_at');
+
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->pengurusService->formatDataExport($results, $fields, $addNumber);
+        $headings = $this->pengurusService->getFieldExportHeadings($fields, $addNumber);
+
+        $filename = 'pengurus_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

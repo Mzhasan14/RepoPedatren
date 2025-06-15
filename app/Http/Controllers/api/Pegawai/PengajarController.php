@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\Pegawai;
 
+use App\Exports\BaseExport;
 use App\Exports\Pegawai\PengajarExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\KeluarPengajarRequest;
@@ -273,8 +274,45 @@ class PengajarController extends Controller
         }
     }
 
-    public function pengajarExport()
+    public function PengajarExport(Request $request)
     {
-        return Excel::download(new PengajarExport, 'data_pengajar.xlsx');
+        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai', 'tanggal_selesai', 'status_aktif'];
+
+        $columnOrder = [
+            'nama_lengkap',
+            'nik',
+            'no_kk',
+            'niup',
+            'jenis_kelamin',
+            'jalan',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'pendidikan_terakhir',
+            'email',
+            'no_telepon',
+            'lembaga',
+            'golongan',
+            'jabatan',
+            'status_aktif',
+        ];
+
+        $optionalFields = $request->input('fields', []);
+        $fields = array_unique(array_merge($defaultFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        $query = $this->pengajarService->getExportPengajarQuery($fields, $request);
+        $query = $query->latest('b.created_at');
+
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->pengajarService->formatDataExport($results, $fields, $addNumber);
+        $headings = $this->pengajarService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        return Excel::download(new BaseExport($formatted, $headings), "pengajar_{$now}.xlsx");
     }
+
 }

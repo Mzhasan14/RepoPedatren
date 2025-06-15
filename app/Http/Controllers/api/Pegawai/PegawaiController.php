@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\Pegawai;
 
+use App\Exports\BaseExport;
 use App\Exports\Pegawai\PegawaiExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\CreatePegawaiRequest;
@@ -92,8 +93,56 @@ class PegawaiController extends Controller
     /**
      * Export Pegawai data to Excel.
      */
-    public function pegawaiExport()
+    public function exportExcel(Request $request)
     {
-        return Excel::download(new PegawaiExport, 'data_pegawai.xlsx');
+        // Kolom default untuk export
+        $defaultExportFields = [
+            'nama_lengkap',
+            'jenis_kelamin',
+            'status_aktif',
+        ];
+
+        // Urutan kolom export
+        $columnOrder = [
+            'no_kk',               // paling depan
+            'nik',
+            'niup',
+            'nama_lengkap',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'alamat',
+            'pendidikan_terakhir',
+            'status_aktif',
+        ];
+
+        // Ambil kolom dari request checkbox
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung default + optional, sesuai urutan columnOrder
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Query dari service
+        $query = $this->pegawaiService->getExportPegawaiQuery($fields, $request);
+
+        // Jika ada filter tambahan, aktifkan jika kamu pakai
+        $query = $this->filterController->applyAllFilters($query, $request);
+
+        $query = $query->latest('b.created_at');
+
+        // Ambil semua atau limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        // Format dan heading
+        $addNumber = true;
+        $formatted = $this->pegawaiService->formatDataExport($results, $fields, $addNumber);
+        $headings = $this->pegawaiService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "pegawai_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

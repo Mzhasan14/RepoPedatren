@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\Pegawai;
 
+use App\Exports\BaseExport;
 use App\Exports\Pegawai\KaryawanExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\KaryawanFormulirRequest;
@@ -215,8 +216,45 @@ class KaryawanController extends Controller
         }
     }
 
-    public function karyawanExport()
+    public function KaryawanExcel(Request $request)
     {
-        return Excel::download(new KaryawanExport, 'data_karyawan.xlsx');
+        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai', 'tanggal_selesai', 'status_aktif'];
+
+        $columnOrder = [
+            'no_kk',
+            'nik',
+            'niup',
+            'nama_lengkap',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'alamat',
+            'pendidikan_terakhir',
+            'email',
+            'no_telepon',
+            'lembaga',
+            'golongan_jabatan',
+            'jabatan',
+            'keterangan_jabatan',
+            'tanggal_mulai',
+            'tanggal_selesai',
+            'status_aktif',
+        ];
+
+        $optionalFields = $request->input('fields', []);
+        $fields = array_unique(array_merge($defaultFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        $query = $this->karyawanService->getExportKaryawanQuery($fields, $request)->latest('b.created_at');
+
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->karyawanService->formatDataExport($results, $fields, $addNumber);
+        $headings  = $this->karyawanService->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        return Excel::download(new BaseExport($formatted, $headings), "karyawan_{$now}.xlsx");
     }
 }
