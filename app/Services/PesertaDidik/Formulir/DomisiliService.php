@@ -2,12 +2,14 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
-use App\Models\DomisiliSantri;
-use App\Models\RiwayatDomisili;
 use App\Models\Santri;
+use App\Models\DomisiliSantri;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\RiwayatDomisili;
+use App\Models\Kewilayahan\Kamar;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kewilayahan\Wilayah;
+use Illuminate\Support\Facades\Auth;
 
 class DomisiliService
 {
@@ -19,7 +21,7 @@ class DomisiliService
             'kamar:id,nama_kamar',
             'santri.biodata:id',
         ])
-            ->whereHas('santri.biodata', fn ($q) => $q->where('id', $bioId))
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
             ->get();
 
         $aktif = DomisiliSantri::with([
@@ -28,7 +30,7 @@ class DomisiliService
             'kamar:id,nama_kamar',
             'santri.biodata:id',
         ])
-            ->whereHas('santri.biodata', fn ($q) => $q->where('id', $bioId))
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
             ->where('status', 'aktif')
             ->first();
 
@@ -63,7 +65,7 @@ class DomisiliService
         return DB::transaction(function () use ($input, $bioId) {
             $santri = Santri::where('biodata_id', $bioId)->latest()->first();
             if (! $santri) {
-                return ['status' => false, 'message' => 'Santri tidak ditemukan.'];
+                return ['status' => false, 'message' => 'Data santri tidak ditemukan atau belum terdaftar sebagai santri.'];
             }
 
             if (DomisiliSantri::where('santri_id', $santri->id)->exists()) {
@@ -80,7 +82,43 @@ class DomisiliService
             if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir ('.$riwayatTerakhir->tanggal_masuk->format('Y-m-d').'). Harap periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir (' . $riwayatTerakhir->tanggal_masuk->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
+                ];
+            }
+
+            // --- VALIDASI JENIS_KELAMIN DAN KAPASITAS KAMAR ---
+            $biodata = $santri->biodata;
+            $wilayahBaru = Wilayah::find($input['wilayah_id']);
+            $kamarBaru = Kamar::find($input['kamar_id']);
+
+            if (! $biodata) {
+                return [
+                    'status' => false,
+                    'message' => 'Data biodata santri tidak ditemukan.',
+                ];
+            }
+
+            $jenisKelamin = strtolower($biodata->jenis_kelamin ?? '');
+            $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+
+            if (
+                ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+                ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+            ) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah yang dipilih.',
+                ];
+            }
+
+            $jumlahPenghuni = DomisiliSantri::where('kamar_id', $input['kamar_id'])
+                ->where('status', 'aktif')
+                ->count();
+            $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+            if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+                return [
+                    'status' => false,
+                    'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
                 ];
             }
 
@@ -142,7 +180,47 @@ class DomisiliService
             if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya ('.$tanggalLama->format('Y-m-d').'). Silakan periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
+            }
+
+            // Ambil data yang akan divalidasi
+            $santri = Santri::find($aktif->santri_id);
+            $biodata = $santri ? $santri->biodata : null;
+            $wilayahBaru = Wilayah::find($input['wilayah_id']);
+            $kamarBaru = Kamar::find($input['kamar_id']);
+
+            if (! $biodata) {
+                return [
+                    'status' => false,
+                    'message' => 'Data santri/biodata tidak ditemukan.',
+                ];
+            }
+
+            // --- Validasi jenis_kelamin dengan kategori wilayah ---
+            $jenisKelamin = strtolower($biodata->jenis_kelamin ?? '');
+            $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+
+            if (
+                ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+                ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+            ) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah yang dipilih.',
+                ];
+            }
+
+            // --- Validasi kapasitas kamar ---
+            $jumlahPenghuni = DomisiliSantri::where('kamar_id', $input['kamar_id'])
+                ->where('status', 'aktif')
+                ->count();
+
+            $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+            if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+                return [
+                    'status' => false,
+                    'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
                 ];
             }
 
@@ -197,7 +275,12 @@ class DomisiliService
                 'created_by' => $aktif->created_by,
             ]);
 
-            $aktif->delete();
+            $aktif->update([
+                'status' => 'keluar',
+                'tanggal_keluar' => $tglKeluar,
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
+            ]);
 
             return ['status' => true, 'message' => 'Santri telah keluar dari domisili.'];
         });
@@ -217,7 +300,45 @@ class DomisiliService
             if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya ('.$tanggalLama->format('Y-m-d').'). Silakan periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                ];
+            }
+
+            // --- VALIDASI JENIS_KELAMIN DAN KAPASITAS KAMAR ---
+            $santri = Santri::find($dom->santri_id);
+            $biodata = $santri ? $santri->biodata : null;
+            $wilayahBaru = Wilayah::find($input['wilayah_id']);
+            $kamarBaru = Kamar::find($input['kamar_id']);
+
+            if (! $biodata) {
+                return [
+                    'status' => false,
+                    'message' => 'Data santri/biodata tidak ditemukan.',
+                ];
+            }
+
+            $jenisKelamin = strtolower($biodata->jenis_kelamin ?? '');
+            $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+
+            if (
+                ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+                ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+            ) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah yang dipilih.',
+                ];
+            }
+
+            $jumlahPenghuni = DomisiliSantri::where('kamar_id', $input['kamar_id'])
+                ->where('status', 'aktif')
+                ->where('id', '<>', $dom->id) // exclude current record
+                ->count();
+            $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+            if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+                return [
+                    'status' => false,
+                    'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
                 ];
             }
 

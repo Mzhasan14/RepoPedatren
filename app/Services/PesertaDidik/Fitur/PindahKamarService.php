@@ -2,11 +2,14 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use App\Models\Santri;
 use App\Models\DomisiliSantri;
 use App\Models\RiwayatDomisili;
-use App\Models\Santri;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Kewilayahan\Blok;
+use App\Models\Kewilayahan\Kamar;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kewilayahan\Wilayah;
+use Illuminate\Support\Facades\Auth;
 
 class PindahKamarService
 {
@@ -17,13 +20,18 @@ class PindahKamarService
         $santriIds = $data['santri_id'];
 
         $namaSantriList = Santri::whereIn('id', $santriIds)
-            ->with('biodata:id,nama')
+            ->with('biodata:id,nama,jenis_kelamin')
             ->get()
-            ->pluck('biodata.nama', 'id');
+            ->keyBy('id');
 
         $domisiliAktif = DomisiliSantri::whereIn('santri_id', $santriIds)
             ->get()
             ->keyBy('santri_id');
+
+        // Ambil data wilayah, blok, kamar beserta kategori
+        $wilayahBaru = Wilayah::find($data['wilayah_id']);
+        $blokBaru = Blok::find($data['blok_id']);
+        $kamarBaru = Kamar::find($data['kamar_id']);
 
         $dataBaruNama = [];
         $dataGagal = [];
@@ -31,17 +39,63 @@ class PindahKamarService
         DB::beginTransaction();
         try {
             foreach ($santriIds as $santriId) {
+                $santri = $namaSantriList->get($santriId);
                 $domisili = $domisiliAktif->get($santriId);
-                $nama = $namaSantriList[$santriId] ?? 'Tidak diketahui';
+                $nama = $santri ? $santri->biodata->nama : 'Tidak diketahui';
+                $jenisKelamin = strtolower($santri->biodata->jenis_kelamin ?? '');
 
                 if (is_null($domisili)) {
                     $dataGagal[] = [
                         'nama' => $nama,
                         'message' => 'Data domisili aktif tidak ditemukan.',
                     ];
-
                     continue;
                 }
+
+                // ========== VALIDASI JENIS KELAMIN & KATEGORI ==========
+
+                $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+                if (
+                    ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+                    ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+                ) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah.',
+                    ];
+                    continue;
+                }
+
+                if ($blokBaru->wilayah_id != $wilayahBaru->id) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Blok tidak sesuai dengan wilayah yang dipilih.',
+                    ];
+                    continue;
+                }
+
+                if ($kamarBaru->blok_id != $blokBaru->id) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Kamar tidak sesuai dengan blok yang dipilih.',
+                    ];
+                    continue;
+                }
+
+                // cek kapasitas kamar
+                $jumlahPenghuni = DomisiliSantri::where('kamar_id', $kamarBaru->id)
+                    ->where('status', 'aktif')
+                    ->count();
+                $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+                if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+                    $dataGagal[] = [
+                        'nama' => $nama,
+                        'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
+                    ];
+                    continue;
+                }
+
+                // ========== END VALIDASI ==========
 
                 // Simpan riwayat lama
                 RiwayatDomisili::create([
@@ -60,9 +114,9 @@ class PindahKamarService
 
                 // Update domisili aktif
                 $domisili->update([
-                    'wilayah_id' => $data['wilayah_id'],
-                    'blok_id' => $data['blok_id'],
-                    'kamar_id' => $data['kamar_id'],
+                    'wilayah_id' => $wilayahBaru->id,
+                    'blok_id' => $blokBaru->id,
+                    'kamar_id' => $kamarBaru->id,
                     'tanggal_masuk' => $now,
                     'updated_by' => $userId,
                     'updated_at' => $now,

@@ -206,6 +206,7 @@ class DataKeluargaSeeder extends Seeder
 
             // ------------------ MULAI MENYIMPAN DATA ANAK ------------------
             $childId = (string) Str::uuid();
+            $jenisKelaminAnak = $faker->randomElement(['l', 'p']);
             $childBirthDate = (new DateTime())->modify('-' . rand(7, 18) . ' years')->format('Y-m-d');
             DB::table('biodata')->insert([
                 'id' => $childId,
@@ -215,9 +216,9 @@ class DataKeluargaSeeder extends Seeder
                 'kecamatan_id' => $kecamatanId,
                 'jalan' => $faker->streetAddress,
                 'kode_pos' => $faker->postcode,
-                'nama' => $faker->name($faker->randomElement(['male', 'female'])),
+                'nama' => $faker->name($jenisKelaminAnak === 'l' ? 'male' : 'female'),
                 'no_passport' => $faker->numerify('############'),
-                'jenis_kelamin' => $faker->randomElement(['l', 'p']),
+                'jenis_kelamin' => $jenisKelaminAnak,
                 'tanggal_lahir' => $childBirthDate,
                 'tempat_lahir' => $faker->city,
                 'anak_keberapa' => rand(1, 5),
@@ -277,9 +278,29 @@ class DataKeluargaSeeder extends Seeder
                 ]);
 
                 if (!$noDomisili) {
-                    $wilayah = $faker->randomElement($wilayahList);
-                    $blok = $faker->randomElement($blokList->where('wilayah_id', $wilayah->id)->values());
-                    $kamar = $faker->randomElement($kamarList->where('blok_id', $blok->id)->values());
+                    // Ambil biodata santri (jenis_kelamin)
+                    $biodata = DB::table('biodata')->where('id', $childId)->first();
+                    $jenisKelamin = strtolower($biodata->jenis_kelamin);
+
+                    // Filter wilayah sesuai jenis_kelamin
+                    if ($jenisKelamin === 'l') {
+                        $wilayahFiltered = $wilayahList->where('kategori', 'putra')->values();
+                    } elseif ($jenisKelamin === 'p') {
+                        $wilayahFiltered = $wilayahList->where('kategori', 'putri')->values();
+                    } else {
+                        $wilayahFiltered = $wilayahList;
+                    }
+                    // Random wilayah fallback jika kosong
+                    if ($wilayahFiltered->isEmpty()) {
+                        $wilayah = $faker->randomElement($wilayahList);
+                    } else {
+                        $wilayah = $faker->randomElement($wilayahFiltered);
+                    }
+                    // Pilih blok & kamar
+                    $blokFiltered = $blokList->where('wilayah_id', $wilayah->id)->values();
+                    $blok = $faker->randomElement($blokFiltered);
+                    $kamarFiltered = $kamarList->where('blok_id', $blok->id)->values();
+                    $kamar = $faker->randomElement($kamarFiltered);
 
                     if ($stSantri === 'aktif') {
                         DB::table('domisili_santri')->insert([
@@ -414,6 +435,20 @@ class DataKeluargaSeeder extends Seeder
                     }
                 }
             }
+
+            // ------------------ BAGIAN ANAK PEGAWAI ------------------
+            if (in_array($currentAyahId, $pegawaiBiodataIds)) {
+                DB::table('anak_pegawai')->insert([
+                    'biodata_id' => $childId,
+                    'pegawai_id' => DB::table('pegawai')->where('biodata_id', $currentAyahId)->value('id'),
+                    'status' => true,
+                    'created_by' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $anakPegawaiCount++;
+            }
+
 
             // ------------------ BAGIAN ANAK PEGAWAI ------------------
             if (in_array($currentAyahId, $pegawaiBiodataIds)) {
@@ -577,7 +612,23 @@ class DataKeluargaSeeder extends Seeder
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    $wilayah = $faker->randomElement($wilayahList);
+
+                    // *** PATCH DOMISILI SESUAI JENIS_KELAMIN ***
+                    $biodataExtra = DB::table('biodata')->where('id', $childIdExtra)->first();
+                    $jenisKelaminExtra = strtolower($biodataExtra->jenis_kelamin);
+
+                    if ($jenisKelaminExtra === 'l') {
+                        $wilayahFiltered = $wilayahList->where('kategori', 'putra')->values();
+                    } elseif ($jenisKelaminExtra === 'p') {
+                        $wilayahFiltered = $wilayahList->where('kategori', 'putri')->values();
+                    } else {
+                        $wilayahFiltered = $wilayahList;
+                    }
+                    if ($wilayahFiltered->isEmpty()) {
+                        $wilayah = $faker->randomElement($wilayahList);
+                    } else {
+                        $wilayah = $faker->randomElement($wilayahFiltered);
+                    }
                     $wilayahId = $wilayah->id;
                     $blokFiltered = $blokList->where('wilayah_id', $wilayahId)->values();
                     $blok = $faker->randomElement($blokFiltered);
@@ -585,6 +636,7 @@ class DataKeluargaSeeder extends Seeder
                     $kamarFiltered = $kamarList->where('blok_id', $blokId)->values();
                     $kamar = $faker->randomElement($kamarFiltered);
                     $kamarId = $kamar->id;
+
                     DB::table('domisili_santri')->insert([
                         'santri_id' => $santriIdExtra,
                         'wilayah_id' => $wilayahId,

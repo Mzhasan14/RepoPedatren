@@ -16,66 +16,79 @@ class WilayahSeeder extends Seeder
         $now = Carbon::now();
         $admin = 1; // ID admin default
 
+        // Data wilayah lengkap dengan kategori
         $wilayahs = [
-            'Wilayah K (Maliki)' => [
+            ['nama' => 'Wilayah K (Maliki)', 'kategori' => 'putra', 'bloks' => [
                 'Asrama Al-Farabi',
                 'Asrama Ibnu Sina',
-                'Asrama Ar-Razi',
-            ],
-            'Wilayah K (Zaid Bin Tsabit)' => [
+                'Asrama Ar-Razi'
+            ]],
+            ['nama' => 'Wilayah K (Zaid Bin Tsabit)', 'kategori' => 'putri', 'bloks' => [
                 'Asrama Aisyah',
                 'Asrama Hafsah',
-                'Asrama Zainab',
-            ],
-            'Wilayah J (Al-Amin)' => [
+                'Asrama Zainab'
+            ]],
+            ['nama' => 'Wilayah J (Al-Amin)', 'kategori' => 'putra', 'bloks' => [
                 'Asrama Al-Kindi',
-                'Asrama Al-Jurjani',
-            ],
-            'Wilayah J (Al‑Lathifiyyah)' => [
+                'Asrama Al-Jurjani'
+            ]],
+            ['nama' => 'Wilayah J (Al‑Lathifiyyah)', 'kategori' => 'putri', 'bloks' => [
                 'Asrama Fatimah',
-                'Asrama Maryam',
-            ],
-            'Dalbar (Az‑Zainiyah)' => [
+                'Asrama Maryam'
+            ]],
+            ['nama' => 'Dalbar (Az‑Zainiyah)', 'kategori' => 'putra', 'bloks' => [
                 'Asrama Imam Syafi’i',
-                'Asrama Imam Malik',
-            ],
-            'Daltim (Al‑Hasyimiyah)' => [
+                'Asrama Imam Malik'
+            ]],
+            ['nama' => 'Daltim (Al‑Hasyimiyah)', 'kategori' => 'putra', 'bloks' => [
                 'Asrama Al-Ghazali',
-                'Asrama Asy-Syathibi',
-            ],
-            'Dalsel (Fatimatuzzahro)' => [
+                'Asrama Asy-Syathibi'
+            ]],
+            ['nama' => 'Dalsel (Fatimatuzzahro)', 'kategori' => 'putri', 'bloks' => [
                 'Asrama Ummu Salamah',
-                'Asrama Rabi’ah Adawiyah',
-            ],
-            'Wilayah Al‑Mawaddah' => [
+                'Asrama Rabi’ah Adawiyah'
+            ]],
+            ['nama' => 'Wilayah Al‑Mawaddah', 'kategori' => 'putri', 'bloks' => [
                 'Asrama Al-Mawaddah 1',
-                'Asrama Al-Mawaddah 2',
-            ],
-            'Ma’had Aly' => [
+                'Asrama Al-Mawaddah 2'
+            ]],
+            ['nama' => 'Ma’had Aly', 'kategori' => 'putra', 'bloks' => [
                 'Asrama Al-Hikam',
-                'Asrama Al-Munawwir',
-            ],
+                'Asrama Al-Munawwir'
+            ]],
         ];
 
-        $kamarNames = [
+        $kamarNamesPutra = [
             'Kamar Umar',
             'Kamar Ali',
             'Kamar Utsman',
             'Kamar Bilal',
             'Kamar Salman',
-            'Kamar Abu Bakar',
+            'Kamar Abu Bakar'
         ];
 
-        foreach ($wilayahs as $wilayahName => $blokList) {
+        $kamarNamesPutri = [
+            'Kamar Aisyah',
+            'Kamar Hafsah',
+            'Kamar Zainab',
+            'Kamar Fatimah',
+            'Kamar Maryam',
+            'Kamar Khadijah'
+        ];
+
+        $kapasitasDefault = 12; // Bisa disesuaikan
+
+        foreach ($wilayahs as $wilayah) {
             $wilayahId = DB::table('wilayah')->insertGetId([
-                'nama_wilayah' => $wilayahName,
+                'nama_wilayah' => $wilayah['nama'],
+                'kategori' => $wilayah['kategori'],
                 'created_by' => $admin,
                 'status' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
 
-            foreach ($blokList as $blokName) {
+            foreach ($wilayah['bloks'] as $blokName) {
                 $blokId = DB::table('blok')->insertGetId([
                     'wilayah_id' => $wilayahId,
                     'nama_blok' => $blokName,
@@ -85,10 +98,13 @@ class WilayahSeeder extends Seeder
                     'updated_at' => $now,
                 ]);
 
+                $kamarNames = $wilayah['kategori'] === 'putra' ? $kamarNamesPutra : $kamarNamesPutri;
+
                 foreach ($kamarNames as $kamarName) {
                     DB::table('kamar')->insert([
                         'blok_id' => $blokId,
                         'nama_kamar' => $kamarName,
+                        'kapasitas' => $kapasitasDefault,
                         'created_by' => $admin,
                         'status' => true,
                         'created_at' => $now,

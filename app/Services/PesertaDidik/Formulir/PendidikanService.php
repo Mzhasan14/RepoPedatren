@@ -81,7 +81,7 @@ class PendidikanService
             if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat pendidikan terakhir ('.$riwayatTerakhir->tanggal_masuk->format('Y-m-d').'). Harap periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat pendidikan terakhir (' . $riwayatTerakhir->tanggal_masuk->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
                 ];
             }
 
@@ -157,7 +157,7 @@ class PendidikanService
             if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya ('.$tanggalLama->format('Y-m-d').'). Silakan periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
                 ];
             }
 
@@ -223,15 +223,20 @@ class PendidikanService
                 'rombel_id' => $aktif->rombel_id ?? null,
                 'angkatan_id' => $aktif->angkatan_id ?? null,
                 'tanggal_masuk' => $aktif->tanggal_masuk,
-                'tanggal_keluar' => $input['tanggal_keluar'],
+                'tanggal_keluar' => $tglKeluar,
                 'status' => $input['status'],
                 'created_by' => $aktif->created_by,
             ]);
 
-            // Hapus data aktif
-            $aktif->delete();
+            // update data aktif
+            $aktif->update([
+                'status' => $input['status'],
+                'tanggal_keluar' => $input['tanggal_keluar'],
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
+            ]);
 
-            return ['status' => true, 'message' => 'Santri telah keluar dari pendidikan.'];
+            return ['status' => true, 'message' => 'Pelajar telah keluar dari pendidikan.'];
         });
     }
 
@@ -244,19 +249,13 @@ class PendidikanService
             }
 
             // Ambil tanggal masuk dan keluar dari input atau fallback ke nilai lama
-            $tanggalMasuk = isset($input['tanggal_masuk'])
-                ? Carbon::parse($input['tanggal_masuk'])
-                : $pendidikan->tanggal_masuk;
+            $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+            $tanggalLama = Carbon::parse($pendidikan->tanggal_masuk);
 
-            $tanggalKeluar = isset($input['tanggal_keluar'])
-                ? Carbon::parse($input['tanggal_keluar'])
-                : $pendidikan->tanggal_keluar;
-
-            // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
-            if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
+            if ($tanggalBaru->lt($tanggalLama)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
+                    'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
                 ];
             }
 
@@ -280,8 +279,7 @@ class PendidikanService
                 'rombel_id' => $input['rombel_id'] ?? null,
                 'angkatan_id' => $input['angkatan_id'] ?? null,
                 'status' => $status,
-                'tanggal_masuk' => $tanggalMasuk,
-                'tanggal_keluar' => $tanggalKeluar ?? null,
+                'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
                 'updated_by' => Auth::id(),
                 'updated_at' => now(),
             ]);

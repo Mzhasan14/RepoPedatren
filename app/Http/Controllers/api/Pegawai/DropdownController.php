@@ -16,18 +16,27 @@ class DropdownController extends Controller
     public function menuWilayahBlokKamar()
     {
         $query = DB::table('wilayah as w')
-            ->leftJoin('blok as b', 'w.id', '=', 'b.wilayah_id')
-            ->leftJoin('kamar as k', 'b.id', '=', 'k.blok_id')
+            ->leftJoin('blok as b', function ($join) {
+                $join->on('w.id', '=', 'b.wilayah_id')
+                    ->where('b.status', true);
+            })
+            ->leftJoin('kamar as k', function ($join) {
+                $join->on('b.id', '=', 'k.blok_id')
+                    ->where('k.status', true);
+            })
             ->select(
                 'w.id as wilayah_id',
                 'w.nama_wilayah',
+                'w.kategori as kategori_wilayah',
                 'b.id as blok_id',
                 'b.wilayah_id',
                 'b.nama_blok',
                 'k.id as kamar_id',
                 'k.blok_id',
-                'k.nama_kamar'
+                'k.nama_kamar',
+                'k.kapasitas as kapasitas_kamar'
             )
+            ->where('w.status', true)
             ->orderBy('w.id')
             ->get();
 
@@ -39,11 +48,12 @@ class DropdownController extends Controller
                 $wilayahs[$row->wilayah_id] = [
                     'id' => $row->wilayah_id,
                     'nama_wilayah' => $row->nama_wilayah,
+                    'kategori' => $row->kategori_wilayah ? strtolower($row->kategori_wilayah) : null,
                     'blok' => [],
                 ];
             }
 
-            // Inisialisasi blok
+            // Inisialisasi blok jika ada & status true
             if (! is_null($row->blok_id) && ! isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
                     'id' => $row->blok_id,
@@ -53,12 +63,23 @@ class DropdownController extends Controller
                 ];
             }
 
-            // Tambahkan kamar jika ada
+            // Tambahkan kamar jika ada & status true
             if (! is_null($row->kamar_id)) {
+                $jumlahPenghuni = \App\Models\DomisiliSantri::where('kamar_id', $row->kamar_id)
+                    ->where('status', 'aktif')
+                    ->count();
+
+                $sisaSlot = ($row->kapasitas_kamar !== null)
+                    ? max($row->kapasitas_kamar - $jumlahPenghuni, 0)
+                    : null;
+
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id]['kamar'][] = [
                     'id' => $row->kamar_id,
                     'id_blok' => $row->blok_id,
                     'nama_kamar' => $row->nama_kamar,
+                    'slot' => $sisaSlot, // slot tersisa
+                    'kapasitas' => $row->kapasitas_kamar,
+                    'penghuni' => $jumlahPenghuni,
                 ];
             }
         }
@@ -72,12 +93,10 @@ class DropdownController extends Controller
                         return strcmp($a['nama_kamar'], $b['nama_kamar']);
                     });
                 }
-
                 // Urutkan blok berdasarkan nama_blok
                 usort($wilayah['blok'], function ($a, $b) {
                     return strcmp($a['nama_blok'], $b['nama_blok']);
                 });
-
                 return $wilayah;
             }, $wilayahs)),
         ];
@@ -89,6 +108,9 @@ class DropdownController extends Controller
 
         return response()->json($result);
     }
+
+
+
     //     public function menuWilayahBlokKamar()
     //     {
     //     $query = DB::table('wilayah as w')
@@ -228,10 +250,14 @@ class DropdownController extends Controller
             ->leftJoin('kabupaten as kb', 'p.id', '=', 'kb.provinsi_id')
             ->leftJoin('kecamatan as kc', 'kb.id', '=', 'kc.kabupaten_id')
             ->select(
-                'n.id as negara_id', 'n.nama_negara',
-                'p.id as provinsi_id', 'p.nama_provinsi',
-                'kb.id as kabupaten_id', 'kb.nama_kabupaten',
-                'kc.id as kecamatan_id', 'kc.nama_kecamatan'
+                'n.id as negara_id',
+                'n.nama_negara',
+                'p.id as provinsi_id',
+                'p.nama_provinsi',
+                'kb.id as kabupaten_id',
+                'kb.nama_kabupaten',
+                'kc.id as kecamatan_id',
+                'kc.nama_kecamatan'
             )
             ->orderBy('n.id')
             ->get();

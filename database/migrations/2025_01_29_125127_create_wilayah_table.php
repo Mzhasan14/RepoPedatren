@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('wilayah', function (Blueprint $table) {
             $table->id();
             $table->string('nama_wilayah');
+            $table->enum('kategori', ['putra', 'putri'])->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
