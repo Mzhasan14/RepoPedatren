@@ -103,4 +103,9 @@ class RiwayatPendidikan extends Model
     {
         return $this->belongsTo(Angkatan::class, 'angkatan_id');
     }
+
+    protected $casts = [
+        'tanggal_keluar' => 'date',
+    ];
+
 }

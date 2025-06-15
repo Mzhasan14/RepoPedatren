@@ -203,14 +203,14 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Biometric
-Route::prefix('biometric')->group(function () {
+Route::prefix('biometric')->middleware('auth:sanctum')->group(function () {
     Route::post('register-profile', [BiometricProfileController::class, 'store']);
     Route::post('update-profile', [BiometricProfileController::class, 'update']);
     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
 });
 
 // Export
-Route::prefix('export')->group(function () {
+Route::prefix('export')->middleware('auth:sanctum')->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
@@ -221,11 +221,10 @@ Route::prefix('export')->group(function () {
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'exportExcel'])->name('anakpegawai.export');
 
     // Kepegawaian
-    Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');
-    Route::get('/karyawan', [KaryawanController::class, 'karyawanExport'])->name('karyawan.export');
+    Route::get('/pegawai', [PegawaiController::class, 'exportExcel'])->name('pegawai.export');
+    Route::get('/karyawan', [KaryawanController::class, 'KaryawanExcel'])->name('karyawan.export');
     Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
     Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
-    Route::get('/walikelas', [WalikelasController::class, 'waliKelasExport'])->name('walikelas.export');
 });
 
 Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
@@ -352,7 +351,7 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
 
 Route::get('/user', [UserController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin');
 
-Route::prefix('data-pokok')->group(function () {
+Route::prefix('data-pokok')->middleware('auth:sanctum')->group(function () {
 
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
@@ -430,7 +429,7 @@ Route::prefix('data-pokok')->group(function () {
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
-Route::prefix('dropdown')->group(function () {
+Route::prefix('dropdown')->middleware('auth:sanctum')->group(function () {
     Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
     Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
     Route::get('/wali-asuh', [DropdownController::class, 'nameWaliasuh']);

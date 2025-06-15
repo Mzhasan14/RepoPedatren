@@ -104,7 +104,7 @@ class DetailService
                 ->get();
         }
         $keluarga = $ortu->merge($saudara);
-        $data['Keluarga'] = $keluarga->map(fn ($i) => [
+        $data['Keluarga'] = $keluarga->map(fn($i) => [
             'nama' => $i->nama,
             'nik' => $i->nik,
             'status' => $i->status,
@@ -123,7 +123,7 @@ class DetailService
                 ->get();
         }
 
-        $data['Status_Santri']['Santri'] = $santriInfo->map(fn ($s) => [
+        $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
             'NIS' => $s->nis,
             'Tanggal_Mulai' => $s->tanggal_masuk,
             'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
@@ -191,7 +191,7 @@ class DetailService
             ->get();
 
         $data['Status_Santri']['Info_Perizinan'] = $izin->isNotEmpty()
-            ? $izin->map(fn ($z) => [
+            ? $izin->map(fn($z) => [
                 'tanggal' => $z->tanggal,
                 'keterangan' => $z->keterangan,
                 'lama_waktu' => $z->lama_waktu,
@@ -199,9 +199,9 @@ class DetailService
             ])
             : [];
 
-        // Gabungkan domisili aktif dan riwayat
+        // Data aktif
         $domisiliAktif = DB::table('domisili_santri as ds')
-            ->join('santri AS s', fn ($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
+            ->join('santri AS s', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
             ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
@@ -215,8 +215,10 @@ class DetailService
                 'ds.tanggal_masuk',
                 'ds.tanggal_keluar',
                 'ds.status',
-            ]);
+            ])
+            ->first();
 
+        // Data riwayat, urutkan terbaru dulu
         $domisiliRiwayat = DB::table('riwayat_domisili as rd')
             ->join('santri as s', 'rd.santri_id', 's.id')
             ->join('biodata as b', 's.biodata_id', 'b.id')
@@ -232,13 +234,27 @@ class DetailService
                 'rd.tanggal_masuk',
                 'rd.tanggal_keluar',
                 'rd.status',
+            ])
+            ->orderByDesc('rd.tanggal_masuk')
+            ->get();
+
+        // Gabungkan aktif + riwayat
+        $data['Domisili'] = collect();
+
+        if ($domisiliAktif) {
+            $data['Domisili']->push([
+                'id' => $domisiliAktif->id,
+                'wilayah' => $domisiliAktif->nama_wilayah,
+                'blok' => $domisiliAktif->nama_blok,
+                'kamar' => $domisiliAktif->nama_kamar,
+                'tanggal_ditempati' => $domisiliAktif->tanggal_masuk,
+                'tanggal_pindah' => $domisiliAktif->tanggal_keluar ?? '-',
+                'status' => $domisiliAktif->status,
             ]);
+        }
 
-        $domisiliGabungan = $domisiliAktif->unionAll($domisiliRiwayat)->get();
-
-        // Map dan urutkan berdasarkan tanggal masuk desc
-        $data['Domisili'] = collect($domisiliGabungan)
-            ->map(fn ($d) => [
+        foreach ($domisiliRiwayat as $d) {
+            $data['Domisili']->push([
                 'id' => $d->id,
                 'wilayah' => $d->nama_wilayah,
                 'blok' => $d->nama_blok,
@@ -246,11 +262,11 @@ class DetailService
                 'tanggal_ditempati' => $d->tanggal_masuk,
                 'tanggal_pindah' => $d->tanggal_keluar ?? '-',
                 'status' => $d->status,
-            ])
-            ->sortByDesc('tanggal_masuk')
-            ->values();
+            ]);
+        }
 
         // Gabungkan pendidikan aktif dan riwayat
+        // Pendidikan aktif/cuti (hanya satu)
         $pendidikanAktif = DB::table('pendidikan as pd')
             ->join('lembaga as l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoin('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
@@ -268,7 +284,9 @@ class DetailService
                 'pd.tanggal_masuk',
                 'pd.tanggal_keluar',
                 'pd.status',
-            ]);
+            ])
+            ->orderByDesc('pd.tanggal_masuk')
+            ->first();
 
         $riwayatPendidikan = DB::table('riwayat_pendidikan as rp')
             ->join('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
@@ -286,13 +304,28 @@ class DetailService
                 'rp.tanggal_masuk',
                 'rp.tanggal_keluar',
                 'rp.status',
+            ])
+            ->orderByDesc('rp.tanggal_masuk')
+            ->get();
+
+        $data['Pendidikan'] = collect();
+
+        if ($pendidikanAktif) {
+            $data['Pendidikan']->push([
+                'id' => $pendidikanAktif->id,
+                'no_induk' => $pendidikanAktif->no_induk,
+                'nama_lembaga' => $pendidikanAktif->nama_lembaga,
+                'nama_jurusan' => $pendidikanAktif->nama_jurusan ?? '-',
+                'nama_kelas' => $pendidikanAktif->nama_kelas ?? '-',
+                'nama_rombel' => $pendidikanAktif->nama_rombel ?? '-',
+                'tahun_masuk' => $pendidikanAktif->tanggal_masuk,
+                'tahun_lulus' => $pendidikanAktif->tanggal_keluar ?? '-',
+                'status' => $pendidikanAktif->status,
             ]);
+        }
 
-        $pendidikanGabungan = $pendidikanAktif->unionAll($riwayatPendidikan)->get();
-
-        // Map dan urutkan berdasarkan tanggal masuk desc
-        $data['Pendidikan'] = collect($pendidikanGabungan)
-            ->map(fn ($p) => [
+        foreach ($riwayatPendidikan as $p) {
+            $data['Pendidikan']->push([
                 'id' => $p->id,
                 'no_induk' => $p->no_induk,
                 'nama_lembaga' => $p->nama_lembaga,
@@ -302,9 +335,8 @@ class DetailService
                 'tahun_masuk' => $p->tanggal_masuk,
                 'tahun_lulus' => $p->tanggal_keluar ?? '-',
                 'status' => $p->status,
-            ])
-            ->sortByDesc('tanggal_masuk')
-            ->values();
+            ]);
+        }
 
         // --- Catatan Afektif ---
         $af = DB::table('catatan_afektif as ca')
@@ -361,7 +393,7 @@ class DetailService
             ->get();
 
         $data['Kunjungan_Mahrom'] = $kun->isNotEmpty()
-            ? $kun->map(fn ($k) => [
+            ? $kun->map(fn($k) => [
                 'nama_pengunjung' => $k->nama,
                 'status' => $k->nama_status,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,
@@ -375,7 +407,7 @@ class DetailService
             ->get();
 
         $data['Khadam'] = $kh->isNotEmpty()
-            ? $kh->map(fn ($kh) => [
+            ? $kh->map(fn($kh) => [
                 'keterangan' => $kh->keterangan,
                 'tanggal_mulai' => $kh->tanggal_mulai,
                 'tanggal_akhir' => $kh->tanggal_akhir ?? '-',
@@ -398,7 +430,7 @@ class DetailService
             ->get();
 
         $data['Karyawan'] = $karyawan->isNotEmpty()
-            ? $karyawan->map(fn ($item) => [
+            ? $karyawan->map(fn($item) => [
                 'lembaga' => $item->nama_lembaga ?? '-',
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
                 'tanggal_mulai' => $item->tanggal_mulai ? date('d-m-Y', strtotime($item->tanggal_mulai)) : '-',
@@ -497,7 +529,7 @@ class DetailService
             ->orderBy('pengurus.tanggal_mulai', 'asc')
             ->get();
         $data['Pengurus'] = $pengurus->isNotEmpty()
-            ? $pengurus->map(fn ($item) => [
+            ? $pengurus->map(fn($item) => [
                 'keterangan_jabatan' => $item->keterangan_jabatan ?? '-',
                 'tanggal_mulai' => $item->tanggal_mulai ?? '-',
                 'tanggal_akhir' => $item->tanggal_akhir ?? '-',
@@ -524,7 +556,7 @@ class DetailService
             ->get();
 
         $data['Wali_Kelas'] = $walikelas->isNotEmpty()
-            ? $walikelas->map(fn ($item) => [
+            ? $walikelas->map(fn($item) => [
                 'Lembaga' => $item->nama_lembaga ?? '-',
                 'Jurusan' => $item->nama_jurusan ?? '-',
                 'Kelas' => $item->nama_kelas ?? '-',
