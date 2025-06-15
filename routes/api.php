@@ -221,11 +221,10 @@ Route::prefix('export')->group(function () {
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'exportExcel'])->name('anakpegawai.export');
 
     // Kepegawaian
-    Route::get('/pegawai', [PegawaiController::class, 'pegawaiExport'])->name('pegawai.export');
-    Route::get('/karyawan', [KaryawanController::class, 'karyawanExport'])->name('karyawan.export');
+    Route::get('/pegawai', [PegawaiController::class, 'exportExcel'])->name('pegawai.export');
+    Route::get('/karyawan', [KaryawanController::class, 'KaryawanExcel'])->name('karyawan.export');
     Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
     Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
-    Route::get('/walikelas', [WalikelasController::class, 'waliKelasExport'])->name('walikelas.export');
 });
 
 Route::prefix('crud')->middleware('auth:sanctum')->group(function () {

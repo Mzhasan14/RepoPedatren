@@ -14,48 +14,56 @@ class CatatanKognitifService
     public function getAllCatatanKognitif(Request $request)
     {
         try {
-            // 1) Ambil ID untuk jenis berkas "Pas foto"
+            // Ambil ID untuk jenis berkas "Pas foto"
             $pasFotoId = DB::table('jenis_berkas')
                 ->where('nama_jenis_berkas', 'Pas foto')
                 ->value('id');
 
-            // 2) Subquery: foto terakhir per biodata
+            if (!$pasFotoId) {
+                throw new \Exception('Jenis berkas "Pas foto" tidak ditemukan');
+            }
+
+            // Subquery: foto terakhir per biodata
             $fotoLast = DB::table('berkas')
                 ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->groupBy('biodata_id');
 
             return Catatan_kognitif::Active()
-                ->join('santri as CatatanSantri', 'CatatanSantri.id', '=', 'catatan_kognitif.id_santri')
-                ->join('biodata as CatatanBiodata', 'CatatanBiodata.id', '=', 'CatatanSantri.biodata_id')
-                ->leftJoin('riwayat_domisili as domisili_santri', 'domisili_santri.santri_id', '=', 'CatatanSantri.id')
+                ->join('santri as cs', 'cs.id', '=', 'catatan_kognitif.id_santri')
+                ->join('biodata as bs', 'bs.id', '=', 'cs.biodata_id')
+                ->leftJoin('domisili_santri', 'domisili_santri.santri_id', '=', 'cs.id')
                 ->leftJoin('wilayah', 'wilayah.id', '=', 'domisili_santri.wilayah_id')
                 ->leftJoin('blok', 'blok.id', '=', 'domisili_santri.blok_id')
                 ->leftJoin('kamar', 'kamar.id', '=', 'domisili_santri.kamar_id')
-                ->leftJoin('riwayat_pendidikan', 'riwayat_pendidikan.biodata_id', '=', 'CatatanBiodata.id')
-                ->leftJoin('lembaga', 'lembaga.id', '=', 'riwayat_pendidikan.lembaga_id')
-                ->leftJoin('jurusan', 'jurusan.id', '=', 'riwayat_pendidikan.jurusan_id')
-                ->leftJoin('kelas', 'kelas.id', '=', 'riwayat_pendidikan.kelas_id')
-                ->leftJoin('rombel', 'rombel.id', '=', 'riwayat_pendidikan.rombel_id')
+                ->leftJoin('pendidikan', 'pendidikan.biodata_id', '=', 'bs.id')
+                ->leftJoin('lembaga', 'lembaga.id', '=', 'pendidikan.lembaga_id')
+                ->leftJoin('jurusan', 'jurusan.id', '=', 'pendidikan.jurusan_id')
+                ->leftJoin('kelas', 'kelas.id', '=', 'pendidikan.kelas_id')
+                ->leftJoin('rombel', 'rombel.id', '=', 'pendidikan.rombel_id')
                 ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_kognitif.id_wali_asuh')
-                ->leftJoin('santri as PencatatSantri', 'PencatatSantri.id', '=', 'wali_asuh.id_santri')
-                ->leftJoin('biodata as PencatatBiodata', 'PencatatBiodata.id', '=', 'PencatatSantri.biodata_id')
-                        // join foto CatatanSantri
+                ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
+                ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
+
+                // join foto santri
                 ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
-                    $join->on('CatatanBiodata.id', '=', 'fotoLastCatatan.biodata_id');
+                    $join->on('bs.id', '=', 'fotoLastCatatan.biodata_id');
                 })
                 ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
-                        // join foto PencatatSantri
+
+                // join foto pencatat
                 ->leftJoinSub($fotoLast, 'fotoLastPencatat', function ($join) {
-                    $join->on('PencatatBiodata.id', '=', 'fotoLastPencatat.biodata_id');
+                    $join->on('bp.id', '=', 'fotoLastPencatat.biodata_id');
                 })
                 ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+
                 ->whereNull('catatan_kognitif.deleted_at')
+
                 ->select(
-                    'CatatanBiodata.id as Biodata_uuid',
-                    'PencatatBiodata.id as Pencatat_uuid',
                     'catatan_kognitif.id',
-                    'CatatanBiodata.nama',
+                    'bs.id as Biodata_uuid',
+                    'bp.id as Pencatat_uuid',
+                    'bs.nama',
                     DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
                     DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
                     DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
@@ -72,17 +80,17 @@ class CatatanKognitifService
                     'catatan_kognitif.tulis_alquran_tindak_lanjut',
                     'catatan_kognitif.baca_alquran_nilai',
                     'catatan_kognitif.baca_alquran_tindak_lanjut',
-                    'PencatatBiodata.nama as pencatat',
+                    'bp.nama as pencatat',
                     DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
                     'catatan_kognitif.created_at',
-                    DB::raw("COALESCE(MAX(FotoCatatan.file_path), 'default.jpg') as foto_catatan"),
-                    DB::raw("COALESCE(MAX(FotoPencatat.file_path), 'default.jpg') as foto_pencatat"),
+                    DB::raw("COALESCE(FotoCatatan.file_path, 'default.jpg') as foto_catatan"),
+                    DB::raw("COALESCE(FotoPencatat.file_path, 'default.jpg') as foto_pencatat")
                 )
                 ->groupBy(
-                    'CatatanBiodata.id',
-                    'PencatatBiodata.id',
                     'catatan_kognitif.id',
-                    'CatatanBiodata.nama',
+                    'bs.id',
+                    'bp.id',
+                    'bs.nama',
                     'catatan_kognitif.kebahasaan_nilai',
                     'catatan_kognitif.kebahasaan_tindak_lanjut',
                     'catatan_kognitif.baca_kitab_kuning_nilai',
@@ -95,11 +103,12 @@ class CatatanKognitifService
                     'catatan_kognitif.tulis_alquran_tindak_lanjut',
                     'catatan_kognitif.baca_alquran_nilai',
                     'catatan_kognitif.baca_alquran_tindak_lanjut',
-                    'PencatatBiodata.nama',
+                    'bp.nama',
                     'wali_asuh.id',
                     'catatan_kognitif.created_at',
-                )
-                ->distinct();
+                    'FotoCatatan.file_path',
+                    'FotoPencatat.file_path'
+                );
         } catch (\Exception $e) {
             Log::error('Error fetching data Catatan Kognitif: '.$e->getMessage());
 

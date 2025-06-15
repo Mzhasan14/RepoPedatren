@@ -29,28 +29,27 @@ class Golongan extends Model
 
     public function kategoriGolongan()
     {
-        return $this->belongsTo(Golongan::class, 'id_kategori_golongan', 'id');
+        return $this->belongsTo(KategoriGolongan::class, 'kategori_golongan_id');
     }
-
     public function pengajar()
     {
-        return $this->hasMany(Pengajar::class, 'golongan_id');
+        return $this->hasMany(Pengajar::class,'golongan_id');
     }
-
-    public function getActivitylogOptions(): LogOptions
+        public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('golongan')
             ->logOnlyDirty()
             ->logOnly(['nama_golongan', 'kategori_golongan_id', 'status', 'created_by', 'updated_by', 'deleted_by'])
-            ->setDescriptionForEvent(fn (string $eventName) => "Golongan {$eventName} oleh ".(Auth::user()->name ?? 'Sistem')
+            ->setDescriptionForEvent(fn(string $eventName) => 
+                "Golongan {$eventName} oleh " . (Auth::user()->name ?? 'Sistem')
             );
     }
 
     protected static function booted()
     {
-        static::creating(fn ($model) => $model->created_by ??= Auth::id());
-        static::updating(fn ($model) => $model->updated_by = Auth::id());
+        static::creating(fn($model) => $model->created_by ??= Auth::id());
+        static::updating(fn($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
