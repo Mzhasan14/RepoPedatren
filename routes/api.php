@@ -57,7 +57,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Endpoint menampilkan log
-Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
+Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity', 'throttle:20,1'])
     ->get('activity-logs', function () {
         return \Spatie\Activitylog\Models\Activity::with('causer', 'subject')
             ->where('log_name', 'api')
@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity'])
     });
 
 // Formulir Peserta Didik
-Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
+Route::prefix('formulir')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     // Biodata
     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
@@ -188,12 +188,12 @@ Route::prefix('formulir')->middleware('auth:sanctum', 'role:superadmin|admin')->
     Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
 });
 
-Route::post('register', [AuthController::class, 'register'])->middleware('auth:sanctum', 'role:admin|superadmin');
+Route::post('register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
-Route::post('forgot', [AuthController::class, 'forgotPassword']);
-Route::post('reset', [AuthController::class, 'resetPassword'])->name('password.reset');
+Route::post('forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('reset', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.reset');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::patch('profile', [AuthController::class, 'updateProfile']);
     Route::post('password', [AuthController::class, 'changePassword']);
@@ -203,14 +203,14 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Biometric
-Route::prefix('biometric')->middleware('auth:sanctum')->group(function () {
+Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:15,1'])->group(function () {
     Route::post('register-profile', [BiometricProfileController::class, 'store']);
     Route::post('update-profile', [BiometricProfileController::class, 'update']);
     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
 });
 
 // Export
-Route::prefix('export')->middleware('auth:sanctum')->group(function () {
+Route::prefix('export')->middleware(['auth:sanctum', 'throttle:12,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
@@ -227,7 +227,7 @@ Route::prefix('export')->middleware('auth:sanctum')->group(function () {
     Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
 });
 
-Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
+Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
 
@@ -312,14 +312,14 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 });
 
-Route::prefix('approve')->middleware('auth:sanctum')->group(function () {
+Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
     // Perizinan
     Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
     Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
     Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
 });
 
-Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->group(function () {
+Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:30,1'])->group(function () {
     // Pendidikan
     Route::post('/pindah-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
     Route::post('/naik-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
@@ -349,9 +349,9 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
     Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
 });
 
-Route::get('/user', [UserController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin');
+Route::get('/user', [UserController::class, 'index'])->middleware(['auth:sanctum', 'role:superadmin', 'throttle:10,1']);
 
-Route::prefix('data-pokok')->middleware('auth:sanctum')->group(function () {
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
@@ -429,7 +429,7 @@ Route::prefix('data-pokok')->middleware('auth:sanctum')->group(function () {
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
-Route::prefix('dropdown')->middleware('auth:sanctum')->group(function () {
+Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
     Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
     Route::get('/wali-asuh', [DropdownController::class, 'nameWaliasuh']);
