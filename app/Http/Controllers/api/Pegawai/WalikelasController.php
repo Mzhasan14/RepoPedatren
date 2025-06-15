@@ -241,12 +241,4 @@ class WalikelasController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Export Walikelas data to Excel.
-     */
-    public function waliKelasExport()
-    {
-        return Excel::download(new WaliKelasExport, 'data_Wali-Kelas.xlsx');
-    }
 }

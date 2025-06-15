@@ -26,8 +26,8 @@ class PindahKaryawanRequest extends FormRequest
         return [
             'golongan_jabatan_id' => 'required|exists:golongan_jabatan,id',
             'lembaga_id' => 'required|exists:lembaga,id',
-            'jabatan' => 'nullable|string|max:255',
-            'keterangan_jabatan' => 'nullable|string|max:255',
+            'jabatan' => 'required|string|max:255',
+            'keterangan_jabatan' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date|after_or_equal:today',
         ];
     }
@@ -42,5 +42,25 @@ class PindahKaryawanRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages()
+    {
+        return [
+            'golongan_jabatan_id.required' => 'Golongan jabatan wajib diisi.',
+            'golongan_jabatan_id.exists'   => 'Golongan jabatan yang dipilih tidak valid.',
+
+            'lembaga_id.required' => 'Lembaga wajib diisi.',
+            'lembaga_id.exists'   => 'Lembaga yang dipilih tidak valid.',
+
+            'jabatan.string' => 'Jabatan harus berupa teks.',
+            'jabatan.max'    => 'Jabatan tidak boleh lebih dari 255 karakter.',
+
+            'keterangan_jabatan.string' => 'Keterangan jabatan harus berupa teks.',
+            'keterangan_jabatan.max'    => 'Keterangan jabatan tidak boleh lebih dari 255 karakter.',
+
+            'tanggal_mulai.required'         => 'Tanggal mulai wajib diisi.',
+            'tanggal_mulai.date'             => 'Tanggal mulai harus berupa tanggal yang valid.',
+            'tanggal_mulai.after_or_equal'   => 'Tanggal mulai tidak boleh lebih kecil dari hari ini.',
+        ];
     }
 }

@@ -24,9 +24,9 @@ class UpdatePengajarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id' => 'nullable|exists:lembaga,id',
-            'golongan_id' => 'nullable|exists:golongan,id',
-            'jabatan' => 'nullable|string|max:255',
+            'lembaga_id' => 'required|exists:lembaga,id',
+            'golongan_id' => 'required|exists:golongan,id',
+            'jabatan' => 'required|string|max:255',
             'tahun_masuk' => 'nullable|date',
         ];
 
@@ -42,5 +42,21 @@ class UpdatePengajarRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages(): array
+    {
+        return [
+            'lembaga_id.required'  => 'Lembaga wajib diisi.',
+            'lembaga_id.exists'    => 'Lembaga yang dipilih tidak valid.',
+
+            'golongan_id.required' => 'Golongan wajib diisi.',
+            'golongan_id.exists'   => 'Golongan yang dipilih tidak valid.',
+
+            'jabatan.required' => 'Jabatan wajib diisi.',
+            'jabatan.string'   => 'Jabatan harus berupa teks.',
+            'jabatan.max'      => 'Jabatan tidak boleh lebih dari 255 karakter.',
+
+            'tahun_masuk.date' => 'Tahun masuk harus berupa tanggal yang valid.',
+        ];
     }
 }

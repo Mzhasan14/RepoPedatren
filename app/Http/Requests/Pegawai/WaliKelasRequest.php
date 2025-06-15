@@ -24,10 +24,10 @@ class WaliKelasRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id' => ['nullable', 'exists:lembaga,id'],
-            'jurusan_id' => ['nullable', 'exists:jurusan,id'],
-            'kelas_id' => ['nullable', 'exists:kelas,id'],
-            'rombel_id' => ['nullable', 'exists:rombel,id'],
+            'lembaga_id' => ['required', 'exists:lembaga,id'],
+            'jurusan_id' => ['required', 'exists:jurusan,id'],
+            'kelas_id' => ['required', 'exists:kelas,id'],
+            'rombel_id' => ['required', 'exists:rombel,id'],
             'jumlah_murid' => ['required', 'numeric', 'min:1'],
             'periode_awal' => ['nullable', 'date'],
         ];
@@ -43,5 +43,20 @@ class WaliKelasRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages(): array
+    {
+        return [
+            'lembaga_id.exists'   => 'Lembaga yang dipilih tidak valid.',
+            'jurusan_id.exists'   => 'Jurusan yang dipilih tidak valid.',
+            'kelas_id.exists'     => 'Kelas yang dipilih tidak valid.',
+            'rombel_id.exists'    => 'Rombel yang dipilih tidak valid.',
+
+            'jumlah_murid.required' => 'Jumlah murid wajib diisi.',
+            'jumlah_murid.numeric'  => 'Jumlah murid harus berupa angka.',
+            'jumlah_murid.min'      => 'Jumlah murid minimal 1 orang.',
+
+            'periode_awal.date' => 'Periode awal harus berupa tanggal yang valid.',
+        ];
     }
 }

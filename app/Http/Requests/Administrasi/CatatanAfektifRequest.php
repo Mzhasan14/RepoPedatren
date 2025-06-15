@@ -25,12 +25,12 @@ class CatatanAfektifRequest extends FormRequest
     {
         return [
             'id_wali_asuh' => 'required|exists:wali_asuh,id',
-            'kepedulian_nilai' => 'nullable|string|max:255',
-            'kepedulian_tindak_lanjut' => 'nullable|string|max:255',
-            'kebersihan_nilai' => 'nullable|string|max:255',
-            'kebersihan_tindak_lanjut' => 'nullable|string|max:255',
-            'akhlak_nilai' => 'nullable|string|max:255',
-            'akhlak_tindak_lanjut' => 'nullable|string|max:255',
+            'kepedulian_nilai' => 'required|string|max:255',
+            'kepedulian_tindak_lanjut' => 'required|string|max:255',
+            'kebersihan_nilai' => 'required|string|max:255',
+            'kebersihan_tindak_lanjut' => 'required|string|max:255',
+            'akhlak_nilai' => 'required|string|max:255',
+            'akhlak_tindak_lanjut' => 'required|string|max:255',
             'tanggal_buat' => 'nullable|date',
         ];
     }
@@ -45,5 +45,29 @@ class CatatanAfektifRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages(): array
+    {
+        return [
+            'id_wali_asuh.required' => 'Wali asuh wajib dipilih.',
+            'id_wali_asuh.exists'   => 'Wali asuh yang dipilih tidak ditemukan atau tidak valid.',
+
+            'kepedulian_nilai.string'         => 'Nilai kepedulian harus berupa teks.',
+            'kepedulian_nilai.max'            => 'Nilai kepedulian tidak boleh lebih dari 255 karakter.',
+            'kepedulian_tindak_lanjut.string' => 'Tindak lanjut kepedulian harus berupa teks.',
+            'kepedulian_tindak_lanjut.max'    => 'Tindak lanjut kepedulian tidak boleh lebih dari 255 karakter.',
+
+            'kebersihan_nilai.string'         => 'Nilai kebersihan harus berupa teks.',
+            'kebersihan_nilai.max'            => 'Nilai kebersihan tidak boleh lebih dari 255 karakter.',
+            'kebersihan_tindak_lanjut.string' => 'Tindak lanjut kebersihan harus berupa teks.',
+            'kebersihan_tindak_lanjut.max'    => 'Tindak lanjut kebersihan tidak boleh lebih dari 255 karakter.',
+
+            'akhlak_nilai.string'         => 'Nilai akhlak harus berupa teks.',
+            'akhlak_nilai.max'            => 'Nilai akhlak tidak boleh lebih dari 255 karakter.',
+            'akhlak_tindak_lanjut.string' => 'Tindak lanjut akhlak harus berupa teks.',
+            'akhlak_tindak_lanjut.max'    => 'Tindak lanjut akhlak tidak boleh lebih dari 255 karakter.',
+
+            'tanggal_buat.date' => 'Tanggal buat harus berupa tanggal yang valid.',
+        ];
     }
 }

@@ -41,4 +41,12 @@ class KeluarKaryawanRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    public function messages(): array
+    {
+        return [
+            'tanggal_selesai.required' => 'Tanggal selesai wajib diisi.',
+            'tanggal_selesai.date'     => 'Tanggal selesai harus berupa tanggal yang valid.',
+        ];
+
+    }
 }

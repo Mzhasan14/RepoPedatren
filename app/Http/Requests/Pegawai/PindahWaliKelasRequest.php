@@ -44,4 +44,21 @@ class PindahWaliKelasRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    public function messages(): array
+    {
+        return [
+            'lembaga_id.exists'   => 'Lembaga yang dipilih tidak valid.',
+            'jurusan_id.exists'   => 'Jurusan yang dipilih tidak valid.',
+            'kelas_id.exists'     => 'Kelas yang dipilih tidak valid.',
+            'rombel_id.exists'    => 'Rombel yang dipilih tidak valid.',
+
+            'jumlah_murid.required' => 'Jumlah murid wajib diisi.',
+            'jumlah_murid.string'   => 'Jumlah murid harus berupa teks.',
+
+            'periode_awal.required'        => 'Periode awal wajib diisi.',
+            'periode_awal.date'            => 'Periode awal harus berupa tanggal yang valid.',
+            'periode_awal.after_or_equal'  => 'Periode awal tidak boleh lebih kecil dari hari ini.',
+        ];
+
+    }
 }

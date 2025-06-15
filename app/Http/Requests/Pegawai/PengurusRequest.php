@@ -25,9 +25,9 @@ class PengurusRequest extends FormRequest
     {
         return [
             'golongan_jabatan_id' => 'required|exists:golongan_jabatan,id',
-            'jabatan' => 'nullable|string|max:255',
-            'satuan_kerja' => 'nullable|string|max:255',
-            'keterangan_jabatan' => 'nullable|string|max:255',
+            'jabatan' => 'required|string|max:255',
+            'satuan_kerja' => 'required|string|max:255',
+            'keterangan_jabatan' => 'required|string|max:255',
             'tanggal_mulai' => 'nullable|date',
         ];
     }
@@ -42,5 +42,23 @@ class PengurusRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages(): array
+    {
+        return [
+            'golongan_jabatan_id.required' => 'Golongan jabatan wajib diisi.',
+            'golongan_jabatan_id.exists'   => 'Golongan jabatan yang dipilih tidak valid.',
+
+            'jabatan.string' => 'Jabatan harus berupa teks.',
+            'jabatan.max'    => 'Jabatan tidak boleh lebih dari 255 karakter.',
+
+            'satuan_kerja.string' => 'Satuan kerja harus berupa teks.',
+            'satuan_kerja.max'    => 'Satuan kerja tidak boleh lebih dari 255 karakter.',
+
+            'keterangan_jabatan.string' => 'Keterangan jabatan harus berupa teks.',
+            'keterangan_jabatan.max'    => 'Keterangan jabatan tidak boleh lebih dari 255 karakter.',
+
+            'tanggal_mulai.date' => 'Tanggal mulai harus berupa tanggal yang valid.',
+        ];
     }
 }

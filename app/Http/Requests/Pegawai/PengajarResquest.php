@@ -26,7 +26,7 @@ class PengajarResquest extends FormRequest
         return [
             'lembaga_id' => 'required|exists:lembaga,id',
             'golongan_id' => 'required|exists:golongan,id',
-            'jabatan' => 'nullable|string|max:255',
+            'jabatan' => 'required|string|max:255',
 
             'nama_materi' => 'nullable|array|min:1',
             'nama_materi.*' => 'nullable|string|max:255',
@@ -54,4 +54,36 @@ class PengajarResquest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    public function messages(): array
+    {
+        return [
+            'lembaga_id.required' => 'Lembaga wajib diisi.',
+            'lembaga_id.exists'   => 'Lembaga yang dipilih tidak valid.',
+
+            'golongan_id.required' => 'Golongan wajib diisi.',
+            'golongan_id.exists'   => 'Golongan yang dipilih tidak valid.',
+
+            'jabatan.required' => 'Jabatan wajib diisi.',
+            'jabatan.string'   => 'Jabatan harus berupa teks.',
+            'jabatan.max'      => 'Jabatan tidak boleh lebih dari 255 karakter.',
+
+            'nama_materi.array'    => 'Format nama materi tidak valid.',
+            'nama_materi.min'      => 'Minimal harus ada satu nama materi.',
+            'nama_materi.*.string' => 'Setiap nama materi harus berupa teks.',
+            'nama_materi.*.max'    => 'Setiap nama materi tidak boleh lebih dari 255 karakter.',
+
+            'jumlah_menit.array'      => 'Format jumlah menit tidak valid.',
+            'jumlah_menit.min'        => 'Minimal harus ada satu data jumlah menit.',
+            'jumlah_menit.*.integer'  => 'Jumlah menit harus berupa angka.',
+            'jumlah_menit.*.min'      => 'Jumlah menit tidak boleh negatif.',
+
+            'tahun_masuk.date' => 'Tahun masuk harus berupa tanggal yang valid.',
+
+            'tahun_masuk_materi_ajar.array'       => 'Format tahun masuk materi ajar tidak valid.',
+            'tahun_masuk_materi_ajar.*.date'      => 'Setiap tahun masuk materi ajar harus berupa tanggal yang valid.',
+
+            'tahun_akhir_materi_ajar.array'       => 'Format tahun akhir materi ajar tidak valid.',
+        ];
+    }
+
 }

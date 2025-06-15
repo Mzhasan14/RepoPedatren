@@ -25,10 +25,10 @@ class KaryawanFormulirRequest extends FormRequest
     {
 
         return [
-            'golongan_jabatan_id' => 'nullable|exists:golongan_jabatan,id',
-            'lembaga_id' => 'nullable|exists:lembaga,id',
-            'jabatan' => 'nullable|string|max:255',
-            'keterangan_jabatan' => 'nullable|string|max:255',
+            'golongan_jabatan_id' => 'required|exists:golongan_jabatan,id',
+            'lembaga_id' => 'required|exists:lembaga,id',
+            'jabatan' => 'required|string|max:255',
+            'keterangan_jabatan' => 'required|string|max:255',
             'tanggal_mulai' => 'nullable|date',
         ];
     }
@@ -43,5 +43,20 @@ class KaryawanFormulirRequest extends FormRequest
         ], 422);
 
         throw new HttpResponseException($response);
+    }
+    public function messages(): array
+    {
+        return [
+            'golongan_jabatan_id.exists' => 'Golongan jabatan yang dipilih tidak valid.',
+            'lembaga_id.exists' => 'Lembaga yang dipilih tidak valid.',
+            
+            'jabatan.string' => 'Nama jabatan harus berupa teks.',
+            'jabatan.max' => 'Nama jabatan tidak boleh lebih dari 255 karakter.',
+            
+            'keterangan_jabatan.string' => 'Keterangan jabatan harus berupa teks.',
+            'keterangan_jabatan.max' => 'Keterangan jabatan tidak boleh lebih dari 255 karakter.',
+            
+            'tanggal_mulai.date' => 'Tanggal mulai harus berupa tanggal yang valid.',
+        ];
     }
 }

@@ -42,4 +42,12 @@ class KeluarPengajarRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    public function messages(): array
+    {
+        return [
+            'tahun_akhir.required' => 'Tanggal selesai wajib diisi.',
+            'tahun_akhir.date'     => 'Tanggal selesai harus berupa tanggal yang valid.',
+        ];
+
+    }
 }
