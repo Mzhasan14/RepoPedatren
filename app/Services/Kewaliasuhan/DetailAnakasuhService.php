@@ -125,7 +125,7 @@ class DetailAnakasuhService
 
         $keluarga = $ortu->merge($saudara);
         if ($keluarga->isNotEmpty()) {
-            $data['Keluarga'] = $keluarga->map(fn ($i) => [
+            $data['Keluarga'] = $keluarga->map(fn($i) => [
                 'nama' => $i->nama,
                 'nik' => $i->nik,
                 'status' => $i->status,
@@ -142,7 +142,7 @@ class DetailAnakasuhService
 
         if ($santriInfo) {
             if ($keluarga->isNotEmpty()) {
-                $data['Status_Santri']['Santri'] = $santriInfo->map(fn ($s) => [
+                $data['Status_Santri']['Santri'] = $santriInfo->map(fn($s) => [
                     'NIS' => $s->nis,
                     'Tanggal_Mulai' => $s->tanggal_masuk,
                     'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
@@ -150,55 +150,77 @@ class DetailAnakasuhService
             }
         }
 
-        // --- 5. Kewaliasuhan ---
+        // Kewaliasuhan
         $kew = DB::table('santri as s')
             ->where('s.id', $santriId)
             ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
             ->leftJoin('anak_asuh as aa', 's.id', '=', 'aa.id_santri')
-            // Pisahkan query untuk wali asuh dan anak asuh
-            ->leftJoin('kewaliasuhan as kw_wali', function ($join) {
-                $join->on('kw_wali.id_wali_asuh', '=', 'wa.id');
-            })
+
+            // Relasi grup jika santri menjadi wali asuh
+            ->leftJoin('grup_wali_asuh as gw_wali', 'gw_wali.id', '=', 'wa.id_grup_wali_asuh')
+
+            // Relasi ke kewaliasuhan jika santri adalah anak asuh
             ->leftJoin('kewaliasuhan as kw_anak', function ($join) {
-                $join->on('kw_anak.id_anak_asuh', '=', 'aa.id');
+                $join->on('kw_anak.id_anak_asuh', '=', 'aa.id')
+                    ->where('kw_anak.status', true);
             })
-            ->leftJoin('grup_wali_asuh as g', 'g.id', '=', 'wa.id_grup_wali_asuh')
+
+            // Wali asuh yang mengasuh santri (anak asuh)
+            ->leftJoin('wali_asuh as wa3', 'wa3.id', '=', 'kw_anak.id_wali_asuh')
+            ->leftJoin('grup_wali_asuh as gw_wali_dari', 'gw_wali_dari.id', '=', 'wa3.id_grup_wali_asuh')
+
             ->select([
-                'g.nama_grup',
-                DB::raw("CASE WHEN wa.id IS NOT NULL THEN 'Wali Asuh' ELSE 'Anak Asuh' END as role"),
-                // Untuk wali asuh (mencari anak asuhnya)
-                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ') 
-                FROM biodata bio
-                JOIN santri s2 ON bio.id = s2.biodata_id
-                JOIN anak_asuh aa2 ON aa2.id_santri = s2.id
-                JOIN kewaliasuhan kw2 ON kw2.id_anak_asuh = aa2.id
-                WHERE kw2.id_wali_asuh = wa.id) as anak_asuh_names"),
-                // Untuk anak asuh (mencari wali asuhnya)
-                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ') 
-                FROM biodata bio
-                JOIN santri s3 ON bio.id = s3.biodata_id
-                JOIN wali_asuh wa3 ON wa3.id_santri = s3.id
-                JOIN kewaliasuhan kw3 ON kw3.id_wali_asuh = wa3.id
-                WHERE kw3.id_anak_asuh = aa.id) as wali_asuh_names"),
+                // Ambil nama grup dari dua sisi
+                DB::raw("CASE 
+                    WHEN wa.id IS NOT NULL AND wa.status = true THEN gw_wali.nama_grup 
+                    WHEN wa3.id IS NOT NULL AND wa3.status = true THEN gw_wali_dari.nama_grup 
+                    ELSE '-' 
+                END as nama_grup"),
+
+
+                // Tentukan peran hanya jika wali_asuh masih aktif
+                DB::raw("CASE 
+                WHEN wa.id IS NOT NULL AND wa.status = true 
+                THEN 'Wali Asuh' 
+                ELSE 'Anak Asuh' 
+            END as role"),
+
+                // Jika wali asuh: ambil nama anak asuhnya (hanya yang status aktif)
+                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ')
+                    FROM biodata bio
+                    JOIN santri s2 ON bio.id = s2.biodata_id
+                    JOIN anak_asuh aa2 ON aa2.id_santri = s2.id
+                    JOIN kewaliasuhan kw2 ON kw2.id_anak_asuh = aa2.id
+                    WHERE kw2.id_wali_asuh = wa.id AND kw2.status = true
+                ) as anak_asuh_names"),
+
+                // Jika anak asuh: ambil nama wali asuhnya (hanya yang status aktif)
+                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ')
+                    FROM biodata bio
+                    JOIN santri s3 ON bio.id = s3.biodata_id
+                    JOIN wali_asuh wa3x ON wa3x.id_santri = s3.id
+                    JOIN kewaliasuhan kw3x ON kw3x.id_wali_asuh = wa3x.id
+                    WHERE kw3x.id_anak_asuh = aa.id AND kw3x.status = true
+                ) as wali_asuh_names"),
             ])
-            ->groupBy('g.nama_grup', 'wa.id', 'aa.id')
             ->get();
 
         if ($kew->isNotEmpty()) {
             $data['Status_Santri']['Kewaliasuhan'] = $kew->map(function ($k) {
                 $result = [
-                    'group_kewaliasuhan' => $k->nama_grup,
+                    'group_kewaliasuhan' => $k->nama_grup ?? '-',
                     'sebagai' => $k->role,
                 ];
 
-                if ($k->role === 'Anak Asuh') {
+                if ($k->role === 'Wali Asuh') {
+                    $result['Anak Asuh'] = $k->anak_asuh_names ?? '-';
+                } else {
                     $result['Nama Wali Asuh'] = $k->wali_asuh_names ?? '-';
                 }
 
                 return $result;
             });
         }
-
         // --- 6. Perizinan ---
         $izin = DB::table('perizinan')
             ->where('santri_id', $santriId)
@@ -214,7 +236,7 @@ class DetailAnakasuhService
             ->get();
 
         if ($izin->isNotEmpty()) {
-            $data['Status_Santri']['Info_Perizinan'] = $izin->map(fn ($z) => [
+            $data['Status_Santri']['Info_Perizinan'] = $izin->map(fn($z) => [
                 'tanggal' => $z->tanggal,
                 'keterangan' => $z->keterangan,
                 'lama_waktu' => $z->lama_waktu,
@@ -383,7 +405,7 @@ class DetailAnakasuhService
             ->get();
 
         if ($kun->isNotEmpty()) {
-            $data['Kunjungan_Mahrom'] = $kun->map(fn ($k) => [
+            $data['Kunjungan_Mahrom'] = $kun->map(fn($k) => [
                 'nama_pengunjung' => $k->nama,
                 'hubungan' => $k->hubungan,
                 'tanggal_kunjungan' => $k->tanggal_kunjungan,

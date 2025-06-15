@@ -49,7 +49,8 @@ class AnakasuhService
             ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where('ws.status', true)
+            ->where('as.status', true)
+            ->where('ks.status', true)
             ->select([
                 's.biodata_id',
                 'as.id',
@@ -215,6 +216,117 @@ class AnakasuhService
             'updated_at' => now(),
         ]);
     }
+
+    public function pindahAnakasuh(array $input, int $idAnakAsuh): array
+    {
+        return DB::transaction(function () use ($input, $idAnakAsuh) {
+            $anakAsuh = Anak_asuh::find($idAnakAsuh);
+            if (! $anakAsuh) {
+                return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
+            }
+
+            // Cek kewaliasuhan aktif
+            $kewAliasuhLama = Kewaliasuhan::where('id_anak_asuh', $idAnakAsuh)
+                ->where('status', true)
+                ->first();
+
+            if (! $kewAliasuhLama) {
+                return ['status' => false, 'message' => 'Data kewaliasuhan aktif tidak ditemukan.'];
+            }
+
+            // Validasi wali asuh baru
+            $waliBaruId = $input['id_wali_asuh'] ?? null;
+            $waliBaru = Wali_asuh::find($waliBaruId);
+            if (! $waliBaru || ! $waliBaru->status) {
+                return ['status' => false, 'message' => 'Wali asuh baru tidak valid atau tidak aktif.'];
+            }
+
+            $tanggalPindah = Carbon::parse($input['tanggal_mulai'] ?? now());
+
+            if ($tanggalPindah->lt(Carbon::parse($kewAliasuhLama->tanggal_mulai))) {
+                return ['status' => false, 'message' => 'Tanggal pindah tidak boleh sebelum tanggal mulai wali asuh sebelumnya.'];
+            }
+
+            // Tutup hubungan kewaliasuhan lama
+            $kewAliasuhLama->update([
+                'tanggal_berakhir' => $tanggalPindah->copy()->subDay(), // sehari sebelum pindah
+                'status' => false,
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Buat hubungan baru
+            $kewAliasuhBaru = Kewaliasuhan::create([
+                'id_wali_asuh' => $waliBaruId,
+                'id_anak_asuh' => $idAnakAsuh,
+                'tanggal_mulai' => $tanggalPindah,
+                'status' => true,
+                'created_by' => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'message' => 'Anak asuh berhasil dipindah ke wali asuh baru.',
+                'data' => [
+                    'kewaliasuhan_lama' => $kewAliasuhLama,
+                    'kewaliasuhan_baru' => $kewAliasuhBaru,
+                ],
+            ];
+        });
+    }
+
+
+    public function keluarAnakasuh(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $anakAsuh = Anak_asuh::find($id);
+            if (! $anakAsuh) {
+                return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
+            }
+
+            // Ambil data kewaliasuhan yang aktif
+            $kewaliasuhan = Kewaliasuhan::where('id_anak_asuh', $id)
+                ->where('status', true)
+                ->first();
+
+            if (! $kewaliasuhan) {
+                return ['status' => false, 'message' => 'Data kewaliasuhan aktif tidak ditemukan untuk anak ini.'];
+            }
+
+            $tanggalMulai = Carbon::parse($kewaliasuhan->tanggal_mulai);
+            $tanggalKeluar = Carbon::parse($input['tanggal_berakhir'] ?? null);
+
+            if (! $tanggalKeluar) {
+                return ['status' => false, 'message' => 'Tanggal keluar tidak valid.'];
+            }
+
+            if ($tanggalKeluar->lt($tanggalMulai)) {
+                return ['status' => false, 'message' => 'Tanggal keluar tidak boleh sebelum tanggal mulai.'];
+            }
+
+            // Update tabel kewaliasuhan
+            $kewaliasuhan->update([
+                'tanggal_berakhir' => $tanggalKeluar,
+                'status' => false,
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Update status anak_asuh
+            $anakAsuh->update([
+                'status' => false,
+                'updated_by' => Auth::id(),
+            ]);
+
+            return [
+                'status' => true,
+                'message' => 'Anak asuh berhasil dikeluarkan dari kewaliasuhan.',
+                'data' => [
+                    'anak_asuh' => $anakAsuh,
+                    'kewaliasuhan' => $kewaliasuhan,
+                ],
+            ];
+        });
+    }
+
 
     public function destroy($id)
     {

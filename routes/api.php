@@ -276,7 +276,6 @@ Route::prefix('crud')->middleware('auth:sanctum')->group(function () {
     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-    Route::post('/anakasuh', [AnakasuhController::class, 'store']);
     Route::put('/anakasuh/{id}', [AnakasuhController::class, 'update']);
     // Route::delete('/anakasuh/{id}', [AnakasuhController::class, 'destroy']);
 
@@ -341,6 +340,8 @@ Route::prefix('fitur')->middleware('auth:sanctum', 'role:superadmin|admin')->gro
 
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
+    Route::put('/keluar-anakasuh/{id}', [AnakasuhController::class, 'keluarAnakasuh']);
+    Route::put('/pindah-anakasuh/{id}', [AnakasuhController::class, 'pindahAnakasuh']);
 
     // presensi
     Route::get('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);

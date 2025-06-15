@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
-use App\Http\Resources\PdResource;
+use App\Models\Santri;
 use App\Models\Biodata;
+use Illuminate\Http\Request;
+use App\Models\Peserta_didik;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\PdResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
-use App\Models\Peserta_didik;
-use App\Models\Santri;
-use App\Services\Kewaliasuhan\AnakasuhService;
-use App\Services\Kewaliasuhan\DetailAnakasuhService;
-use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Kewaliasuhan\AnakasuhService;
+use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
+use App\Services\Kewaliasuhan\DetailAnakasuhService;
+use App\Http\Requests\Kewaliasuhan\KeluarAnakasuhRequest;
+use App\Http\Requests\Kewaliasuhan\PindahAnakasuhRequest;
+use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
 
 class AnakasuhController extends Controller
 {
@@ -98,6 +102,58 @@ class AnakasuhController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memproses permintaan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function keluarAnakasuh(KeluarAnakasuhRequest $request, $id): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->anakasuhService->keluarAnakasuh($validated, $id);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil diperbarui',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal keluar khadam: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function pindahAnakasuh(PindahAnakasuhRequest $request, $id): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->anakasuhService->pindahAnakasuh($validated, $id);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'kewaliasuhan baru berhasil dibuat',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal pindah anak asuh: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage(),
             ], 500);
         }

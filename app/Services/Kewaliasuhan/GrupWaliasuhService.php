@@ -28,7 +28,7 @@ class GrupWaliasuhService
                 's.nis',
                 'b.nama',
                 'w.nama_wilayah',
-                DB::raw('COUNT(aa.id) as jumlah_anak_asuh'),
+                DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
                 'gs.updated_at',
                 'gs.created_at',
             ])

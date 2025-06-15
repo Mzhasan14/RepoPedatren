@@ -139,7 +139,16 @@ class WaliasuhService
                 return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai wali asuh aktif.'];
             }
 
-            // 4. Buat data wali asuh
+            // 4. Cek apakah sudah menjadi anak asuh aktif
+            $activeAnakAsuhExists = Kewaliasuhan::where('id_anak_asuh', $santri->id)
+                ->whereNull('tanggal_selesai')
+                ->exists();
+
+            if ($activeAnakAsuhExists) {
+                return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai anak asuh aktif.'];
+            }
+
+            // 5. Buat data wali asuh
             $waliAsuh = Wali_asuh::create([
                 'id_santri' => $santri->id,
                 'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? null,
@@ -148,7 +157,7 @@ class WaliasuhService
                 'created_by' => Auth::id(),
             ]);
 
-            // 5. Activity log
+            // 6. Activity log
             activity('wali_asuh_create')
                 ->performedOn($waliAsuh)
                 ->withProperties([
