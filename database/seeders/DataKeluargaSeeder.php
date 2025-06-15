@@ -22,14 +22,14 @@ class DataKeluargaSeeder extends Seeder
 
         // Ambil data blok & kamar
         $wilayahList = DB::table('wilayah')->get();
-        $blokList = DB::table('blok')->get();           // kolom: id, wilayah_id
-        $kamarList = DB::table('kamar')->get();          // kolom: id, blok_id
+        $blokList = DB::table('blok')->get();
+        $kamarList = DB::table('kamar')->get();
 
         // Ambil data lembaga, jurusan, kelas, rombel
-        $lembagaList = DB::table('lembaga')->get();        // kolom: id
-        $jurusanList = DB::table('jurusan')->get();        // kolom: id, lembaga_id
-        $kelasList = DB::table('kelas')->get();          // kolom: id, jurusan_id
-        $rombelList = DB::table('rombel')->get();         // kolom: id, kelas_id
+        $lembagaList = DB::table('lembaga')->get();
+        $jurusanList = DB::table('jurusan')->get();
+        $kelasList = DB::table('kelas')->get();
+        $rombelList = DB::table('rombel')->get();
 
         // Ambil ID status hubungan keluarga (ayah kandung, ibu kandung)
         $hk = DB::table('hubungan_keluarga')->get();
@@ -40,7 +40,6 @@ class DataKeluargaSeeder extends Seeder
         $pegawaiBiodataIds = DB::table('pegawai')->pluck('biodata_id')->toArray();
 
         // Ambil daftar ID angkatan
-        // Ambil daftar ID angkatan
         $angkatanSantriList = DB::table('angkatan')->where('kategori', 'santri')->get();
         $angkatanPelajarList = DB::table('angkatan')->where('kategori', 'pelajar')->get();
 
@@ -49,7 +48,6 @@ class DataKeluargaSeeder extends Seeder
             throw new \Exception('Seeder gagal: tabel `angkatan` untuk kategori santri atau pelajar kosong.');
         }
 
-        // Definisikan skenario
         $scenarios = [
             // [doSantri, stSantri, doPendidikan, stPendidikan, weight]
             'active_both' => [true,  'aktif',  true,  'aktif',   40],
@@ -69,12 +67,11 @@ class DataKeluargaSeeder extends Seeder
             }
         }
 
-        // Simpan data keluarga yang sudah dibuat
         $keluargaTersimpan = [];
-
-        // Counter anak_pegawai
         $anakPegawaiCount = 0;
         $requiredAnakPegawai = 50;
+
+        $now = new \DateTime();
 
         for ($i = 1; $i <= 200; $i++) {
             $gunakanKeluargaLama = $faker->boolean(15);
@@ -128,7 +125,7 @@ class DataKeluargaSeeder extends Seeder
                     'kode_pos' => $faker->postcode,
                     'nama' => $faker->name('male'),
                     'jenis_kelamin' => 'l',
-                    'tanggal_lahir' => $faker->date(),
+                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-35 years')->format('Y-m-d')),
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
@@ -154,7 +151,7 @@ class DataKeluargaSeeder extends Seeder
                     'kode_pos' => $faker->postcode,
                     'nama' => $faker->name('female'),
                     'jenis_kelamin' => 'p',
-                    'tanggal_lahir' => $faker->date(),
+                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d')),
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
@@ -209,6 +206,7 @@ class DataKeluargaSeeder extends Seeder
 
             // ------------------ MULAI MENYIMPAN DATA ANAK ------------------
             $childId = (string) Str::uuid();
+            $childBirthDate = (new DateTime())->modify('-' . rand(7, 18) . ' years')->format('Y-m-d');
             DB::table('biodata')->insert([
                 'id' => $childId,
                 'negara_id' => $negaraId,
@@ -220,7 +218,7 @@ class DataKeluargaSeeder extends Seeder
                 'nama' => $faker->name($faker->randomElement(['male', 'female'])),
                 'no_passport' => $faker->numerify('############'),
                 'jenis_kelamin' => $faker->randomElement(['l', 'p']),
-                'tanggal_lahir' => $faker->date(),
+                'tanggal_lahir' => $childBirthDate,
                 'tempat_lahir' => $faker->city,
                 'anak_keberapa' => rand(1, 5),
                 'dari_saudara' => rand(1, 5),
@@ -251,26 +249,17 @@ class DataKeluargaSeeder extends Seeder
                 $angkatanId = $angkatan->id;
                 $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
 
-                // Gantikan dateTimeBetween dengan logika sederhana
                 $startDate = new DateTime($tahunAjaran->tanggal_mulai);
                 $endDate = new DateTime($tahunAjaran->tanggal_selesai);
-                if ($startDate > $endDate) {
-                    $endDate = clone $startDate;
-                }
-                $tanggalMasukSantri = $startDate->format('Y-m-d');
+                $nowDate = new DateTime();
+
+                $maxMasuk = $nowDate < $endDate ? $nowDate : $endDate;
+                $tanggalMasukSantri = $startDate > $maxMasuk ? $startDate->format('Y-m-d') : $faker->dateTimeBetween($startDate->format('Y-m-d'), $maxMasuk->format('Y-m-d'))->format('Y-m-d');
+                if ($tanggalMasukSantri > date('Y-m-d')) $tanggalMasukSantri = date('Y-m-d'); // patch
 
                 if ($stSantri === 'alumni') {
-                    $tanggalKeluarSantri = null;
-                    $masuk = new \DateTime($tanggalMasukSantri);
-                    $maxEnd = (clone $masuk)->modify('+2 years');
-                    $now = new \DateTime;
-
-                    if ($masuk < $maxEnd) {
-                        $end = $now > $maxEnd ? $maxEnd : $now;
-                        $tanggalKeluarSantri = $masuk->format('Y-m-d'); // tetap valid, tidak acak
-                    } else {
-                        $tanggalKeluarSantri = $tanggalMasukSantri;
-                    }
+                    $keluarDate = (new DateTime($tanggalMasukSantri))->modify('+3 years');
+                    $tanggalKeluarSantri = $keluarDate > $nowDate ? $nowDate->format('Y-m-d') : $keluarDate->format('Y-m-d');
                 } else {
                     $tanggalKeluarSantri = null;
                 }
@@ -287,7 +276,7 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                if (! $noDomisili) {
+                if (!$noDomisili) {
                     $wilayah = $faker->randomElement($wilayahList);
                     $blok = $faker->randomElement($blokList->where('wilayah_id', $wilayah->id)->values());
                     $kamar = $faker->randomElement($kamarList->where('blok_id', $blok->id)->values());
@@ -298,7 +287,7 @@ class DataKeluargaSeeder extends Seeder
                             'wilayah_id' => $wilayah->id,
                             'blok_id' => $blok->id,
                             'kamar_id' => $kamar->id,
-                            'tanggal_masuk' => $tanggalMasukSantri.' 00:00:00',
+                            'tanggal_masuk' => $tanggalMasukSantri . ' 00:00:00',
                             'status' => 'aktif',
                             'created_by' => 1,
                             'created_at' => now(),
@@ -310,8 +299,8 @@ class DataKeluargaSeeder extends Seeder
                             'wilayah_id' => $wilayah->id,
                             'blok_id' => $blok->id,
                             'kamar_id' => $kamar->id,
-                            'tanggal_masuk' => $tanggalMasukSantri.' 00:00:00',
-                            'tanggal_keluar' => ($tanggalKeluarSantri ?: now()).' 00:00:00',
+                            'tanggal_masuk' => $tanggalMasukSantri . ' 00:00:00',
+                            'tanggal_keluar' => ($tanggalKeluarSantri ?: now()) . ' 00:00:00',
                             'status' => 'keluar',
                             'created_by' => 1,
                             'created_at' => now(),
@@ -331,13 +320,13 @@ class DataKeluargaSeeder extends Seeder
                 $angkatanPelId = $angkatanPel->id;
                 $tahunAjaranPel = DB::table('tahun_ajaran')->where('id', $angkatanPel->tahun_ajaran_id)->first();
 
-                // Hindari dateTimeBetween
                 $startDate = new DateTime($tahunAjaranPel->tanggal_mulai);
                 $endDate = new DateTime($tahunAjaranPel->tanggal_selesai);
-                if ($startDate > $endDate) {
-                    $endDate = clone $startDate;
-                }
-                $tanggalMasukPendidikan = $startDate->format('Y-m-d');
+                $nowDate = new DateTime();
+
+                $maxMasuk = $nowDate < $endDate ? $nowDate : $endDate;
+                $tanggalMasukPendidikan = $startDate > $maxMasuk ? $startDate->format('Y-m-d') : $faker->dateTimeBetween($startDate->format('Y-m-d'), $maxMasuk->format('Y-m-d'))->format('Y-m-d');
+                if ($tanggalMasukPendidikan > date('Y-m-d')) $tanggalMasukPendidikan = date('Y-m-d'); // patch
 
                 $lembaga = $faker->randomElement($lembagaList);
                 $jurusan = $faker->randomElement($jurusanList->where('lembaga_id', $lembaga->id)->values());
@@ -360,17 +349,8 @@ class DataKeluargaSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
                 } else {
-                    $tanggalKeluarPendidikan = null;
-                    $masuk = new \DateTime($tanggalMasukPendidikan);
-                    $maxEnd = (clone $masuk)->modify('+2 years');
-                    $now = new \DateTime;
-
-                    if ($masuk < $maxEnd) {
-                        $end = $now > $maxEnd ? $maxEnd : $now;
-                        $tanggalKeluarPendidikan = $masuk->format('Y-m-d');
-                    } else {
-                        $tanggalKeluarPendidikan = $tanggalMasukPendidikan;
-                    }
+                    $keluarDate = (new DateTime($tanggalMasukPendidikan))->modify('+3 years');
+                    $tanggalKeluarPendidikan = $keluarDate > $nowDate ? $nowDate->format('Y-m-d') : $keluarDate->format('Y-m-d');
 
                     $existing = DB::table('pendidikan')->where('biodata_id', $childId)->where('status', 'aktif')->first();
 
@@ -380,7 +360,6 @@ class DataKeluargaSeeder extends Seeder
                             'tanggal_keluar' => $tanggalKeluarPendidikan,
                             'updated_at' => now(),
                         ]);
-
                         DB::table('riwayat_pendidikan')->insert([
                             'biodata_id' => $childId,
                             'angkatan_id' => $existing->angkatan_id,
@@ -412,13 +391,11 @@ class DataKeluargaSeeder extends Seeder
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
-
                         $pendidikanBaru = DB::table('pendidikan')
                             ->where('biodata_id', $childId)
                             ->where('status', 'lulus')
                             ->orderBy('created_at', 'desc')
                             ->first();
-
                         DB::table('riwayat_pendidikan')->insert([
                             'biodata_id' => $childId,
                             'angkatan_id' => $angkatanPelId,
@@ -449,74 +426,6 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
                 $anakPegawaiCount++;
-
-                if ($faker->boolean(50)) {
-                    // tambah santri
-                    $angkatan = $faker->randomElement($angkatanSantriList);
-                    $angkatanId = $angkatan->id;
-                    $tahunAjaran = DB::table('tahun_ajaran')->where('id', $angkatan->tahun_ajaran_id)->first();
-                    $tanggalMasukSantri = $faker->dateTimeBetween($tahunAjaran->tanggal_mulai, $tahunAjaran->tanggal_selesai)->format('Y-m-d');
-                    $santriId = DB::table('santri')->insertGetId([
-                        'biodata_id' => $childId,
-                        'angkatan_id' => $angkatanId,
-                        'nis' => $faker->unique()->numerify('###########'),
-                        'tanggal_masuk' => $tanggalMasukSantri,
-                        'status' => 'aktif',
-                        'created_by' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    $wilayah = $faker->randomElement($wilayahList);
-                    $wilayahId = $wilayah->id;
-                    $blokFiltered = $blokList->where('wilayah_id', $wilayahId)->values();
-                    $blok = $faker->randomElement($blokFiltered);
-                    $blokId = $blok->id;
-                    $kamarFiltered = $kamarList->where('blok_id', $blokId)->values();
-                    $kamar = $faker->randomElement($kamarFiltered);
-                    $kamarId = $kamar->id;
-                    DB::table('domisili_santri')->insert([
-                        'santri_id' => $santriId,
-                        'wilayah_id' => $wilayahId,
-                        'blok_id' => $blokId,
-                        'kamar_id' => $kamarId,
-                        'tanggal_masuk' => $tanggalMasukSantri.' 00:00:00',
-                        'status' => 'aktif',
-                        'created_by' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    // tambah pendidikan
-                    $angkatanPel = $faker->randomElement($angkatanPelajarList);
-                    $angkatanPelId = $angkatanPel->id;
-                    $tahunAjaranPel = DB::table('tahun_ajaran')->where('id', $angkatanPel->tahun_ajaran_id)->first();
-                    $tanggalMasukPendidikan = $faker->dateTimeBetween($tahunAjaranPel->tanggal_mulai, $tahunAjaranPel->tanggal_selesai)->format('Y-m-d');
-                    $lembaga = $faker->randomElement($lembagaList);
-                    $lembagaId = $lembaga->id;
-                    $jurusanF = $jurusanList->where('lembaga_id', $lembagaId)->values();
-                    $jurusan = $faker->randomElement($jurusanF);
-                    $jurusanId = $jurusan->id;
-                    $kelasF = $kelasList->where('jurusan_id', $jurusanId)->values();
-                    $kelas = $faker->randomElement($kelasF);
-                    $kelasId = $kelas->id;
-                    $rombelF = $rombelList->where('kelas_id', $kelasId)->values();
-                    $rombel = $faker->randomElement($rombelF);
-                    $rombelId = $rombel->id;
-                    DB::table('pendidikan')->insert([
-                        'biodata_id' => $childId,
-                        'angkatan_id' => $angkatanPelId,
-                        'no_induk' => $faker->unique()->numerify('###########'),
-                        'lembaga_id' => $lembagaId,
-                        'jurusan_id' => $jurusanId,
-                        'kelas_id' => $kelasId,
-                        'rombel_id' => $rombelId,
-                        'tanggal_masuk' => $tanggalMasukPendidikan,
-                        'status' => 'aktif',
-                        'created_by' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
             }
         }
 
@@ -533,7 +442,7 @@ class DataKeluargaSeeder extends Seeder
                 $ayahId = $randomPegawai->biodata_id;
                 $pegawaiId = $randomPegawai->id;
                 $ayahBiodata = DB::table('biodata')->where('id', $ayahId)->first();
-                if (! $ayahBiodata) {
+                if (!$ayahBiodata) {
                     continue;
                 }
                 $negaraId = $ayahBiodata->negara_id;
@@ -541,7 +450,7 @@ class DataKeluargaSeeder extends Seeder
                 $kabupatenId = $ayahBiodata->kabupaten_id;
                 $kecamatanId = $ayahBiodata->kecamatan_id;
                 $newNoKK = $faker->numerify('###############');
-                if (! DB::table('orang_tua_wali')->where('id_biodata', $ayahId)->exists()) {
+                if (!DB::table('orang_tua_wali')->where('id_biodata', $ayahId)->exists()) {
                     DB::table('orang_tua_wali')->insert([
                         'id_biodata' => $ayahId,
                         'id_hubungan_keluarga' => $ayahStatus,
@@ -572,7 +481,7 @@ class DataKeluargaSeeder extends Seeder
                     'nama' => $faker->name('female'),
                     'no_passport' => $faker->numerify('############'),
                     'jenis_kelamin' => 'p',
-                    'tanggal_lahir' => $faker->date(),
+                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d')),
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
@@ -592,7 +501,7 @@ class DataKeluargaSeeder extends Seeder
                     'id_hubungan_keluarga' => $ibuStatus,
                     'pekerjaan' => $faker->jobTitle(),
                     'penghasilan' => $faker->randomElement(['500000', '1000000', '2000000']),
-                    'wali' => ! $ibuWafat,
+                    'wali' => !$ibuWafat,
                     'status' => true,
                     'created_by' => 1,
                 ]);
@@ -604,6 +513,7 @@ class DataKeluargaSeeder extends Seeder
                 ]);
 
                 $childIdExtra = (string) Str::uuid();
+                $childBirthDateExtra = (new DateTime())->modify('-' . rand(7, 18) . ' years')->format('Y-m-d');
                 DB::table('biodata')->insert([
                     'id' => $childIdExtra,
                     'negara_id' => $negaraId,
@@ -615,7 +525,7 @@ class DataKeluargaSeeder extends Seeder
                     'nama' => $faker->name($faker->randomElement(['male', 'female'])),
                     'no_passport' => $faker->numerify('############'),
                     'jenis_kelamin' => $faker->randomElement(['l', 'p']),
-                    'tanggal_lahir' => $faker->date(),
+                    'tanggal_lahir' => $childBirthDateExtra,
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
@@ -643,13 +553,20 @@ class DataKeluargaSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $anakPegawaiCount++;
 
+                // Bagian pendidikan/santri anak pegawai (aktif, tanggal tidak lewat hari ini)
                 if ($faker->boolean(50)) {
+                    // Tambah santri
                     $angkatanSantri = $faker->randomElement($angkatanSantriList);
                     $angkatanIdSantri = $angkatanSantri->id;
                     $tahunAjaranSantri = DB::table('tahun_ajaran')->where('id', $angkatanSantri->tahun_ajaran_id)->first();
-                    $tanggalMasukSantriExtra = $faker->dateTimeBetween($tahunAjaranSantri->tanggal_mulai, $tahunAjaranSantri->tanggal_selesai)->format('Y-m-d');
+
+                    $startDate = new DateTime($tahunAjaranSantri->tanggal_mulai);
+                    $endDate = new DateTime($tahunAjaranSantri->tanggal_selesai);
+                    $nowDate = new DateTime();
+                    $maxMasuk = $nowDate < $endDate ? $nowDate : $endDate;
+                    $tanggalMasukSantriExtra = $startDate > $maxMasuk ? $startDate->format('Y-m-d') : $faker->dateTimeBetween($startDate->format('Y-m-d'), $maxMasuk->format('Y-m-d'))->format('Y-m-d');
+                    if ($tanggalMasukSantriExtra > date('Y-m-d')) $tanggalMasukSantriExtra = date('Y-m-d');
                     $santriIdExtra = DB::table('santri')->insertGetId([
                         'biodata_id' => $childIdExtra,
                         'angkatan_id' => $angkatanIdSantri,
@@ -673,17 +590,24 @@ class DataKeluargaSeeder extends Seeder
                         'wilayah_id' => $wilayahId,
                         'blok_id' => $blokId,
                         'kamar_id' => $kamarId,
-                        'tanggal_masuk' => $tanggalMasukSantriExtra.' 00:00:00',
+                        'tanggal_masuk' => $tanggalMasukSantriExtra . ' 00:00:00',
                         'status' => 'aktif',
                         'created_by' => 1,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 } else {
+                    // Tambah pendidikan
                     $angkatanPelExtra = $faker->randomElement($angkatanPelajarList);
                     $angkatanPelIdExtra = $angkatanPelExtra->id;
                     $tahunAjaranPelExtra = DB::table('tahun_ajaran')->where('id', $angkatanPelExtra->tahun_ajaran_id)->first();
-                    $tanggalMasukPendidikanExtra = $faker->dateTimeBetween($tahunAjaranPelExtra->tanggal_mulai, $tahunAjaranPelExtra->tanggal_selesai)->format('Y-m-d');
+
+                    $startDate = new DateTime($tahunAjaranPelExtra->tanggal_mulai);
+                    $endDate = new DateTime($tahunAjaranPelExtra->tanggal_selesai);
+                    $nowDate = new DateTime();
+                    $maxMasuk = $nowDate < $endDate ? $nowDate : $endDate;
+                    $tanggalMasukPendidikanExtra = $startDate > $maxMasuk ? $startDate->format('Y-m-d') : $faker->dateTimeBetween($startDate->format('Y-m-d'), $maxMasuk->format('Y-m-d'))->format('Y-m-d');
+                    if ($tanggalMasukPendidikanExtra > date('Y-m-d')) $tanggalMasukPendidikanExtra = date('Y-m-d');
                     $lembaga = $faker->randomElement($lembagaList);
                     $lembagaId = $lembaga->id;
                     $jurusanF = $jurusanList->where('lembaga_id', $lembagaId)->values();
@@ -710,6 +634,7 @@ class DataKeluargaSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
                 }
+                $anakPegawaiCount++;
             }
         }
     }
