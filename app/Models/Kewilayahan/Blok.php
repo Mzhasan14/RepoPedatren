@@ -25,13 +25,13 @@ class Blok extends Model
     //     return $query->where('status', true);
     // }
 
-    // public function wilayah()
-    // {
-    //     return $this->belongsTo(Wilayah::class, 'id_wilayah', 'id');
-    // }
+    public function wilayah()
+    {
+        return $this->belongsTo(Wilayah::class, 'wilayah_id', 'id');
+    }
 
-    // public function kamar()
-    // {
-    //     return $this->hasMany(Kamar::class, 'id_blok', 'id');
-    // }
+    public function kamar()
+    {
+        return $this->hasMany(Kamar::class, 'blok_id', 'id');
+    }
 }

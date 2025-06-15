@@ -23,22 +23,13 @@ class Wilayah extends Model
 
     protected $guarded = ['id'];
 
-    // public function RiwayatDomisili()
-    // {
-    //     $this->hasMany(RiwayatDomisili::class, 'id_wilayah', 'id');
-    // }
+    public function blok()
+    {
+        return $this->hasMany(Blok::class, 'wilayah_id', 'id');
+    }
 
-    // public function scopeActive($query)
-    // {
-    //     return $query->where('status', true);
-    // }
-
-    // public function blok()
-    // {
-    //     return $this->hasMany(Blok::class, 'id_wilayah', 'id');
-    // }
-
-    // public function grupKewaliasuhan() {
-    //     return $this->hasMany(Grup_WaliAsuh::class,'id_wilayah','id');
-    // }
+    public function grupKewaliasuhan()
+    {
+        return $this->hasMany(Grup_WaliAsuh::class, 'id_wilayah', 'id');
+    }
 }

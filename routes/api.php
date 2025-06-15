@@ -285,6 +285,17 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(func
     Route::put('{id}/lembaga', [LembagaController::class, 'update']);
     Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
 
+    // 🏠 Wilayah (Blok, Kamar, Domisili)
+    Route::apiResource('/wilayah', WilayahController::class);
+    Route::apiResource('/blok', BlokController::class);
+    Route::apiResource('/kamar', KamarController::class);
+
+    // 🎓 Pendidikan
+    Route::apiResource('/lembaga', LembagaController::class);
+    Route::apiResource('/jurusan', JurusanController::class);
+    Route::apiResource('/kelas', KelasController::class);
+    Route::apiResource('/rombel', RombelController::class);
+
     // golongan
     Route::get('golongan', [GolonganController::class, 'index']);
     Route::post('golongan', [GolonganController::class, 'store']);
@@ -402,17 +413,6 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:100,1'])->gro
     Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
     Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
 
-    // 🏠 Wilayah (Blok, Kamar, Domisili)
-    Route::apiResource('/wilayah', WilayahController::class);
-    Route::apiResource('/blok', BlokController::class);
-    Route::apiResource('/kamar', KamarController::class);
-    Route::apiResource('/domisili', DomisiliController::class);
-
-    // 🎓 Pendidikan
-    Route::apiResource('/lembaga', LembagaController::class);
-    Route::apiResource('/jurusan', JurusanController::class);
-    Route::apiResource('/kelas', KelasController::class);
-    Route::apiResource('/rombel', RombelController::class);
 
     // 👨‍🏫 Pegawai & Guru
     Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);

@@ -20,13 +20,9 @@ class Kamar extends Model
     public $incrementing = true;
 
     protected $guarded = ['id'];
-    // public function scopeActive($query)
-    // {
-    //     return $query->where('status', true);
-    // }
-
-    // public function blok()
-    // {
-    //     return $this->belongsTo(Blok::class, 'id_blok', 'id');
-    // }
+    
+    public function blok()
+    {
+        return $this->belongsTo(Blok::class, 'blok_id', 'id');
+    }
 }
