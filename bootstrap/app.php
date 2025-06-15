@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.role' => \App\Http\Middleware\CheckRole::class,
             'log.activity' => \App\Http\Middleware\LogApiActivity::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \Bepsvpt\SecureHeaders\SecureHeadersMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
