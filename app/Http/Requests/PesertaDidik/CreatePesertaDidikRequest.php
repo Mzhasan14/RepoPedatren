@@ -117,23 +117,21 @@ class CreatePesertaDidikRequest extends FormRequest
             $nik = $this->input('nik');
             $nikAyah = $this->input('nik_ayah');
             $nikIbu = $this->input('nik_ibu');
-            $nikWali = $this->input('nik_wali');
 
             $niks = [
                 'nik' => $nik,
                 'nik_ayah' => $nikAyah,
                 'nik_ibu' => $nikIbu,
-                'nik_wali' => $nikWali,
             ];
 
             // Cek jika ada value sama selain null
             $nikCounts = array_count_values(array_filter($niks));
             foreach ($nikCounts as $nikValue => $count) {
                 if ($count > 1) {
-                    $dupeFields = array_keys(array_filter($niks, fn ($v) => $v === $nikValue));
+                    $dupeFields = array_keys(array_filter($niks, fn($v) => $v === $nikValue));
                     $validator->errors()->add(
                         'nik',
-                        'NIK '.implode(', ', $dupeFields).' tidak boleh sama.'
+                        'NIK ' . implode(', ', $dupeFields) . ' tidak boleh sama.'
                     );
                 }
             }
@@ -146,6 +144,10 @@ class CreatePesertaDidikRequest extends FormRequest
                 if (! $this->filled('angkatan_pelajar_id')) {
                     $validator->errors()->add('angkatan_pelajar_id', 'Angkatan pelajar wajib diisi jika lembaga diisi.');
                 }
+            }
+
+            if ($this->filled('no_induk') && ! $this->filled('lembaga_id')) {
+                $validator->errors()->add('lembaga_id', 'Lembaga wajib diisi jika No Induk diisi.');
             }
 
             // Validasi: jika wilayah diisi, maka blok, kamar, dan tanggal masuk domisili wajib

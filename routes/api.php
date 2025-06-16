@@ -49,10 +49,9 @@ use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
 use App\Http\Controllers\api\PesertaDidik\PelajarController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
 use App\Http\Controllers\api\PesertaDidik\SantriController;
-use App\Http\Controllers\api\Wilayah\BlokController;
-use App\Http\Controllers\api\Wilayah\DropdownWilayahController;
-use App\Http\Controllers\api\Wilayah\KamarController;
-use App\Http\Controllers\api\Wilayah\WilayahController;
+use App\Http\Controllers\api\wilayah\BlokController;
+use App\Http\Controllers\api\wilayah\KamarController;
+use App\Http\Controllers\api\wilayah\WilayahController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
