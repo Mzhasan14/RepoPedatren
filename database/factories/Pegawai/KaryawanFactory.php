@@ -22,7 +22,7 @@ class KaryawanFactory extends Factory
      */
     public function definition(): array
     {
-        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
+        $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'yesterday');
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;

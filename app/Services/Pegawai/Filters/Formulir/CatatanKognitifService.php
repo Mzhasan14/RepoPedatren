@@ -29,6 +29,7 @@ class CatatanKognitifService
                     ->limit(1);
             },
         ])
+            ->orderByDesc('tanggal_buat')
             ->get()
             ->map(function ($item) {
                 $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);

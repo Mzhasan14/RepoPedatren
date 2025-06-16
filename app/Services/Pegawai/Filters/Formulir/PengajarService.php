@@ -15,6 +15,7 @@ class PengajarService
     {
         $pengajar = Pengajar::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
             ->with(['materiAjar', 'lembaga', 'golongan'])
+            ->orderBy('tahun_masuk','desc')
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,

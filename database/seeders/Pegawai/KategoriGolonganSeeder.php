@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Pegawai;
 
+use App\Models\Pegawai\KategoriGolongan;
 use Database\Factories\Pegawai\KategoriGolonganFactory;
 use Illuminate\Database\Seeder;
 
@@ -12,7 +13,16 @@ class KategoriGolonganSeeder extends Seeder
      */
     public function run(): void
     {
-        (new KategoriGolonganFactory)->count(300)->create();
+                $kategoriList = ['Guru Pertama', 'Guru Muda', 'Guru Madya', 'Guru Utama'];
 
+        foreach ($kategoriList as $nama) {
+            KategoriGolongan::updateOrCreate(
+                ['nama_kategori_golongan' => $nama],
+                [
+                    'created_by' => 1,
+                    'status' => true,
+                ]
+            );
+        }
     }
 }

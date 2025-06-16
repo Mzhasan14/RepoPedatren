@@ -14,6 +14,7 @@ class PengurusService
     {
         $pengurus = Pengurus::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
             ->with(['pegawai.biodata'])
+            ->orderBy('tanggal_mulai','desc')
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,

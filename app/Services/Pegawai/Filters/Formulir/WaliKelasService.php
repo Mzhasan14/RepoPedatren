@@ -14,6 +14,7 @@ class WaliKelasService
     {
         $waliKelas = WaliKelas::whereHas('pegawai.biodata', fn ($q) => $q->where('id', $bioId))
             ->with(['pegawai.biodata', 'lembaga', 'jurusan', 'kelas', 'rombel'])
+            ->orderBy('periode_awal','desc')
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,

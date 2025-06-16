@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Catatan_kognitif;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Database\Factories\Kewaliasuhan\Wali_asuhFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -28,7 +29,7 @@ class CatatanKognitifFactory extends Factory
 
         return [
             'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_wali_asuh' => (new Wali_asuhFactory)->create()->id,
+            'id_wali_asuh' => Wali_asuh::inRandomOrder()->first()->id,
             'kebahasaan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
             'kebahasaan_tindak_lanjut' => $this->faker->sentence(),
             'baca_kitab_kuning_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),

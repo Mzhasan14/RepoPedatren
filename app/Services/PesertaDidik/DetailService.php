@@ -426,7 +426,7 @@ class DetailService
                 'karyawan.tanggal_mulai',
                 'karyawan.tanggal_selesai'
             )
-            ->orderBy('karyawan.tanggal_mulai', 'asc')
+            ->orderBy('karyawan.tanggal_mulai', 'desc')
             ->get();
 
         $data['Karyawan'] = $karyawan->isNotEmpty()
@@ -483,6 +483,8 @@ class DetailService
                 'materi_ajar.tahun_masuk',
                 'materi_ajar.tahun_akhir',
             )
+            ->orderByDesc('pengajar.tahun_masuk')
+            ->orderByDesc('materi_ajar.tahun_masuk')
             ->get();
 
         if ($pengajar->isNotEmpty()) {
@@ -526,7 +528,7 @@ class DetailService
                 'pengurus.tanggal_mulai',
                 'pengurus.tanggal_akhir',
             )
-            ->orderBy('pengurus.tanggal_mulai', 'asc')
+            ->orderBy('pengurus.tanggal_mulai', 'desc')
             ->get();
         $data['Pengurus'] = $pengurus->isNotEmpty()
             ? $pengurus->map(fn($item) => [
