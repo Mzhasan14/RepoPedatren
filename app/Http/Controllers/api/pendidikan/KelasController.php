@@ -85,9 +85,18 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
 
+        $jumlahPelajarAktif = $kelas->pendidikan()->where('status', 'aktif')->count();
+
+        if ($jumlahPelajarAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kelas tidak dapat dinonaktifkan karena masih ada ' . $jumlahPelajarAktif . ' data pelajar aktif.',
+            ], 400);
+        }
+
         $kelas->updated_by = Auth::id();
         $kelas->updated_at = now();
-        $kelas->status = false; // Menonaktifkan kelas
+        $kelas->status = false;
         $kelas->save();
 
         return response()->json([

@@ -93,9 +93,18 @@ class WilayahController extends Controller
     {
         $wilayah = Wilayah::findOrFail($id);
 
+        $jumlahDomisiliAktif = $wilayah->domisiliSantri()->where('status', 'aktif')->count();
+
+        if ($jumlahDomisiliAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wilayah tidak dapat dinonaktifkan karena masih terdapat ' . $jumlahDomisiliAktif . ' santri aktif yang menempati wilayah ini.',
+            ], 400);
+        }
+
         $wilayah->updated_by = Auth::id();
         $wilayah->updated_at = now();
-        $wilayah->status = false; // Menonaktifkan wilayah
+        $wilayah->status = false;
         $wilayah->save();
 
         return response()->json([

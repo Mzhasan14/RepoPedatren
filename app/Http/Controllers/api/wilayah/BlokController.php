@@ -127,9 +127,18 @@ class BlokController extends Controller
     {
         $blok = Blok::findOrFail($id);
 
+        $jumlahDomisiliAktif = $blok->domisiliSantri()->where('status', 'aktif')->count();
+
+        if ($jumlahDomisiliAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Blok tidak dapat dinonaktifkan karena masih terdapat ' . $jumlahDomisiliAktif . ' santri aktif yang menempati blok ini.',
+            ], 400);
+        }
+
         $blok->updated_by = Auth::id();
         $blok->updated_at = now();
-        $blok->status = false; // Menonaktifkan blok
+        $blok->status = false;
         $blok->save();
 
         return response()->json([

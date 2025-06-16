@@ -93,9 +93,18 @@ class JurusanController extends Controller
     {
         $jurusan = Jurusan::findOrFail($id);
 
+        $jumlahPelajarAktif = $jurusan->pendidikan()->where('status', 'aktif')->count();
+
+        if ($jumlahPelajarAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jurusan tidak dapat dinonaktifkan karena masih ada ' . $jumlahPelajarAktif . ' data pelajar aktif.',
+            ], 400);
+        }
+
         $jurusan->updated_by = Auth::id();
         $jurusan->updated_at = now();
-        $jurusan->status = false; // Nonaktifkan jurusan
+        $jurusan->status = false;
         $jurusan->save();
 
         return response()->json([

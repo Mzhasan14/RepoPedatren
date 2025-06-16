@@ -90,9 +90,18 @@ class RombelController extends Controller
     {
         $rombel = Rombel::findOrFail($id);
 
+        $jumlahPelajarAktif = $rombel->pendidikan()->where('status', 'aktif')->count();
+
+        if ($jumlahPelajarAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rombel tidak dapat dinonaktifkan karena masih ada ' . $jumlahPelajarAktif . ' data pelajar aktif.',
+            ], 400);
+        }
+
         $rombel->updated_by = Auth::id();
         $rombel->updated_at = now();
-        $rombel->status = false; // Menonaktifkan rombel
+        $rombel->status = false;
         $rombel->save();
 
         return response()->json([

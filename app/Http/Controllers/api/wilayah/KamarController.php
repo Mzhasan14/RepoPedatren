@@ -114,9 +114,18 @@ class KamarController extends Controller
     {
         $kamar = Kamar::findOrFail($id);
 
+        $jumlahDomisiliAktif = $kamar->domisiliSantri()->where('status', 'aktif')->count();
+
+        if ($jumlahDomisiliAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kamar tidak dapat dinonaktifkan karena masih terdapat ' . $jumlahDomisiliAktif . ' santri aktif yang menempati kamar ini.',
+            ], 400);
+        }
+
         $kamar->updated_by = Auth::id();
         $kamar->updated_at = now();
-        $kamar->status = false; // Menonaktifkan kamar
+        $kamar->status = false;
         $kamar->save();
 
         return response()->json([

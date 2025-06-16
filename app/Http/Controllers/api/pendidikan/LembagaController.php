@@ -86,6 +86,16 @@ class LembagaController extends Controller
     {
         $lembaga = Lembaga::findOrFail($id);
 
+        // Hitung jumlah data pelajar aktif
+        $jumlahPelajarAktif = $lembaga->pendidikan()->where('status', 'aktif')->count();
+
+        if ($jumlahPelajarAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lembaga tidak dapat dinonaktifkan karena masih ada ' . $jumlahPelajarAktif . ' data pelajar aktif.',
+            ], 400);
+        }
+
         $lembaga->updated_by = Auth::id();
         $lembaga->updated_at = now();
         $lembaga->status = false;
