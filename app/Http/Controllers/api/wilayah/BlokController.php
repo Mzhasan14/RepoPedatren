@@ -127,6 +127,9 @@ class BlokController extends Controller
     {
         $blok = Blok::findOrFail($id);
         $blok->deleted_by = Auth::id();
+        $blok->updated_by = Auth::id();
+        $blok->updated_at = now();
+        $blok->status = false;
         $blok->save();
         $blok->delete();
 

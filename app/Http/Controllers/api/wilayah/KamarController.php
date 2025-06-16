@@ -114,6 +114,9 @@ class KamarController extends Controller
     {
         $kamar = Kamar::findOrFail($id);
         $kamar->deleted_by = Auth::id();
+        $kamar->updated_by = Auth::id();
+        $kamar->updated_at = now();
+        $kamar->status = false;
         $kamar->save();
         $kamar->delete();
 

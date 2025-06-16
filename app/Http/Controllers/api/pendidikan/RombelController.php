@@ -11,17 +11,45 @@ class RombelController extends Controller
 {
     public function index()
     {
-        $rombels = Rombel::with('kelas')->where('status', true)->get();
+        $rombels = Rombel::with(['kelas.jurusan.lembaga'])
+            ->where('status', true)
+            ->get(['id', 'nama_rombel', 'gender_rombel', 'kelas_id', 'status'])
+            ->map(function ($rombel) {
+                return [
+                    'id' => $rombel->id,
+                    'nama_rombel' => $rombel->nama_rombel,
+                    'gender_rombel' => $rombel->gender_rombel,
+                    'nama_kelas' => $rombel->kelas ? $rombel->kelas->nama_kelas : null,
+                    'nama_jurusan' => $rombel->kelas && $rombel->kelas->jurusan ? $rombel->kelas->jurusan->nama_jurusan : null,
+                    'nama_lembaga' => $rombel->kelas && $rombel->kelas->jurusan && $rombel->kelas->jurusan->lembaga ? $rombel->kelas->jurusan->lembaga->nama_lembaga : null,
+                    'status' => $rombel->status,
+                ];
+            });
 
         return response()->json($rombels);
     }
 
     public function show($id)
     {
-        $rombel = Rombel::with('kelas')->findOrFail($id);
+        $rombel = Rombel::with([
+            'kelas.jurusan.lembaga',
+            'pendidikan'
+        ])->findOrFail($id);
 
-        return response()->json($rombel);
+        $totalSiswa = $rombel->pendidikan->count();
+
+        return response()->json([
+            'id' => $rombel->id,
+            'nama_rombel' => $rombel->nama_rombel,
+            'gender_rombel' => $rombel->gender_rombel,
+            'status' => $rombel->status,
+            'nama_kelas' => $rombel->kelas ? $rombel->kelas->nama_kelas : null,
+            'nama_jurusan' => $rombel->kelas && $rombel->kelas->jurusan ? $rombel->kelas->jurusan->nama_jurusan : null,
+            'nama_lembaga' => $rombel->kelas && $rombel->kelas->jurusan && $rombel->kelas->jurusan->lembaga ? $rombel->kelas->jurusan->lembaga->nama_lembaga : null,
+            'total_siswa' => $totalSiswa,
+        ]);
     }
+
 
     public function store(Request $request)
     {
@@ -62,6 +90,9 @@ class RombelController extends Controller
     {
         $rombel = Rombel::findOrFail($id);
         $rombel->deleted_by = Auth::id();
+        $rombel->updated_by = Auth::id();
+        $rombel->updated_at = now();
+        $rombel->status = false;
         $rombel->save();
         $rombel->delete();
 

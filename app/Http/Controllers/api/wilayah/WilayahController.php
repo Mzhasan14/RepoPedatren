@@ -93,6 +93,9 @@ class WilayahController extends Controller
     {
         $wilayah = Wilayah::findOrFail($id);
         $wilayah->deleted_by = Auth::id();
+        $wilayah->updated_by = Auth::id();
+        $wilayah->updated_at = now();
+        $wilayah->status = false;
         $wilayah->save();
         $wilayah->delete();
 

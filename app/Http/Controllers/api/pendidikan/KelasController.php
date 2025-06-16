@@ -11,16 +11,42 @@ class KelasController extends Controller
 {
     public function index()
     {
-        $kelases = Kelas::with('jurusan')->where('status', true)->get();
+        $kelases = Kelas::with(['jurusan.lembaga'])
+            ->where('status', true)
+            ->get(['id', 'nama_kelas', 'jurusan_id', 'status'])
+            ->map(function ($kelas) {
+                return [
+                    'id' => $kelas->id,
+                    'nama_kelas' => $kelas->nama_kelas,
+                    'nama_jurusan' => $kelas->jurusan ? $kelas->jurusan->nama_jurusan : null,
+                    'nama_lembaga' => $kelas->jurusan && $kelas->jurusan->lembaga ? $kelas->jurusan->lembaga->nama_lembaga : null,
+                    'status' => $kelas->status,
+                ];
+            });
 
         return response()->json($kelases);
     }
 
     public function show($id)
     {
-        $kelas = Kelas::with('jurusan')->findOrFail($id);
+        $kelas = Kelas::with([
+            'jurusan.lembaga',
+            'rombel',
+            'pendidikan'
+        ])->findOrFail($id);
 
-        return response()->json($kelas);
+        $totalRombel = $kelas->rombel->count();
+        $totalSiswa = $kelas->pendidikan->count();
+
+        return response()->json([
+            'id' => $kelas->id,
+            'nama_kelas' => $kelas->nama_kelas,
+            'status' => $kelas->status,
+            'nama_jurusan' => $kelas->jurusan ? $kelas->jurusan->nama_jurusan : null,
+            'nama_lembaga' => $kelas->jurusan && $kelas->jurusan->lembaga ? $kelas->jurusan->lembaga->nama_lembaga : null,
+            'total_rombel' => $totalRombel,
+            'total_siswa' => $totalSiswa,
+        ]);
     }
 
     public function store(Request $request)
@@ -59,6 +85,9 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
         $kelas->deleted_by = Auth::id();
+        $kelas->updated_by = Auth::id();
+        $kelas->updated_at = now();
+        $kelas->status = false;
         $kelas->save();
         $kelas->delete();
 

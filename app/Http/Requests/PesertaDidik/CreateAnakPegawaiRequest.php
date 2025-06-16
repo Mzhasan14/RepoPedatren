@@ -174,6 +174,24 @@ class CreateAnakPegawaiRequest extends FormRequest
             if (($mondok == 1 || $wilayahId !== null) && empty($nis)) {
                 $validator->errors()->add('nis', 'Kolom NIS wajib diisi jika mondok atau wilayah diisi.');
             }
+
+            $validator->after(function ($validator) {
+                $mondok = $this->input('mondok');
+                $lembagaId = $this->input('lembaga_id');
+                $wilayahId = $this->input('wilayah_id');
+
+                // Jika tidak mondok, tidak pilih lembaga, tidak pilih wilayah
+                if (
+                    (is_null($mondok) || $mondok == 0)
+                    && is_null($lembagaId)
+                    && is_null($wilayahId)
+                ) {
+                    $validator->errors()->add(
+                        'mondok',
+                        'Pendaftaran tidak dapat diproses. Minimal, peserta harus terdaftar sebagai santri (mondok) atau pelajar pada salah satu lembaga pendidikan.'
+                    );
+                }
+            });
         });
     }
 

@@ -2,11 +2,12 @@
 
 namespace App\Models\Pendidikan;
 
+use App\Models\Pendidikan;
 use App\Models\Pegawai\Pengajar;
 use App\Models\RiwayatPendidikan;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Lembaga extends Model
 {
@@ -15,33 +16,18 @@ class Lembaga extends Model
 
     protected $table = 'lembaga';
 
-    protected $primaryKey = 'id';
-
-    protected $keyType = 'int';
-
-    public $incrementing = true;
-
     protected $guarded = ['id'];
 
-    // public function RiwayatPendidikan()
-    // {
-    //     $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
-    // }
+    public function jurusan()
+    {
+        return $this->hasMany(Jurusan::class, 'lembaga_id', 'id');
+    }
 
-    // public function scopeActive($query)
-    // {
-    //     return $query->where('status', true);
-    // }
+    public function pendidikan()
+    {
+        return $this->hasMany(Pendidikan::class);
+    }
 
-    // public function jurusan()
-    // {
-    //     return $this->hasMany(Jurusan::class, 'id_lembaga', 'id');
-    // }
-
-    // public function pengajar()
-    // {
-    //     return $this->hasMany(Pengajar::class, 'id_lembaga','id');
-    // }
     public function pengajar()
     {
         return $this->hasMany(Pengajar::class);

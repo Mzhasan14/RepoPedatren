@@ -2,10 +2,10 @@
 
 namespace App\Models\Pendidikan;
 
-use App\Models\RiwayatPendidikan;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Pendidikan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Kelas extends Model
 {
@@ -14,31 +14,20 @@ class Kelas extends Model
 
     protected $table = 'kelas';
 
-    protected $primaryKey = 'id';
-
-    protected $keyType = 'int';
-
-    public $incrementing = true;
-
     protected $guarded = ['id'];
 
-    public function scopeActive($query)
+    public function jurusan()
     {
-        return $query->where('status', true);
+        return $this->belongsTo(Jurusan::class, 'jurusan_id', 'id');
     }
 
-    // public function RiwayatPendidikan()
-    // {
-    //     $this->hasMany(RiwayatPendidikan::class, 'id_lembaga', 'id');
-    // }
+    public function rombel()
+    {
+        return $this->hasMany(Rombel::class, 'kelas_id', 'id');
+    }
 
-    // public function jurusan()
-    // {
-    //     return $this->belongsTo(Jurusan::class, 'id_jurusan', 'id');
-    // }
-
-    // public function rombel()
-    // {
-    //     return $this->hasMany(Rombel::class, 'id_kelas', 'id');
-    // }
+    public function pendidikan()
+    {
+        return $this->hasMany(Pendidikan::class);
+    }
 }

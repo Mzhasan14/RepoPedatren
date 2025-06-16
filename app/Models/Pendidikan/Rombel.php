@@ -2,10 +2,10 @@
 
 namespace App\Models\Pendidikan;
 
-use App\Models\RiwayatPendidikan;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Pendidikan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Rombel extends Model
 {
@@ -14,26 +14,15 @@ class Rombel extends Model
 
     protected $table = 'rombel';
 
-    protected $primaryKey = 'id';
-
-    protected $keyType = 'int';
-
-    public $incrementing = true;
-
     protected $guarded = ['id'];
 
-    // public function scopeActive($query)
-    // {
-    //     return $query->where('status', true);
-    // }
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_id', 'id');
+    }
 
-    // public function RiwayatPendidikan()
-    // {
-    //     $this->hasMany(RiwayatPendidikan::class, 'lembaga_id', 'id');
-    // }
-
-    // public function kelas()
-    // {
-    //     return $this->belongsTo(Lembaga::class, 'kelas_id', 'id');
-    // }
+    public function pendidikan()
+    {
+        return $this->hasMany(Pendidikan::class);
+    }
 }

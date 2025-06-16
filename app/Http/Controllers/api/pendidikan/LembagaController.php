@@ -11,9 +11,46 @@ class LembagaController extends Controller
 {
     public function index()
     {
-        $lembagas = Lembaga::where('status', true)->get();
+        $lembagas = Lembaga::where('status', true)
+            ->get(['id', 'nama_lembaga', 'status']);
 
         return response()->json($lembagas);
+    }
+
+    public function show($id)
+    {
+        $lembaga = Lembaga::with([
+            'jurusan.kelas.rombel',
+            'pendidikan',
+        ])->findOrFail($id);
+
+        // Hitung total jurusan
+        $totalJurusan = $lembaga->jurusan->count();
+
+        // Hitung total kelas
+        $totalKelas = $lembaga->jurusan->sum(function ($jurusan) {
+            return $jurusan->kelas->count();
+        });
+
+        // Hitung total rombel
+        $totalRombel = $lembaga->jurusan->sum(function ($jurusan) {
+            return $jurusan->kelas->sum(function ($kelas) {
+                return $kelas->rombel->count();
+            });
+        });
+
+        // Hitung total siswa
+        $totalSiswa = $lembaga->pendidikan->count();
+
+        return response()->json([
+            'id' => $lembaga->id,
+            'nama_lembaga' => $lembaga->nama_lembaga,
+            'status' => $lembaga->status,
+            'total_jurusan' => $totalJurusan,
+            'total_kelas' => $totalKelas,
+            'total_rombel' => $totalRombel,
+            'total_siswa' => $totalSiswa,
+        ]);
     }
 
     public function store(Request $request)
@@ -49,6 +86,9 @@ class LembagaController extends Controller
     {
         $lembaga = Lembaga::findOrFail($id);
         $lembaga->deleted_by = Auth::id();
+        $lembaga->updated_by = Auth::id();
+        $lembaga->updated_at = now();
+        $lembaga->status = false;
         $lembaga->save();
         $lembaga->delete();
 

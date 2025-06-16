@@ -11,16 +11,50 @@ class JurusanController extends Controller
 {
     public function index()
     {
-        $jurusans = Jurusan::with('lembaga')->where('status', true)->get();
+        $jurusans = Jurusan::with('lembaga:id,nama_lembaga')->where('status', true)
+            ->get(['id', 'nama_jurusan', 'status', 'lembaga_id'])
+            ->map(function ($jurusan) {
+                return [
+                    'id' => $jurusan->id,
+                    'nama_jurusan' => $jurusan->nama_jurusan,
+                    'status'       => $jurusan->status,
+                    'nama_lembaga' => $jurusan->lembaga ? $jurusan->lembaga->nama_lembaga : null
+                ];
+            });
 
         return response()->json($jurusans);
     }
 
     public function show($id)
     {
-        $jurusan = Jurusan::with('lembaga')->findOrFail($id);
+        $jurusan = Jurusan::with([
+            'lembaga',
+            'kelas.rombel',
+            'kelas.pendidikan', // relasi siswa
+        ])->findOrFail($id);
 
-        return response()->json($jurusan);
+        // Hitung total kelas
+        $totalKelas = $jurusan->kelas->count();
+
+        // Hitung total rombel
+        $totalRombel = $jurusan->kelas->sum(function ($kelas) {
+            return $kelas->rombel->count();
+        });
+
+        // Hitung total siswa (dari relasi pendidikan di kelas)
+        $totalSiswa = $jurusan->kelas->sum(function ($kelas) {
+            return $kelas->pendidikan->count();
+        });
+
+        return response()->json([
+            'id' => $jurusan->id,
+            'nama_jurusan' => $jurusan->nama_jurusan,
+            'status' => $jurusan->status,
+            'nama_lembaga' => $jurusan->lembaga ? $jurusan->lembaga->nama_lembaga : null,
+            'total_kelas' => $totalKelas,
+            'total_rombel' => $totalRombel,
+            'total_siswa' => $totalSiswa,
+        ]);
     }
 
     public function store(Request $request)
@@ -59,6 +93,9 @@ class JurusanController extends Controller
     {
         $jurusan = Jurusan::findOrFail($id);
         $jurusan->deleted_by = Auth::id();
+        $jurusan->updated_by = Auth::id();
+        $jurusan->updated_at = now();
+        $jurusan->status = false;
         $jurusan->save();
         $jurusan->delete();
 
