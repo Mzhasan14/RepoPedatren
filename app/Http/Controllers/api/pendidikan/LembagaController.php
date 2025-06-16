@@ -9,12 +9,32 @@ use Illuminate\Support\Facades\Auth;
 
 class LembagaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $lembagas = Lembaga::where('status', true)
-            ->get(['id', 'nama_lembaga', 'status']);
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        return response()->json($lembagas);
+        $lembaga = Lembaga::where('status', $status === 'aktif')
+            ->select('id', 'nama_lembaga', 'status')
+            ->paginate($perPage);
+
+        $lembaga->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_lembaga' => $item->nama_lembaga,
+                'status' => $item->status,
+            ];
+        });
+
+        if ($lembaga->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json($lembaga);
     }
 
     public function show($id)

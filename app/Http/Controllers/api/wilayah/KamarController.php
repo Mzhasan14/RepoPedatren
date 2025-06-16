@@ -11,33 +11,33 @@ class KamarController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        $kamars = Kamar::with('blok.wilayah')
-            ->where('status', true)
-            ->select('id', 'blok_id', 'nama_kamar', 'kapasitas', 'status')
+        $kamar = Kamar::with('blok.wilayah:id,nama_wilayah')
+            ->where('status', $status === 'aktif')
+            ->select('id', 'nama_kamar', 'blok_id', 'status')
             ->paginate($perPage);
 
-        $kamars->getCollection()->transform(function ($kamar) {
+        $kamar->getCollection()->transform(function ($item) {
             return [
-                'id' => $kamar->id,
-                'nama_kamar' => $kamar->nama_kamar,
-                'blok_id' => $kamar->blok_id,
-                'kapasitas' => $kamar->kapasitas,
-                'status' => $kamar->status,
-                'blok' => [
-                    'id' => $kamar->blok->id ?? null,
-                    'nama_blok' => $kamar->blok->nama_blok ?? null,
-                ],
-                'wilayah' => [
-                    'id' => $kamar->blok->wilayah->id ?? null,
-                    'nama_wilayah' => $kamar->blok->wilayah->nama_wilayah ?? null,
-                    'kategori' => $kamar->blok->wilayah->kategori ?? null,
-                ],
+                'id' => $item->id,
+                'nama_kamar' => $item->nama_kamar,
+                'blok' => $item->blok ? $item->blok->nama_blok : null,
+                'wilayah' => $item->blok && $item->blok->wilayah ? $item->blok->wilayah->nama_wilayah : null,
+                'status' => $item->status,
             ];
         });
 
-        return response()->json($kamars);
+        if ($kamar->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json($kamar);
     }
 
     public function show($id)

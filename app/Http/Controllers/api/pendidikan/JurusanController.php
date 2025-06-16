@@ -9,20 +9,36 @@ use Illuminate\Support\Facades\Auth;
 
 class JurusanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $jurusans = Jurusan::with('lembaga:id,nama_lembaga')->where('status', true)
-            ->get(['id', 'nama_jurusan', 'status', 'lembaga_id'])
-            ->map(function ($jurusan) {
-                return [
-                    'id' => $jurusan->id,
-                    'nama_jurusan' => $jurusan->nama_jurusan,
-                    'status'       => $jurusan->status,
-                    'nama_lembaga' => $jurusan->lembaga ? $jurusan->lembaga->nama_lembaga : null
-                ];
-            });
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        return response()->json($jurusans);
+        $jurusan = Jurusan::with('lembaga:id,nama_lembaga')
+            ->where('status', $status === 'aktif')
+            ->select('id', 'nama_jurusan', 'lembaga_id', 'status')
+            ->paginate($perPage);
+
+        $jurusan->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_jurusan' => $item->nama_jurusan,
+                'lembaga' => $item->lembaga ? $item->lembaga->nama_lembaga : null,
+                'status' => $item->status,
+            ];
+        });
+
+        // Cek jika data kosong
+        if ($jurusan->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        // Jika data ada, tetap pakai format paginasi
+        return response()->json($jurusan);
     }
 
     public function show($id)

@@ -12,28 +12,32 @@ class BlokController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        $bloks = Blok::with('wilayah')
-            ->where('status', true)
-            ->select('id', 'wilayah_id', 'nama_blok', 'status')
+        $blok = Blok::with('wilayah:id,nama_wilayah')
+            ->where('status', $status === 'aktif')
+            ->select('id', 'nama_blok', 'wilayah_id', 'status')
             ->paginate($perPage);
 
-        $bloks->getCollection()->transform(function ($blok) {
+        $blok->getCollection()->transform(function ($item) {
             return [
-                'id' => $blok->id,
-                'wilayah_id' => $blok->wilayah_id,
-                'nama_blok' => $blok->nama_blok,
-                'status' => $blok->status,
-                'wilayah' => [
-                    'id' => $blok->wilayah->id ?? null,
-                    'nama_wilayah' => $blok->wilayah->nama_wilayah ?? null,
-                    'kategori' => $blok->wilayah->kategori ?? null,
-                ]
+                'id' => $item->id,
+                'nama_blok' => $item->nama_blok,
+                'wilayah' => $item->wilayah ? $item->wilayah->nama_wilayah : null,
+                'status' => $item->status,
             ];
         });
 
-        return response()->json($bloks);
+        if ($blok->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json($blok);
     }
 
     public function show($id)

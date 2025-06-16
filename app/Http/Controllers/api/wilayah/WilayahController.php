@@ -11,16 +11,31 @@ class WilayahController extends Controller
 {
     public function index(Request $request)
     {
-        // Default 10 per halaman, bisa override via query param ?per_page=20
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        $wilayah = Wilayah::where('status', true)
-            ->select('id', 'nama_wilayah', 'kategori', 'status')
+        $wilayah = Wilayah::where('status', $status === 'aktif')
+            ->select('id', 'nama_wilayah', 'status')
             ->paginate($perPage);
+
+        $wilayah->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_wilayah' => $item->nama_wilayah,
+                'status' => $item->status,
+            ];
+        });
+
+        if ($wilayah->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
 
         return response()->json($wilayah);
     }
-
 
     public function show($id)
     {

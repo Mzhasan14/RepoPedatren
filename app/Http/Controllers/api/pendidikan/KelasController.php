@@ -9,22 +9,35 @@ use Illuminate\Support\Facades\Auth;
 
 class KelasController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $kelases = Kelas::with(['jurusan.lembaga'])
-            ->where('status', true)
-            ->get(['id', 'nama_kelas', 'jurusan_id', 'status'])
-            ->map(function ($kelas) {
-                return [
-                    'id' => $kelas->id,
-                    'nama_kelas' => $kelas->nama_kelas,
-                    'nama_jurusan' => $kelas->jurusan ? $kelas->jurusan->nama_jurusan : null,
-                    'nama_lembaga' => $kelas->jurusan && $kelas->jurusan->lembaga ? $kelas->jurusan->lembaga->nama_lembaga : null,
-                    'status' => $kelas->status,
-                ];
-            });
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        return response()->json($kelases);
+        $kelas = Kelas::with('jurusan.lembaga:id,nama_lembaga')
+            ->where('status', $status === 'aktif')
+            ->select('id', 'nama_kelas', 'jurusan_id', 'status')
+            ->paginate($perPage);
+
+        $kelas->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_kelas' => $item->nama_kelas,
+                'jurusan' => $item->jurusan ? $item->jurusan->nama_jurusan : null,
+                'lembaga' => $item->jurusan && $item->jurusan->lembaga ? $item->jurusan->lembaga->nama_lembaga : null,
+                'status' => $item->status,
+            ];
+        });
+
+        if ($kelas->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json($kelas);
     }
 
     public function show($id)

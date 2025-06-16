@@ -9,24 +9,36 @@ use Illuminate\Support\Facades\Auth;
 
 class RombelController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $rombels = Rombel::with(['kelas.jurusan.lembaga'])
-            ->where('status', true)
-            ->get(['id', 'nama_rombel', 'gender_rombel', 'kelas_id', 'status'])
-            ->map(function ($rombel) {
-                return [
-                    'id' => $rombel->id,
-                    'nama_rombel' => $rombel->nama_rombel,
-                    'gender_rombel' => $rombel->gender_rombel,
-                    'nama_kelas' => $rombel->kelas ? $rombel->kelas->nama_kelas : null,
-                    'nama_jurusan' => $rombel->kelas && $rombel->kelas->jurusan ? $rombel->kelas->jurusan->nama_jurusan : null,
-                    'nama_lembaga' => $rombel->kelas && $rombel->kelas->jurusan && $rombel->kelas->jurusan->lembaga ? $rombel->kelas->jurusan->lembaga->nama_lembaga : null,
-                    'status' => $rombel->status,
-                ];
-            });
+        $perPage = $request->get('per_page', 25);
+        $status = $request->get('status', 'aktif');
 
-        return response()->json($rombels);
+        $rombel = Rombel::with('kelas.jurusan.lembaga:id,nama_lembaga')
+            ->where('status', $status === 'aktif')
+            ->select('id', 'nama_rombel', 'kelas_id', 'status')
+            ->paginate($perPage);
+
+        $rombel->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_rombel' => $item->nama_rombel,
+                'kelas' => $item->kelas ? $item->kelas->nama_kelas : null,
+                'jurusan' => $item->kelas && $item->kelas->jurusan ? $item->kelas->jurusan->nama_jurusan : null,
+                'lembaga' => $item->kelas && $item->kelas->jurusan && $item->kelas->jurusan->lembaga ? $item->kelas->jurusan->lembaga->nama_lembaga : null,
+                'status' => $item->status,
+            ];
+        });
+
+        if ($rombel->total() == 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ]);
+        }
+
+        return response()->json($rombel);
     }
 
     public function show($id)
