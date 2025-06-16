@@ -85,13 +85,32 @@ class LembagaController extends Controller
     public function destroy($id)
     {
         $lembaga = Lembaga::findOrFail($id);
-        $lembaga->deleted_by = Auth::id();
+
         $lembaga->updated_by = Auth::id();
         $lembaga->updated_at = now();
         $lembaga->status = false;
         $lembaga->save();
-        $lembaga->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data lembaga berhasil dinonaktifkan.',
+            'data' => $lembaga
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $lembaga = Lembaga::findOrFail($id);
+
+        $lembaga->updated_by = Auth::id();
+        $lembaga->updated_at = now();
+        $lembaga->status = true;
+        $lembaga->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data lembaga berhasil diaktifkan kembali.',
+            'data' => $lembaga
+        ], 200);
     }
 }

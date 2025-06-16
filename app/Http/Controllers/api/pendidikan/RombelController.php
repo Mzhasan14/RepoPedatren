@@ -89,13 +89,32 @@ class RombelController extends Controller
     public function destroy($id)
     {
         $rombel = Rombel::findOrFail($id);
-        $rombel->deleted_by = Auth::id();
+
         $rombel->updated_by = Auth::id();
         $rombel->updated_at = now();
-        $rombel->status = false;
+        $rombel->status = false; // Menonaktifkan rombel
         $rombel->save();
-        $rombel->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data rombel berhasil dinonaktifkan.',
+            'data' => $rombel
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $rombel = Rombel::findOrFail($id);
+
+        $rombel->updated_by = Auth::id();
+        $rombel->updated_at = now();
+        $rombel->status = true;
+        $rombel->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data rombel berhasil diaktifkan kembali.',
+            'data' => $rombel
+        ], 200);
     }
 }

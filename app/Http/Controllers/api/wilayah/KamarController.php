@@ -113,13 +113,32 @@ class KamarController extends Controller
     public function destroy($id)
     {
         $kamar = Kamar::findOrFail($id);
-        $kamar->deleted_by = Auth::id();
+
         $kamar->updated_by = Auth::id();
         $kamar->updated_at = now();
-        $kamar->status = false;
+        $kamar->status = false; // Menonaktifkan kamar
         $kamar->save();
-        $kamar->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kamar berhasil dinonaktifkan.',
+            'data' => $kamar
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $kamar = Kamar::findOrFail($id);
+
+        $kamar->updated_by = Auth::id();
+        $kamar->updated_at = now();
+        $kamar->status = true;
+        $kamar->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kamar berhasil diaktifkan kembali.',
+            'data' => $kamar
+        ], 200);
     }
 }

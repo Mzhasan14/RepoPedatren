@@ -286,14 +286,21 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(func
 
     // 🏠 Wilayah (Blok, Kamar, Domisili)
     Route::apiResource('/wilayah', WilayahController::class);
+    Route::put('/wilayah/{id}/activate', [WilayahController::class, 'activate']);
     Route::apiResource('/blok', BlokController::class);
+    Route::put('/blok/{id}/activate', [BlokController::class, 'activate']);
     Route::apiResource('/kamar', KamarController::class);
+    Route::put('/kamar/{id}/activate', [KamarController::class, 'activate']);
 
     // 🎓 Pendidikan
     Route::apiResource('/lembaga', LembagaController::class);
+    Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
     Route::apiResource('/jurusan', JurusanController::class);
+    Route::put('/jurusan/{id}/activate', [JurusanController::class, 'activate']);
     Route::apiResource('/kelas', KelasController::class);
+    Route::put('/kelas/{id}/activate', [KelasController::class, 'activate']);
     Route::apiResource('/rombel', RombelController::class);
+    Route::put('/rombel/{id}/activate', [RombelController::class, 'activate']);
 
     // golongan
     Route::get('golongan', [GolonganController::class, 'index']);

@@ -126,13 +126,32 @@ class BlokController extends Controller
     public function destroy($id)
     {
         $blok = Blok::findOrFail($id);
-        $blok->deleted_by = Auth::id();
+
         $blok->updated_by = Auth::id();
         $blok->updated_at = now();
-        $blok->status = false;
+        $blok->status = false; // Menonaktifkan blok
         $blok->save();
-        $blok->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data blok berhasil dinonaktifkan.',
+            'data' => $blok
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $blok = Blok::findOrFail($id);
+
+        $blok->updated_by = Auth::id();
+        $blok->updated_at = now();
+        $blok->status = true;
+        $blok->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data blok berhasil diaktifkan kembali.',
+            'data' => $blok
+        ], 200);
     }
 }

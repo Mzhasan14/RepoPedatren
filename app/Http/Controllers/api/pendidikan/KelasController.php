@@ -84,13 +84,32 @@ class KelasController extends Controller
     public function destroy($id)
     {
         $kelas = Kelas::findOrFail($id);
-        $kelas->deleted_by = Auth::id();
+
         $kelas->updated_by = Auth::id();
         $kelas->updated_at = now();
-        $kelas->status = false;
+        $kelas->status = false; // Menonaktifkan kelas
         $kelas->save();
-        $kelas->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kelas berhasil dinonaktifkan.',
+            'data' => $kelas
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $kelas = Kelas::findOrFail($id);
+
+        $kelas->updated_by = Auth::id();
+        $kelas->updated_at = now();
+        $kelas->status = true;
+        $kelas->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kelas berhasil diaktifkan kembali.',
+            'data' => $kelas
+        ], 200);
     }
 }

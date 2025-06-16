@@ -92,13 +92,32 @@ class JurusanController extends Controller
     public function destroy($id)
     {
         $jurusan = Jurusan::findOrFail($id);
-        $jurusan->deleted_by = Auth::id();
+
         $jurusan->updated_by = Auth::id();
         $jurusan->updated_at = now();
-        $jurusan->status = false;
+        $jurusan->status = false; // Nonaktifkan jurusan
         $jurusan->save();
-        $jurusan->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data jurusan berhasil dinonaktifkan.',
+            'data' => $jurusan
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $jurusan = Jurusan::findOrFail($id);
+
+        $jurusan->updated_by = Auth::id();
+        $jurusan->updated_at = now();
+        $jurusan->status = true;
+        $jurusan->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data jurusan berhasil diaktifkan kembali.',
+            'data' => $jurusan
+        ], 200);
     }
 }

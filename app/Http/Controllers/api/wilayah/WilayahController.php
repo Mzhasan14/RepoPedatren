@@ -92,13 +92,32 @@ class WilayahController extends Controller
     public function destroy($id)
     {
         $wilayah = Wilayah::findOrFail($id);
-        $wilayah->deleted_by = Auth::id();
+
         $wilayah->updated_by = Auth::id();
         $wilayah->updated_at = now();
-        $wilayah->status = false;
+        $wilayah->status = false; // Menonaktifkan wilayah
         $wilayah->save();
-        $wilayah->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data wilayah berhasil dinonaktifkan.',
+            'data' => $wilayah
+        ], 200);
+    }
+
+    public function activate($id)
+    {
+        $wilayah = Wilayah::findOrFail($id);
+
+        $wilayah->updated_by = Auth::id();
+        $wilayah->updated_at = now();
+        $wilayah->status = true;
+        $wilayah->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data wilayah berhasil diaktifkan kembali.',
+            'data' => $wilayah
+        ], 200);
     }
 }
