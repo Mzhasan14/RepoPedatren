@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
+use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pendidikan\Lembaga;
@@ -22,15 +23,13 @@ class KaryawanFactory extends Factory
     public function definition(): array
     {
         $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
-        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
-            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
-            : null; // NULL jika masih menjabat
-
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'golongan_jabatan_id' => (new GolonganJabatanFactory)->create()->id,
+            'golongan_jabatan_id' => function () {
+                return GolonganJabatan::inRandomOrder()->first()->id;
+            },
             'lembaga_id' => function () {
                 return Lembaga::inRandomOrder()->first()->id;
             },
@@ -75,7 +74,7 @@ class KaryawanFactory extends Factory
                 'Bagian Konsumsi dan Dapur Pesantren',
             ]),
             'tanggal_mulai' => $tanggalMulai,
-            'tanggal_selesai' => $tanggalSelesai,
+            'tanggal_selesai' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
         ];

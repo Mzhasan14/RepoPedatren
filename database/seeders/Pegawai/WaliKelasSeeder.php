@@ -13,20 +13,13 @@ class WaliKelasSeeder extends Seeder
      */
     public function run(): void
     {
-        // Ambil pegawai unik yang belum memiliki entri karyawan
         $pegawaiList = Pegawai::whereDoesntHave('wali_kelas')->inRandomOrder()->limit(50)->get();
 
         foreach ($pegawaiList as $pegawai) {
-            $jumlahKaryawan = fake()->numberBetween(1, 3);
-            $aktifIndex = fake()->numberBetween(0, $jumlahKaryawan - 1);
-
-            for ($i = 0; $i < $jumlahKaryawan; $i++) {
-                WaliKelas::factory()->create([
-                    'pegawai_id' => $pegawai->id,
-                    'status_aktif' => $i === $aktifIndex ? 'aktif' : 'tidak aktif',
-                ]);
-            }
+            WaliKelas::factory()->create([
+                'pegawai_id' => $pegawai->id,
+                'status_aktif' => 'aktif',
+            ]);
         }
-
     }
 }

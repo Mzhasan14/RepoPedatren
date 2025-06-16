@@ -45,7 +45,7 @@ class PengurusService
             // Foto terakhir
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->whereNull('pengurus.deleted_at')
+            ->whereNull('pengurus.tanggal_akhir')
             ->where('pengurus.status_aktif', 'aktif');
 
         return $query;

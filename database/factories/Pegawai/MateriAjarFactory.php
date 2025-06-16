@@ -17,6 +17,14 @@ class MateriAjarFactory extends Factory
      */
     public function definition(): array
     {
+            $tahunMasuk = $this->faker->dateTimeBetween('-10 years', 'now');
+            $punyaTahunAkhir = $this->faker->boolean(70);
+
+            $tahunAkhir = $punyaTahunAkhir
+                ? $this->faker->dateTimeBetween($tahunMasuk, 'now')
+                : null;
+
+            $statusAktif = $tahunAkhir ? 'tidak aktif' : 'aktif';
         return [
             'pengajar_id' => function () {
                 return Pengajar::inRandomOrder()->first()->id;
@@ -49,11 +57,9 @@ class MateriAjarFactory extends Factory
             ]),
             'jumlah_menit' => $this->faker->numberBetween(30, 180), // Antara 30 - 180 menit
             'created_by' => 1,
-            'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
-            'tahun_akhir' => $this->faker->boolean(70)
-                ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d')
-                : null,
-            'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
+            'tahun_masuk' => $tahunMasuk->format('Y-m-d'),
+            'tahun_akhir' => $tahunAkhir?->format('Y-m-d'),
+            'status_aktif' => $statusAktif,
         ];
     }
 }

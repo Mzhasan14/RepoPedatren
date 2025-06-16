@@ -43,19 +43,19 @@ class PegawaiService
         $pengajarAktif = DB::table('pengajar')
             ->select('pegawai_id', DB::raw('MAX(id) as id'))
             ->where('status_aktif', 'aktif')
-            ->whereNull('deleted_at')
+            ->whereNull('tahun_akhir')
             ->groupBy('pegawai_id');
 
         $karyawanAktif = DB::table('karyawan')
             ->select('pegawai_id', DB::raw('MAX(id) as id'))
             ->where('status_aktif', 'aktif')
-            ->whereNull('deleted_at')
+            ->whereNull('tanggal_selesai')
             ->groupBy('pegawai_id');
 
         $pengurusAktif = DB::table('pengurus')
             ->select('pegawai_id', DB::raw('MAX(id) as id'))
             ->where('status_aktif', 'aktif')
-            ->whereNull('deleted_at')
+            ->whereNull('tanggal_akhir')
             ->groupBy('pegawai_id');
 
         $query = DB::table('pegawai')
@@ -71,7 +71,7 @@ class PegawaiService
             ->leftJoin('wali_kelas', function ($join) {
                 $join->on('pegawai.id', '=', 'wali_kelas.pegawai_id')
                     ->where('wali_kelas.status_aktif', 'aktif')
-                    ->whereNull('wali_kelas.deleted_at');
+                    ->whereNull('wali_kelas.periode_akhir');
             })
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')

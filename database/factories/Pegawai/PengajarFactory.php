@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
+use App\Models\Pegawai\Golongan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pendidikan\Lembaga;
@@ -25,15 +26,15 @@ class PengajarFactory extends Factory
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'golongan_id' => (new GolonganFactory)->create()->id,
+            'golongan_id' => function () {
+                return Golongan::inRandomOrder()->first()->id;
+            },
             'lembaga_id' => function () {
                 return Lembaga::inRandomOrder()->first()->id;
             },
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
-            'tahun_akhir' => $this->faker->boolean(70)
-                ? $this->faker->dateTimeBetween($this->faker->dateTimeBetween('-10 years', 'now'), 'now')->format('Y-m-d')
-                : null,
+            'tahun_akhir' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1,
             'updated_by' => null,

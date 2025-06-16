@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
+use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengurus;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,15 +22,14 @@ class PengurusFactory extends Factory
     public function definition(): array
     {
         $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
-        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
-            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
-            : null; // NULL jika masih menjabat
 
         return [
             'pegawai_id' => function () {
                 return Pegawai::inRandomOrder()->first()->id;
             },
-            'golongan_jabatan_id' => (new GolonganJabatanFactory)->create()->id,
+            'golongan_jabatan_id' => function () {
+                return GolonganJabatan::inRandomOrder()->first()->id;
+            },
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'satuan_kerja' => $this->faker->randomElement([
                 'Madrasah Tsanawiyah Al-Hikmah',
@@ -56,7 +56,7 @@ class PengurusFactory extends Factory
                 'Dosen Tamu',
             ]),
             'tanggal_mulai' => $tanggalMulai,
-            'tanggal_akhir' => $tanggalSelesai,
+            'tanggal_akhir' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),
             'created_by' => 1, // ID pengguna yang membuat data
             'created_at' => now(),

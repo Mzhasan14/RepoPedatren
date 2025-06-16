@@ -13,20 +13,13 @@ class KaryawanSeeder extends Seeder
      */
     public function run(): void
     {
-        // Ambil pegawai unik yang belum memiliki entri karyawan
         $pegawaiList = Pegawai::whereDoesntHave('karyawan')->inRandomOrder()->limit(50)->get();
 
         foreach ($pegawaiList as $pegawai) {
-            $jumlahKaryawan = fake()->numberBetween(1, 3);
-            $aktifIndex = fake()->numberBetween(0, $jumlahKaryawan - 1);
-
-            for ($i = 0; $i < $jumlahKaryawan; $i++) {
-                Karyawan::factory()->create([
-                    'pegawai_id' => $pegawai->id,
-                    'status_aktif' => $i === $aktifIndex ? 'aktif' : 'tidak aktif',
-                ]);
-            }
+            Karyawan::factory()->create([
+                'pegawai_id' => $pegawai->id,
+                'status_aktif' => 'aktif',
+            ]);
         }
-
     }
 }

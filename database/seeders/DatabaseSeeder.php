@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Pegawai\DropPegawaiNoEntitas;
 use Database\Seeders\Pegawai\GolonganJabatanSeeder;
 use Database\Seeders\Pegawai\GolonganSeeder;
 use Database\Seeders\Pegawai\KaryawanSeeder;
@@ -37,6 +38,7 @@ class DatabaseSeeder extends Seeder
             BiodataSeeder::class,
             KategoriGolonganSeeder::class,
             GolonganSeeder::class,
+            GolonganJabatanSeeder::class,
             PegawaiSeeder::class,
             PengajarSeeder::class,
             KaryawanSeeder::class,
@@ -56,9 +58,9 @@ class DatabaseSeeder extends Seeder
             MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
             PengunjungMahromSeeder::class,
-            GolonganJabatanSeeder::class,
             // BiometricSeeder::class,
             PresensiSantriSeeder::class,
+            DropPegawaiNoEntitas::class,
         ]);
 
         // Aktifkan kembali logging activity setelah seeding selesai

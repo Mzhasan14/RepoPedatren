@@ -44,7 +44,7 @@ class PengajarService
                     ->where('materi_ajar.status_aktif', 'aktif')
                     ->whereNull('materi_ajar.tahun_akhir');
             })
-            ->whereNull('pengajar.deleted_at')
+            ->whereNull('pengajar.tahun_akhir')
             ->where('pengajar.status_aktif', 'aktif');
     }
     public function getAllPengajar(Request $request)

@@ -25,9 +25,6 @@ class WaliKelasFactory extends Factory
     public function definition(): array
     {
         $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
-        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
-            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
-            : null; // NULL jika masih menjabat
 
         return [
             'pegawai_id' => function () {
@@ -47,7 +44,7 @@ class WaliKelasFactory extends Factory
             },
             'jumlah_murid' => $this->faker->numberBetween(20, 40),
             'periode_awal' => $tanggalMulai,
-            'periode_akhir' => $tanggalSelesai,
+            'periode_akhir' => null,
             'created_by' => 1,
             'updated_by' => null,
             'status_aktif' => $this->faker->randomElement(['aktif', 'tidak aktif']),

@@ -44,7 +44,7 @@ class KaryawanService
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'karyawan.lembaga_id')
-            ->whereNull('karyawan.deleted_at')
+            ->whereNull('karyawan.tanggal_selesai')
             ->where('karyawan.status_aktif', 'aktif');
     }
     public function getAllKaryawan(Request $request)

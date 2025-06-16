@@ -38,7 +38,7 @@ class WaliKelasService
             ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
             ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
-            ->whereNull('wali_kelas.deleted_at')
+            ->whereNull('wali_kelas.periode_akhir')
             ->where('wali_kelas.status_aktif', 'aktif');
     }
     public function getAllWalikelas(Request $request)
