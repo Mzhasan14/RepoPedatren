@@ -32,8 +32,7 @@ return new class extends Migration
                 'sudah berada diluar pondok',
                 'perizinan ditolak',
                 'dibatalkan',
-                'telat(sudah kembali)',
-                'telat(belum kembali)',
+                'telat',
                 'kembali tepat waktu',
             ]);
             $table->text('keterangan');

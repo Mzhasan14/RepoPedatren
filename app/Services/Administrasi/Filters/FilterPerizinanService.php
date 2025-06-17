@@ -85,7 +85,7 @@ class FilterPerizinanService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
             'MATCH(nama) AGAINST(? IN BOOLEAN MODE)',
@@ -101,7 +101,7 @@ class FilterPerizinanService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -151,10 +151,24 @@ class FilterPerizinanService
             return $query;
         }
 
-        $query->where('pr.status', $request->status);
+        // Ambil status yang di-request
+        $status = $request->status;
+        $now = now();
+
+        // Khusus untuk status telat
+        if ($status === 'telat(sudah kembali)') {
+            $query->whereNotNull('pr.tanggal_kembali')
+                ->whereColumn('pr.tanggal_kembali', '>', 'pr.tanggal_akhir');
+        } elseif ($status === 'telat(belum kembali)') {
+            $query->whereNull('pr.tanggal_kembali')
+                ->where('pr.tanggal_akhir', '<', $now);
+        } else {
+            $query->where('pr.status', $status);
+        }
 
         return $query;
     }
+
 
     public function applyJenisIzinFilter(Builder $query, Request $request): Builder
     {

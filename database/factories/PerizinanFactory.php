@@ -59,11 +59,12 @@ class PerizinanFactory extends Factory
         if ($now->gte($kembali)) {
             if ($kembali->lte($akhir)) {
                 $status = 'kembali tepat waktu';
-            } else {
-                $status = 'telat(sudah kembali)';
+            } elseif ($kembali->gt($akhir)) {
+                $status = 'telat';
             }
         } elseif ($now->gt($akhir)) {
-            $status = 'telat(belum kembali)';
+            // Telat dan belum kembali, tetap gunakan status 'telat'
+            $status = 'telat';
         }
 
         // 6. Tentukan approval flags berdasarkan status
@@ -74,8 +75,7 @@ class PerizinanFactory extends Factory
         $approvedStatuses = [
             'perizinan diterima',
             'sudah berada diluar pondok',
-            'telat(sudah kembali)',
-            'telat(belum kembali)',
+            'telat',
             'kembali tepat waktu',
         ];
 
@@ -85,7 +85,7 @@ class PerizinanFactory extends Factory
             $approved_by_pengasuh = true;
         }
 
-        // Jika status masih "sedang proses", random siapa saja yang sudah approve
+        // Jika status masih "sedang proses izin", random siapa saja yang sudah approve
         if ($status === 'sedang proses izin') {
             $approved_by_biktren = $this->faker->boolean(50);
             $approved_by_kamtib = $this->faker->boolean(50);

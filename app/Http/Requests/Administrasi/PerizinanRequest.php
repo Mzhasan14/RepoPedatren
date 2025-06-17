@@ -33,7 +33,7 @@ class PerizinanRequest extends FormRequest
             'tanggal_akhir' => 'required|date|after_or_equal:tanggal_mulai',
             'tanggal_kembali' => 'nullable|date|after_or_equal:tanggal_mulai',
             'jenis_izin' => 'required|in:Personal,Rombongan',
-            'status' => 'required|in:sedang proses izin,perizinan diterima,sudah berada diluar pondok,perizinan ditolak,dibatalkan,telat(sudah kembali),telat(belum kembali),kembali tepat waktu',
+            'status' => 'required|in:sedang proses izin,perizinan diterima,sudah berada diluar pondok,perizinan ditolak,dibatalkan,telat',
             'keterangan' => 'nullable|string',
         ];
     }
