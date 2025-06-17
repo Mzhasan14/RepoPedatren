@@ -56,6 +56,7 @@ class GrupWaliasuhService
             'jumlah_anak_asuh' => $item->jumlah_anak_asuh,
             'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'status' =>$item->status
         ]);
     }
 
