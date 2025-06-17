@@ -21,7 +21,6 @@ class GrupWaliasuhService
             ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
-            ->where('gs.status', true)
             ->select([
                 'gs.id',
                 'gs.nama_grup as group',
