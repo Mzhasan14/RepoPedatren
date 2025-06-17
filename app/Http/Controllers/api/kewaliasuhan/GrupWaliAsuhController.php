@@ -140,7 +140,7 @@ class GrupWaliAsuhController extends Controller
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (! Auth::id()) {
+            if (!Auth::id()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Pengguna tidak terautentikasi',
@@ -149,7 +149,7 @@ class GrupWaliAsuhController extends Controller
 
             $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
-            if (! $grup) {
+            if (!$grup) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Data grup wali asuh tidak ditemukan',
@@ -175,22 +175,25 @@ class GrupWaliAsuhController extends Controller
                 ], 400);
             }
 
-            // Soft delete
-            $grup->delete();
+            // Ubah status menjadi non aktif, isi kolom deleted_by dan deleted_at
+            $grup->status = false;
+            $grup->deleted_by = Auth::id();
+            $grup->deleted_at = now();
+            $grup->save();
 
             // Log activity
-            activity('grup_wali_asuh_delete')
+            activity('grup_wali_asuh_nonaktifkan')
                 ->performedOn($grup)
                 ->withProperties([
-                    'deleted_at' => now(),
-                    'deleted_by' => Auth::id(),
+                    'deleted_at' => $grup->deleted_at,
+                    'deleted_by' => $grup->deleted_by,
                 ])
-                ->event('delete_grup_wali_asuh')
-                ->log('Grup wali asuh berhasil dihapus (soft delete)');
+                ->event('nonaktif_grup_wali_asuh')
+                ->log('Grup wali asuh dinonaktifkan tanpa dihapus (soft update)');
 
             return response()->json([
                 'status' => true,
-                'message' => 'Grup wali asuh berhasil dihapus',
+                'message' => 'Grup wali asuh berhasil dinonaktifkan',
                 'data' => [
                     'deleted_at' => $grup->deleted_at,
                 ],
@@ -198,93 +201,51 @@ class GrupWaliAsuhController extends Controller
         });
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    // public function index()
-    // {
-    //      $grupWaliAsuh = Grup_WaliAsuh::Active()->latest()->paginate(5);
-    //     return new PdResource(true, 'list grup wali asuh', $grupWaliAsuh);
-    // }
+    public function activate($id)
+    {
+        return DB::transaction(function () use ($id) {
+            if (!Auth::id()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pengguna tidak terautentikasi',
+                ], 401);
+            }
 
-    // /**
-    //  * Store a newly created resource in storage.
-    //  */
-    // public function store(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'nama_grup' => 'required',
-    //         'created_by' => 'required',
-    //         'status' => 'nullable',
-    //     ]);
+            $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
-    //     if ($validator->fails()) {
-    //         return response()->json($validator->errors(), 422);
-    //     }
+            if (!$grup) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data grup wali asuh tidak ditemukan',
+                ], 404);
+            }
 
-    //     $grupWaliAsuh = Grup_WaliAsuh::create($validator->validated());
+            // Jika status sudah aktif
+            if ($grup->status) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Grup wali asuh sudah dalam keadaan aktif',
+                ], 400);
+            }
 
-    //     return new PdResource(true, 'Data berhasil ditambah', $grupWaliAsuh);
-    // }
+            // Aktifkan kembali
+            $grup->status = true;
+            $grup->deleted_by = null;
+            $grup->deleted_at = null;
+            $grup->updated_by = Auth::id();
+            $grup->updated_at = now();
+            $grup->save();
 
-    // /**
-    //  * Display the specified resource.
-    //  */
-    // public function show(string $id)
-    // {
-    //     $grupWaliAsuh = Grup_WaliAsuh::findOrFail($id);
-    //     return new PdResource(true, 'Detail data', $grupWaliAsuh);
-    // }
+            // Log activity
+            activity('grup_wali_asuh_restore')
+                ->performedOn($grup)
+                ->event('restore_grup_wali_asuh')
+                ->log('Grup wali asuh berhasil diaktifkan kembali');
 
-    // /**
-    //  * Update the specified resource in storage.
-    //  */
-    // public function update(Request $request, string $id)
-    // {
-    //     $grupWaliAsuh = Grup_WaliAsuh::findOrFail($id);
-
-    //     $validator = Validator::make($request->all(), [
-    //         'nama_grup' => 'required',
-    //         'updated_by' => 'nullable',
-    //         'status' => 'nullable'
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json($validator->errors(), 422);
-    //     }
-
-    //     $grupWaliAsuh->update($request->validated());
-    //     return new PdResource(true, 'Data berhasil diubah', $grupWaliAsuh);
-    // }
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
-    // public function destroy(string $id)
-    // {
-    //     $grupWaliAsuh = Grup_WaliAsuh::findOrFail($id);
-    //     $grupWaliAsuh->delete();
-    //     return new PdResource(true,'Data berhasil dihapus',null);
-    // }
-
-    // public function kewaliasuhan() {
-
-    //      $grupKewaliasuhan = Grup_WaliAsuh::join('wali_asuh as wa1','grup_wali_asuh.id','=','wa1.id_grup_wali_asuh')
-    //      ->join('wilayah','grup_wali_asuh.id_wilayah','=','wilayah.id')
-    //      ->join('santri','santri.nis','=','wa1.nis')
-    //      ->join('peserta_didik','santri.id_peserta_didik','=','peserta_didik.id')
-    //      ->join('biodata','peserta_didik.id_biodata','=','biodata.id')
-
-    //      ->select(
-    //         'grup_wali_asuh.id',
-    //         'grup_wali_asuh.nama_grup',
-    //         'santri.nis as Nis_WaliAsuh',
-    //         'biodata.nama as Nama_WaliAsuh',
-    //         'wilayah.nama_wilayah',
-    //         'grup_wali_asuh.updated_by as Tanggal Update Group'
-
-    //      )->get();
-
-    //     return new PdResource(true, 'list grup kewaliasuhan', $grupKewaliasuhan);
-    // }
+            return response()->json([
+                'status' => true,
+                'message' => 'Grup wali asuh berhasil diaktifkan kembali',
+            ]);
+        });
+    }
 }

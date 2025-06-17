@@ -183,7 +183,7 @@ class GrupWaliasuhService
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (! Auth::id()) {
+            if (!Auth::id()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Pengguna tidak terautentikasi',
@@ -192,7 +192,7 @@ class GrupWaliasuhService
 
             $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
-            if (! $grup) {
+            if (!$grup) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Data grup wali asuh tidak ditemukan',
@@ -218,25 +218,76 @@ class GrupWaliasuhService
                 ], 400);
             }
 
-            // Soft delete
-            $grup->delete();
+            // Ubah status menjadi non aktif, isi kolom deleted_by dan deleted_at
+            $grup->status = false;
+            $grup->deleted_by = Auth::id();
+            $grup->deleted_at = now();
+            $grup->save();
 
             // Log activity
-            activity('grup_wali_asuh_delete')
+            activity('grup_wali_asuh_nonaktifkan')
                 ->performedOn($grup)
                 ->withProperties([
-                    'deleted_at' => now(),
-                    'deleted_by' => Auth::id(),
+                    'deleted_at' => $grup->deleted_at,
+                    'deleted_by' => $grup->deleted_by,
                 ])
-                ->event('delete_grup_wali_asuh')
-                ->log('Grup wali asuh berhasil dihapus (soft delete)');
+                ->event('nonaktif_grup_wali_asuh')
+                ->log('Grup wali asuh dinonaktifkan tanpa dihapus (soft update)');
 
             return response()->json([
                 'status' => true,
-                'message' => 'Grup wali asuh berhasil dihapus',
+                'message' => 'Grup wali asuh berhasil dinonaktifkan',
                 'data' => [
                     'deleted_at' => $grup->deleted_at,
                 ],
+            ]);
+        });
+    }
+
+    public function activate($id)
+    {
+        return DB::transaction(function () use ($id) {
+            if (!Auth::id()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pengguna tidak terautentikasi',
+                ], 401);
+            }
+
+            $grup = Grup_WaliAsuh::withTrashed()->find($id);
+
+            if (!$grup) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data grup wali asuh tidak ditemukan',
+                ], 404);
+            }
+
+            // Jika status sudah aktif
+            if ($grup->status) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Grup wali asuh sudah dalam keadaan aktif',
+                ], 400);
+            }
+
+            // Aktifkan kembali
+            $grup->status = true;
+            $grup->deleted_by = null;
+            $grup->deleted_at = null;
+            $grup->updated_by = Auth::id();
+            $grup->updated_at = now();
+            $grup->save();
+
+            // Log activity
+            activity('grup_wali_asuh_restore')
+                ->performedOn($grup)
+                ->event('restore_grup_wali_asuh')
+                ->log('Grup wali asuh berhasil diaktifkan kembali');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Grup wali asuh berhasil diaktifkan kembali',
             ]);
         });
     }
