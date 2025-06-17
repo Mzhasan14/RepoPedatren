@@ -27,11 +27,11 @@ class PerizinanService
         return DB::table('perizinan as pr')
             ->join('santri as s', 'pr.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-            ->leftjoin('domisili_santri as ds', fn ($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftjoin('domisili_santri as ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftjoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftjoin('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
             ->leftjoin('kelas as kls', 'pd.kelas_id', '=', 'kls.id')
@@ -42,7 +42,7 @@ class PerizinanService
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
             ->leftjoin('users as pengasuh', 'pr.pengasuh_id', '=', 'pengasuh.id')
             ->leftjoin('users as kamtib', 'pr.kamtib_id', '=', 'kamtib.id')
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
     }
 
@@ -91,7 +91,13 @@ class PerizinanService
                   "),
             'pr.tanggal_kembali',
             'pr.jenis_izin',
-            'pr.status',
+            DB::raw("
+                CASE
+                    WHEN pr.status = 'telat' AND pr.tanggal_kembali IS NOT NULL THEN 'telat(sudah kembali)'
+                    WHEN pr.tanggal_kembali IS NULL AND NOW() > pr.tanggal_akhir THEN 'telat(belum kembali)'
+                    ELSE pr.status
+                END AS status
+            "),
             'pr.created_by as pembuat',
             'pengasuh.name as nama_pengasuh',
             'biktren.name as nama_biktren',
@@ -111,7 +117,7 @@ class PerizinanService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'id' => $item->id,
             'nama_santri' => $item->nama_santri,
             'jenis_kelamin' => $item->jenis_kelamin,
@@ -156,10 +162,10 @@ class PerizinanService
     public function index(string $bioId): array
     {
         $perizinan = Perizinan::with('santri.biodata:id')
-            ->whereHas('santri.biodata', fn ($q) => $q->where('id', $bioId))
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
             ->latest()
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'id' => $item->id,
                 'alasan_izin' => $item->alasan_izin,
                 'alamat_tujuan' => $item->alamat_tujuan,
@@ -194,7 +200,6 @@ class PerizinanService
                 'tanggal_mulai' => $data['tanggal_mulai'],
                 'tanggal_akhir' => $data['tanggal_akhir'],
                 'jenis_izin' => $data['jenis_izin'],
-                'status' => $data['status'],
                 'keterangan' => $data['keterangan'] ?? null,
                 'created_by' => Auth::id(),
                 'created_at' => now(),
@@ -242,17 +247,17 @@ class PerizinanService
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            // $tglMulai = Carbon::parse($data['tanggal_mulai']);
-            // $tglKembali = Carbon::parse($data['tanggal_kembali']);
+            $tglMulai = Carbon::parse($data['tanggal_mulai']);
+            $tglKembali = Carbon::parse($data['tanggal_kembali']);
 
-            // if (!is_null($data['tanggal_kembali'])) {
-            //     if ($tglKembali->lt($tglMulai)) {
-            //         return [
-            //             'status' => false,
-            //             'message' => 'Tanggal kembali tidak boleh lebih awal dari tanggal mulai sebelumnya (' . $tglMulai->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
-            //         ];
-            //     }
-            // }
+            if (!is_null($data['tanggal_kembali'])) {
+                if ($tglKembali->lt($tglMulai)) {
+                    return [
+                        'status' => false,
+                        'message' => 'Tanggal kembali tidak boleh lebih awal dari tanggal mulai sebelumnya (' . $tglMulai->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+                    ];
+                }
+            }
 
             $izin->update([
                 'pengasuh_id' => $data['pengasuh_id'] ?? null,
@@ -307,7 +312,7 @@ class PerizinanService
 
         // Join dinamis sesuai kebutuhan export
         if (in_array('wilayah', $fields) || in_array('blok', $fields) || in_array('kamar', $fields)) {
-            $query->leftJoin('domisili_santri as ds2', fn ($j) => $j->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'))
+            $query->leftJoin('domisili_santri as ds2', fn($j) => $j->on('s.id', '=', 'ds2.santri_id')->where('ds2.status', 'aktif'))
                 ->leftJoin('wilayah AS w2', 'ds2.wilayah_id', '=', 'w2.id')
                 ->leftJoin('blok AS bl2', 'ds2.blok_id', '=', 'bl2.id')
                 ->leftJoin('kamar AS km2', 'ds2.kamar_id', '=', 'km2.id');
@@ -318,7 +323,7 @@ class PerizinanService
             in_array('kelas', $fields) ||
             in_array('rombel', $fields)
         ) {
-            $query->leftJoin('pendidikan AS pd2', fn ($j) => $j->on('b.id', '=', 'pd2.biodata_id')->where('pd2.status', 'aktif'))
+            $query->leftJoin('pendidikan AS pd2', fn($j) => $j->on('b.id', '=', 'pd2.biodata_id')->where('pd2.status', 'aktif'))
                 ->leftJoin('lembaga AS l2', 'pd2.lembaga_id', '=', 'l2.id')
                 ->leftJoin('jurusan as j2', 'pd2.jurusan_id', '=', 'j2.id')
                 ->leftJoin('kelas as kls2', 'pd2.kelas_id', '=', 'kls2.id')

@@ -187,10 +187,10 @@ Route::prefix('formulir')->middleware(['auth:sanctum', 'role:superadmin|admin', 
     Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
 });
 
-Route::post('register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
-Route::post('login', [AuthController::class, 'login'])->middleware('throttle:7,1')->name('login');
-Route::post('forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
-Route::post('reset', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.reset');
+Route::post('register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:20,1']);
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+Route::post('forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:10,1');
+Route::post('reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('password.reset');
 
 Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
@@ -202,7 +202,7 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
 });
 
 // Biometric
-Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:15,1'])->group(function () {
+Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('register-profile', [BiometricProfileController::class, 'store']);
     Route::post('update-profile', [BiometricProfileController::class, 'update']);
     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
@@ -226,7 +226,7 @@ Route::prefix('export')->middleware(['auth:sanctum', 'throttle:12,1'])->group(fu
     Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
 });
 
-Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
+Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
 
@@ -244,6 +244,9 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(func
     Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
     Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+
+    Route::put('/{id}/perizinan/set-keluar', [PerizinanController::class, 'setKeluar']);
+    Route::put('/{id}/perizinan/set-kembali', [PerizinanController::class, 'setKembali']);
 
     Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
 
@@ -329,7 +332,7 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:30,1'])->group(func
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 });
 
-Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
+Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     // Perizinan
     Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
     Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
