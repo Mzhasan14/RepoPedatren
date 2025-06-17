@@ -31,6 +31,7 @@ class GrupWaliasuhService
                 DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
                 'gs.updated_at',
                 'gs.created_at',
+                'gs.status'
             ])
             ->groupBy(
                 'gs.id',
@@ -39,7 +40,8 @@ class GrupWaliasuhService
                 'b.nama',
                 'w.nama_wilayah',
                 'gs.updated_at',
-                'gs.created_at'
+                'gs.created_at',
+                'gs.status'
             )
             ->orderBy('gs.id');
     }
