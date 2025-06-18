@@ -90,14 +90,13 @@ class WilayahController extends Controller
         $request->validate([
             'nama_wilayah' => 'sometimes|required|string|max:255|unique:wilayah,nama_wilayah,' . $id,
             'kategori'     => 'sometimes|nullable|in:putra,putri',
-            'status'       => 'sometimes|required|boolean',
         ], [
             'nama_wilayah.unique' => 'Nama wilayah sudah digunakan.',
             'kategori.in' => 'Kategori hanya boleh putra atau putri.',
         ]);
 
         $wilayah = Wilayah::findOrFail($id);
-        $wilayah->fill($request->only('nama_wilayah', 'kategori', 'status'));
+        $wilayah->fill($request->only('nama_wilayah', 'kategori'));
         $wilayah->updated_by = Auth::id();
         $wilayah->save();
 

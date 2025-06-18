@@ -93,12 +93,10 @@ class JurusanController extends Controller
     {
         $request->validate([
             'nama_jurusan' => 'sometimes|required|string|max:255',
-            'lembaga_id' => 'sometimes|required|exists:lembaga,id',
-            'status' => 'sometimes|required|boolean',
         ]);
 
         $jurusan = Jurusan::findOrFail($id);
-        $jurusan->fill($request->only('nama_jurusan', 'lembaga_id', 'status'));
+        $jurusan->fill($request->only('nama_jurusan'));
         $jurusan->updated_by = Auth::id();
         $jurusan->save();
 

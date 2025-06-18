@@ -82,12 +82,10 @@ class KelasController extends Controller
     {
         $request->validate([
             'nama_kelas' => 'sometimes|required|string|max:255',
-            'jurusan_id' => 'sometimes|required|exists:jurusan,id',
-            'status' => 'sometimes|required|boolean',
         ]);
 
         $kelas = Kelas::findOrFail($id);
-        $kelas->fill($request->only('nama_kelas', 'jurusan_id', 'status'));
+        $kelas->fill($request->only('nama_kelas'));
         $kelas->updated_by = Auth::id();
         $kelas->save();
 

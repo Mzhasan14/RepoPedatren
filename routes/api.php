@@ -1,75 +1,176 @@
 <?php
 
-use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
-use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
-use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
-use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
-use App\Http\Controllers\api\Administrasi\PelanggaranController;
-use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
-use App\Http\Controllers\api\Administrasi\PerizinanController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\api\Auth\UserController;
-use App\Http\Controllers\api\Biometric\BiometricProfileController;
-use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
-use App\Http\Controllers\api\keluarga\KeluargaController;
-use App\Http\Controllers\api\keluarga\OrangTuaWaliController;
+use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\keluarga\WaliController;
-use App\Http\Controllers\api\kewaliasuhan\AnakasuhController;
-use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
-use App\Http\Controllers\api\kewaliasuhan\WaliasuhController;
+use App\Http\Controllers\api\wilayah\KamarController;
+use App\Http\Controllers\api\Pegawai\PegawaiController;
+use App\Http\Controllers\api\wilayah\WilayahController;
 use App\Http\Controllers\api\Pegawai\DropdownController;
 use App\Http\Controllers\api\Pegawai\GolonganController;
-use App\Http\Controllers\api\Pegawai\GolonganJabatanController;
 use App\Http\Controllers\api\Pegawai\KaryawanController;
-use App\Http\Controllers\api\Pegawai\KategoriGolonganController;
-use App\Http\Controllers\api\Pegawai\PegawaiController;
 use App\Http\Controllers\api\Pegawai\PengajarController;
 use App\Http\Controllers\api\Pegawai\PengurusController;
-use App\Http\Controllers\api\Pegawai\WalikelasController;
-use App\Http\Controllers\api\pendidikan\DropdownPendidikanController;
-use App\Http\Controllers\api\pendidikan\JurusanController;
 use App\Http\Controllers\api\pendidikan\KelasController;
-use App\Http\Controllers\api\pendidikan\LembagaController;
+use App\Http\Controllers\api\keluarga\KeluargaController;
+use App\Http\Controllers\api\Pegawai\WalikelasController;
 use App\Http\Controllers\api\pendidikan\RombelController;
+use App\Http\Controllers\api\pendidikan\JurusanController;
+use App\Http\Controllers\api\pendidikan\LembagaController;
 use App\Http\Controllers\api\PesertaDidik\AlumniController;
-use App\Http\Controllers\api\PesertaDidik\AnakPegawaiController;
-use App\Http\Controllers\api\PesertaDidik\BersaudaraController;
 use App\Http\Controllers\api\PesertaDidik\DetailController;
-use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
+use App\Http\Controllers\api\PesertaDidik\KhadamController;
+use App\Http\Controllers\api\PesertaDidik\SantriController;
+use App\Http\Controllers\api\PesertaDidik\PelajarController;
+use App\Http\Controllers\api\keluarga\OrangTuaWaliController;
+use App\Http\Controllers\api\kewaliasuhan\AnakasuhController;
+use App\Http\Controllers\api\kewaliasuhan\WaliasuhController;
+use App\Http\Controllers\api\Administrasi\PerizinanController;
+use App\Http\Controllers\api\Pegawai\GolonganJabatanController;
+use App\Http\Controllers\api\PesertaDidik\BersaudaraController;
+use App\Http\Controllers\api\Administrasi\PelanggaranController;
+use App\Http\Controllers\api\Pegawai\KategoriGolonganController;
+use App\Http\Controllers\api\PesertaDidik\AnakPegawaiController;
+use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
+use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
+use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
+use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
+use App\Http\Controllers\api\Biometric\BiometricProfileController;
+use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
+use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\BerkasController;
+use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
+use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
+use App\Http\Controllers\api\pendidikan\DropdownPendidikanController;
+use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\BiodataController;
+use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\DomisiliController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
-use App\Http\Controllers\api\PesertaDidik\KhadamController;
-use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
-use App\Http\Controllers\api\PesertaDidik\PelajarController;
-use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
-use App\Http\Controllers\api\PesertaDidik\SantriController;
-use App\Http\Controllers\api\wilayah\BlokController;
-use App\Http\Controllers\api\wilayah\KamarController;
-use App\Http\Controllers\api\wilayah\WilayahController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
 
-// Endpoint menampilkan log
-Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'log.activity', 'throttle:20,1'])
-    ->get('activity-logs', function () {
-        return \Spatie\Activitylog\Models\Activity::with('causer', 'subject')
-            ->where('log_name', 'api')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+// Auth
+Route::post('register', [AuthController::class, 'register'])
+    ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
+
+Route::post('login', [AuthController::class, 'login'])
+    ->middleware('throttle:10,1')
+    ->name('login');
+
+Route::post('forgot', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:5,1');
+
+Route::post('reset', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:5,1')
+    ->name('password.reset');
+
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::patch('profile', [AuthController::class, 'updateProfile']);
+    Route::post('password', [AuthController::class, 'changePassword']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
     });
+});
+
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
+    // 🏫 Santri & Peserta Didik
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
+    Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
+    Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/santri', [SantriController::class, 'getAllSantri']);
+    Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
+    Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
+    Route::get('/pelajar/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/alumni', [AlumniController::class, 'alumni']);
+    Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
+    Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
+
+    // Khadam
+    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
+    Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
+
+    // Pengunjung mahrom
+    Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
+    Route::get('/pengunjung/{id}', [DetailPengunjungController::class, 'getDetailPengunjung']);
+
+    // 🚨 Administrasi
+    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
+    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
+    Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
+
+    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
+    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
+    Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
+
+    // 🏫 Keluarga
+    Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
+    Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
+    Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
+    Route::get('/wali', [WaliController::class, 'getAllWali']);
+    Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
+
+    // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
+    Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
+    Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
+    Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
+    Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
+    Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
+
+    // 👨‍🏫 Pegawai & Guru
+    Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
+    Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
+    Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
+    Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
+    Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
+    Route::post('pegawai', [PegawaiController::class, 'store']);
+
+    Route::get('/pengurus/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/pengajar/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/karyawan/{id}', [DetailController::class, 'getDetail']);
+    Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
+});
+
+// Export
+Route::prefix('export')->middleware(['auth:sanctum', 'throttle:15,1'])->group(function () {
+    Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
+    Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
+    Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
+    Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
+    Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');
+    Route::get('/perizinan', [PerizinanController::class, 'exportExcel'])->name('perizinan.export');
+    Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
+    Route::get('/anakpegawai', [AnakPegawaiController::class, 'exportExcel'])->name('anakpegawai.export');
+    Route::get('/pegawai', [PegawaiController::class, 'exportExcel'])->name('pegawai.export');
+    Route::get('/karyawan', [KaryawanController::class, 'KaryawanExcel'])->name('karyawan.export');
+    Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
+    Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
+});
 
 // Formulir Peserta Didik
-Route::prefix('formulir')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
+Route::prefix('formulir')->middleware([
+    'auth:sanctum',
+    'role:superadmin|admin',
+    'throttle:200,1'
+])->group(function () {
+
     // Biodata
     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
-
     // Santri
     Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
     Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
@@ -186,46 +287,7 @@ Route::prefix('formulir')->middleware(['auth:sanctum', 'role:superadmin|admin', 
     Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
 });
 
-Route::post('register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:20,1']);
-Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
-Route::post('forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:10,1');
-Route::post('reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('password.reset');
-
-Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::patch('profile', [AuthController::class, 'updateProfile']);
-    Route::post('password', [AuthController::class, 'changePassword']);
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-});
-
-// Biometric
-Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
-    Route::post('register-profile', [BiometricProfileController::class, 'store']);
-    Route::post('update-profile', [BiometricProfileController::class, 'update']);
-    Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
-});
-
-// Export
-Route::prefix('export')->middleware(['auth:sanctum', 'throttle:12,1'])->group(function () {
-    Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
-    Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
-    Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
-    Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
-    Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');
-    Route::get('/perizinan', [PerizinanController::class, 'exportExcel'])->name('perizinan.export');
-    Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
-    Route::get('/anakpegawai', [AnakPegawaiController::class, 'exportExcel'])->name('anakpegawai.export');
-
-    // Kepegawaian
-    Route::get('/pegawai', [PegawaiController::class, 'exportExcel'])->name('pegawai.export');
-    Route::get('/karyawan', [KaryawanController::class, 'KaryawanExcel'])->name('karyawan.export');
-    Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
-    Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
-});
-
-Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
+Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
 
@@ -330,14 +392,13 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:100,1'])->group(fun
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 });
 
-Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
-    // Perizinan
+Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
     Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
     Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
 });
 
-Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:30,1'])->group(function () {
+Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     // Pendidikan
     Route::post('/pindah-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
     Route::post('/naik-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'naik']);
@@ -367,76 +428,9 @@ Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'th
     Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
 });
 
-Route::get('/user', [UserController::class, 'index'])->middleware(['auth:sanctum', 'role:superadmin', 'throttle:10,1']);
+Route::get('/user', [UserController::class, 'index'])->middleware(['auth:sanctum', 'role:superadmin', 'throttle:20,1']);
 
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
-
-    // 🏫 Santri & Peserta Didik
-    Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
-    Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
-    Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/santri', [SantriController::class, 'getAllSantri']);
-    Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
-    Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/pelajar', [PelajarController::class, 'getAllPelajar']);
-    Route::get('/pelajar/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/alumni', [AlumniController::class, 'alumni']);
-    Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
-    Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
-
-    // Khadam
-    Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
-    Route::get('/khadam/{id}', [DetailController::class, 'getDetail']);
-
-    // Pengunjung mahrom
-    Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
-    Route::get('/pengunjung/{id}', [DetailPengunjungController::class, 'getDetailPengunjung']);
-
-    // 🚨 Administrasi
-    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
-    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
-    Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
-    Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
-
-    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
-    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
-    Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
-
-    // 🏫 Keluarga
-    Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
-    Route::get('/orangtua', [OrangTuaWaliController::class, 'getAllOrangtua']);
-    Route::get('/orangtua/{id}', [OrangTuaWaliController::class, 'getDetailOrangtua']);
-    Route::get('/wali', [WaliController::class, 'getAllWali']);
-    Route::get('/wali/{id}', [WaliController::class, 'getDetailWali']);
-
-    // 🏠 Kewaliasuhan (Asrama/Pengasuhan)
-    Route::get('/waliasuh', [WaliasuhController::class, 'getAllWaliasuh']);
-    Route::get('/waliasuh/{id}', [WaliasuhController::class, 'getDetailWaliasuh']);
-    Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
-    Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
-    Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
-
-
-    // 👨‍🏫 Pegawai & Guru
-    Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
-    Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
-    Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
-    Route::get('/karyawan', [KaryawanController::class, 'dataKaryawan']);
-    Route::get('/pegawai', [PegawaiController::class, 'dataPegawai']);
-    Route::post('pegawai', [PegawaiController::class, 'store']);
-
-    Route::get('/pengurus/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/pengajar/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/karyawan/{id}', [DetailController::class, 'getDetail']);
-    Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
-});
-
-Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
+Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
     Route::get('/golongan-jabatan', [DropdownController::class, 'getGolonganJabatan']);
     Route::get('/satuan-kerja', [DropdownController::class, 'getSatuanKerja']);
     Route::get('/wali-asuh', [DropdownController::class, 'nameWaliasuh']);
@@ -451,21 +445,32 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:100,1'])->group
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);
 
-    // // kewilayahan
-    // Route::get('/wilayah', [DropdownWilayahController::class, 'getWilayah']);
-    // Route::get('/blok/{wilayah}', [DropdownWilayahController::class, 'getBlok']);
-    // Route::get('/kamar/{blok}', [DropdownWilayahController::class, 'getKamar']);
-
-    // // Pendidikan
-    // Route::get('lembaga', [DropdownPendidikanController::class, 'getLembaga']);
-    // Route::get('jurusan/{lembaga}', [DropdownPendidikanController::class, 'getJurusan']);
-    // Route::get('kelas/{jurusan}', [DropdownPendidikanController::class, 'getKelas']);
-    // Route::get('rombel/{kelas}', [DropdownPendidikanController::class, 'getRombel']);
-
     // Kewaliasuhan
     Route::get('/grup', [GrupWaliasuhController::class, 'getGrup']);
     Route::get('/waliasuh', [WaliasuhController::class, 'getWaliasuh']);
 
     // Keluarga
     Route::get('hubungan', [HubunganKeluargaController::class, 'getHubungan']);
+});
+
+// Endpoint menampilkan log  
+Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin', 'throttle:120,1');
+
+// Route::middleware([
+//     'auth:sanctum',
+//     'role:superadmin|admin',
+//     'log.activity',
+//     'throttle:100,1'
+// ])->get('activity-logs', function () {
+//     return \Spatie\Activitylog\Models\Activity::with('causer', 'subject')
+//         ->where('log_name', 'api')
+//         ->orderBy('created_at', 'desc')
+//         ->paginate(20);
+// });
+
+// Biometric
+Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
+    Route::post('register-profile', [BiometricProfileController::class, 'store']);
+    Route::post('update-profile', [BiometricProfileController::class, 'update']);
+    Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
 });

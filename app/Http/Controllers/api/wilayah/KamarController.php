@@ -96,14 +96,12 @@ class KamarController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'blok_id' => 'sometimes|required|exists:blok,id',
             'nama_kamar' => 'sometimes|required|string|max:255',
             'kapasitas' => 'sometimes|nullable|integer|min:1',
-            'status' => 'sometimes|required|boolean',
         ]);
 
         $kamar = Kamar::findOrFail($id);
-        $kamar->fill($request->only('blok_id', 'nama_kamar', 'kapasitas', 'status'));
+        $kamar->fill($request->only('blok_id', 'nama_kamar', 'kapasitas'));
         $kamar->updated_by = Auth::id();
         $kamar->save();
 

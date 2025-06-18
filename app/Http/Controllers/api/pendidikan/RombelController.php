@@ -86,12 +86,10 @@ class RombelController extends Controller
         $request->validate([
             'nama_rombel' => 'sometimes|required|string|max:255',
             'gender_rombel' => 'sometimes|required|in:putra,putri',
-            'kelas_id' => 'sometimes|required|exists:kelas,id',
-            'status' => 'sometimes|required|boolean',
         ]);
 
         $rombel = Rombel::findOrFail($id);
-        $rombel->fill($request->only('nama_rombel', 'gender_rombel', 'kelas_id', 'status'));
+        $rombel->fill($request->only('nama_rombel', 'gender_rombel'));
         $rombel->updated_by = Auth::id();
         $rombel->save();
 

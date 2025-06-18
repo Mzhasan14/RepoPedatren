@@ -106,21 +106,10 @@ class BlokController extends Controller
 
         $request->validate([
             'wilayah_id' => 'sometimes|required|exists:wilayah,id',
-            'nama_blok' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('blok')->ignore($blok->id)->where(function ($q) use ($request, $blok) {
-                    // Jika wilayah_id diinput, pakai yang diinput. Jika tidak, pakai yang lama.
-                    $wilayahId = $request->wilayah_id ?? $blok->wilayah_id;
-                    return $q->where('wilayah_id', $wilayahId);
-                }),
-            ],
-            'status' => 'sometimes|required|boolean',
+            'kategoti'   => 'required|string|in:putra,putri'
         ]);
 
-        $blok->fill($request->only('wilayah_id', 'nama_blok', 'status'));
+        $blok->fill($request->only('wilayah_id', 'status'));
         $blok->updated_by = Auth::id();
         $blok->save();
 

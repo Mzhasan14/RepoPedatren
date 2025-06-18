@@ -90,12 +90,11 @@ class LembagaController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_lembaga' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|required|boolean',
+            'nama_lembaga' => 'sometimes|required|string|max:255'
         ]);
 
         $lembaga = Lembaga::findOrFail($id);
-        $lembaga->fill($request->only('nama_lembaga', 'status'));
+        $lembaga->fill($request->only('nama_lembaga'));
         $lembaga->updated_by = Auth::id();
         $lembaga->save();
 
