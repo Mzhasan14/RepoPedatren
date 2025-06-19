@@ -33,8 +33,72 @@ class PindahKamarService
         $blokBaru = Blok::find($data['blok_id']);
         $kamarBaru = Kamar::find($data['kamar_id']);
 
+        // ==== VALIDASI SEMUA DATA DULU ====
+        foreach ($santriIds as $santriId) {
+            $santri = $namaSantriList->get($santriId);
+            $domisili = $domisiliAktif->get($santriId);
+            $nama = $santri ? $santri->biodata->nama : 'Tidak diketahui';
+            $jenisKelamin = strtolower($santri->biodata->jenis_kelamin ?? '');
+
+            // 1. Domisili aktif harus ada
+            if (is_null($domisili)) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah domisili dibatalkan. Santri <b>$nama</b> tidak memiliki domisili aktif.<br>
+                    Silakan periksa kembali data domisili.",
+                    'data_baru' => [],
+                ];
+            }
+
+            // 2. Validasi kategori wilayah
+            $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+            $genderSantri = $jenisKelamin === 'l' ? 'putra' : ($jenisKelamin === 'p' ? 'putri' : '');
+            if ($genderSantri && $kategoriWilayah && $genderSantri !== $kategoriWilayah) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah domisili dibatalkan. Santri <b>$nama</b> dengan jenis kelamin <b>$genderSantri</b> tidak sesuai dengan kategori wilayah <b>$kategoriWilayah</b>.<br>
+                    Silakan pilih wilayah yang sesuai.",
+                    'data_baru' => [],
+                ];
+            }
+
+            // 3. Validasi blok sesuai wilayah
+            if ($blokBaru->wilayah_id != $wilayahBaru->id) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah domisili dibatalkan. Blok yang dipilih tidak sesuai dengan wilayah <b>$nama</b>.<br>
+                    Silakan pilih blok yang sesuai dengan wilayah.",
+                    'data_baru' => [],
+                ];
+            }
+
+            // 4. Validasi kamar sesuai blok
+            if ($kamarBaru->blok_id != $blokBaru->id) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah domisili dibatalkan. Kamar yang dipilih tidak sesuai dengan blok pada santri <b>$nama</b>.<br>
+                    Silakan pilih kamar yang sesuai dengan blok.",
+                    'data_baru' => [],
+                ];
+            }
+
+            // 5. Validasi kapasitas kamar
+            $jumlahPenghuni = DomisiliSantri::where('kamar_id', $kamarBaru->id)
+                ->where('status', 'aktif')
+                ->count();
+            $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+            if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah domisili dibatalkan. Kamar untuk santri <b>$nama</b> sudah penuh.<br>
+                    Silakan pilih kamar lain yang masih tersedia.",
+                    'data_baru' => [],
+                ];
+            }
+        }
+
+        // ==== SEMUA VALID, LAKUKAN PINDAH ====
         $dataBaruNama = [];
-        $dataGagal = [];
 
         DB::beginTransaction();
         try {
@@ -42,60 +106,6 @@ class PindahKamarService
                 $santri = $namaSantriList->get($santriId);
                 $domisili = $domisiliAktif->get($santriId);
                 $nama = $santri ? $santri->biodata->nama : 'Tidak diketahui';
-                $jenisKelamin = strtolower($santri->biodata->jenis_kelamin ?? '');
-
-                if (is_null($domisili)) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Data domisili aktif tidak ditemukan.',
-                    ];
-                    continue;
-                }
-
-                // ========== VALIDASI JENIS KELAMIN & KATEGORI ==========
-
-                $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
-                if (
-                    ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
-                    ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
-                ) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah.',
-                    ];
-                    continue;
-                }
-
-                if ($blokBaru->wilayah_id != $wilayahBaru->id) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Blok tidak sesuai dengan wilayah yang dipilih.',
-                    ];
-                    continue;
-                }
-
-                if ($kamarBaru->blok_id != $blokBaru->id) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Kamar tidak sesuai dengan blok yang dipilih.',
-                    ];
-                    continue;
-                }
-
-                // cek kapasitas kamar
-                $jumlahPenghuni = DomisiliSantri::where('kamar_id', $kamarBaru->id)
-                    ->where('status', 'aktif')
-                    ->count();
-                $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
-                if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
-                    ];
-                    continue;
-                }
-
-                // ========== END VALIDASI ==========
 
                 // Simpan riwayat lama
                 RiwayatDomisili::create([
@@ -135,7 +145,7 @@ class PindahKamarService
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memindahkan domisili.',
-                'error' => $e->getMessage(),
+                'data_baru' => [],
             ];
         }
 
@@ -143,7 +153,6 @@ class PindahKamarService
             'success' => true,
             'message' => 'Santri berhasil dipindahkan ke domisili baru.',
             'data_baru' => $dataBaruNama,
-            'data_gagal' => $dataGagal,
         ];
     }
 }

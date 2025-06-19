@@ -4,9 +4,10 @@ namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Biodata;
 use App\Models\Pendidikan;
+use App\Models\Pendidikan\Rombel;
 use App\Models\RiwayatPendidikan;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PindahNaikJenjangService
 {
@@ -17,27 +18,49 @@ class PindahNaikJenjangService
         $bioIds = $data['biodata_id'];
 
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
+        $biodataMap = Biodata::whereIn('id', $bioIds)->get()->keyBy('id');
         $pendidikanAktif = Pendidikan::whereIn('biodata_id', $bioIds)
             ->get()
             ->keyBy('biodata_id');
 
+        $rombelTujuan = Rombel::find($data['rombel_id']);
+
+        // --- Validasi seluruh data terlebih dahulu ---
+        foreach ($bioIds as $bioId) {
+            $pendidikan = $pendidikanAktif->get($bioId);
+            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+
+            if (is_null($pendidikan)) {
+                return [
+                    'success' => false,
+                    'message' => "Proses pindah dibatalkan. Terdapat peserta didik bernama <b>$nama</b> yang tidak memiliki data pendidikan aktif.<br>
+                Silakan periksa kembali data peserta didik Anda.",
+                    'data_baru' => [],
+                ];
+            }
+
+            $biodata = $biodataMap->get($bioId);
+            if ($biodata && $rombelTujuan && $rombelTujuan->gender_rombel) {
+                $genderSantri = strtolower($biodata->jenis_kelamin) === 'l' ? 'putra' : 'putri';
+                if ($rombelTujuan->gender_rombel !== $genderSantri) {
+                    return [
+                        'success' => false,
+                        'message' => "Proses pindah dibatalkan. Terdapat peserta didik bernama <b>$nama</b> yang jenis kelaminnya (<b>$genderSantri</b>) tidak sesuai dengan gender rombel yang dipilih (<b>{$rombelTujuan->gender_rombel}</b>).<br>
+                    Silakan periksa kembali pilihan rombel Anda agar sesuai dengan jenis kelamin peserta didik.",
+                        'data_baru' => [],
+                    ];
+                }
+            }
+        }
+
+        // Jika valid, lakukan proses pindah seperti biasa
         $dataBaruNama = [];
-        $dataGagal = [];
 
         DB::beginTransaction();
         try {
             foreach ($bioIds as $bioId) {
                 $pendidikan = $pendidikanAktif->get($bioId);
                 $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
-
-                if (is_null($pendidikan)) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Data pendidikan aktif tidak ditemukan.',
-                    ];
-
-                    continue;
-                }
 
                 RiwayatPendidikan::create([
                     'biodata_id' => $pendidikan->biodata_id,
@@ -79,7 +102,7 @@ class PindahNaikJenjangService
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memindahkan data.',
-                'error' => $e->getMessage(),
+                'data_baru' => [],
             ];
         }
 
@@ -87,7 +110,6 @@ class PindahNaikJenjangService
             'success' => true,
             'message' => 'Peserta didik berhasil dipindahkan.',
             'data_baru' => $dataBaruNama,
-            'data_gagal' => $dataGagal,
         ];
     }
 
@@ -98,27 +120,49 @@ class PindahNaikJenjangService
         $bioIds = $data['biodata_id'];
 
         $biodataList = Biodata::whereIn('id', $bioIds)->pluck('nama', 'id');
+        $biodataMap = Biodata::whereIn('id', $bioIds)->get()->keyBy('id');
         $pendidikanAktif = Pendidikan::whereIn('biodata_id', $bioIds)
             ->get()
             ->keyBy('biodata_id');
 
+        $rombelTujuan = Rombel::find($data['rombel_id']);
+
+        // --- Validasi seluruh data terlebih dahulu ---
+        foreach ($bioIds as $bioId) {
+            $pendidikan = $pendidikanAktif->get($bioId);
+            $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
+
+            if (is_null($pendidikan)) {
+                return [
+                    'success' => false,
+                    'message' => "Proses naik kelas dibatalkan. Terdapat peserta didik bernama <b>$nama</b> yang tidak memiliki data pendidikan aktif.<br>
+                    Silakan periksa kembali data peserta didik Anda.",
+                    'data_baru' => [],
+                ];
+            }
+
+            $biodata = $biodataMap->get($bioId);
+            if ($biodata && $rombelTujuan && $rombelTujuan->gender_rombel) {
+                $genderSantri = strtolower($biodata->jenis_kelamin) === 'l' ? 'putra' : 'putri';
+                if ($rombelTujuan->gender_rombel !== $genderSantri) {
+                    return [
+                        'success' => false,
+                        'message' => "Proses naik kelas dibatalkan. Terdapat peserta didik bernama <b>$nama</b> yang jenis kelaminnya (<b>$genderSantri</b>) tidak sesuai dengan gender rombel yang dipilih (<b>{$rombelTujuan->gender_rombel}</b>).<br>
+                        Silakan periksa kembali pilihan rombel Anda agar sesuai dengan jenis kelamin peserta didik.",
+                        'data_baru' => [],
+                    ];
+                }
+            }
+        }
+
+        // Jika valid, lakukan proses naik kelas seperti biasa
         $dataBaruNama = [];
-        $dataGagal = [];
 
         DB::beginTransaction();
         try {
             foreach ($bioIds as $bioId) {
                 $pendidikan = $pendidikanAktif->get($bioId);
                 $nama = $biodataList[$bioId] ?? 'Tidak diketahui';
-
-                if (is_null($pendidikan)) {
-                    $dataGagal[] = [
-                        'nama' => $nama,
-                        'message' => 'Data pendidikan aktif tidak ditemukan.',
-                    ];
-
-                    continue;
-                }
 
                 RiwayatPendidikan::create([
                     'biodata_id' => $pendidikan->biodata_id,
@@ -160,7 +204,7 @@ class PindahNaikJenjangService
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memproses kenaikan kelas.',
-                'error' => $e->getMessage(),
+                'data_baru' => [],
             ];
         }
 
@@ -168,7 +212,6 @@ class PindahNaikJenjangService
             'success' => true,
             'message' => 'Peserta didik berhasil naik kelas.',
             'data_baru' => $dataBaruNama,
-            'data_gagal' => $dataGagal,
         ];
     }
 }
