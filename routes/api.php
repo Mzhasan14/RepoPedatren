@@ -454,7 +454,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 });
 
 // Endpoint menampilkan log  
-Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware('auth:sanctum', 'role:superadmin', 'throttle:120,1');
+Route::get('/activity-logs', [ActivityController::class, 'index']);
 
 // Route::middleware([
 //     'auth:sanctum',

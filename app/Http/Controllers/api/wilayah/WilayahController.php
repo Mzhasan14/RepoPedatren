@@ -96,6 +96,46 @@ class WilayahController extends Controller
         ]);
 
         $wilayah = Wilayah::findOrFail($id);
+        $oldKategori = $wilayah->kategori;
+
+        // Ambil kategori baru jika diinput, jika tidak pakai yang lama
+        $newKategori = $request->has('kategori') ? $request->kategori : $oldKategori;
+
+        // Cek perubahan kategori
+        if ($oldKategori !== $newKategori) {
+            // Jika berubah ke 'putri', cek apakah ada santri laki-laki ('l')
+            if ($newKategori === 'putri') {
+                $jumlahLaki = $wilayah->domisiliSantri()
+                    ->where('status', 'aktif')
+                    ->whereHas('santri.biodata', function ($q) {
+                        $q->where('jenis_kelamin', 'l');
+                    })->count();
+
+                if ($jumlahLaki > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Terdapat $jumlahLaki santri berjenis kelamin laki-laki ('l') yang masih menempati wilayah ini.",
+                    ], 400);
+                }
+            }
+
+            // Jika berubah ke 'putra', cek apakah ada santri perempuan ('p')
+            if ($newKategori === 'putra') {
+                $jumlahPerempuan = $wilayah->domisiliSantri()
+                    ->where('status', 'aktif')
+                    ->whereHas('santri.biodata', function ($q) {
+                        $q->where('jenis_kelamin', 'p');
+                    })->count();
+
+                if ($jumlahPerempuan > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Terdapat $jumlahPerempuan santri berjenis kelamin perempuan ('p') yang masih menempati wilayah ini.",
+                    ], 400);
+                }
+            }
+        }
+
         $wilayah->fill($request->only('nama_wilayah', 'kategori'));
         $wilayah->updated_by = Auth::id();
         $wilayah->save();

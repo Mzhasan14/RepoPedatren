@@ -81,20 +81,60 @@ class RombelController extends Controller
         return response()->json($rombel, 201);
     }
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'nama_rombel' => 'sometimes|required|string|max:255',
-            'gender_rombel' => 'sometimes|required|in:putra,putri',
-        ]);
+   public function update(Request $request, $id)
+{
+    $request->validate([
+        'nama_rombel'   => 'sometimes|required|string|max:255',
+        'gender_rombel' => 'sometimes|required|in:putra,putri',
+    ]);
 
-        $rombel = Rombel::findOrFail($id);
-        $rombel->fill($request->only('nama_rombel', 'gender_rombel'));
-        $rombel->updated_by = Auth::id();
-        $rombel->save();
+    $rombel = Rombel::findOrFail($id);
+    $oldGender = $rombel->gender_rombel;
+    $newGender = $request->has('gender_rombel') ? $request->gender_rombel : $oldGender;
 
-        return response()->json($rombel);
+    // Cek perubahan gender_rombel
+    if ($oldGender !== $newGender) {
+        $pendidikans = $rombel->pendidikan()->where('status', 'aktif')->get();
+        $biodataIds = $pendidikans->pluck('biodata_id');
+
+        if ($newGender === 'putri') {
+            // Tidak boleh ada siswa laki-laki ('l')
+            $countLaki = \App\Models\Biodata::whereIn('id', $biodataIds)
+                ->where('jenis_kelamin', 'l')->count();
+
+            if ($countLaki > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Update dibatalkan. Masih ada $countLaki siswa berjenis kelamin laki-laki ('l') di rombel ini.",
+                ], 400);
+            }
+        }
+
+        if ($newGender === 'putra') {
+            // Tidak boleh ada siswa perempuan ('p')
+            $countPerempuan = \App\Models\Biodata::whereIn('id', $biodataIds)
+                ->where('jenis_kelamin', 'p')->count();
+
+            if ($countPerempuan > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Update dibatalkan. Masih ada $countPerempuan siswa berjenis kelamin perempuan ('p') di rombel ini.",
+                ], 400);
+            }
+        }
     }
+
+    // Jika lolos pengecekan di atas, update berjalan
+    $rombel->fill($request->only('nama_rombel', 'gender_rombel'));
+    $rombel->updated_by = Auth::id();
+    $rombel->save();
+
+    return response()->json([
+        'success' => true,
+        'data'    => $rombel,
+    ]);
+}
+
 
     public function destroy($id)
     {
