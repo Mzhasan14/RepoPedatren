@@ -4,9 +4,13 @@ namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Biodata;
 use App\Models\Keluarga;
+use App\Models\Pendidikan;
+use App\Models\DomisiliSantri;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Pendidikan\Rombel;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kewilayahan\Wilayah;
+use Illuminate\Support\Facades\Auth;
 
 class BiodataService
 {
@@ -69,7 +73,7 @@ class BiodataService
 
         // Cari berkas dengan jenis "Pas foto"
         $pasFoto = $biodata->berkas
-            ->firstWhere(fn ($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas Foto');
+            ->firstWhere(fn($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas Foto');
 
         return [
             'status' => true,
@@ -104,6 +108,47 @@ class BiodataService
         ];
     }
 
+    private function checkGenderConsistency($bioId, $newGender)
+    {
+        // Konversi 'L' => 'putra', 'P' => 'putri'
+        $genderText = ($newGender == 'L') ? 'putra' : 'putri';
+
+        // Cek Pendidikan → Rombel → gender_rombel
+        $pendidikan = Pendidikan::where('biodata_id', $bioId)->first();
+        $genderRombel = null;
+        if ($pendidikan && $pendidikan->rombel_id) {
+            // Pastikan relasi Rombel ada
+            $rombel = Rombel::find($pendidikan->rombel_id);
+            if ($rombel && $rombel->gender_rombel) {
+                $genderRombel = $rombel->gender_rombel;
+            }
+        }
+        if ($genderRombel && $genderRombel !== $genderText) {
+            return [
+                'status' => false,
+                'message' => 'Jenis kelamin tidak konsisten dengan rombel saat ini (' . $genderRombel . ').',
+            ];
+        }
+
+        // Cek DomisiliSantri → Wilayah → kategori
+        $domisili = DomisiliSantri::where('biodata_id', $bioId)->first();
+        $kategoriWilayah = null;
+        if ($domisili && $domisili->wilayah_id) {
+            $wilayah = Wilayah::find($domisili->wilayah_id);
+            if ($wilayah && $wilayah->kategori) {
+                $kategoriWilayah = $wilayah->kategori;
+            }
+        }
+        if ($kategoriWilayah && $kategoriWilayah !== $genderText) {
+            return [
+                'status' => false,
+                'message' => 'Jenis kelamin tidak konsisten dengan wilayah saat ini (' . $kategoriWilayah . ').',
+            ];
+        }
+
+        return ['status' => true];
+    }
+
     public function update(array $input, string $bioId): array
     {
         // Cari data berdasarkan ID
@@ -115,6 +160,18 @@ class BiodataService
                 'status' => false,
                 'message' => 'Data tidak ditemukan.',
             ];
+        }
+
+        // Cek jika ada perubahan jenis_kelamin
+        $jenisKelaminBaru = $input['jenis_kelamin'] ?? $biodata->jenis_kelamin;
+        if ($jenisKelaminBaru !== $biodata->jenis_kelamin) {
+            $cekGender = $this->checkGenderConsistency($bioId, $jenisKelaminBaru);
+            if (! $cekGender['status']) {
+                return [
+                    'status' => false,
+                    'message' => $cekGender['message'],
+                ];
+            }
         }
 
         $noKK = Keluarga::where('id_biodata', $bioId)->value('no_kk');
@@ -142,7 +199,7 @@ class BiodataService
         $biodata->no_passport = $input['no_passport'] ?? $biodata->no_passport;
         $biodata->nik = $input['nik'] ?? $biodata->nik;
         $biodata->nama = $input['nama'] ?? $biodata->nama;
-        $biodata->jenis_kelamin = $input['jenis_kelamin'] ?? $biodata->jenis_kelamin;
+        $biodata->jenis_kelamin = $jenisKelaminBaru;
         $biodata->tanggal_lahir = isset($input['tanggal_lahir']) ? \Carbon\Carbon::parse($input['tanggal_lahir']) : $biodata->tanggal_lahir;
         $biodata->tempat_lahir = $input['tempat_lahir'] ?? $biodata->tempat_lahir;
         $biodata->anak_keberapa = $input['anak_keberapa'] ?? $biodata->anak_keberapa;

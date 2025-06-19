@@ -114,7 +114,7 @@ class WilayahController extends Controller
                 if ($jumlahLaki > 0) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Terdapat $jumlahLaki santri berjenis kelamin laki-laki ('l') yang masih menempati wilayah ini.",
+                        'message' => "Terdapat $jumlahLaki santri berjenis kelamin laki-laki yang masih menempati wilayah ini.",
                     ], 400);
                 }
             }
@@ -130,7 +130,7 @@ class WilayahController extends Controller
                 if ($jumlahPerempuan > 0) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Terdapat $jumlahPerempuan santri berjenis kelamin perempuan ('p') yang masih menempati wilayah ini.",
+                        'message' => "Terdapat $jumlahPerempuan santri berjenis kelamin perempuan yang masih menempati wilayah ini.",
                     ], 400);
                 }
             }

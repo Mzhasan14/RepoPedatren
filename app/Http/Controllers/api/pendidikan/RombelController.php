@@ -105,7 +105,7 @@ class RombelController extends Controller
             if ($countLaki > 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Update dibatalkan. Masih ada $countLaki siswa berjenis kelamin laki-laki ('l') di rombel ini.",
+                    'message' => "Update dibatalkan. Masih ada $countLaki siswa berjenis kelamin laki-laki di rombel ini.",
                 ], 400);
             }
         }
@@ -118,7 +118,7 @@ class RombelController extends Controller
             if ($countPerempuan > 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Update dibatalkan. Masih ada $countPerempuan siswa berjenis kelamin perempuan ('p') di rombel ini.",
+                    'message' => "Update dibatalkan. Masih ada $countPerempuan siswa berjenis kelamin perempuan di rombel ini.",
                 ], 400);
             }
         }
