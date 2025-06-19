@@ -484,7 +484,7 @@ class DataKeluargaSeeder extends Seeder
                 $provinsiId = $ayahBiodata->provinsi_id;
                 $kabupatenId = $ayahBiodata->kabupaten_id;
                 $kecamatanId = $ayahBiodata->kecamatan_id;
-                $newNoKK = $faker->numerify('###############');
+                $newNoKK = $faker->numerify('################');
                 if (!DB::table('orang_tua_wali')->where('id_biodata', $ayahId)->exists()) {
                     DB::table('orang_tua_wali')->insert([
                         'id_biodata' => $ayahId,
@@ -536,7 +536,7 @@ class DataKeluargaSeeder extends Seeder
                     'id_hubungan_keluarga' => $ibuStatus,
                     'pekerjaan' => $faker->jobTitle(),
                     'penghasilan' => $faker->randomElement(['500000', '1000000', '2000000']),
-                    'wali' => !$ibuWafat,
+                    'wali' => false,
                     'status' => true,
                     'created_by' => 1,
                 ]);

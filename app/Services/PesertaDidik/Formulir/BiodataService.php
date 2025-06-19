@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
+use App\Models\Santri;
 use App\Models\Biodata;
 use App\Models\Keluarga;
 use App\Models\Pendidikan;
@@ -111,7 +112,7 @@ class BiodataService
     private function checkGenderConsistency($bioId, $newGender)
     {
         // Konversi 'L' => 'putra', 'P' => 'putri'
-        $genderText = ($newGender == 'L') ? 'putra' : 'putri';
+        $genderText = ($newGender == 'l') ? 'putra' : 'putri';
 
         // Cek Pendidikan → Rombel → gender_rombel
         $pendidikan = Pendidikan::where('biodata_id', $bioId)->first();
@@ -130,15 +131,23 @@ class BiodataService
             ];
         }
 
-        // Cek DomisiliSantri → Wilayah → kategori
-        $domisili = DomisiliSantri::where('biodata_id', $bioId)->first();
+        // Cari Santri berdasarkan biodata_id
+        $santri = Santri::where('biodata_id', $bioId)->first();
+
+        $domisili = null;
         $kategoriWilayah = null;
+
+        if ($santri) {
+            $domisili = DomisiliSantri::where('santri_id', $santri->id)->first();
+        }
+
         if ($domisili && $domisili->wilayah_id) {
             $wilayah = Wilayah::find($domisili->wilayah_id);
             if ($wilayah && $wilayah->kategori) {
                 $kategoriWilayah = $wilayah->kategori;
             }
         }
+
         if ($kategoriWilayah && $kategoriWilayah !== $genderText) {
             return [
                 'status' => false,

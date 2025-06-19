@@ -2,11 +2,13 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
+use App\Models\Biodata;
 use App\Models\Pendidikan;
-use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Pendidikan\Rombel;
+use App\Models\RiwayatPendidikan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PendidikanService
 {
@@ -69,6 +71,20 @@ class PendidikanService
 
             if ($pendidikanAktif) {
                 return ['status' => false, 'message' => 'Data ini sudah memiliki pendidikan aktif.'];
+            }
+
+            // CEK KEC SESUAIAN JENIS KELAMIN DAN ROMBEL BARU
+            $biodata = Biodata::find($bioId);
+            $rombel = Rombel::find($input['rombel_id'] ?? null);
+
+            if ($biodata && $rombel && $rombel->gender_rombel) {
+                $genderSantri = ($biodata->jenis_kelamin == 'l') ? 'putra' : 'putri';
+                if ($rombel->gender_rombel !== $genderSantri) {
+                    return [
+                        'status' => false,
+                        'message' => 'Rombel yang dipilih hanya untuk ' . $rombel->gender_rombel . '. Data santri saat ini adalah ' . $genderSantri . '. Silakan pilih rombel yang sesuai.',
+                    ];
+                }
             }
 
             $tanggalMasuk = $input['tanggal_masuk'] ? Carbon::parse($input['tanggal_masuk']) : now();
@@ -144,6 +160,20 @@ class PendidikanService
 
             if ($aktif->tanggal_keluar) {
                 return ['status' => false, 'message' => 'Riwayat sudah ditutup.'];
+            }
+
+            // CEK KEC SESUAIAN JENIS KELAMIN DAN ROMBEL BARU
+            $biodata = Biodata::find($aktif->biodata_id);
+            $rombelBaru = Rombel::find($input['rombel_id'] ?? null);
+
+            if ($biodata && $rombelBaru && $rombelBaru->gender_rombel) {
+                $genderSantri = ($biodata->jenis_kelamin == 'l') ? 'putra' : 'putri';
+                if ($rombelBaru->gender_rombel !== $genderSantri) {
+                    return [
+                        'status' => false,
+                        'message' => 'Rombel yang dipilih hanya untuk ' . $rombelBaru->gender_rombel . '. Data santri saat ini adalah ' . $genderSantri . '. Silakan pilih rombel yang sesuai.',
+                    ];
+                }
             }
 
             if (empty($input['tanggal_masuk']) || ! strtotime($input['tanggal_masuk'])) {
@@ -268,6 +298,20 @@ class PendidikanService
                     'status' => false,
                     'message' => 'Tanggal keluar tidak boleh diisi jika status santri masih aktif.',
                 ];
+            }
+
+            // --- VALIDASI JENIS KELAMIN DAN ROMBEL ---
+            $biodata = $pendidikan->biodata ?? Biodata::find($pendidikan->biodata_id);
+            $rombelBaru = Rombel::find($input['rombel_id'] ?? $pendidikan->rombel_id);
+
+            if ($biodata && $rombelBaru && $rombelBaru->gender_rombel) {
+                $genderSantri = ($biodata->jenis_kelamin == 'l') ? 'putra' : 'putri';
+                if ($rombelBaru->gender_rombel !== $genderSantri) {
+                    return [
+                        'status' => false,
+                        'message' => 'Rombel yang dipilih hanya untuk ' . $rombelBaru->gender_rombel . '. Data santri saat ini adalah ' . $genderSantri . '. Silakan pilih rombel yang sesuai.',
+                    ];
+                }
             }
 
             // Update data aktif
