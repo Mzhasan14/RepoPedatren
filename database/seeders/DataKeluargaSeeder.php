@@ -14,6 +14,44 @@ class DataKeluargaSeeder extends Seeder
     {
         $faker = Factory::create('id_ID');
 
+        // ==== HELPER FUNCTION ====
+        $usedNames = [
+            'male' => [],
+            'female' => [],
+        ];
+
+        $generateUniqueName = function ($faker, $gender, &$usedNames) {
+            do {
+                $name = $faker->unique()->name($gender);
+            } while (in_array($name, $usedNames[$gender]));
+            $usedNames[$gender][] = $name;
+            return $name;
+        };
+
+        // 6 digit wilayah, 6 digit tgl lahir, 4 digit random
+        $generateNIK = function ($kodeWilayah, $tanggalLahir) {
+            $tgl = date('dmy', strtotime($tanggalLahir));
+            return $kodeWilayah . $tgl . str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        };
+
+        // 081x-xxxx-xxxx
+        $generatePhone = function () {
+            $prefix = ['0811', '0812', '0813', '0821', '0822', '0823', '0852', '0853', '0851'];
+            $num = $prefix[array_rand($prefix)];
+            $num .= str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            $num .= str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            return $num;
+        };
+
+        $generateEmail = function ($name, $faker) {
+            // nama kecil, titik, tanpa karakter aneh
+            $clear = strtolower(preg_replace('/[^a-z]/', '.', $name));
+            $clear = preg_replace('/\.+/', '.', $clear);
+            return $clear . '@' . $faker->freeEmailDomain;
+        };
+
+        // ==== END HELPER FUNCTION ====
+
         // Ambil data wilayah (negara, provinsi, kabupaten, kecamatan)
         $negaraList = DB::table('negara')->get();
         $provinsiList = DB::table('provinsi')->get();
@@ -112,9 +150,25 @@ class DataKeluargaSeeder extends Seeder
                 $kecamatan = $faker->randomElement($kecamatanFiltered);
                 $kecamatanId = $kecamatan->id;
 
+                // Kode wilayah, fallback jika tidak numeric, harus 6 digit
+                $kodeWilayah = str_pad(
+                    (is_numeric($provinsiId) ? $provinsiId : '11') .
+                        (is_numeric($kabupatenId) ? $kabupatenId : '01') .
+                        (is_numeric($kecamatanId) ? $kecamatanId : '01'),
+                    6,
+                    '0',
+                    STR_PAD_RIGHT
+                );
+
                 $currentNoKK = $faker->numerify('################');
-                // Buat ayah
+                // Ayah
                 $currentAyahId = (string) Str::uuid();
+                $ayahTglLahir = $faker->date('Y-m-d', (new DateTime())->modify('-35 years')->format('Y-m-d'));
+                $ayahNama = $generateUniqueName($faker, 'male', $usedNames);
+                $ayahNIK = $generateNIK($kodeWilayah, $ayahTglLahir);
+                $ayahPhone = $generatePhone();
+                $ayahEmail = $generateEmail($ayahNama, $faker);
+
                 DB::table('biodata')->insert([
                     'id' => $currentAyahId,
                     'negara_id' => $negaraId,
@@ -123,15 +177,15 @@ class DataKeluargaSeeder extends Seeder
                     'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
-                    'nama' => $faker->name('male'),
+                    'nama' => $ayahNama,
                     'jenis_kelamin' => 'l',
-                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-35 years')->format('Y-m-d')),
+                    'tanggal_lahir' => $ayahTglLahir,
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
-                    'nik' => $faker->numerify('################'),
-                    'no_telepon' => $faker->phoneNumber,
-                    'email' => $faker->unique()->email,
+                    'nik' => $ayahNIK,
+                    'no_telepon' => $ayahPhone,
+                    'email' => $ayahEmail,
                     'status' => true,
                     'wafat' => false,
                     'created_by' => 1,
@@ -139,8 +193,14 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Buat ibu
+                // Ibu
                 $currentIbuId = (string) Str::uuid();
+                $ibuTglLahir = $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d'));
+                $ibuNama = $generateUniqueName($faker, 'female', $usedNames);
+                $ibuNIK = $generateNIK($kodeWilayah, $ibuTglLahir);
+                $ibuPhone = $generatePhone();
+                $ibuEmail = $generateEmail($ibuNama, $faker);
+
                 DB::table('biodata')->insert([
                     'id' => $currentIbuId,
                     'negara_id' => $negaraId,
@@ -149,15 +209,15 @@ class DataKeluargaSeeder extends Seeder
                     'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
-                    'nama' => $faker->name('female'),
+                    'nama' => $ibuNama,
                     'jenis_kelamin' => 'p',
-                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d')),
+                    'tanggal_lahir' => $ibuTglLahir,
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
-                    'nik' => $faker->numerify('################'),
-                    'no_telepon' => $faker->phoneNumber,
-                    'email' => $faker->unique()->email,
+                    'nik' => $ibuNIK,
+                    'no_telepon' => $ibuPhone,
+                    'email' => $ibuEmail,
                     'status' => true,
                     'wafat' => false,
                     'created_by' => 1,
@@ -207,7 +267,14 @@ class DataKeluargaSeeder extends Seeder
             // ------------------ MULAI MENYIMPAN DATA ANAK ------------------
             $childId = (string) Str::uuid();
             $jenisKelaminAnak = $faker->randomElement(['l', 'p']);
+            $genderAnak = $jenisKelaminAnak === 'l' ? 'male' : 'female';
             $childBirthDate = (new DateTime())->modify('-' . rand(7, 18) . ' years')->format('Y-m-d');
+            $kodeWilayahAnak = isset($kodeWilayah) ? $kodeWilayah : '110101'; // fallback
+            $namaAnak = $generateUniqueName($faker, $genderAnak, $usedNames);
+            $nikAnak = $generateNIK($kodeWilayahAnak, $childBirthDate);
+            $phoneAnak = $generatePhone();
+            $emailAnak = $generateEmail($namaAnak, $faker);
+
             DB::table('biodata')->insert([
                 'id' => $childId,
                 'negara_id' => $negaraId,
@@ -216,16 +283,16 @@ class DataKeluargaSeeder extends Seeder
                 'kecamatan_id' => $kecamatanId,
                 'jalan' => $faker->streetAddress,
                 'kode_pos' => $faker->postcode,
-                'nama' => $faker->name($jenisKelaminAnak === 'l' ? 'male' : 'female'),
+                'nama' => $namaAnak,
                 'no_passport' => $faker->numerify('############'),
                 'jenis_kelamin' => $jenisKelaminAnak,
                 'tanggal_lahir' => $childBirthDate,
                 'tempat_lahir' => $faker->city,
                 'anak_keberapa' => rand(1, 5),
                 'dari_saudara' => rand(1, 5),
-                'nik' => $faker->numerify('################'),
-                'no_telepon' => $faker->phoneNumber,
-                'email' => $faker->unique()->email,
+                'nik' => $nikAnak,
+                'no_telepon' => $phoneAnak,
+                'email' => $emailAnak,
                 'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
                 'status' => true,
                 'created_by' => 1,
@@ -352,7 +419,16 @@ class DataKeluargaSeeder extends Seeder
                 $lembaga = $faker->randomElement($lembagaList);
                 $jurusan = $faker->randomElement($jurusanList->where('lembaga_id', $lembaga->id)->values());
                 $kelas = $faker->randomElement($kelasList->where('jurusan_id', $jurusan->id)->values());
-                $rombel = $faker->randomElement($rombelList->where('kelas_id', $kelas->id)->values());
+                $rombelFiltered = $rombelList
+                    ->where('kelas_id', $kelas->id)
+                    ->where('gender_rombel', $jenisKelaminAnak === 'l' ? 'putra' : 'putri')
+                    ->values();
+
+                if ($rombelFiltered->isEmpty()) {
+                    $rombel = $faker->randomElement($rombelList->where('kelas_id', $kelas->id)->values());
+                } else {
+                    $rombel = $faker->randomElement($rombelFiltered);
+                }
 
                 if ($stPendidikan === 'aktif') {
                     DB::table('pendidikan')->insert([
@@ -464,7 +540,6 @@ class DataKeluargaSeeder extends Seeder
             }
         }
 
-        // Tambah hingga minimal 50 anak_pegawai
         if ($anakPegawaiCount < $requiredAnakPegawai) {
             $pegawaiList = DB::table('pegawai')->select('id', 'biodata_id')->get()->toArray();
             $need = $requiredAnakPegawai - $anakPegawaiCount;
@@ -484,27 +559,25 @@ class DataKeluargaSeeder extends Seeder
                 $provinsiId = $ayahBiodata->provinsi_id;
                 $kabupatenId = $ayahBiodata->kabupaten_id;
                 $kecamatanId = $ayahBiodata->kecamatan_id;
-                $newNoKK = $faker->numerify('################');
-                if (!DB::table('orang_tua_wali')->where('id_biodata', $ayahId)->exists()) {
-                    DB::table('orang_tua_wali')->insert([
-                        'id_biodata' => $ayahId,
-                        'id_hubungan_keluarga' => $ayahStatus,
-                        'pekerjaan' => $faker->jobTitle(),
-                        'penghasilan' => $faker->randomElement(['500000', '1000000', '2000000']),
-                        'wali' => true,
-                        'status' => true,
-                        'created_by' => 1,
-                    ]);
-                }
-                DB::table('keluarga')->insert([
-                    'no_kk' => $newNoKK,
-                    'id_biodata' => $ayahId,
-                    'status' => true,
-                    'created_by' => 1,
-                ]);
+                $kodeWilayah = str_pad(
+                    (is_numeric($provinsiId) ? $provinsiId : '11') .
+                        (is_numeric($kabupatenId) ? $kabupatenId : '01') .
+                        (is_numeric($kecamatanId) ? $kecamatanId : '01'),
+                    6,
+                    '0',
+                    STR_PAD_RIGHT
+                );
+                $newNoKK = $faker->numerify('##############');
 
+                // === Realistis untuk ibu
                 $ibuWafat = $faker->boolean(10);
                 $newIbuId = (string) Str::uuid();
+                $ibuTglLahir = $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d'));
+                $ibuNama = $generateUniqueName($faker, 'female', $usedNames);
+                $ibuNIK = $generateNIK($kodeWilayah, $ibuTglLahir);
+                $ibuPhone = $generatePhone();
+                $ibuEmail = $generateEmail($ibuNama, $faker);
+
                 DB::table('biodata')->insert([
                     'id' => $newIbuId,
                     'negara_id' => $negaraId,
@@ -513,16 +586,16 @@ class DataKeluargaSeeder extends Seeder
                     'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
-                    'nama' => $faker->name('female'),
+                    'nama' => $ibuNama,
                     'no_passport' => $faker->numerify('############'),
                     'jenis_kelamin' => 'p',
-                    'tanggal_lahir' => $faker->date('Y-m-d', (new DateTime())->modify('-33 years')->format('Y-m-d')),
+                    'tanggal_lahir' => $ibuTglLahir,
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
-                    'nik' => $faker->numerify('################'),
-                    'no_telepon' => $faker->phoneNumber,
-                    'email' => $faker->unique()->email,
+                    'nik' => $ibuNIK,
+                    'no_telepon' => $ibuPhone,
+                    'email' => $ibuEmail,
                     'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
                     'smartcard' => $faker->numerify('############'),
                     'status' => true,
@@ -547,8 +620,16 @@ class DataKeluargaSeeder extends Seeder
                     'created_by' => 1,
                 ]);
 
+                // === Realistis untuk anak
                 $childIdExtra = (string) Str::uuid();
+                $jenisKelaminExtra = $faker->randomElement(['l', 'p']);
+                $genderExtra = $jenisKelaminExtra === 'l' ? 'male' : 'female';
                 $childBirthDateExtra = (new DateTime())->modify('-' . rand(7, 18) . ' years')->format('Y-m-d');
+                $namaAnakExtra = $generateUniqueName($faker, $genderExtra, $usedNames);
+                $nikAnakExtra = $generateNIK($kodeWilayah, $childBirthDateExtra);
+                $phoneAnakExtra = $generatePhone();
+                $emailAnakExtra = $generateEmail($namaAnakExtra, $faker);
+
                 DB::table('biodata')->insert([
                     'id' => $childIdExtra,
                     'negara_id' => $negaraId,
@@ -557,16 +638,16 @@ class DataKeluargaSeeder extends Seeder
                     'kecamatan_id' => $kecamatanId,
                     'jalan' => $faker->streetAddress,
                     'kode_pos' => $faker->postcode,
-                    'nama' => $faker->name($faker->randomElement(['male', 'female'])),
+                    'nama' => $namaAnakExtra,
                     'no_passport' => $faker->numerify('############'),
-                    'jenis_kelamin' => $faker->randomElement(['l', 'p']),
+                    'jenis_kelamin' => $jenisKelaminExtra,
                     'tanggal_lahir' => $childBirthDateExtra,
                     'tempat_lahir' => $faker->city,
                     'anak_keberapa' => rand(1, 5),
                     'dari_saudara' => rand(1, 5),
-                    'nik' => $faker->numerify('################'),
-                    'no_telepon' => $faker->phoneNumber,
-                    'email' => $faker->unique()->email,
+                    'nik' => $nikAnakExtra,
+                    'no_telepon' => $phoneAnakExtra,
+                    'email' => $emailAnakExtra,
                     'jenjang_pendidikan_terakhir' => $faker->randomElement(['sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
                     'smartcard' => $faker->numerify('############'),
                     'status' => true,
@@ -589,7 +670,6 @@ class DataKeluargaSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Bagian pendidikan/santri anak pegawai (aktif, tanggal tidak lewat hari ini)
                 if ($faker->boolean(50)) {
                     // Tambah santri
                     $angkatanSantri = $faker->randomElement($angkatanSantriList);
@@ -614,9 +694,7 @@ class DataKeluargaSeeder extends Seeder
                     ]);
 
                     // *** PATCH DOMISILI SESUAI JENIS_KELAMIN ***
-                    $biodataExtra = DB::table('biodata')->where('id', $childIdExtra)->first();
-                    $jenisKelaminExtra = strtolower($biodataExtra->jenis_kelamin);
-
+                    $jenisKelaminExtra = strtolower($jenisKelaminExtra);
                     if ($jenisKelaminExtra === 'l') {
                         $wilayahFiltered = $wilayahList->where('kategori', 'putra')->values();
                     } elseif ($jenisKelaminExtra === 'p') {
@@ -668,9 +746,20 @@ class DataKeluargaSeeder extends Seeder
                     $kelasF = $kelasList->where('jurusan_id', $jurusanId)->values();
                     $kelas = $faker->randomElement($kelasF);
                     $kelasId = $kelas->id;
-                    $rombelF = $rombelList->where('kelas_id', $kelasId)->values();
-                    $rombel = $faker->randomElement($rombelF);
+
+                    // Pilih rombel berdasarkan gender
+                    $rombelFiltered = $rombelList
+                        ->where('kelas_id', $kelasId)
+                        ->where('gender_rombel', $jenisKelaminExtra === 'l' ? 'putra' : 'putri')
+                        ->values();
+
+                    if ($rombelFiltered->isEmpty()) {
+                        $rombel = $faker->randomElement($rombelList->where('kelas_id', $kelasId)->values());
+                    } else {
+                        $rombel = $faker->randomElement($rombelFiltered);
+                    }
                     $rombelId = $rombel->id;
+
                     DB::table('pendidikan')->insert([
                         'biodata_id' => $childIdExtra,
                         'angkatan_id' => $angkatanPelIdExtra,
@@ -691,7 +780,6 @@ class DataKeluargaSeeder extends Seeder
         }
     }
 }
-
 // {
 //     public function run(): void
 //     {
