@@ -27,7 +27,6 @@ class PindahNaikJenjangController extends Controller
                 'message' => $result['message'],
                 'data' => [
                     'berhasil' => $result['data_baru'],
-                    'gagal' => $result['data_gagal'],
                 ],
             ], 200);
         } catch (\Exception $e) {
@@ -43,14 +42,13 @@ class PindahNaikJenjangController extends Controller
     {
         try {
             $validated = $request->validated();
-            $result = $this->pindah->naik($validated);
+            $result = $this->pindah->naik($validated);  
 
             return response()->json([
                 'success' => true,
                 'message' => $result['message'],
                 'data' => [
                     'berhasil' => $result['data_baru'],
-                    'gagal' => $result['data_gagal'],
                 ],
             ], 200);
         } catch (\Exception $e) {

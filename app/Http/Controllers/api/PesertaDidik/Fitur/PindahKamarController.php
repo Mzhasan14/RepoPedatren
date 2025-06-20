@@ -27,7 +27,6 @@ class PindahKamarController extends Controller
                 'message' => $result['message'],
                 'data' => [
                     'berhasil' => $result['data_baru'],
-                    'gagal' => $result['data_gagal'],
                 ],
             ], 200);
         } catch (\Exception $e) {
