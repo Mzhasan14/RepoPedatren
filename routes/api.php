@@ -203,6 +203,13 @@ Route::prefix('formulir')->middleware([
 
     Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
 
+    Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
+    Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
+    Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
+
+    Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
+    Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
+    
     // Khadam
     Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
     Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
@@ -418,8 +425,6 @@ Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'th
 
     // anak asuh
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
-    Route::put('/keluar-anakasuh/{id}', [AnakasuhController::class, 'keluarAnakasuh']);
-    Route::put('/pindah-anakasuh/{id}', [AnakasuhController::class, 'pindahAnakasuh']);
 
     // presensi
     Route::get('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);

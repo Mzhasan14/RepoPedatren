@@ -2,14 +2,15 @@
 
 namespace App\Services\Kewaliasuhan;
 
-use App\Models\Kewaliasuhan\Anak_asuh;
-use App\Models\Kewaliasuhan\Kewaliasuhan;
-use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
+use App\Models\Biodata;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Kewaliasuhan\Anak_asuh;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
 
 class AnakasuhService
 {
@@ -93,27 +94,29 @@ class AnakasuhService
 
     public function index(string $bioId): array
     {
-        $list = DB::table('anak_asuh as a')
-            ->join('santri as s', 'w.id_santri', '=', 's.id')
-            ->join('kewaliasuhan as ks', 'id_wali_asuh', '=', 'w.id')
+        $list = DB::table('anak_asuh as as')
+            ->join('santri as s', 'as.id_santri', '=', 's.id')
+            ->join('kewaliasuhan as k','k.id_anak_asuh','=','as.id')
             ->where('s.biodata_id', $bioId)
             ->select([
-                'a.id',
+                'as.id',
                 's.nis',
-                'ks.tanggal_mulai',
-                'ks.tanggal_berakhir',
-                'a.status',
+                'k.tanggal_mulai',
+                'k.tanggal_berakhir',
+                's.status as status_anak_asuh',
+                'k.status as status_kewaliasuhan',
             ])
             ->get();
 
         return [
             'status' => true,
-            'data' => $list->map(fn ($item) => [
+            'data' => $list->map(fn($item) => [
                 'id' => $item->id,
                 'nis' => $item->nis,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
-                'status' => $item->status,
+                'status_anak_asuh' => $item->status_anak_asuh,
+                'status_kewaliasuhan' => $item->status_kewaliasuhan,
             ]),
         ];
     }
@@ -218,6 +221,120 @@ class AnakasuhService
                 'data_gagal' => $santriIds,
             ];
         }
+    }
+
+    public function formStore(array $input, string $bioId): array
+    {
+        return DB::transaction(function () use ($input, $bioId) {
+            // 1. Validasi biodata
+            $biodata = Biodata::find($bioId);
+            if (! $biodata) {
+                return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
+            }
+
+            // 2. Cek apakah santri sudah ada
+            $santri = Santri::where('biodata_id', $bioId)->first();
+            if (! $santri) {
+                return ['status' => false, 'message' => 'Data santri tidak ditemukan.'];
+            }
+            $idSantri = $santri->id;
+
+            // 3. Cek apakah santri sudah menjadi anak asuh aktif
+            $anakAsuhId = Anak_Asuh::where('id_santri', $idSantri)->value('id');
+
+            $anakAsuhAktif = Kewaliasuhan::where('id_anak_asuh', $anakAsuhId)
+                ->where('status', true)
+                ->whereNull('tanggal_berakhir')
+                ->exists();
+
+
+            if ($anakAsuhAktif) {
+                return ['status' => false, 'message' => 'Santri ini sudah menjadi anak asuh aktif.'];
+            }
+
+            // 4. Ambil wali asuh
+            $waliAsuh = Wali_asuh::with('grupWaliAsuh')->find($input['id_wali_asuh'] ?? null);
+            if (! $waliAsuh || ! $waliAsuh->grupWaliAsuh) {
+                return ['status' => false, 'message' => 'Wali asuh atau grup tidak ditemukan.'];
+            }
+
+            // 5. Validasi jenis kelamin sesuai grup wali asuh
+            $jenisKelaminSantri = strtolower($biodata->jenis_kelamin);
+            $jenisKelaminGrup = strtolower($waliAsuh->grupWaliAsuh->jenis_kelamin);
+
+            if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
+                return ['status' => false, 'message' => 'Jenis kelamin santri tidak cocok dengan grup wali asuh.'];
+            }
+
+            // 6. Tambahkan ke tabel anak_asuh
+            $anakAsuh = Anak_Asuh::create([
+                'id_santri' => $santri->id,
+                'status' => true,
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 7. Tambahkan ke tabel kewaliasuhan
+            $kewaliasuhan = Kewaliasuhan::create([
+                'id_wali_asuh' => $waliAsuh->id,
+                'id_anak_asuh' => $anakAsuh->id,
+                'tanggal_mulai' => now(),
+                'status' => true,
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 8. Logging
+            activity('anak_asuh_create')
+                ->performedOn($anakAsuh)
+                ->withProperties([
+                    'biodata_id' => $bioId,
+                    'santri_id' => $santri->id,
+                    'wali_asuh_id' => $waliAsuh->id,
+                ])
+                ->log('Anak asuh baru ditambahkan dan dihubungkan ke wali asuh');
+
+            return [
+                'status' => true,
+                'message' => 'Anak asuh berhasil ditambahkan dan dikaitkan ke wali asuh.',
+                'data' => [
+                    'anak_asuh' => $anakAsuh,
+                    'kewaliasuhan' => $kewaliasuhan,
+                ],
+            ];
+        });
+    }
+
+
+
+    public function show(int $id): array
+    {
+        $as = Anak_asuh::with(['santri', 'kewaliasuhan'])->find($id);
+
+        if (! $as) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+        }
+
+        // Siapkan array untuk menampung semua data kewaliasuhan
+        $allKewaliasuhanData = [];
+
+        // Loop melalui setiap item di koleksi kewaliasuhan
+        foreach ($as->kewaliasuhan as $kewaliasuhan) {
+            $allKewaliasuhanData[] = [
+                'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
+                'tanggal_akhir' => $kewaliasuhan->tanggal_berakhir,
+                'status_kewaliasuhan' => $kewaliasuhan->status
+            ];
+        }
+
+        return ['status' => true, 'data' => [
+            'id' => $as->id,
+            'nis' => $as->santri->nis,
+            'kewaliasuhan_history' => $allKewaliasuhanData, // Mengganti dengan array koleksi
+            'status_anakasuh' => $as->status
+        ]];
     }
 
 

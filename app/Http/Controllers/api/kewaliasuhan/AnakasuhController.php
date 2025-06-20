@@ -20,6 +20,7 @@ use App\Http\Requests\Kewaliasuhan\anakAsuhRequest;
 use App\Services\Kewaliasuhan\DetailAnakasuhService;
 use App\Http\Requests\Kewaliasuhan\KeluarAnakasuhRequest;
 use App\Http\Requests\Kewaliasuhan\PindahAnakasuhRequest;
+use App\Http\Requests\Kewaliasuhan\tambahAnakasuhRequest;
 use App\Services\Kewaliasuhan\Filters\FilterAnakasuhService;
 
 class AnakasuhController extends Controller
@@ -84,6 +85,28 @@ class AnakasuhController extends Controller
         ], 200);
     }
 
+    public function index($bioId): JsonResponse
+    {
+        try {
+            $result = $this->anakasuhService->index($bioId);
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function store(anakAsuhRequest $request)
     {
         try {
@@ -107,6 +130,57 @@ class AnakasuhController extends Controller
         }
     }
 
+    public function formStore(tambahAnakasuhRequest $request, $bioId): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $result = $this->anakasuhService->formStore($validated, $bioId);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Data berhasil ditambah',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal tambah anakasuh: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function show($id): JsonResponse
+    {
+        try {
+            $result = $this->anakasuhService->show($id);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail anakasuh: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function keluarAnakasuh(KeluarAnakasuhRequest $request, $id): JsonResponse
     {
         try {
@@ -124,7 +198,7 @@ class AnakasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar khadam: ' . $e->getMessage());
+            Log::error('Gagal keluar anakasuh: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',

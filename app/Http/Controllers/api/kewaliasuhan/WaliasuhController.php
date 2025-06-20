@@ -95,7 +95,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data khadam: '.$e->getMessage());
+            Log::error('Gagal ambil data waliasuh: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -121,7 +121,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah khadam: '.$e->getMessage());
+            Log::error('Gagal tambah waliasuh: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -146,7 +146,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail khadam: '.$e->getMessage());
+            Log::error('Gagal ambil detail Waliasuh: '.$e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
