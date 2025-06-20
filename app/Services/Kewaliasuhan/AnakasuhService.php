@@ -132,17 +132,48 @@ class AnakasuhService
 
         $dataBaru = [];
         $dataGagal = [];
-        $relasiBaru = [];
 
         DB::beginTransaction();
         try {
+            // Ambil wali asuh dan jenis kelamin grup-nya
+            $waliAsuh = Wali_asuh::with('santri.biodata', 'grup')->find($waliAsuhId);
+            if (! $waliAsuh || ! $waliAsuh->grup) {
+                return [
+                    'success' => false,
+                    'message' => 'Wali asuh atau grup tidak ditemukan.',
+                    'data_baru' => [],
+                    'data_gagal' => $santriIds,
+                ];
+            }
+
+            $jenisKelaminGrup = strtolower($waliAsuh->grup->jenis_kelamin); // e.g. 'laki-laki'
+
             foreach ($santriIds as $idSantri) {
                 if (in_array($idSantri, $anakAsuhAktif)) {
                     $dataGagal[] = [
                         'santri_id' => $idSantri,
                         'message' => 'Santri sudah menjadi anak asuh aktif.',
                     ];
+                    continue;
+                }
 
+                // Ambil jenis kelamin santri anak asuh
+                $santri = Santri::with('biodata')->find($idSantri);
+                if (! $santri || ! $santri->biodata) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message' => 'Santri tidak ditemukan.',
+                    ];
+                    continue;
+                }
+
+                $jenisKelaminSantri = strtolower($santri->biodata->jenis_kelamin);
+
+                if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message' => 'Jenis kelamin anak asuh tidak cocok dengan grup wali asuh.',
+                    ];
                     continue;
                 }
 
@@ -182,12 +213,13 @@ class AnakasuhService
 
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
                 'data_baru' => [],
                 'data_gagal' => $santriIds,
             ];
         }
     }
+
 
     protected function assignToWaliAsuh($anakAsuhId, $waliAsuhId)
     {

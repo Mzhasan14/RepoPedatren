@@ -4,6 +4,7 @@ namespace App\Services\Kewaliasuhan;
 
 use App\Models\Biodata;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
+use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Illuminate\Http\Request;
@@ -148,7 +149,23 @@ class WaliasuhService
                 return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai anak asuh aktif.'];
             }
 
-            // 5. Buat data wali asuh
+            // 5. Cek apakah grup sesuai jenis kelamin santri
+            $grup = Grup_WaliAsuh::find($input['id_grup_wali_asuh'] ?? null);
+            if (! $grup) {
+                return ['status' => false, 'message' => 'Grup wali asuh tidak ditemukan.'];
+            }
+
+            $jenisKelaminSantri = $biodata->jenis_kelamin;
+            $jenisKelaminGrup = $grup->jenis_kelamin;
+
+            if (strtolower($jenisKelaminSantri) !== strtolower($jenisKelaminGrup)) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin santri tidak sesuai dengan grup wali asuh.'
+                ];
+            }
+
+            // 6. Buat data wali asuh
             $waliAsuh = Wali_asuh::create([
                 'id_santri' => $santri->id,
                 'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? null,
@@ -157,7 +174,7 @@ class WaliasuhService
                 'created_by' => Auth::id(),
             ]);
 
-            // 6. Activity log
+            // 7. Activity log
             activity('wali_asuh_create')
                 ->performedOn($waliAsuh)
                 ->withProperties([
