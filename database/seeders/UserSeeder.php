@@ -24,6 +24,7 @@ class UserSeeder extends Seeder
             'kamtib',
             'biktren',
             'pengasuh',
+            'waliasuh',
         ];
 
         foreach ($roles as $role) {
@@ -63,12 +64,12 @@ class UserSeeder extends Seeder
         $staff->assignRole('staff');
 
         // Santri
-        $santri = User::create([
-            'name' => 'Santri User',
-            'email' => 'santri@example.com',
+        $WaliAsuh = User::create([
+            'name' => 'Wali Asuh User',
+            'email' => 'waliasuh@example.com',
             'password' => Hash::make('password'),
         ]);
-        $santri->assignRole('santri');
+        $WaliAsuh->assignRole('waliasuh');
 
         $kamtib = User::create([
             'name' => 'Kamtib',
