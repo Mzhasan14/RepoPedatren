@@ -42,6 +42,7 @@ class PerizinanService
             ->leftjoin('users as biktren', 'pr.biktren_id', '=', 'biktren.id')
             ->leftjoin('users as pengasuh', 'pr.pengasuh_id', '=', 'pengasuh.id')
             ->leftjoin('users as kamtib', 'pr.kamtib_id', '=', 'kamtib.id')
+            ->leftjoin('users as pembuat', 'pr.created_by', '=', 'pembuat.id')
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
     }
@@ -98,7 +99,7 @@ class PerizinanService
                     ELSE pr.status
                 END AS status
             "),
-            'pr.created_by as pembuat',
+            'pembuat.name as pembuat',
             'pengasuh.name as nama_pengasuh',
             'biktren.name as nama_biktren',
             'kamtib.name as nama_kamtib',
