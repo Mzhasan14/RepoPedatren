@@ -168,7 +168,7 @@ class DetailAnakasuhService
             // Wali asuh yang mengasuh santri (anak asuh)
             ->leftJoin('wali_asuh as wa3', 'wa3.id', '=', 'kw_anak.id_wali_asuh')
             ->leftJoin('grup_wali_asuh as gw_wali_dari', 'gw_wali_dari.id', '=', 'wa3.id_grup_wali_asuh')
-
+            ->where('kw_anak.status',true)
             ->select([
                 // Ambil nama grup dari dua sisi
                 DB::raw("CASE 

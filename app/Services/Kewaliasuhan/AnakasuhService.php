@@ -100,6 +100,7 @@ class AnakasuhService
             ->where('s.biodata_id', $bioId)
             ->select([
                 'as.id',
+                's.id as santriId',
                 's.nis',
                 'k.tanggal_mulai',
                 'k.tanggal_berakhir',
@@ -112,6 +113,7 @@ class AnakasuhService
             'status' => true,
             'data' => $list->map(fn($item) => [
                 'id' => $item->id,
+                'id_santri' => $item->santriId,
                 'nis' => $item->nis,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
@@ -139,8 +141,8 @@ class AnakasuhService
         DB::beginTransaction();
         try {
             // Ambil wali asuh dan jenis kelamin grup-nya
-            $waliAsuh = Wali_asuh::with('santri.biodata', 'grup')->find($waliAsuhId);
-            if (! $waliAsuh || ! $waliAsuh->grup) {
+            $waliAsuh = Wali_asuh::with('santri.biodata', 'grupWaliAsuh')->find($waliAsuhId);
+            if (! $waliAsuh || ! $waliAsuh->grupWaliAsuh) {
                 return [
                     'success' => false,
                     'message' => 'Wali asuh atau grup tidak ditemukan.',
@@ -149,7 +151,7 @@ class AnakasuhService
                 ];
             }
 
-            $jenisKelaminGrup = strtolower($waliAsuh->grup->jenis_kelamin); // e.g. 'laki-laki'
+            $jenisKelaminGrup = strtolower($waliAsuh->grupWaliAsuh->jenis_kelamin); // e.g. 'laki-laki'
 
             foreach ($santriIds as $idSantri) {
                 if (in_array($idSantri, $anakAsuhAktif)) {
@@ -205,9 +207,19 @@ class AnakasuhService
 
             DB::commit();
 
+            // Pengecekan baru: Jika tidak ada satupun santri yang berhasil ditambahkan
+            if (empty($dataBaru) && !empty($dataGagal)) {
+                return [
+                    'success' => false, 
+                    'message' => 'Tidak ada santri yang berhasil ditambahkan. ' . count($dataGagal) . ' santri gagal ditambahkan.',
+                    'data_baru' => $dataBaru, 
+                    'data_gagal' => $dataGagal,
+                ];
+            }
+            // Jika ada yang berhasil (atau campuran berhasil dan gagal)
             return [
                 'success' => true,
-                'message' => 'Santri berhasil ditambahkan sebagai anak asuh dan dikaitkan dengan wali asuh.',
+                'message' => 'Santri berhasil ditambahkan sebagai anak asuh dan dikaitkan dengan wali asuh. ' . count($dataBaru) . ' berhasil, ' . count($dataGagal) . ' gagal ditambahkan.',
                 'data_baru' => $dataBaru,
                 'data_gagal' => $dataGagal,
             ];
@@ -216,9 +228,9 @@ class AnakasuhService
 
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(), // Lebih spesifik untuk kesalahan sistem
                 'data_baru' => [],
-                'data_gagal' => $santriIds,
+                'data_gagal' => $santriIds, // Atau lebih spesifik ke santri yang gagal karena error ini
             ];
         }
     }
