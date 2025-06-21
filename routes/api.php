@@ -146,9 +146,10 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
 });
 
 // Export
-Route::prefix('export')->middleware(['auth:sanctum', 'throttle:15,1'])->group(function () {
+Route::prefix('export')->middleware([ 'throttle:15,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
+    Route::get('/santri-nondomisili', [NonDomisiliController::class, 'exportExcel'])->name('nondomisili.export');
     Route::get('/pelajar', [PelajarController::class, 'exportExcel'])->name('pelajar.export');
     Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
     Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');

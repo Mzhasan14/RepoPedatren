@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\api\PesertaDidik;
 
-use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\Filters\FilterNonDomisiliService;
-use App\Services\PesertaDidik\NonDomisiliService;
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Services\PesertaDidik\NonDomisiliService;
+use App\Services\PesertaDidik\Filters\FilterNonDomisiliService;
 
 class NonDomisiliController extends Controller
 {
@@ -59,8 +61,63 @@ class NonDomisiliController extends Controller
         ]);
     }
 
-    // public function nonDomisiliExport(Request $request, FilterSantriService $filterService)
-    // {
-    //     return Excel::download(new Export($request, $filterService), 'santri_non_domisili.xlsx');
-    // }
+    public function exportExcel(Request $request)
+    {
+        // Daftar kolom default untuk export (export utama, bukan tampilan list)
+        $defaultExportFields = [
+            'nama',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'angkatan_pelajar',
+        ];
+
+        $columnOrder = [
+            'no_kk',           // di depan
+            'nik',
+            'niup',
+            'nama',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'angkatan_santri',
+            'status',
+            'no_induk',
+            'pendidikan',
+            'angkatan_pelajar',
+            'ibu_kandung',
+            'ayah_kandung',
+        ];
+
+        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung kolom default export + kolom optional (hindari duplikat)
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Gunakan query khusus untuk export (boleh mirip dengan list)
+        $query = $this->nonDomisili->getExportNonDomisiliQuery($fields, $request);
+        $query = $this->filter->nonDomisiliFilters($query, $request);
+
+        $query = $query->latest('b.created_at');
+
+        // Jika user centang "all", ambil semua, else gunakan limit/pagination
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        // Format data sesuai urutan dan field export
+        $addNumber = true; // Supaya kolom No selalu muncul
+        $formatted = $this->nonDomisili->formatDataExport($results, $fields, $addNumber);
+        $headings = $this->nonDomisili->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "santri_non_domisili_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
+    }
 }
