@@ -17,6 +17,7 @@ class tambahAnakasuhRequest extends FormRequest
     {
         return [
             'id_wali_asuh' => 'required|exists:wali_asuh,id',
+            'tanggal_mulai' => 'required|date'
         ];
     }
 

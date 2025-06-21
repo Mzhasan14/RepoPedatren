@@ -291,7 +291,7 @@ class AnakasuhService
             $kewaliasuhan = Kewaliasuhan::create([
                 'id_wali_asuh' => $waliAsuh->id,
                 'id_anak_asuh' => $anakAsuh->id,
-                'tanggal_mulai' => now(),
+                'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
                 'status' => true,
                 'created_by' => Auth::id(),
                 'created_at' => now(),
