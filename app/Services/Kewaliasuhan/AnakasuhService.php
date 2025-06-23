@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class AnakasuhService
 {
@@ -323,30 +324,66 @@ class AnakasuhService
 
     public function show(int $id): array
     {
-        $as = Anak_asuh::with(['santri', 'kewaliasuhan'])->find($id);
+        try {
+            // Ambil Anak_asuh beserta santri-nya
+            $as = Anak_asuh::with('santri')->findOrFail($id);
 
-        if (! $as) {
-            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
-        }
+            // Ambil SATU data kewaliasuhan yang aktif untuk anak asuh ini
+            // Jika ada banyak yang aktif, ini akan ambil yang pertama ditemukan
+            $kewaliasuhanAktif = $as->kewaliasuhan() // Mengakses relasi sebagai query builder
+                ->where('status', true) // Filter langsung pada tabel kewaliasuhan
+                ->orderBy('tanggal_mulai', 'desc') // Ambil yang paling baru (jika ada lebih dari satu aktif)
+                ->first(); // Ambil hanya satu hasil
 
-        // Siapkan array untuk menampung semua data kewaliasuhan
-        $allKewaliasuhanData = [];
+            // Jika tidak ada kewaliasuhan yang aktif ditemukan
+            if (!$kewaliasuhanAktif) {
+                return ['status' => false, 'message' => 'Data anak asuh ditemukan, tetapi tidak ada kewaliasuhan aktif.'];
+            }
 
-        // Loop melalui setiap item di koleksi kewaliasuhan
-        foreach ($as->kewaliasuhan as $kewaliasuhan) {
-            $allKewaliasuhanData[] = [
-                'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
-                'tanggal_akhir' => $kewaliasuhan->tanggal_berakhir,
-                'status_kewaliasuhan' => $kewaliasuhan->status
+            return [
+                'status' => true,
+                'data' => [
+                    'id' => $as->id,
+                    'nis' => $as->santri->nis,
+                    'tanggal_mulai' => $kewaliasuhanAktif->tanggal_mulai,
+                    'tanggal_berakhir' => $kewaliasuhanAktif->tanggal_berakhir,
+                    'status_kewaliasuhan' => $kewaliasuhanAktif->status, // Menambahkan status kewaliasuhan
+                    'status_anakasuh' => $as->status // Status dari anak asuh itu sendiri
+                ]
             ];
+        } catch (ModelNotFoundException $e) {
+            // Tangani jika Anak_asuh dengan ID tersebut tidak ditemukan
+            return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
+        } catch (\Exception $e) {
+            // Tangani error umum lainnya
+            return ['status' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()];
         }
+        // $as = Anak_asuh::with(['santri', 'kewaliasuhan'])->where('kewaliasuhan.status', true)->find($id);
 
-        return ['status' => true, 'data' => [
-            'id' => $as->id,
-            'nis' => $as->santri->nis,
-            'kewaliasuhan_history' => $allKewaliasuhanData, // Mengganti dengan array koleksi
-            'status_anakasuh' => $as->status
-        ]];
+        // if (! $as) {
+        //     return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+        // }
+
+        // // Siapkan array untuk menampung semua data kewaliasuhan
+        // $allKewaliasuhanData = [];
+
+        // // Loop melalui setiap item di koleksi kewaliasuhan
+        // foreach ($as->kewaliasuhan as $kewaliasuhan) {
+        //     $allKewaliasuhanData[] = [
+        //         'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
+        //         'tanggal_akhir' => $kewaliasuhan->tanggal_berakhir,
+        //         'status_kewaliasuhan' => $kewaliasuhan->status
+        //     ];
+        // }
+
+        // return ['status' => true, 'data' => [
+        //     'id' => $as->id,
+        //     'nis' => $as->santri->nis,
+        //     // 'kewaliasuhan' => $allKewaliasuhanData,
+        //     'tanggal_mulai' => $as->kewaliasuhan->tanggal_mulai,
+        //     'tanggal_berakhir'  => $as->kewaliasuhan->tanggal_berakhir,
+        //     'status_anakasuh' => $as->status
+        // ]];
     }
 
 
