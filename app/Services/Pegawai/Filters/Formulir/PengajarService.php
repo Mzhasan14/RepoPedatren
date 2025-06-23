@@ -56,6 +56,7 @@ class PengajarService
             'materi_id' => $m->id,
             'kode_mapel' => $m->kode_mapel,
             'nama_mapel' => $m->nama_mapel,
+            'status' => $m->status,
         ]);
 
         return [
@@ -353,7 +354,7 @@ class PengajarService
     public function showMapelById(int $id): array
     {
         try {
-            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel')
+            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel','status')
                 ->findOrFail($id);
 
             return [
