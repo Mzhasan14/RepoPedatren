@@ -55,6 +55,7 @@ use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\Api\Pegawai\MataPelajaranController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -242,8 +243,18 @@ Route::prefix('formulir')->middleware([
     Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
     Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
     Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
-    Route::put('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
+    Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
     Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
+    Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
+
+    Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
+    Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
+    Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
+    Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
+    Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
+    Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
+    Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);
+    Route::put('/{jadwalId}/jadwal-pelajaran/update', [PengajarController::class, 'updateJadwal']);
 
     Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
     Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
@@ -398,6 +409,21 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(fun
     Route::post('/pegawai', [PegawaiController::class, 'store']);
     Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
+
+        // Jam Pelajaran
+    Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
+    Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
+    Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
+    Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
+    Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
+
+    // Jadwal Pelajaran
+    Route::get('/jadwal-pelajaran', [MataPelajaranController::class,'getAllJadwal']);
+    Route::post('/jadwal-pelajaran', [MataPelajaranController::class,'storeJadwal']);
+    Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'showJadwal']);
+    Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'updateJadwal']);
+    Route::delete('/jadwal-pelajaran/batch-delete', [MataPelajaranController::class, 'batchDelete']);
+
 });
 
 Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {

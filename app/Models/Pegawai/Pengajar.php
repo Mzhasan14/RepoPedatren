@@ -78,4 +78,8 @@ class Pengajar extends Model
     {
         return $this->belongsTo(Pegawai::class);
     }
+    public function mataPelajaran()
+    {
+        return $this->hasMany(MataPelajaran::class, 'pengajar_id');
+    }
 }

@@ -2,19 +2,27 @@
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
+use App\Models\Pegawai\JadwalPelajaran;
+use App\Models\Pegawai\JamPelajaran;
+use App\Models\Pegawai\MataPelajaran;
 use App\Models\Pegawai\MateriAjar;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Lembaga;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PengajarService
 {
     public function index(string $bioId): array
     {
         $pengajar = Pengajar::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
-            ->with(['materiAjar', 'lembaga', 'golongan'])
+            ->with(['lembaga', 'golongan'])
             ->orderBy('tahun_masuk','desc')
             ->get()
             ->map(fn ($p) => [
@@ -25,9 +33,6 @@ class PengajarService
                 'tanggal_masuk' => $p->tahun_masuk,
                 'tanggal_keluar' => $p->tahun_akhir,
                 'status' => $p->status_aktif,
-                'nama_materi' => $p->materiAjar->pluck('nama_materi')->join(', '),
-                'jumlah_menit' => $p->materiAjar->sum('jumlah_menit'),
-                'status_aktif' => $p->status_aktif,
             ]);
 
         return [
@@ -38,8 +43,7 @@ class PengajarService
 
     public function show($id): array
     {
-        $pengajar = Pengajar::with(['materiAjar'])
-            ->find($id);
+        $pengajar = Pengajar::with(['mataPelajaran'])->find($id);
 
         if (! $pengajar) {
             return [
@@ -48,13 +52,10 @@ class PengajarService
             ];
         }
 
-        $materi = $pengajar->materiAjar->map(fn ($m) => [
-            'id' => $m->id,
-            'nama_materi' => $m->nama_materi,
-            'jumlah_menit' => $m->jumlah_menit,
-            'tahun_masuk' => $m->tahun_masuk,
-            'tahun_akhir' => $m->tahun_akhir,
-            'status_aktif' => $m->status_aktif,
+        $materi = $pengajar->mataPelajaran->map(fn ($m) => [
+            'materi_id' => $m->id,
+            'kode_mapel' => $m->kode_mapel,
+            'nama_mapel' => $m->nama_mapel,
         ]);
 
         return [
@@ -104,9 +105,302 @@ class PengajarService
         });
     }
 
+    // public function store(array $data, string $bioId): array
+    // {
+    //     // 1. Periksa apakah Pegawai sudah memiliki pengajar aktif
+    //     $exist = Pengajar::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
+    //         ->where('status_aktif', 'aktif')
+    //         ->first();
+
+    //     if ($exist) {
+    //         return [
+    //             'status' => false,
+    //             'message' => 'Pegawai masih memiliki Pengajar aktif',
+    //         ];
+    //     }
+
+    //     // 2. Cari Pegawai berdasarkan biodata_id
+    //     $pegawai = Pegawai::where('biodata_id', $bioId)
+    //         ->latest()
+    //         ->first();
+
+    //     if (! $pegawai) {
+    //         return [
+    //             'status' => false,
+    //             'message' => 'Pegawai tidak ditemukan untuk biodata ini',
+    //         ];
+    //     }
+
+    //     // 3. Buat Pengajar Baru dalam transaction
+    //     return DB::transaction(function () use ($data, $pegawai) {
+    //         $pengajar = Pengajar::create([
+    //             'pegawai_id' => $pegawai->id,
+    //             'golongan_id' => $data['golongan_id'],
+    //             'lembaga_id' => $data['lembaga_id'],
+    //             'jabatan' => $data['jabatan'],
+    //             'tahun_masuk' => $data['tahun_masuk'] ?? now(),
+    //             'status_aktif' => 'aktif',
+    //             'created_by' => Auth::id(),
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         // 4. Tambahkan materi ajar jika ada
+    //         if (! empty($data['nama_materi'])) {
+    //             if (is_array($data['nama_materi'])) {
+    //                 foreach ($data['nama_materi'] as $index => $nama) {
+    //                     MateriAjar::create([
+    //                         'pengajar_id' => $pengajar->id,
+    //                         'nama_materi' => $nama,
+    //                         'jumlah_menit' => $data['jumlah_menit'][$index] ?? 0,
+    //                         'tahun_masuk' => now(),
+    //                         'status_aktif' => 'aktif',
+    //                         'created_by' => Auth::id(),
+    //                         'created_at' => now(),
+    //                         'updated_at' => now(),
+    //                     ]);
+    //                 }
+    //             } else {
+    //                 MateriAjar::create([
+    //                     'pengajar_id' => $pengajar->id,
+    //                     'nama_materi' => $data['nama_materi'],
+    //                     'jumlah_menit' => $data['jumlah_menit'] ?? 0,
+    //                     'tahun_masuk' => now(),
+    //                     'status_aktif' => 'aktif',
+    //                     'created_by' => Auth::id(),
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                 ]);
+    //             }
+    //         }
+
+    //         // 5. Return response
+    //         return [
+    //             'status' => true,
+    //             'data' => $pengajar->fresh()->load('materiAjar'),
+    //         ];
+    //     });
+    // }
+
+    // public function pindahPengajar(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $old = Pengajar::with('materiAjar')->find($id);
+    //         if (! $old) {
+    //             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+    //         }
+
+    //         if ($old->tahun_akhir) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
+    //             ];
+    //         }
+
+    //         $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
+    //         $hariIni = Carbon::now();
+
+    //         if ($tahunMasukBaru->lt($hariIni)) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
+    //             ];
+    //         }
+
+    //         // Nonaktifkan semua materi ajar lama
+    //         foreach ($old->materiAjar as $materi) {
+    //             $materi->update([
+    //                 'status_aktif' => 'tidak aktif',
+    //                 'tahun_akhir' => $hariIni,
+    //                 'updated_by' => Auth::id(),
+    //             ]);
+    //         }
+
+    //         // Tutup pengajar lama
+    //         $old->update([
+    //             'status_aktif' => 'tidak aktif',
+    //             'tahun_akhir' => $hariIni,
+    //             'updated_by' => Auth::id(),
+    //         ]);
+
+    //         // Buat pengajar baru
+    //         $new = Pengajar::create([
+    //             'pegawai_id' => $old->pegawai_id,
+    //             'golongan_id' => $input['golongan_id'],
+    //             'lembaga_id' => $input['lembaga_id'],
+    //             'jabatan' => $input['jabatan'] ?? $old->jabatan,
+    //             'tahun_masuk' => $tahunMasukBaru,
+    //             'status_aktif' => 'aktif',
+    //             'created_by' => Auth::id(),
+    //         ]);
+
+    //         // Buat materi ajar baru dari input
+    //         if (! empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
+    //             foreach ($input['materi_ajar'] as $materiBaru) {
+    //                 $new->materiAjar()->create([
+    //                     'nama_materi' => $materiBaru['nama_materi'],
+    //                     'tahun_masuk' => $tahunMasukBaru,
+    //                     'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
+    //                     'status_aktif' => 'aktif',
+    //                     'created_by' => Auth::id(),
+    //                 ]);
+    //             }
+    //         }
+
+    //         return [
+    //             'status' => true,
+    //             'data' => $new->load('materiAjar'),
+    //         ];
+    //     });
+    // }
+
+    // public function keluarPengajar(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $pengajar = Pengajar::find($id);
+    //         if (! $pengajar) {
+    //             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+    //         }
+
+    //         if ($pengajar->tahun_akhir) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data pengajar sudah ditandai selesai/nonaktif.',
+    //             ];
+    //         }
+
+    //         $tahunAkhir = Carbon::parse($input['tahun_akhir'] ?? '');
+    //         if ($tahunAkhir->lt(Carbon::parse($pengajar->tahun_masuk))) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tahun akhir tidak boleh sebelum tahun masuk.',
+    //             ];
+    //         }
+
+    //         // Update status pengajar menjadi tidak aktif dan set tahun_akhir
+    //         $pengajar->update([
+    //             'status_aktif' => 'tidak aktif',
+    //             'tahun_akhir' => $tahunAkhir,
+    //             'updated_by' => Auth::id(),
+    //         ]);
+
+    //         // Nonaktifkan semua materi ajar terkait pengajar ini
+    //         foreach ($pengajar->materiAjar as $materi) {
+    //             $materi->update([
+    //                 'status_aktif' => 'tidak aktif',
+    //                 'tahun_akhir' => $tahunAkhir,
+    //                 'updated_by' => Auth::id(),
+    //             ]);
+    //         }
+
+    //         return [
+    //             'status' => true,
+    //             'data' => $pengajar->load('materiAjar'),
+    //         ];
+    //     });
+    // }
+
+    // public function nonaktifkan(string $pengajarId, string $materiId): array
+    // {
+    //     $materi = MateriAjar::where('pengajar_id', $pengajarId)
+    //         ->where('id', $materiId)
+    //         ->first();
+
+    //     if (! $materi) {
+    //         return ['status' => false, 'message' => 'Materi tidak ditemukan.'];
+    //     }
+
+    //     if (! is_null($materi->tahun_akhir) && $materi->status_aktif === 'tidak aktif') {
+    //         return ['status' => false, 'message' => 'Materi sudah nonaktif dan tidak bisa diubah.'];
+    //     }
+
+    //     $materi->update([
+    //         'tahun_akhir' => now(),
+    //         'status_aktif' => 'tidak aktif',
+    //         'updated_by' => Auth::id(),
+    //     ]);
+
+    //     return ['status' => true, 'message' => 'Materi berhasil dinonaktifkan.', 'data' => $materi];
+    // }
+
+    // public function tambahMateri(string $pengajarId, array $input): array
+    // {
+    //     $pengajar = Pengajar::find($pengajarId);
+
+    //     if (! $pengajar) {
+    //         return ['status' => false, 'message' => 'Pengajar tidak ditemukan.'];
+    //     }
+
+    //     if (empty($input['materi_ajar']) || ! is_array($input['materi_ajar'])) {
+    //         return ['status' => false, 'message' => 'Data materi ajar tidak valid.'];
+    //     }
+
+    //     $tahunMasuk = $input['tahun_masuk'] ?? now();
+
+    //     foreach ($input['materi_ajar'] as $materiBaru) {
+    //         $pengajar->materiAjar()->create([
+    //             'nama_materi' => $materiBaru['nama_materi'],
+    //             'tahun_masuk' => $tahunMasuk,
+    //             'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
+    //             'status_aktif' => 'aktif',
+    //             'created_by' => Auth::id(),
+    //         ]);
+    //     }
+
+    //     return ['status' => true, 'message' => 'Materi ajar berhasil ditambahkan.', 'data' => $pengajar->load('materiAjar')];
+    // }
+    
+    public function showMapelById(int $id): array
+    {
+        try {
+            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel')
+                ->findOrFail($id);
+
+            return [
+                'status' => true,
+                'data' => $materi,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil data materi: ' . $e->getMessage());
+
+            return [
+                'status' => false,
+                'message' => 'Mata pelajaran tidak ditemukan.',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+    public function updateMateri(int $materiId, array $input): array
+    {
+        try {
+            $materi = MataPelajaran::findOrFail($materiId);
+
+            $materi->update([
+                'kode_mapel'  => $input['kode_mapel'], // tetap, tidak bisa diubah
+                'nama_mapel'  => $input['nama_mapel'],
+                'updated_by'  => Auth::id(),
+                'updated_at'  => now(),
+            ]);
+
+            return [
+                'status' => true,
+                'message' => 'Mata pelajaran berhasil diperbarui.',
+                'data' => $materi->fresh(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Gagal update mata pelajaran: ' . $e->getMessage());
+
+            return [
+                'status' => false,
+                'message' => 'Gagal memperbarui mata pelajaran.',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
     public function store(array $data, string $bioId): array
     {
-        // 1. Periksa apakah Pegawai sudah memiliki pengajar aktif
+        // Cek apakah sudah ada pengajar aktif untuk biodata ini
         $exist = Pengajar::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
@@ -118,10 +412,8 @@ class PengajarService
             ];
         }
 
-        // 2. Cari Pegawai berdasarkan biodata_id
-        $pegawai = Pegawai::where('biodata_id', $bioId)
-            ->latest()
-            ->first();
+        // Cari pegawai berdasarkan biodata
+        $pegawai = Pegawai::where('biodata_id', $bioId)->latest()->first();
 
         if (! $pegawai) {
             return [
@@ -130,53 +422,36 @@ class PengajarService
             ];
         }
 
-        // 3. Buat Pengajar Baru dalam transaction
         return DB::transaction(function () use ($data, $pegawai) {
+            // Simpan data pengajar
             $pengajar = Pengajar::create([
-                'pegawai_id' => $pegawai->id,
-                'golongan_id' => $data['golongan_id'],
-                'lembaga_id' => $data['lembaga_id'],
-                'jabatan' => $data['jabatan'],
-                'tahun_masuk' => $data['tahun_masuk'] ?? now(),
+                'pegawai_id'   => $pegawai->id,
+                'golongan_id'  => $data['golongan_id'],
+                'lembaga_id'   => $data['lembaga_id'],
+                'jabatan'      => $data['jabatan'],
+                'tahun_masuk'  => $data['tahun_masuk'] ?? now(),
                 'status_aktif' => 'aktif',
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_by'   => Auth::id(),
+                'created_at'   => now(),
+                'updated_at'   => now(),
             ]);
 
-            // 4. Tambahkan materi ajar jika ada
-            if (! empty($data['nama_materi'])) {
-                if (is_array($data['nama_materi'])) {
-                    foreach ($data['nama_materi'] as $index => $nama) {
-                        MateriAjar::create([
-                            'pengajar_id' => $pengajar->id,
-                            'nama_materi' => $nama,
-                            'jumlah_menit' => $data['jumlah_menit'][$index] ?? 0,
-                            'tahun_masuk' => now(),
-                            'status_aktif' => 'aktif',
-                            'created_by' => Auth::id(),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                } else {
-                    MateriAjar::create([
-                        'pengajar_id' => $pengajar->id,
-                        'nama_materi' => $data['nama_materi'],
-                        'jumlah_menit' => $data['jumlah_menit'] ?? 0,
-                        'tahun_masuk' => now(),
-                        'status_aktif' => 'aktif',
-                        'created_by' => Auth::id(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+            // Iterasi mata pelajaran (tanpa menyimpan jadwal)
+            foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
+                MataPelajaran::create([
+                    'kode_mapel'   => $mapel['kode_mapel'],
+                    'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
+                    'pengajar_id'  => $pengajar->id,
+                    'status'       => true,
+                    'created_by'   => Auth::id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
             }
 
-            // 5. Return response
             return [
                 'status' => true,
-                'data' => $pengajar->fresh()->load('materiAjar'),
+                'data' => $pengajar->fresh()->load('mataPelajaran'),
             ];
         });
     }
@@ -184,7 +459,7 @@ class PengajarService
     public function pindahPengajar(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $old = Pengajar::with('materiAjar')->find($id);
+            $old = Pengajar::with('mataPelajaran')->find($id);
             if (! $old) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
@@ -206,49 +481,47 @@ class PengajarService
                 ];
             }
 
-            // Nonaktifkan semua materi ajar lama
-            foreach ($old->materiAjar as $materi) {
-                $materi->update([
-                    'status_aktif' => 'tidak aktif',
-                    'tahun_akhir' => $hariIni,
-                    'updated_by' => Auth::id(),
-                ]);
+            // Hapus jadwal & mapel lama
+            foreach ($old->mataPelajaran as $mapel) {
+                $mapel->jadwalPelajaran()->delete();
+                $mapel->delete();
             }
 
-            // Tutup pengajar lama
+            // Nonaktifkan data lama
             $old->update([
                 'status_aktif' => 'tidak aktif',
-                'tahun_akhir' => $hariIni,
-                'updated_by' => Auth::id(),
+                'tahun_akhir'  => $hariIni,
+                'updated_by'   => Auth::id(),
             ]);
 
-            // Buat pengajar baru
+            // Buat data pengajar baru
             $new = Pengajar::create([
-                'pegawai_id' => $old->pegawai_id,
-                'golongan_id' => $input['golongan_id'],
-                'lembaga_id' => $input['lembaga_id'],
-                'jabatan' => $input['jabatan'] ?? $old->jabatan,
-                'tahun_masuk' => $tahunMasukBaru,
+                'pegawai_id'   => $old->pegawai_id,
+                'golongan_id'  => $input['golongan_id'],
+                'lembaga_id'   => $input['lembaga_id'],
+                'jabatan'      => $input['jabatan'] ?? $old->jabatan,
+                'tahun_masuk'  => $tahunMasukBaru,
                 'status_aktif' => 'aktif',
-                'created_by' => Auth::id(),
+                'created_by'   => Auth::id(),
             ]);
 
-            // Buat materi ajar baru dari input
-            if (! empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
-                foreach ($input['materi_ajar'] as $materiBaru) {
-                    $new->materiAjar()->create([
-                        'nama_materi' => $materiBaru['nama_materi'],
-                        'tahun_masuk' => $tahunMasukBaru,
-                        'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
-                        'status_aktif' => 'aktif',
-                        'created_by' => Auth::id(),
-                    ]);
-                }
+            // Tambahkan mata pelajaran ke pengajar baru
+            foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
+                MataPelajaran::create([
+                    'kode_mapel'   => $mapel['kode_mapel'],
+                    'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
+                    'pengajar_id'  => $new->id,
+                    'status'       => true,
+                    'created_by'   => Auth::id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
             }
 
             return [
                 'status' => true,
-                'data' => $new->load('materiAjar'),
+                'message' => 'Pengajar berhasil dipindah dan mata pelajaran ditambahkan.',
+                'data'   => $new->load('mataPelajaran'),
             ];
         });
     }
@@ -256,7 +529,8 @@ class PengajarService
     public function keluarPengajar(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $pengajar = Pengajar::find($id);
+            $pengajar = Pengajar::with('mataPelajaran.jadwalPelajaran')->find($id);
+
             if (! $pengajar) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
@@ -269,6 +543,7 @@ class PengajarService
             }
 
             $tahunAkhir = Carbon::parse($input['tahun_akhir'] ?? '');
+
             if ($tahunAkhir->lt(Carbon::parse($pengajar->tahun_masuk))) {
                 return [
                     'status' => false,
@@ -276,76 +551,109 @@ class PengajarService
                 ];
             }
 
-            // Update status pengajar menjadi tidak aktif dan set tahun_akhir
+            // Nonaktifkan pengajar
             $pengajar->update([
                 'status_aktif' => 'tidak aktif',
                 'tahun_akhir' => $tahunAkhir,
                 'updated_by' => Auth::id(),
             ]);
 
-            // Nonaktifkan semua materi ajar terkait pengajar ini
-            foreach ($pengajar->materiAjar as $materi) {
-                $materi->update([
-                    'status_aktif' => 'tidak aktif',
-                    'tahun_akhir' => $tahunAkhir,
-                    'updated_by' => Auth::id(),
-                ]);
+            // Hapus seluruh mata pelajaran dan jadwal terkait
+            foreach ($pengajar->mataPelajaran as $mapel) {
+                $mapel->jadwalPelajaran()->delete(); // Hapus jadwal terlebih dahulu
+                $mapel->delete(); // Lalu hapus mata pelajaran
             }
 
             return [
                 'status' => true,
-                'data' => $pengajar->load('materiAjar'),
+                'data' => $pengajar->load('mataPelajaran.jadwalPelajaran'),
             ];
         });
     }
-
-    public function nonaktifkan(string $pengajarId, string $materiId): array
+    public function nonaktifkanMataPelajaran(string $pengajarId, string $mataPelajaranId): array
     {
-        $materi = MateriAjar::where('pengajar_id', $pengajarId)
-            ->where('id', $materiId)
+        $mapel = MataPelajaran::with('jadwalPelajaran')
+            ->where('pengajar_id', $pengajarId)
+            ->where('id', $mataPelajaranId)
             ->first();
 
-        if (! $materi) {
-            return ['status' => false, 'message' => 'Materi tidak ditemukan.'];
+        if (! $mapel) {
+            return ['status' => false, 'message' => 'Mata pelajaran tidak ditemukan.'];
         }
 
-        if (! is_null($materi->tahun_akhir) && $materi->status_aktif === 'tidak aktif') {
-            return ['status' => false, 'message' => 'Materi sudah nonaktif dan tidak bisa diubah.'];
+        DB::beginTransaction();
+        try {
+            // Hapus semua jadwal terkait
+            $mapel->jadwalPelajaran()->delete();
+
+            // Hapus mata pelajaran
+            $mapel->delete();
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'message' => 'Mata pelajaran dan jadwalnya berhasil dihapus.',
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return [
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menghapus mata pelajaran.',
+                'error' => $e->getMessage(),
+            ];
         }
-
-        $materi->update([
-            'tahun_akhir' => now(),
-            'status_aktif' => 'tidak aktif',
-            'updated_by' => Auth::id(),
-        ]);
-
-        return ['status' => true, 'message' => 'Materi berhasil dinonaktifkan.', 'data' => $materi];
     }
 
-    public function tambahMateri(string $pengajarId, array $input): array
+    public function tambahMataPelajaran(string $pengajarId, array $input): array
     {
         $pengajar = Pengajar::find($pengajarId);
 
         if (! $pengajar) {
-            return ['status' => false, 'message' => 'Pengajar tidak ditemukan.'];
+            return [
+                'status' => false,
+                'message' => 'Pengajar tidak ditemukan.'
+            ];
         }
 
-        if (empty($input['materi_ajar']) || ! is_array($input['materi_ajar'])) {
-            return ['status' => false, 'message' => 'Data materi ajar tidak valid.'];
+        if (empty($input['mata_pelajaran']) || ! is_array($input['mata_pelajaran'])) {
+            return [
+                'status' => false,
+                'message' => 'Data mata pelajaran tidak valid.'
+            ];
         }
 
-        $tahunMasuk = $input['tahun_masuk'] ?? now();
+        try {
+            DB::beginTransaction();
 
-        foreach ($input['materi_ajar'] as $materiBaru) {
-            $pengajar->materiAjar()->create([
-                'nama_materi' => $materiBaru['nama_materi'],
-                'tahun_masuk' => $tahunMasuk,
-                'jumlah_menit' => $materiBaru['jumlah_menit'] ?? 0,
-                'status_aktif' => 'aktif',
-                'created_by' => Auth::id(),
-            ]);
+            foreach ($input['mata_pelajaran'] as $mapelInput) {
+                MataPelajaran::create([
+                    'kode_mapel'   => $mapelInput['kode_mapel'],
+                    'nama_mapel'   => $mapelInput['nama_mapel'],
+                    'pengajar_id'  => $pengajar->id,
+                    'status'       => true,
+                    'created_by'   => Auth::id(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return [
+                'status'  => true,
+                'message' => 'Mata pelajaran berhasil ditambahkan.',
+                'data'    => $pengajar->load('mataPelajaran'),
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return [
+                'status'  => false,
+                'message' => 'Terjadi kesalahan saat menambahkan mata pelajaran.',
+                'error'   => $e->getMessage(),
+            ];
         }
-
-        return ['status' => true, 'message' => 'Materi ajar berhasil ditambahkan.', 'data' => $pengajar->load('materiAjar')];
     }
 }

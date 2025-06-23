@@ -69,18 +69,18 @@ class CreatePegawaiRequest extends FormRequest
             'jabatan_karyawan' => 'nullable|required_if:karyawan,1|string|max:100',
             'keterangan_jabatan_karyawan' => 'nullable|required_if:karyawan,1|string|max:255',
             'tanggal_mulai_karyawan' => 'nullable|required_if:karyawan,1|date',
-
+  
             // ===== Pengajar =====
-            'pengajar' => 'nullable|in:1,0',
-            'golongan_id_pengajar' => 'nullable|required_if:pengajar,1|exists:golongan,id',
-            'lembaga_id_pengajar' => 'nullable|required_if:pengajar,1|exists:lembaga,id',
-            'jabatan_pengajar' => 'nullable|required_if:pengajar,1|string|max:100',
-            'tanggal_mulai_pengajar' => 'nullable|required_if:pengajar,1|date',
+            'pengajar'                 => 'nullable|in:1,0',
+            'golongan_id_pengajar'    => 'nullable|required_if:pengajar,1|nullable|exists:golongan,id',
+            'lembaga_id_pengajar'     => 'nullable|required_if:pengajar,1|nullable|exists:lembaga,id',
+            'jabatan_pengajar'        => 'nullable|required_if:pengajar,1|nullable|string|max:100',
+            'tanggal_mulai_pengajar'  => 'nullable|required_if:pengajar,1|nullable|date',
 
-            // ===== Materi Ajar =====
-            'materi_ajar.*.nama_materi' => 'nullable|string|max:255',
-            'materi_ajar.*.jumlah_menit' => 'nullable|integer|min:0',
-            'tanggal_mulai_materi' => 'nullable|date',
+            // ===== Mata Pelajaran =====
+            'mata_pelajaran' => 'nullable|array',
+            'mata_pelajaran.*.kode_mapel' => 'nullable|required_with:mata_pelajaran|nullable|string|max:50',
+            'mata_pelajaran.*.nama_mapel' => 'nullable|required_with:mata_pelajaran|nullable|string|max:100',
 
             // ===== Pengurus =====
             'pengurus' => 'nullable|in:1,0',
@@ -168,22 +168,15 @@ class CreatePegawaiRequest extends FormRequest
             'tanggal_mulai_karyawan.date' => 'Format tanggal mulai karyawan tidak valid.',
 
             // Pengajar
-            'golongan_id_pengajar.required_if' => 'Golongan pengajar wajib diisi saat pengajar dipilih.',
-            'golongan_id_pengajar.exists' => 'Golongan pengajar tidak valid.',
-            'lembaga_id_pengajar.required_if' => 'Lembaga pengajar wajib diisi saat pengajar dipilih.',
-            'lembaga_id_pengajar.exists' => 'Lembaga pengajar tidak valid.',
-            'jabatan_pengajar.required_if' => 'Jabatan pengajar wajib diisi saat pengajar dipilih.',
-            'jabatan_pengajar.max' => 'Jabatan pengajar maksimal 100 karakter.',
-            'tanggal_mulai_pengajar.required_if' => 'Tanggal mulai pengajar wajib diisi saat pengajar dipilih.',
-            'tanggal_mulai_pengajar.date' => 'Format tanggal mulai pengajar tidak valid.',
+            'golongan_id_pengajar.required_if'       => 'Golongan pengajar wajib diisi jika status pengajar aktif.',
+            'lembaga_id_pengajar.required_if'        => 'Lembaga pengajar wajib diisi jika status pengajar aktif.',
+            'jabatan_pengajar.required_if'           => 'Jabatan pengajar wajib diisi jika status pengajar aktif.',
+            'tanggal_mulai_pengajar.required_if'     => 'Tanggal mulai pengajar wajib diisi jika status pengajar aktif.',
 
-            // Materi Ajar
-            'materi_ajar.*.nama_materi.string' => 'Nama materi harus berupa teks.',
-            'materi_ajar.*.nama_materi.max' => 'Nama materi maksimal 255 karakter.',
-            'materi_ajar.*.jumlah_menit.integer' => 'Jumlah menit harus berupa angka.',
-            'materi_ajar.*.jumlah_menit.min' => 'Jumlah menit minimal 0.',
-            'tanggal_mulai_materi.date' => 'Format tanggal mulai materi tidak valid.',
-
+            // Mata Pelajaran
+            'mata_pelajaran.required'                => 'Data mata pelajaran wajib diisi.',
+            'mata_pelajaran.*.kode_mapel.required'   => 'Kode mapel tidak boleh kosong.',
+            'mata_pelajaran.*.nama_mapel.required'   => 'Nama mapel tidak boleh kosong.',
             // Pengurus
             'golongan_jabatan_id_pengurus.required_if' => 'Golongan jabatan pengurus wajib diisi saat pengurus dipilih.',
             'golongan_jabatan_id_pengurus.exists' => 'Golongan jabatan pengurus tidak valid.',

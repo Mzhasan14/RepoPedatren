@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests\Pegawai;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class TambahMateriAjarRequest extends FormRequest
+class UpdateMapelRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,23 +24,19 @@ class TambahMateriAjarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'mata_pelajaran' => 'required|array|min:1',
-            'mata_pelajaran.*.kode_mapel' => 'required|string|max:20',
-            'mata_pelajaran.*.nama_mapel' => 'required|string|max:100',
+            'kode_mapel' => 'required|string|max:20|unique:mata_pelajaran,kode_mapel,' . $this->route('id'),
+            'nama_mapel' => 'required|string|max:255',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'mata_pelajaran.required' => 'Daftar mata pelajaran wajib diisi.',
-            'mata_pelajaran.array' => 'Format mata pelajaran tidak valid.',
-
-            'mata_pelajaran.*.kode_mapel.required' => 'Kode mata pelajaran wajib diisi.',
-            'mata_pelajaran.*.kode_mapel.max' => 'Kode mata pelajaran maksimal 20 karakter.',
-
-            'mata_pelajaran.*.nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
-            'mata_pelajaran.*.nama_mapel.max' => 'Nama mata pelajaran maksimal 100 karakter.',
+            'kode_mapel.required' => 'Kode mapel wajib diisi.',
+            'kode_mapel.max' => 'Kode mapel maksimal 20 karakter.',
+            'kode_mapel.unique' => 'Kode mapel sudah digunakan.',
+            'nama_mapel.required' => 'Nama mapel wajib diisi.',
+            'nama_mapel.max' => 'Nama mapel maksimal 255 karakter.',
         ];
     }
     protected function failedValidation(Validator $validator)

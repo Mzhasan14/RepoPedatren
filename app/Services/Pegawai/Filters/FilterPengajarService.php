@@ -20,7 +20,7 @@ class FilterPengajarService
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $query = $this->applySmartcardFilter($query, $request);
-        $query = $this->applyMateriAjarFilter($query, $request);
+        $query = $this->applyMapelFilter($query, $request);
         $query = $this->applyMasaKerjaFilter($query, $request);
         $query = $this->applyJabatanPengajarFilter($query, $request);
 
@@ -180,25 +180,25 @@ class FilterPengajarService
         return $query;
     }
 
-    private function applyMateriAjarFilter(Builder $query, Request $request): Builder
+    private function applyMapelFilter(Builder $query, Request $request): Builder
     {
         if ($request->has('materi_ajar')) {
             $value = $request->materi_ajar;
 
             if ($value === '0') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 0');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) = 0');
             } elseif ($value === '1') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 1');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) = 1');
             } elseif ($value === '>1') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 1');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) > 1');
             } elseif ($value === '2') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 2');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) = 2');
             } elseif ($value === '>2') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 2');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) > 2');
             } elseif ($value === '3') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) = 3');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) = 3');
             } elseif ($value === '>3') {
-                $query->havingRaw('COUNT(DISTINCT materi_ajar.id) > 3');
+                $query->havingRaw('COUNT(DISTINCT mata_pelajaran.id) > 3');
             }
         }
 

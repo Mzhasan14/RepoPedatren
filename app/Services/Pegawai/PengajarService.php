@@ -39,67 +39,70 @@ class PengajarService
             ->leftJoin('kategori_golongan as kg', 'g.kategori_golongan_id', '=', 'kg.id')
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoin('materi_ajar', function ($join) {
-                $join->on('materi_ajar.pengajar_id', '=', 'pengajar.id')
-                    ->where('materi_ajar.status_aktif', 'aktif')
-                    ->whereNull('materi_ajar.tahun_akhir');
+
+            // Mata pelajaran dan jadwal
+            ->leftJoin('mata_pelajaran', function ($join) {
+                $join->on('mata_pelajaran.pengajar_id', '=', 'pengajar.id')
+                    ->where('mata_pelajaran.status', true);
             })
+            ->leftJoin('jadwal_pelajaran', 'mata_pelajaran.id', '=', 'jadwal_pelajaran.mata_pelajaran_id')
+            ->leftJoin('jam_pelajaran', 'jadwal_pelajaran.jam_pelajaran_id', '=', 'jam_pelajaran.id')
+
             ->whereNull('pengajar.tahun_akhir')
             ->where('pengajar.status_aktif', 'aktif');
     }
     public function getAllPengajar(Request $request)
     {
-        try {
-            $query = $this->basePengajarQuery($request);
+        $query = $this->basePengajarQuery($request);
 
-            $fields = [
-                'pegawai.biodata_id as biodata_uuid',
-                'b.nama',
-                'wp.niup',
-                DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
-                DB::raw("GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', ') AS daftar_materi"),
-                DB::raw("CONCAT(
-                    FLOOR(SUM(DISTINCT materi_ajar.jumlah_menit) / 60), ' jam ',
-                    MOD(SUM(DISTINCT materi_ajar.jumlah_menit), 60), ' menit'
-                ) AS total_waktu_materi"),
-                DB::raw('COUNT(DISTINCT materi_ajar.nama_materi) AS total_materi'),
-                DB::raw("CASE 
-                    WHEN TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())) = 0 
-                    THEN CONCAT('Belum setahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'), ' sampai ', IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini'))
-                    ELSE CONCAT(TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())), ' Tahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'), ' sampai ', IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini'))
-                END AS masa_kerja"),
-                'g.nama_golongan',
-                'b.nama_pendidikan_terakhir',
-                DB::raw("DATE_FORMAT(pengajar.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
-                DB::raw("DATE_FORMAT(pengajar.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
-                'l.nama_lembaga',
-                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
-            ];
+        $fields = [
+            'pegawai.biodata_id as biodata_uuid',
+            'b.nama',
+            'wp.niup',
+            DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
 
-            return $query->select($fields)->groupBy(
-                'pegawai.biodata_id',
-                'b.nama',
-                'wp.niup',
-                'b.tanggal_lahir',
-                'g.nama_golongan',
-                'b.nama_pendidikan_terakhir',
-                'pengajar.updated_at',
-                'pengajar.created_at',
-                'l.nama_lembaga',
-                'pengajar.tahun_masuk',
-                'pengajar.tahun_akhir'
-            );
-        } catch (\Exception $e) {
-            Log::error('Error fetching data Pengajar: ' . $e->getMessage());
+            // Mapel dan mengajar
+            DB::raw("GROUP_CONCAT(DISTINCT mata_pelajaran.nama_mapel SEPARATOR ', ') AS daftar_mapel"),
+            DB::raw("COUNT(DISTINCT mata_pelajaran.id) AS total_mapel"),
+            DB::raw("CONCAT(
+                TRUNCATE(SUM(TIME_TO_SEC(TIMEDIFF(jam_pelajaran.jam_selesai, jam_pelajaran.jam_mulai))) / 3600, 0), ' jam ',
+                TRUNCATE((SUM(TIME_TO_SEC(TIMEDIFF(jam_pelajaran.jam_selesai, jam_pelajaran.jam_mulai))) % 3600) / 60, 0), ' menit'
+            ) AS total_waktu_mengajar"),
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat mengambil data pengajar',
-                'code' => 500,
-            ], 500);
-        }
+
+            // Materi (dianggap sama dengan mapel)
+            DB::raw("GROUP_CONCAT(DISTINCT mata_pelajaran.nama_mapel SEPARATOR ', ') AS daftar_materi"),
+            DB::raw("COUNT(DISTINCT mata_pelajaran.id) AS total_materi"),
+
+            // Lainnya
+            DB::raw("CASE 
+                WHEN TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())) = 0 
+                THEN CONCAT('Belum setahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'), ' sampai ', IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini'))
+                ELSE CONCAT(TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())), ' Tahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'), ' sampai ', IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini'))
+            END AS masa_kerja"),
+
+            'g.nama_golongan',
+            'b.nama_pendidikan_terakhir',
+            DB::raw("DATE_FORMAT(pengajar.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
+            DB::raw("DATE_FORMAT(pengajar.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
+            'l.nama_lembaga',
+            DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
+        ];
+
+        return $query->select($fields)->groupBy(
+            'pegawai.biodata_id',
+            'b.nama',
+            'wp.niup',
+            'b.tanggal_lahir',
+            'g.nama_golongan',
+            'b.nama_pendidikan_terakhir',
+            'pengajar.updated_at',
+            'pengajar.created_at',
+            'l.nama_lembaga',
+            'pengajar.tahun_masuk',
+            'pengajar.tahun_akhir'
+        );
     }
-
     public function formatData($results)
     {
         return collect($results->items())->map(fn ($item) => [
@@ -109,7 +112,6 @@ class PengajarService
             'umur' => $item->umur,
             'daftar_materi' => $item->daftar_materi ?? '-',
             'total_materi' => $item->total_materi ?? 0,
-            'total_waktu_materi' => $item->total_waktu_materi ?? '-',
             'masa_kerja' => $item->masa_kerja ?? '-',
             'golongan' => $item->nama_golongan,
             'pendidikan_terakhir' => $item->nama_pendidikan_terakhir,

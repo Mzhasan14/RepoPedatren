@@ -5,7 +5,7 @@ namespace App\Http\Requests\Pegawai;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-
+use Illuminate\Validation\Rule;
 class PengajarResquest extends FormRequest
 {
     /**
@@ -24,22 +24,14 @@ class PengajarResquest extends FormRequest
     public function rules(): array
     {
         return [
-            'lembaga_id' => 'required|exists:lembaga,id',
-            'golongan_id' => 'required|exists:golongan,id',
-            'jabatan' => 'required|string|max:255',
+            'golongan_id' => 'bail|required|integer|exists:golongan,id',
+            'lembaga_id'  => 'bail|required|integer|exists:lembaga,id',
+            'jabatan'     => 'nullable|string|max:255',
+            'tahun_masuk' => 'bail|required|date|after_or_equal:today',
 
-            'nama_materi' => 'nullable|array|min:1',
-            'nama_materi.*' => 'nullable|string|max:255',
-
-            'jumlah_menit' => 'nullable|array|min:1',
-            'jumlah_menit.*' => 'nullable|integer|min:0',
-
-            'tahun_masuk' => 'nullable|date',
-
-            'tahun_masuk_materi_ajar' => 'nullable|array',
-            'tahun_masuk_materi_ajar.*' => 'nullable|date',
-
-            'tahun_akhir_materi_ajar' => 'nullable|array',
+            'mata_pelajaran' => 'nullable|array',
+            'mata_pelajaran.*.kode_mapel' => 'nullable|required_with:mata_pelajaran|string|max:100',
+            'mata_pelajaran.*.nama_mapel' => 'nullable|required_with:mata_pelajaran|string|max:100',
         ];
     }
 
@@ -57,32 +49,32 @@ class PengajarResquest extends FormRequest
     public function messages(): array
     {
         return [
-            'lembaga_id.required' => 'Lembaga wajib diisi.',
-            'lembaga_id.exists'   => 'Lembaga yang dipilih tidak valid.',
-
+            // Pengajar
             'golongan_id.required' => 'Golongan wajib diisi.',
-            'golongan_id.exists'   => 'Golongan yang dipilih tidak valid.',
+            'golongan_id.integer'  => 'Golongan harus berupa angka.',
+            'golongan_id.exists'   => 'Golongan tidak ditemukan.',
 
-            'jabatan.required' => 'Jabatan wajib diisi.',
-            'jabatan.string'   => 'Jabatan harus berupa teks.',
-            'jabatan.max'      => 'Jabatan tidak boleh lebih dari 255 karakter.',
+            'lembaga_id.required' => 'Lembaga wajib diisi.',
+            'lembaga_id.integer'  => 'Lembaga harus berupa angka.',
+            'lembaga_id.exists'   => 'Lembaga tidak ditemukan.',
 
-            'nama_materi.array'    => 'Format nama materi tidak valid.',
-            'nama_materi.min'      => 'Minimal harus ada satu nama materi.',
-            'nama_materi.*.string' => 'Setiap nama materi harus berupa teks.',
-            'nama_materi.*.max'    => 'Setiap nama materi tidak boleh lebih dari 255 karakter.',
+            'jabatan.string' => 'Jabatan harus berupa teks.',
+            'jabatan.max'    => 'Jabatan maksimal 255 karakter.',
 
-            'jumlah_menit.array'      => 'Format jumlah menit tidak valid.',
-            'jumlah_menit.min'        => 'Minimal harus ada satu data jumlah menit.',
-            'jumlah_menit.*.integer'  => 'Jumlah menit harus berupa angka.',
-            'jumlah_menit.*.min'      => 'Jumlah menit tidak boleh negatif.',
+            'tahun_masuk.required'         => 'Tahun masuk wajib diisi.',
+            'tahun_masuk.date'             => 'Tahun masuk harus berupa tanggal.',
+            'tahun_masuk.after_or_equal'   => 'Tahun masuk tidak boleh sebelum hari ini.',
 
-            'tahun_masuk.date' => 'Tahun masuk harus berupa tanggal yang valid.',
+            // Mata pelajaran
+            'mata_pelajaran.array' => 'Format mata pelajaran tidak valid.',
 
-            'tahun_masuk_materi_ajar.array'       => 'Format tahun masuk materi ajar tidak valid.',
-            'tahun_masuk_materi_ajar.*.date'      => 'Setiap tahun masuk materi ajar harus berupa tanggal yang valid.',
+            'mata_pelajaran.*.kode_mapel.required_with' => 'Kode mata pelajaran wajib diisi.',
+            'mata_pelajaran.*.kode_mapel.string'        => 'Kode mata pelajaran harus berupa teks.',
+            'mata_pelajaran.*.kode_mapel.max'           => 'Kode mata pelajaran maksimal 100 karakter.',
 
-            'tahun_akhir_materi_ajar.array'       => 'Format tahun akhir materi ajar tidak valid.',
+            'mata_pelajaran.*.nama_mapel.required_with' => 'Nama mata pelajaran wajib diisi.',
+            'mata_pelajaran.*.nama_mapel.string'        => 'Nama mata pelajaran harus berupa teks.',
+            'mata_pelajaran.*.nama_mapel.max'           => 'Nama mata pelajaran maksimal 100 karakter.',
         ];
     }
 

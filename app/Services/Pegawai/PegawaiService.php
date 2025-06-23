@@ -5,12 +5,18 @@ namespace App\Services\Pegawai;
 use App\Models\Berkas;
 use App\Models\Biodata;
 use App\Models\Keluarga;
+use App\Models\Pegawai\JadwalPelajaran;
+use App\Models\Pegawai\JamPelajaran;
 use App\Models\Pegawai\Karyawan;
+use App\Models\Pegawai\MataPelajaran;
 use App\Models\Pegawai\MateriAjar;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
 use App\Models\Pegawai\WaliKelas;
+use App\Models\Pendidikan\Jurusan;
+use App\Models\Pendidikan\Kelas;
+use App\Models\Pendidikan\Lembaga;
 use App\Models\WargaPesantren;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -317,27 +323,26 @@ class PegawaiService
             // Simpan pengajar dan materi ajar
             if (! empty($input['pengajar'])) {
                 $pengajar = Pengajar::create([
-                    'pegawai_id' => $pegawai->id,
-                    'golongan_id' => $input['golongan_id_pengajar'] ?? null,
-                    'lembaga_id' => $input['lembaga_id_pengajar'] ?? null,
-                    'jabatan' => $input['jabatan_pengajar'] ?? null,
-                    'tahun_masuk' => $input['tanggal_mulai_pengajar'] ?? now(),
+                    'pegawai_id'   => $pegawai->id,
+                    'golongan_id'  => $input['golongan_id_pengajar'] ?? null,
+                    'lembaga_id'   => $input['lembaga_id_pengajar'] ?? null,
+                    'jabatan'      => $input['jabatan_pengajar'] ?? null,
+                    'tahun_masuk'  => $input['tanggal_mulai_pengajar'] ?? now(),
                     'status_aktif' => 'aktif',
-                    'created_by' => Auth::id(),
+                    'created_by'   => Auth::id(),
                 ]);
+
                 $resultData['pengajar'] = $pengajar;
 
-                if (! empty($input['materi_ajar']) && is_array($input['materi_ajar'])) {
-                    foreach ($input['materi_ajar'] as $materi) {
-                        MateriAjar::create([
-                            'pengajar_id' => $pengajar->id,
-                            'nama_materi' => $materi['nama_materi'],
-                            'jumlah_menit' => $materi['jumlah_menit'] ?? null,
-                            'tahun_masuk' => $input['tanggal_mulai_materi'] ?? now(),
-                            'status_aktif' => 'aktif',
-                            'created_by' => Auth::id(),
-                        ]);
-                    }
+                // Simpan mata pelajaran tanpa jadwal
+                foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
+                    MataPelajaran::create([
+                        'kode_mapel'   => $mapel['kode_mapel'],
+                        'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
+                        'pengajar_id'  => $pengajar->id,
+                        'status'       => true,
+                        'created_by'   => Auth::id(),
+                    ]);
                 }
             }
 

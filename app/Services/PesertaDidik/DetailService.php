@@ -445,46 +445,38 @@ class DetailService
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
             ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')
             ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
-            ->leftJoin('materi_ajar', 'materi_ajar.pengajar_id', '=', 'pengajar.id')
+            
+            // Mata pelajaran dan jadwal
+            ->leftJoin('mata_pelajaran', 'mata_pelajaran.pengajar_id', '=', 'pengajar.id')
+            ->leftJoin('jadwal_pelajaran', 'jadwal_pelajaran.mata_pelajaran_id', '=', 'mata_pelajaran.id')
+            ->leftJoin('lembaga as l2', 'l2.id', '=', 'jadwal_pelajaran.lembaga_id')
+            ->leftJoin('jurusan', 'jurusan.id', '=', 'jadwal_pelajaran.jurusan_id')
+            ->leftJoin('kelas', 'kelas.id', '=', 'jadwal_pelajaran.kelas_id')
+            ->leftJoin('rombel', 'rombel.id', '=', 'jadwal_pelajaran.rombel_id')
+            ->leftJoin('jam_pelajaran', 'jam_pelajaran.id', '=', 'jadwal_pelajaran.jam_pelajaran_id')
+            
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
+                // Pangkalan
                 'lembaga.nama_lembaga',
-                'pengajar.jabatan as pekerjaan_kontrak',  // gunakan snake_case agar konsisten
+                'pengajar.jabatan as pekerjaan_kontrak',
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',
                 'pengajar.tahun_masuk',
                 'pengajar.tahun_akhir',
-                'materi_ajar.tahun_masuk as tanggal_masuk',
-                'materi_ajar.tahun_akhir as tanggal_akhir',
+
                 DB::raw("DATE_FORMAT(pengajar.tahun_masuk, '%e %M %Y') AS sejak"),
-                DB::raw("
-                    CONCAT(
-                        TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, IFNULL(pengajar.tahun_akhir, NOW())),
-                        ' Tahun'
-                    ) AS masa_kerja
-                "),
-                DB::raw("
-                    CONCAT(
-                        GROUP_CONCAT(DISTINCT materi_ajar.nama_materi SEPARATOR ', '),
-                        ' (',
-                        FLOOR(SUM(materi_ajar.jumlah_menit) / 60), ' jam ',
-                        MOD(SUM(materi_ajar.jumlah_menit), 60), ' menit setiap pertemuan)'
-                    ) AS daftar_materi_dengan_waktu
-                "),
-                DB::raw('COUNT(DISTINCT materi_ajar.id) as total_materi')
+                DB::raw("CONCAT(
+                    TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, IFNULL(pengajar.tahun_akhir, NOW())),
+                    ' Tahun') AS masa_kerja"),
+
+                // Mata Pelajaran
+                'mata_pelajaran.id as materi_id',
+                'mata_pelajaran.kode_mapel',
+                'mata_pelajaran.nama_mapel',
+                DB::raw("CONCAT(jam_pelajaran.jam_mulai, ' - ', jam_pelajaran.jam_selesai) AS jam")
             )
-            ->groupBy(
-                'lembaga.nama_lembaga',
-                'pengajar.jabatan',
-                'kategori_golongan.nama_kategori_golongan',
-                'golongan.nama_golongan',
-                'pengajar.tahun_masuk',
-                'pengajar.tahun_akhir',
-                'materi_ajar.tahun_masuk',
-                'materi_ajar.tahun_akhir',
-            )
-            ->orderByDesc('pengajar.tahun_masuk')
-            ->orderByDesc('materi_ajar.tahun_masuk')
+            ->orderByRaw("FIELD(jadwal_pelajaran.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
             ->get();
 
         if ($pengajar->isNotEmpty()) {
@@ -498,23 +490,22 @@ class DetailService
                         'sejak' => $item->sejak ?? '-',
                         'masa_kerja' => $item->masa_kerja ?? '-',
                     ],
-                    'materi' => [
-                        'lembaga' => $item->nama_lembaga ?? '-',
-                        'daftar_materi' => $item->daftar_materi_dengan_waktu ?? '-',
-                        'tanggal_mulai' => $item->tanggal_masuk ?? null,
-                        'tanggal_akhir' => $item->tanggal_akhir ?? null,
-                    ],
+                    'mata_pelajaran' => $item->kode_mapel ? [
+                        'materi_id' => $item->materi_id ?? null, // tambahkan kolom 'mata_pelajaran.id' di select
+                        'kode_mapel' => $item->kode_mapel,
+                        'nama_mapel' => $item->nama_mapel,
+                    ] : null
                 ];
             });
 
             $data['Pengajar'] = [
                 'Pangkalan' => $pengajarMap->pluck('pangkalan')->unique()->values()->all(),
-                'Materi_Ajar' => $pengajarMap->pluck('materi')->filter()->values()->all(),
+                'Mata_Pelajaran' => $pengajarMap->pluck('mata_pelajaran')->filter()->unique('materi_id')->values()->all(),
             ];
         } else {
             $data['Pengajar'] = [
                 'Pangkalan' => [],
-                'Materi_Ajar' => [],
+                'Mata_Pelajaran' => [],
             ];
         }
 

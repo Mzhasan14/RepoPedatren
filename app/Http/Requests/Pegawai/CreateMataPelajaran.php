@@ -5,8 +5,7 @@ namespace App\Http\Requests\Pegawai;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-
-class TambahMateriAjarRequest extends FormRequest
+class CreateMataPelajaran extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +23,9 @@ class TambahMateriAjarRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'pengajar_id' => 'required|exists:pengajar,id',
             'mata_pelajaran' => 'required|array|min:1',
-            'mata_pelajaran.*.kode_mapel' => 'required|string|max:20',
+            'mata_pelajaran.*.kode_mapel' => 'required|string|max:50',
             'mata_pelajaran.*.nama_mapel' => 'required|string|max:100',
         ];
     }
@@ -33,14 +33,12 @@ class TambahMateriAjarRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'mata_pelajaran.required' => 'Daftar mata pelajaran wajib diisi.',
+            'pengajar_id.required' => 'Pengajar harus dipilih.',
+            'pengajar_id.exists' => 'Pengajar tidak ditemukan.',
+            'mata_pelajaran.required' => 'Mata pelajaran tidak boleh kosong.',
             'mata_pelajaran.array' => 'Format mata pelajaran tidak valid.',
-
             'mata_pelajaran.*.kode_mapel.required' => 'Kode mata pelajaran wajib diisi.',
-            'mata_pelajaran.*.kode_mapel.max' => 'Kode mata pelajaran maksimal 20 karakter.',
-
             'mata_pelajaran.*.nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
-            'mata_pelajaran.*.nama_mapel.max' => 'Nama mata pelajaran maksimal 100 karakter.',
         ];
     }
     protected function failedValidation(Validator $validator)
