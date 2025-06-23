@@ -67,39 +67,46 @@ class JadwalService
             foreach ($input['jadwal'] ?? [] as $jadwal) {
                 $hari = $jadwal['hari'] ?? 'Hari tidak diketahui';
 
-                $kelas    = Kelas::find($jadwal['kelas_id']);
-                $jam      = JamPelajaran::find($jadwal['jam_pelajaran_id']);
-                $jurusan  = Jurusan::find($jadwal['jurusan_id']);
-                $lembaga  = Lembaga::find($input['lembaga_id'] ?? null);
-
-                $kelasNama   = optional($kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
-                $jamKe       = optional($jam)->jam_ke ?? "(Jam tidak ditemukan)";
-                $jurusanNama = optional($jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
-                $lembagaNama = optional($lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
-
-                // Cek bentrok kelas
-                $bentrokKelas = JadwalPelajaran::where('hari', $hari)
+                // Validasi bentrok kelas berdasarkan data dari database
+                $jadwalBentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                    ->where('hari', $hari)
                     ->where('kelas_id', $jadwal['kelas_id'])
                     ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
-                    ->exists();
+                    ->where(function ($query) use ($materiId) {
+                        $query->whereNull('mata_pelajaran_id')
+                            ->orWhere('mata_pelajaran_id', '!=', $materiId);
+                    })
+                    ->first();
 
-                if ($bentrokKelas) {
+                if ($jadwalBentrokKelas) {
+                    $kelasNama   = optional($jadwalBentrokKelas->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                    $jurusanNama = optional($jadwalBentrokKelas->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                    $lembagaNama = optional($jadwalBentrokKelas->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+                    $jamKe       = optional($jadwalBentrokKelas->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+
                     throw new \Exception("Gagal menambahkan '$mapelName': kelas $kelasNama ($jurusanNama - $lembagaNama) sudah memiliki jadwal pada hari $hari, jam ke-$jamKe.");
                 }
 
-                // Cek bentrok pengajar
-                $bentrokPengajar = JadwalPelajaran::where('hari', $hari)
+                // Validasi bentrok pengajar berdasarkan data dari database
+                $jadwalBentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran', 'mataPelajaran'])
+                    ->where('hari', $hari)
                     ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
-                    ->whereHas('mataPelajaran', function ($query) use ($new) {
-                        $query->where('pengajar_id', $new->id);
+                    ->whereHas('mataPelajaran', function ($q) use ($new) {
+                        $q->where('pengajar_id', $new->id);
                     })
-                    ->exists();
+                    ->where('mata_pelajaran_id', '!=', $materiId)
+                    ->first();
 
-                if ($bentrokPengajar) {
-                    throw new \Exception("Gagal menambahkan '$mapelName': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas lain ($jurusanNama - $lembagaNama).");
+                if ($jadwalBentrokPengajar) {
+                    $kelasNama   = optional($jadwalBentrokPengajar->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                    $jurusanNama = optional($jadwalBentrokPengajar->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                    $lembagaNama = optional($jadwalBentrokPengajar->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+                    $jamKe       = optional($jadwalBentrokPengajar->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+
+                    throw new \Exception("Gagal menambahkan '$mapelName': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama).");
                 }
 
-                // Simpan
+                // Simpan data ke database
                 JadwalPelajaran::create([
                     'hari'                => $hari,
                     'semester_id'         => $jadwal['semester_id'],
@@ -163,43 +170,49 @@ class JadwalService
 
             $hari = $input['hari'];
 
+            // Ambil data jam untuk keperluan pesan
             $jam = JamPelajaran::find($input['jam_pelajaran_id']);
             $jamKe = optional($jam)->jam_ke ?? "(Jam tidak diketahui)";
 
-            $bentrokKelas = JadwalPelajaran::where('hari', $hari)
+            // Validasi bentrok kelas
+            $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                ->where('hari', $hari)
                 ->where('kelas_id', $input['kelas_id'])
                 ->where('jam_pelajaran_id', $input['jam_pelajaran_id'])
                 ->where('id', '!=', $jadwalId)
-                ->with(['kelas', 'jurusan', 'lembaga'])
                 ->first();
 
             if ($bentrokKelas) {
                 $kelasNama   = optional($bentrokKelas->kelas)->nama_kelas ?? "(kelas tidak diketahui)";
                 $jurusanNama = optional($bentrokKelas->jurusan)->nama_jurusan ?? "(jurusan tidak diketahui)";
                 $lembagaNama = optional($bentrokKelas->lembaga)->nama_lembaga ?? "(lembaga tidak diketahui)";
+                $jamKe       = optional($bentrokKelas->jamPelajaran)->jam_ke ?? $jamKe;
 
                 throw new \Exception(
                     "Jadwal tidak dapat diperbarui: hari $hari, jam ke-$jamKe sudah digunakan oleh kelas $kelasNama di jurusan $jurusanNama ($lembagaNama)."
                 );
             }
 
-            $bentrokPengajar = JadwalPelajaran::where('hari', $hari)
+            // Validasi bentrok pengajar
+            $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                ->where('hari', $hari)
                 ->where('jam_pelajaran_id', $input['jam_pelajaran_id'])
                 ->where('id', '!=', $jadwalId)
                 ->whereHas('mataPelajaran', fn($q) => $q->where('pengajar_id', $pengajarId))
-                ->with(['kelas', 'jurusan', 'lembaga'])
                 ->first();
 
             if ($bentrokPengajar) {
                 $kelasNama   = optional($bentrokPengajar->kelas)->nama_kelas ?? "(kelas tidak diketahui)";
                 $jurusanNama = optional($bentrokPengajar->jurusan)->nama_jurusan ?? "(jurusan tidak diketahui)";
                 $lembagaNama = optional($bentrokPengajar->lembaga)->nama_lembaga ?? "(lembaga tidak diketahui)";
+                $jamKe       = optional($bentrokPengajar->jamPelajaran)->jam_ke ?? $jamKe;
 
                 throw new \Exception(
                     "Pengajar tidak dapat dijadwalkan ulang: sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama)."
                 );
             }
 
+            // Update jadwal
             $jadwal->update([
                 'hari'               => $hari,
                 'semester_id'        => $input['semester_id'],
@@ -404,10 +417,34 @@ class JadwalService
             ];
         }
 
+        // Cek duplikat kode_mapel dalam array input
+        $kodeMapelInput = array_column($input['mata_pelajaran'], 'kode_mapel');
+        $duplikat = array_diff_assoc($kodeMapelInput, array_unique($kodeMapelInput));
+
+        if (!empty($duplikat)) {
+            return [
+                'status' => false,
+                'message' => 'Terdapat duplikat kode mata pelajaran dalam input.',
+            ];
+        }
+
         try {
             DB::beginTransaction();
 
             foreach ($input['mata_pelajaran'] as $mapel) {
+                // Validasi: kode_mapel tidak boleh duplikat untuk data yang masih aktif
+                $kodeSudahAda = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                    ->where('status', true)
+                    ->exists();
+
+                if ($kodeSudahAda) {
+                    DB::rollBack();
+                    return [
+                        'status'  => false,
+                        'message' => 'Kode mata pelajaran '.$mapel['kode_mapel'].' sudah digunakan untuk data aktif.',
+                    ];
+                }
+
                 MataPelajaran::create([
                     'kode_mapel'  => $mapel['kode_mapel'],
                     'nama_mapel'  => $mapel['nama_mapel'],
@@ -533,38 +570,41 @@ class JadwalService
             foreach ($input['jadwal'] ?? [] as $jadwal) {
                 $hari = $jadwal['hari'] ?? 'Hari tidak diketahui';
 
-                $kelas   = Kelas::find($jadwal['kelas_id']);
-                $jam     = JamPelajaran::find($jadwal['jam_pelajaran_id']);
-                $jurusan = Jurusan::find($jadwal['jurusan_id']);
-                $lembaga = Lembaga::find($jadwal['lembaga_id'] ?? null);
-
-                $kelasNama   = optional($kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
-                $jamKe       = optional($jam)->jam_ke ?? "(Jam tidak ditemukan)";
-                $jurusanNama = optional($jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
-                $lembagaNama = optional($lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
-
-                // Cek bentrok kelas
-                $bentrokKelas = JadwalPelajaran::where('hari', $hari)
+                // Validasi bentrok kelas dari database
+                $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                    ->where('hari', $hari)
                     ->where('kelas_id', $jadwal['kelas_id'])
                     ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
-                    ->exists();
+                    ->first();
 
                 if ($bentrokKelas) {
+                    $kelasNama   = optional($bentrokKelas->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                    $jamKe       = optional($bentrokKelas->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+                    $jurusanNama = optional($bentrokKelas->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                    $lembagaNama = optional($bentrokKelas->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+
                     throw new \Exception("Gagal menambahkan '{$mataPelajaran->nama_mapel}': kelas $kelasNama ($jurusanNama - $lembagaNama) sudah memiliki jadwal pada hari $hari, jam ke-$jamKe.");
                 }
 
-                // Cek bentrok pengajar
-                $bentrokPengajar = JadwalPelajaran::where('hari', $hari)
+                // Validasi bentrok pengajar dari database
+                $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                    ->where('hari', $hari)
                     ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
                     ->whereHas('mataPelajaran', function ($query) use ($pengajarId) {
                         $query->where('pengajar_id', $pengajarId);
                     })
-                    ->exists();
+                    ->first();
 
                 if ($bentrokPengajar) {
-                    throw new \Exception("Gagal menambahkan '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas lain ($jurusanNama - $lembagaNama).");
+                    $kelasNama   = optional($bentrokPengajar->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                    $jamKe       = optional($bentrokPengajar->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+                    $jurusanNama = optional($bentrokPengajar->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                    $lembagaNama = optional($bentrokPengajar->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+
+                    throw new \Exception("Gagal menambahkan '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama).");
                 }
 
+                // Simpan ke database
                 $data = JadwalPelajaran::create([
                     'hari'               => $hari,
                     'semester_id'        => $jadwal['semester_id'],
@@ -642,43 +682,48 @@ class JadwalService
 
             $mataPelajaran = MataPelajaran::findOrFail($data['mata_pelajaran_id']);
             $pengajarId = $mataPelajaran->pengajar_id;
-            $hari = $data['hari'];
-            $jamId = $data['jam_pelajaran_id'];
-            $kelasId = $data['kelas_id'];
-            $lembaga = Lembaga::find($data['lembaga_id']);
-            $jurusan = Jurusan::find($data['jurusan_id']);
-            $kelas = Kelas::find($kelasId);
-            $jam = JamPelajaran::find($jamId);
 
-            $kelasNama   = optional($kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
-            $jamKe       = optional($jam)->jam_ke ?? "(Jam tidak ditemukan)";
-            $jurusanNama = optional($jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
-            $lembagaNama = optional($lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+            $hari     = $data['hari'];
+            $jamId    = $data['jam_pelajaran_id'];
+            $kelasId  = $data['kelas_id'];
 
             // Cek bentrok kelas
-            $bentrokKelas = JadwalPelajaran::where('id', '!=', $id)
+            $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                ->where('id', '!=', $id)
                 ->where('hari', $hari)
                 ->where('kelas_id', $kelasId)
                 ->where('jam_pelajaran_id', $jamId)
-                ->exists();
+                ->first();
 
             if ($bentrokKelas) {
+                $kelasNama   = optional($bentrokKelas->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                $jamKe       = optional($bentrokKelas->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+                $jurusanNama = optional($bentrokKelas->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                $lembagaNama = optional($bentrokKelas->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+
                 throw new \Exception("Gagal mengubah '{$mataPelajaran->nama_mapel}': kelas $kelasNama ($jurusanNama - $lembagaNama) sudah memiliki jadwal pada hari $hari, jam ke-$jamKe.");
             }
 
             // Cek bentrok pengajar
-            $bentrokPengajar = JadwalPelajaran::where('id', '!=', $id)
+            $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
+                ->where('id', '!=', $id)
                 ->where('hari', $hari)
                 ->where('jam_pelajaran_id', $jamId)
                 ->whereHas('mataPelajaran', function ($q) use ($pengajarId) {
                     $q->where('pengajar_id', $pengajarId);
                 })
-                ->exists();
+                ->first();
 
             if ($bentrokPengajar) {
-                throw new \Exception("Gagal mengubah '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas lain ($jurusanNama - $lembagaNama).");
+                $kelasNama   = optional($bentrokPengajar->kelas)->nama_kelas ?? "(Kelas tidak ditemukan)";
+                $jamKe       = optional($bentrokPengajar->jamPelajaran)->jam_ke ?? "(Jam tidak ditemukan)";
+                $jurusanNama = optional($bentrokPengajar->jurusan)->nama_jurusan ?? "(Jurusan tidak ditemukan)";
+                $lembagaNama = optional($bentrokPengajar->lembaga)->nama_lembaga ?? "(Lembaga tidak ditemukan)";
+
+                throw new \Exception("Gagal mengubah '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama).");
             }
 
+            // Update jadwal
             $jadwal->update([
                 'hari'               => $hari,
                 'semester_id'        => $data['semester_id'],

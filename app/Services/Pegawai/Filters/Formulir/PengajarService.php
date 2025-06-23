@@ -376,8 +376,21 @@ class PengajarService
         try {
             $materi = MataPelajaran::findOrFail($materiId);
 
+            // Validasi kode_mapel unik di data aktif (kecuali dirinya sendiri)
+            $kodeSudahAda = MataPelajaran::where('kode_mapel', $input['kode_mapel'])
+                ->where('status', true)
+                ->where('id', '!=', $materi->id)
+                ->exists();
+
+            if ($kodeSudahAda) {
+                return [
+                    'status' => false,
+                    'message' => 'Kode mata pelajaran '.$input['kode_mapel'].' sudah digunakan oleh data aktif lainnya.',
+                ];
+            }
+
             $materi->update([
-                'kode_mapel'  => $input['kode_mapel'], // tetap, tidak bisa diubah
+                'kode_mapel'  => $input['kode_mapel'], // sekarang boleh diubah
                 'nama_mapel'  => $input['nama_mapel'],
                 'updated_by'  => Auth::id(),
                 'updated_at'  => now(),
@@ -629,6 +642,19 @@ class PengajarService
             DB::beginTransaction();
 
             foreach ($input['mata_pelajaran'] as $mapelInput) {
+                // Validasi duplikat kode_mapel yang aktif
+                $kodeSudahAda = MataPelajaran::where('kode_mapel', $mapelInput['kode_mapel'])
+                    ->where('status', true)
+                    ->exists();
+
+                if ($kodeSudahAda) {
+                    DB::rollBack();
+                    return [
+                        'status'  => false,
+                        'message' => 'Kode mata pelajaran ' . $mapelInput['kode_mapel'] . ' sudah digunakan untuk data yang aktif.',
+                    ];
+                }
+
                 MataPelajaran::create([
                     'kode_mapel'   => $mapelInput['kode_mapel'],
                     'nama_mapel'   => $mapelInput['nama_mapel'],
