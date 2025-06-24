@@ -29,9 +29,6 @@ class PengajarFactory extends Factory
             'golongan_id' => function () {
                 return Golongan::inRandomOrder()->first()->id;
             },
-            'lembaga_id' => function () {
-                return Lembaga::inRandomOrder()->first()->id;
-            },
             'jabatan' => $this->faker->randomElement(['kultural', 'tetap', 'kontrak', 'pengkaderan']),
             'tahun_masuk' => $this->faker->dateTimeBetween('-10 years', 'now')->format('Y-m-d'),
             'tahun_akhir' => null,

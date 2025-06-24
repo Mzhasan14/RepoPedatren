@@ -441,7 +441,6 @@ class DetailService
         // --- Ambil data pengajar dan riwayat materi ---
         $pengajar = DB::table('pengajar')
             ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')
-            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
             ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')
             ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
@@ -458,7 +457,7 @@ class DetailService
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 // Pangkalan
-                'lembaga.nama_lembaga',
+                DB::raw("GROUP_CONCAT(DISTINCT l2.nama_lembaga SEPARATOR ', ') as nama_lembaga"),
                 'pengajar.jabatan as pekerjaan_kontrak',
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',

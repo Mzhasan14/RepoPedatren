@@ -514,6 +514,7 @@ class JadwalService
     public function getAllJadwalQuery(Request $request)
     {
         return DB::table('jadwal_pelajaran as jp')
+            ->join('semester','jp.semester_id','=','semester.id')
             ->join('mata_pelajaran as mp', 'mp.id', '=', 'jp.mata_pelajaran_id')
             ->join('lembaga as l', 'l.id', '=', 'jp.lembaga_id')
             ->join('jurusan as j', 'j.id', '=', 'jp.jurusan_id')
@@ -524,9 +525,13 @@ class JadwalService
             ->leftJoin('biodata as b', 'b.id', '=', 'pg.biodata_id')
             ->select([
                 'jp.id',
+                'l.id as lembaga_id',
                 'l.nama_lembaga',
+                'j.id as jurusan_id',
                 'j.nama_jurusan',
+                'k.id as kelas_id',
                 'k.nama_kelas',
+                'semester.semester',
                 'mp.kode_mapel',
                 'mp.nama_mapel',
                 'b.nama as nama_pengajar',
@@ -536,26 +541,43 @@ class JadwalService
                 'jam.jam_selesai',
                 'jp.hari',
             ])
-            ->orderByRaw("FIELD(jp.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
+            ->orderByRaw("FIELD(jp.hari, 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu')")
             ->orderBy('jam.jam_ke');
     }
-    public function formatJadwalData($results)
+
+    public function groupJadwalByHari($data)
     {
-        return $results->map(function ($item) {
-            return [
+        $grouped = [];
+
+        foreach ($data as $item) {
+            $hari = $item->hari;
+
+            if (!isset($grouped[$hari])) {
+                $grouped[$hari] = [];
+            }
+
+            $grouped[$hari][] = [
                 'id' => $item->id,
-                'nama_lembaga' => $item->nama_lembaga,
-                'nama_jurusan' => $item->nama_jurusan,
-                'nama_kelas' => $item->nama_kelas,
                 'kode_mapel' => $item->kode_mapel,
                 'nama_mapel' => $item->nama_mapel,
-                'nama_pengajar' => $item->nama_pengajar ?? '-',
-                'nik_pengajar' => $item->nik_pengajar ?? '-',
+                'nama_pengajar' => $item->nama_pengajar,
                 'jam_ke' => $item->jam_ke,
-                'jam' => $item->jam_mulai . ' - ' . $item->jam_selesai,
-                'hari' => $item->hari,
+                'jam_mulai' => $item->jam_mulai,
+                'jam_selesai' => $item->jam_selesai,
             ];
-        });
+        }
+
+        // Urutkan hari tetap (manual urutan)
+        $orderedDays = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $sorted = [];
+
+        foreach ($orderedDays as $day) {
+            if (isset($grouped[$day])) {
+                $sorted[$day] = $grouped[$day];
+            }
+        }
+
+        return $sorted;
     }
     public function storeJadwalMataPelajaran(array $input): array
     {

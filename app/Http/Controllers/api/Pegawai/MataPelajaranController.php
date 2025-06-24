@@ -230,28 +230,45 @@ class MataPelajaranController extends Controller
     public function getAllJadwal(Request $request)
     {
         try {
+            // Pastikan semua parameter dikirim dan tidak kosong
+            if (
+                blank($request->input('lembaga_id')) ||
+                blank($request->input('jurusan_id')) ||
+                blank($request->input('kelas_id'))
+            ) {
+                return response()->json([
+                    'status' => 'success',
+                    'meta' => null,
+                    'data' => []
+                ]);
+            }
+
+            // Proses query setelah semua filter valid
             $query = $this->JadwalService->getAllJadwalQuery($request);
-            $query = $this->FilterJadwalPelajaranService->applyJadwalFilters($query, $request); // filter eksternal
+            $query = $this->FilterJadwalPelajaranService->applyJadwalFilters($query, $request);
+            $results = $query->get();
 
-            $perPage = (int) $request->input('limit', 25);
-            $currentPage = (int) $request->input('page', 1);
-            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
+            $formatted = $this->JadwalService->groupJadwalByHari($results);
 
-            $formatted = $this->JadwalService->formatJadwalData($results);
+            $meta = $results->first();
+            $metaInfo = $meta ? [
+                'lembaga' => $meta->nama_lembaga,
+                'jurusan' => $meta->nama_jurusan,
+                'kelas' => $meta->nama_kelas,
+                'semester' => 'Semester ' . $meta->semester
+            ] : null;
 
             return response()->json([
-                'total_data' => $results->total(),
-                'current_page' => $results->currentPage(),
-                'per_page' => $results->perPage(),
-                'total_pages' => $results->lastPage(),
-                'data' => $formatted,
+                'status' => 'success',
+                'meta' => $metaInfo,
+                'data' => $formatted
             ]);
         } catch (\Throwable $e) {
             Log::error("[JadwalPelajaranController] Error: {$e->getMessage()}");
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Terjadi kesalahan pada server',
+                'message' => 'Terjadi kesalahan pada server'
             ], 500);
         }
     }

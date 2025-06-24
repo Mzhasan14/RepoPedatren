@@ -34,17 +34,17 @@ class PengajarService
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
             ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoin('lembaga as l', 'pengajar.lembaga_id', '=', 'l.id')
             ->leftJoin('golongan as g', 'pengajar.golongan_id', '=', 'g.id')
             ->leftJoin('kategori_golongan as kg', 'g.kategori_golongan_id', '=', 'kg.id')
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-
+            
             // Mata pelajaran dan jadwal
             ->leftJoin('mata_pelajaran', function ($join) {
                 $join->on('mata_pelajaran.pengajar_id', '=', 'pengajar.id')
-                    ->where('mata_pelajaran.status', true);
+                ->where('mata_pelajaran.status', true);
             })
+            ->leftJoin('lembaga as l', 'mata_pelajaran.lembaga_id', '=', 'l.id')
             ->leftJoin('jadwal_pelajaran', 'mata_pelajaran.id', '=', 'jadwal_pelajaran.mata_pelajaran_id')
             ->leftJoin('jam_pelajaran', 'jadwal_pelajaran.jam_pelajaran_id', '=', 'jam_pelajaran.id')
 
@@ -117,7 +117,7 @@ class PengajarService
             'pendidikan_terakhir' => $item->nama_pendidikan_terakhir,
             'tgl_update' => Carbon::parse($item->tgl_update)->translatedFormat('d F Y H:i:s'),
             'tgl_input' => Carbon::parse($item->tgl_input)->translatedFormat('d F Y H:i:s'),
-            'lembaga' => $item->nama_lembaga,
+            'lembaga' => $item->nama_lembaga ?? '-',
             'foto_profil' => url($item->foto_profil),
         ]);
     }
