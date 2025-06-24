@@ -436,108 +436,148 @@ class PengajarService
             ];
         }
 
-        return DB::transaction(function () use ($data, $pegawai) {
-            // Simpan data pengajar
-            $pengajar = Pengajar::create([
-                'pegawai_id'   => $pegawai->id,
-                'golongan_id'  => $data['golongan_id'],
-                'lembaga_id'   => $data['lembaga_id'],
-                'jabatan'      => $data['jabatan'],
-                'tahun_masuk'  => $data['tahun_masuk'] ?? now(),
-                'status_aktif' => 'aktif',
-                'created_by'   => Auth::id(),
-                'created_at'   => now(),
-                'updated_at'   => now(),
-            ]);
-
-            // Iterasi mata pelajaran (tanpa menyimpan jadwal)
-            foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
-                MataPelajaran::create([
-                    'kode_mapel'   => $mapel['kode_mapel'],
-                    'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
-                    'pengajar_id'  => $pengajar->id,
-                    'status'       => true,
+        try {
+            return DB::transaction(function () use ($data, $pegawai) {
+                // Simpan data pengajar
+                $pengajar = Pengajar::create([
+                    'pegawai_id'   => $pegawai->id,
+                    'golongan_id'  => $data['golongan_id'],
+                    'lembaga_id'   => $data['lembaga_id'],
+                    'jabatan'      => $data['jabatan'],
+                    'tahun_masuk'  => $data['tahun_masuk'] ?? now(),
+                    'status_aktif' => 'aktif',
                     'created_by'   => Auth::id(),
                     'created_at'   => now(),
                     'updated_at'   => now(),
                 ]);
-            }
+
+                // Validasi dan Simpan mata pelajaran
+                foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
+                    $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                        ->where('status', true)
+                        ->first();
+
+                    if ($mapelAktif) {
+                        throw new \Exception('Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".');
+                    }
+
+                    MataPelajaran::create([
+                        'kode_mapel'   => $mapel['kode_mapel'],
+                        'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
+                        'pengajar_id'  => $pengajar->id,
+                        'status'       => true,
+                        'created_by'   => Auth::id(),
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
+
+                return [
+                    'status' => true,
+                    'data' => $pengajar->fresh()->load('mataPelajaran'),
+                ];
+            });
+        } catch (\Throwable $e) {
+            DB::rollBack();
 
             return [
-                'status' => true,
-                'data' => $pengajar->fresh()->load('mataPelajaran'),
+                'status'  => false,
+                'message' => 'Gagal menyimpan data pengajar.',
+                'error'   => $e->getMessage(),
             ];
-        });
+        }
     }
 
     public function pindahPengajar(array $input, int $id): array
     {
-        return DB::transaction(function () use ($input, $id) {
-            $old = Pengajar::with('mataPelajaran')->find($id);
-            if (! $old) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
-            }
+        try {
+            return DB::transaction(function () use ($input, $id) {
+                $old = Pengajar::with('mataPelajaran')->find($id);
+                if (! $old) {
+                    return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+                }
 
-            if ($old->tahun_akhir) {
-                return [
-                    'status' => false,
-                    'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
-                ];
-            }
+                if ($old->tahun_akhir) {
+                    return [
+                        'status' => false,
+                        'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
+                    ];
+                }
 
-            $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
-            $hariIni = Carbon::now();
+                $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
+                $hariIni = Carbon::now();
 
-            if ($tahunMasukBaru->lt($hariIni)) {
-                return [
-                    'status' => false,
-                    'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
-                ];
-            }
+                if ($tahunMasukBaru->lt($hariIni)) {
+                    return [
+                        'status' => false,
+                        'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
+                    ];
+                }
 
-            // Hapus jadwal & mapel lama
-            foreach ($old->mataPelajaran as $mapel) {
-                $mapel->jadwalPelajaran()->delete();
-                $mapel->delete();
-            }
+                // Hapus jadwal & nonaktifkan mapel lama
+                foreach ($old->mataPelajaran as $mapel) {
+                    $mapel->jadwalPelajaran()->delete();
 
-            // Nonaktifkan data lama
-            $old->update([
-                'status_aktif' => 'tidak aktif',
-                'tahun_akhir'  => $hariIni,
-                'updated_by'   => Auth::id(),
-            ]);
+                    $mapel->update([
+                        'status'     => false,
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]);
+                }
 
-            // Buat data pengajar baru
-            $new = Pengajar::create([
-                'pegawai_id'   => $old->pegawai_id,
-                'golongan_id'  => $input['golongan_id'],
-                'lembaga_id'   => $input['lembaga_id'],
-                'jabatan'      => $input['jabatan'] ?? $old->jabatan,
-                'tahun_masuk'  => $tahunMasukBaru,
-                'status_aktif' => 'aktif',
-                'created_by'   => Auth::id(),
-            ]);
-
-            // Tambahkan mata pelajaran ke pengajar baru
-            foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
-                MataPelajaran::create([
-                    'kode_mapel'   => $mapel['kode_mapel'],
-                    'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
-                    'pengajar_id'  => $new->id,
-                    'status'       => true,
-                    'created_by'   => Auth::id(),
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                // Nonaktifkan data lama
+                $old->update([
+                    'status_aktif' => 'tidak aktif',
+                    'tahun_akhir'  => $hariIni,
+                    'updated_by'   => Auth::id(),
                 ]);
-            }
 
+                // Buat data pengajar baru
+                $new = Pengajar::create([
+                    'pegawai_id'   => $old->pegawai_id,
+                    'golongan_id'  => $input['golongan_id'],
+                    'lembaga_id'   => $input['lembaga_id'],
+                    'jabatan'      => $input['jabatan'] ?? $old->jabatan,
+                    'tahun_masuk'  => $tahunMasukBaru,
+                    'status_aktif' => 'aktif',
+                    'created_by'   => Auth::id(),
+                ]);
+
+                // Validasi dan simpan mata pelajaran baru
+                foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
+                    $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                        ->where('status', true)
+                        ->first();
+
+                    if ($mapelAktif) {
+                        throw new \Exception('Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".');
+                    }
+
+                    MataPelajaran::create([
+                        'kode_mapel'   => $mapel['kode_mapel'],
+                        'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
+                        'pengajar_id'  => $new->id,
+                        'status'       => true,
+                        'created_by'   => Auth::id(),
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
+
+                return [
+                    'status' => true,
+                    'message' => 'Pengajar berhasil dipindah dan mata pelajaran ditambahkan.',
+                    'data'   => $new->load('mataPelajaran'),
+                ];
+            });
+        } catch (\Throwable $e) {
+            DB::rollBack(); // Untuk berjaga-jaga walau transaction() otomatis rollback
             return [
-                'status' => true,
-                'message' => 'Pengajar berhasil dipindah dan mata pelajaran ditambahkan.',
-                'data'   => $new->load('mataPelajaran'),
+                'status'  => false,
+                'message' => 'Gagal memindah pengajar.',
+                'error'   => $e->getMessage(),
             ];
-        });
+        }
     }
 
     public function keluarPengajar(array $input, int $id): array
@@ -568,19 +608,25 @@ class PengajarService
             // Nonaktifkan pengajar
             $pengajar->update([
                 'status_aktif' => 'tidak aktif',
-                'tahun_akhir' => $tahunAkhir,
-                'updated_by' => Auth::id(),
+                'tahun_akhir'  => $tahunAkhir,
+                'updated_by'   => Auth::id(),
             ]);
 
-            // Hapus seluruh mata pelajaran dan jadwal terkait
+            // Nonaktifkan mata pelajaran dan hapus jadwal terkait
             foreach ($pengajar->mataPelajaran as $mapel) {
-                $mapel->jadwalPelajaran()->delete(); // Hapus jadwal terlebih dahulu
-                $mapel->delete(); // Lalu hapus mata pelajaran
+                $mapel->jadwalPelajaran()->delete(); // Hapus jadwal secara permanen
+
+                $mapel->update([
+                    'status'     => false,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
             }
 
             return [
                 'status' => true,
-                'data' => $pengajar->load('mataPelajaran.jadwalPelajaran'),
+                'message' => 'Pengajar berhasil dinonaktifkan dan mata pelajaran dinonaktifkan.',
+                'data'   => $pengajar->load('mataPelajaran.jadwalPelajaran'),
             ];
         });
     }
@@ -643,16 +689,16 @@ class PengajarService
             DB::beginTransaction();
 
             foreach ($input['mata_pelajaran'] as $mapelInput) {
-                // Validasi duplikat kode_mapel yang aktif
-                $kodeSudahAda = MataPelajaran::where('kode_mapel', $mapelInput['kode_mapel'])
+                // Cari data mapel aktif dengan kode yang sama
+                $mapelAktif = MataPelajaran::where('kode_mapel', $mapelInput['kode_mapel'])
                     ->where('status', true)
-                    ->exists();
+                    ->first();
 
-                if ($kodeSudahAda) {
+                if ($mapelAktif) {
                     DB::rollBack();
                     return [
                         'status'  => false,
-                        'message' => 'Kode mata pelajaran ' . $mapelInput['kode_mapel'] . ' sudah digunakan untuk data yang aktif.',
+                        'message' => 'Kode mata pelajaran ' . $mapelInput['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".',
                     ];
                 }
 

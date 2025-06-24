@@ -334,8 +334,17 @@ class PegawaiService
 
                 $resultData['pengajar'] = $pengajar;
 
-                // Simpan mata pelajaran tanpa jadwal
+                // Validasi & simpan mata pelajaran
                 foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
+                    // Cek apakah kode_mapel sudah aktif digunakan
+                    $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                        ->where('status', true)
+                        ->first();
+
+                    if ($mapelAktif) {
+                        throw new \Exception('Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".');
+                    }
+
                     MataPelajaran::create([
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',

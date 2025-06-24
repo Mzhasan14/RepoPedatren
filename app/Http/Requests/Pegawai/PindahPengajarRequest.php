@@ -28,12 +28,12 @@ class PindahPengajarRequest extends FormRequest
             'golongan_id' => ['required', 'integer', 'exists:golongan,id'],
             'lembaga_id'  => ['required', 'integer', 'exists:lembaga,id'],
             'jabatan'     => ['nullable', 'string', 'max:255'],
-            'tahun_masuk' => ['required', 'date', 'after_or_equal:today'],
+            'tahun_masuk' => ['required', 'date'],
 
             // Mata pelajaran
-            'mata_pelajaran' => ['required', 'array'],
-            'mata_pelajaran.*.kode_mapel' => ['required', 'string', 'max:50'],
-            'mata_pelajaran.*.nama_mapel' => ['required', 'string', 'max:255'],
+            'mata_pelajaran' => ['nullable', 'array'],
+            'mata_pelajaran.*.kode_mapel' => ['nullable', 'string', 'max:50'],
+            'mata_pelajaran.*.nama_mapel' => ['nullable', 'string', 'max:255'],
         ];
     }
 

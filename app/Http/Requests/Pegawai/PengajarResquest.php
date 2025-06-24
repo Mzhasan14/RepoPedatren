@@ -27,7 +27,7 @@ class PengajarResquest extends FormRequest
             'golongan_id' => 'bail|required|integer|exists:golongan,id',
             'lembaga_id'  => 'bail|required|integer|exists:lembaga,id',
             'jabatan'     => 'nullable|string|max:255',
-            'tahun_masuk' => 'bail|required|date|after_or_equal:today',
+            'tahun_masuk' => 'bail|required|date|after_or_equal:2000-01-01',
 
             'mata_pelajaran' => 'nullable|array',
             'mata_pelajaran.*.kode_mapel' => 'nullable|required_with:mata_pelajaran|string|max:100',
