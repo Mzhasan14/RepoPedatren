@@ -35,6 +35,16 @@ class PegawaiController extends Controller
         try {
             $pegawai = $this->pegawaiService->store($validated);
 
+            // Jika status false, artinya error, langsung return response error
+            if (isset($pegawai['status']) && $pegawai['status'] === false) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $pegawai['message'] ?? 'Gagal menyimpan data pegawai.',
+                    'error' => $pegawai['error'] ?? null,
+                ], 400);
+            }
+
+            // Jika sukses, return response sukses
             return response()->json([
                 'status' => 'success',
                 'message' => $pegawai['message'] ?? 'Pegawai berhasil ditambahkan.',
@@ -46,7 +56,7 @@ class PegawaiController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage() ?? 'Terjadi kesalahan pada server.',
-            ], 400);
+            ], 500);
         }
     }
 
