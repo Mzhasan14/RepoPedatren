@@ -159,14 +159,22 @@ class PegawaiService
             $isExisting = false;
             $resultData = [];
 
-            // Cek apakah NIK sudah terdaftar
-            $existingBiodata = Biodata::where('nik', $input['nik'])->first();
+            // Cari data biodata berdasarkan NIK atau no_passport
+            $existingBiodata = null;
+
+            if (!empty($input['nik'])) {
+                $existingBiodata = Biodata::where('nik', $input['nik'])->first();
+            } elseif (!empty($input['no_passport'])) {
+                $existingBiodata = Biodata::where('no_passport', $input['no_passport'])->first();
+            }
 
             if ($existingBiodata) {
                 $isExisting = true;
 
                 // Cek apakah sudah ada pegawai aktif
-                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)->where('status_aktif', 'aktif')->first();
+                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)
+                    ->where('status_aktif', 'aktif')
+                    ->first();
 
                 if ($existingPegawai) {
                     return [
@@ -176,9 +184,9 @@ class PegawaiService
                     ];
                 }
 
+                // Nonaktifkan role-role sebelumnya
                 $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)->latest()->first();
 
-                // Otomatis nonaktifkan role jika masih aktif
                 if ($pegawaiNonaktif) {
                     $roleTables = [
                         'karyawan' => Karyawan::class,
@@ -196,14 +204,12 @@ class PegawaiService
                             if ($role) {
                                 $dataUpdate = ['status_aktif' => 'tidak aktif'];
 
-                                // Tambah tanggal selesai / akhir sesuai role
                                 switch ($key) {
                                     case 'karyawan':
                                         $dataUpdate['tanggal_selesai'] = now();
                                         break;
                                     case 'pengajar':
                                         $dataUpdate['tahun_akhir'] = now();
-                                        // Materi ajar juga harus diupdate
                                         MateriAjar::where('pengajar_id', $role->id)
                                             ->where('status_aktif', 'aktif')
                                             ->update([
@@ -227,9 +233,8 @@ class PegawaiService
                 }
 
                 $biodata = $existingBiodata;
-
             } else {
-                // Insert biodata baru
+                // Buat data biodata baru
                 $biodata = Biodata::create([
                     'id' => Str::uuid(),
                     'negara_id' => $input['negara_id'],
@@ -260,7 +265,7 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan keluarga jika ada
+            // Simpan keluarga
             if (! empty($input['no_kk'])) {
                 Keluarga::create([
                     'id_biodata' => $biodata->id,
@@ -270,7 +275,7 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan warga pesantren jika ada
+            // Simpan warga pesantren
             if (! empty($input['niup'])) {
                 WargaPesantren::create([
                     'biodata_id' => $biodata->id,
@@ -306,7 +311,7 @@ class PegawaiService
                 'created_by' => Auth::id(),
             ]);
 
-            // Simpan karyawan
+            // Karyawan
             if (! empty($input['karyawan'])) {
                 $resultData['karyawan'] = Karyawan::create([
                     'pegawai_id' => $pegawai->id,
@@ -320,7 +325,7 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan pengajar dan materi ajar
+            // Pengajar
             if (! empty($input['pengajar'])) {
                 $pengajar = Pengajar::create([
                     'pegawai_id'   => $pegawai->id,
@@ -334,9 +339,7 @@ class PegawaiService
 
                 $resultData['pengajar'] = $pengajar;
 
-                // Validasi & simpan mata pelajaran
                 foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
-                    // Cek apakah kode_mapel sudah aktif digunakan
                     $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
                         ->where('status', true)
                         ->first();
@@ -355,7 +358,7 @@ class PegawaiService
                 }
             }
 
-            // Simpan pengurus
+            // Pengurus
             if (! empty($input['pengurus'])) {
                 $resultData['pengurus'] = Pengurus::create([
                     'pegawai_id' => $pegawai->id,
@@ -369,7 +372,7 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan wali kelas
+            // Wali Kelas
             if (! empty($input['wali_kelas'])) {
                 $resultData['wali_kelas'] = WaliKelas::create([
                     'pegawai_id' => $pegawai->id,
@@ -399,7 +402,7 @@ class PegawaiService
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error Membuat Data pegawai: '.$e->getMessage());
+            Log::error('Error Membuat Data pegawai: ' . $e->getMessage());
 
             return [
                 'status' => false,
