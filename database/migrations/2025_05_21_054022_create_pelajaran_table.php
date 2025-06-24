@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('kode_mapel');
             $table->string('nama_mapel');
-            $table->unsignedBigInteger('lembaga_id');
             $table->unsignedBigInteger('pengajar_id');
             $table->boolean('status');
             $table->unsignedBigInteger('created_by');
@@ -23,7 +22,6 @@ return new class extends Migration
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->timestamps();
 
-            $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');

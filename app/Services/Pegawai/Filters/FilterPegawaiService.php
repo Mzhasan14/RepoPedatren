@@ -30,8 +30,7 @@ class FilterPegawaiService
         if ($request->filled('lembaga')) {
             $query
                 ->leftJoin('lembaga as lk', 'lk.id', '=', 'karyawan.lembaga_id')
-                ->leftJoin('mata_pelajaran as mp', 'mp.pengajar_id', '=', 'pengajar.id')
-                ->leftJoin('lembaga as lp', 'lp.id', '=', 'mp.lembaga_id') // ambil lembaga pengajar lewat mata_pelajaran
+                ->leftJoin('lembaga as lp', 'lp.id', '=', 'pengajar.lembaga_id')
                 ->leftJoin('lembaga as lw', 'lw.id', '=', 'wali_kelas.lembaga_id')
                 ->where(function ($q) use ($request) {
                     $nama = strtolower($request->lembaga);

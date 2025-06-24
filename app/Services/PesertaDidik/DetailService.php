@@ -441,23 +441,23 @@ class DetailService
         // --- Ambil data pengajar dan riwayat materi ---
         $pengajar = DB::table('pengajar')
             ->join('pegawai', 'pegawai.id', '=', 'pengajar.pegawai_id')
+            ->leftJoin('lembaga', 'lembaga.id', '=', 'pengajar.lembaga_id')
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
             ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')
             ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
             
             // Mata pelajaran dan jadwal
-            ->leftJoin('mata_pelajaran', 'mata_pelajaran.pengajar_id', '=', 'pengajar.id')
+            ->leftJoin('mata_pelajaran', function ($join) {
+                $join->on('mata_pelajaran.pengajar_id', '=', 'pengajar.id')
+                ->where('mata_pelajaran.status', true);
+            })
             ->leftJoin('jadwal_pelajaran', 'jadwal_pelajaran.mata_pelajaran_id', '=', 'mata_pelajaran.id')
-            ->leftJoin('lembaga as l2', 'l2.id', '=', 'jadwal_pelajaran.lembaga_id')
-            ->leftJoin('jurusan', 'jurusan.id', '=', 'jadwal_pelajaran.jurusan_id')
-            ->leftJoin('kelas', 'kelas.id', '=', 'jadwal_pelajaran.kelas_id')
-            ->leftJoin('rombel', 'rombel.id', '=', 'jadwal_pelajaran.rombel_id')
             ->leftJoin('jam_pelajaran', 'jam_pelajaran.id', '=', 'jadwal_pelajaran.jam_pelajaran_id')
             
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 // Pangkalan
-                DB::raw("GROUP_CONCAT(DISTINCT l2.nama_lembaga SEPARATOR ', ') as nama_lembaga"),
+                'lembaga.nama_lembaga',
                 'pengajar.jabatan as pekerjaan_kontrak',
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',
@@ -490,7 +490,7 @@ class DetailService
                         'masa_kerja' => $item->masa_kerja ?? '-',
                     ],
                     'mata_pelajaran' => $item->kode_mapel ? [
-                        'materi_id' => $item->materi_id ?? null, // tambahkan kolom 'mata_pelajaran.id' di select
+                        'materi_id' => $item->materi_id,
                         'kode_mapel' => $item->kode_mapel,
                         'nama_mapel' => $item->nama_mapel,
                     ] : null

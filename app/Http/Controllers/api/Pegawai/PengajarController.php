@@ -144,7 +144,7 @@ class PengajarController extends Controller
         }
     }
 
-    public function getallPengajar(Request $request)
+    public function getAllPengajar(Request $request)
     {
         try {
             $query = $this->pengajarService->getAllPengajar($request);
@@ -153,25 +153,6 @@ class PengajarController extends Controller
             $perPage = (int) $request->input('limit', 25);
             $currentPage = (int) $request->input('page', 1);
             $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
-            // Optional: Clean daftar_mapel dari duplikat literal
-            $results->getCollection()->transform(function ($item) {
-                $item->daftar_mapel = collect(explode(', ', $item->daftar_mapel ?? ''))
-                    ->map(fn($m) => trim($m))
-                    ->unique()
-                    ->implode(', ');
-                return $item;
-            });
-
-            $formatted = $this->pengajarService->formatData($results);
-
-            return response()->json([
-                'total_data' => $results->total(),
-                'current_page' => $results->currentPage(),
-                'per_page' => $results->perPage(),
-                'total_pages' => $results->lastPage(),
-                'data' => $formatted,
-            ]);
         } catch (\Throwable $e) {
             Log::error("[PengajarController] Error: {$e->getMessage()}");
 
@@ -180,7 +161,26 @@ class PengajarController extends Controller
                 'message' => 'Terjadi kesalahan pada server',
             ], 500);
         }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ], 200);
+        }
+
+        $formatted = $this->pengajarService->formatData($results);
+
+        return response()->json([
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
+        ]);
     }
+
 
     public function pindahPengajar(PindahPengajarRequest $request, $id)
     {

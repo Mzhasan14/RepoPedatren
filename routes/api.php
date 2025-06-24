@@ -246,11 +246,11 @@ Route::prefix('formulir')->middleware([
     Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
     Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
     Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
+    Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
 
     Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
     Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
     Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
-    Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
     Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
     Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
     Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);

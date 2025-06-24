@@ -597,24 +597,25 @@ class PengajarService
 
         DB::beginTransaction();
         try {
-            // Hapus semua jadwal terkait
+            // Hapus semua jadwal pelajaran terkait secara permanen
             $mapel->jadwalPelajaran()->delete();
 
-            // Hapus mata pelajaran
-            $mapel->delete();
+            // Nonaktifkan mata pelajaran (asumsikan kolom 'status' adalah boolean)
+            $mapel->status = false;
+            $mapel->save();
 
             DB::commit();
 
             return [
                 'status' => true,
-                'message' => 'Mata pelajaran dan jadwalnya berhasil dihapus.',
+                'message' => 'Mata pelajaran berhasil dinonaktifkan dan jadwalnya dihapus.',
             ];
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return [
                 'status' => false,
-                'message' => 'Terjadi kesalahan saat menghapus mata pelajaran.',
+                'message' => 'Terjadi kesalahan saat menonaktifkan mata pelajaran.',
                 'error' => $e->getMessage(),
             ];
         }

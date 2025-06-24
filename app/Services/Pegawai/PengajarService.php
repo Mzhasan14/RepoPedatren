@@ -34,17 +34,17 @@ class PengajarService
             ->join('biodata as b', 'pegawai.biodata_id', '=', 'b.id')
             ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoin('lembaga as l', 'pengajar.lembaga_id', '=', 'l.id')
             ->leftJoin('golongan as g', 'pengajar.golongan_id', '=', 'g.id')
             ->leftJoin('kategori_golongan as kg', 'g.kategori_golongan_id', '=', 'kg.id')
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            
+
             // Mata pelajaran dan jadwal
             ->leftJoin('mata_pelajaran', function ($join) {
                 $join->on('mata_pelajaran.pengajar_id', '=', 'pengajar.id')
-                ->where('mata_pelajaran.status', true);
+                    ->where('mata_pelajaran.status', true);
             })
-            ->leftJoin('lembaga as l', 'mata_pelajaran.lembaga_id', '=', 'l.id')
             ->leftJoin('jadwal_pelajaran', 'mata_pelajaran.id', '=', 'jadwal_pelajaran.mata_pelajaran_id')
             ->leftJoin('jam_pelajaran', 'jadwal_pelajaran.jam_pelajaran_id', '=', 'jam_pelajaran.id')
 
@@ -61,20 +61,11 @@ class PengajarService
             'wp.niup',
             DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
 
-            // Mapel dan mengajar
-            DB::raw("GROUP_CONCAT(DISTINCT mata_pelajaran.nama_mapel SEPARATOR ', ') AS daftar_mapel"),
-            DB::raw("COUNT(DISTINCT mata_pelajaran.id) AS total_mapel"),
-            DB::raw("CONCAT(
-                TRUNCATE(SUM(TIME_TO_SEC(TIMEDIFF(jam_pelajaran.jam_selesai, jam_pelajaran.jam_mulai))) / 3600, 0), ' jam ',
-                TRUNCATE((SUM(TIME_TO_SEC(TIMEDIFF(jam_pelajaran.jam_selesai, jam_pelajaran.jam_mulai))) % 3600) / 60, 0), ' menit'
-            ) AS total_waktu_mengajar"),
-
-
-            // Materi (dianggap sama dengan mapel)
-            DB::raw("GROUP_CONCAT(DISTINCT mata_pelajaran.nama_mapel SEPARATOR ', ') AS daftar_materi"),
+            // Gabungan mapel dan totalnya
+            DB::raw("GROUP_CONCAT(DISTINCT mata_pelajaran.nama_mapel SEPARATOR ', ') as daftar_materi"),
             DB::raw("COUNT(DISTINCT mata_pelajaran.id) AS total_materi"),
 
-            // Lainnya
+            // Masa kerja
             DB::raw("CASE 
                 WHEN TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, CURDATE())) = 0 
                 THEN CONCAT('Belum setahun sejak ', DATE_FORMAT(pengajar.tahun_masuk, '%Y-%m-%d'), ' sampai ', IF(pengajar.tahun_akhir IS NOT NULL, DATE_FORMAT(pengajar.tahun_akhir, '%Y-%m-%d'), 'saat ini'))
