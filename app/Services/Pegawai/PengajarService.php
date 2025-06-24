@@ -114,96 +114,105 @@ class PengajarService
     }
     public function getExportPengajarQuery($fields, $request)
     {
-        $query = $this->basePengajarQuery($request); // Sama seperti basePegawaiQuery
-
-        if (in_array('no_kk', $fields)) {
-            $query->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata');
-        }
-
-        if (in_array('jalan', $fields)) {
-            $query->leftJoin('kecamatan as kec', 'kec.id', '=', 'b.kecamatan_id')
-                ->leftJoin('kabupaten as kab', 'kab.id', '=', 'b.kabupaten_id')
-                ->leftJoin('provinsi as prov', 'prov.id', '=', 'b.provinsi_id')
-                ->leftJoin('negara as neg', 'neg.id', '=', 'b.negara_id');
-        }
+        $query = $this->basePengajarQuery($request);
 
         $select = [];
+        $groupBy = [];
+
         foreach ($fields as $field) {
             switch ($field) {
                 case 'nama_lengkap':
                     $select[] = 'b.nama as nama_lengkap';
+                    $groupBy[] = 'b.nama';
                     break;
+
                 case 'nik':
                     $select[] = DB::raw('COALESCE(b.nik, b.no_passport) as nik');
+                    $groupBy[] = 'b.nik';
+                    $groupBy[] = 'b.no_passport';
                     break;
+
                 case 'niup':
                     $select[] = 'wp.niup';
+                    $groupBy[] = 'wp.niup';
                     break;
+
                 case 'jenis_kelamin':
                     $select[] = 'b.jenis_kelamin';
+                    $groupBy[] = 'b.jenis_kelamin';
                     break;
+
                 case 'tempat_lahir':
                 case 'tanggal_lahir':
                     $select[] = "b.$field";
+                    $groupBy[] = "b.$field";
                     break;
+
                 case 'no_kk':
                     $select[] = 'k.no_kk';
+                    $groupBy[] = 'k.no_kk';
+                    $query->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata');
                     break;
+
                 case 'jalan':
                     $select[] = 'b.jalan';
                     $select[] = 'kec.nama_kecamatan';
                     $select[] = 'kab.nama_kabupaten';
                     $select[] = 'prov.nama_provinsi';
                     $select[] = 'neg.nama_negara';
+
+                    $groupBy[] = 'b.jalan';
+                    $groupBy[] = 'kec.nama_kecamatan';
+                    $groupBy[] = 'kab.nama_kabupaten';
+                    $groupBy[] = 'prov.nama_provinsi';
+                    $groupBy[] = 'neg.nama_negara';
+
+                    $query->leftJoin('kecamatan as kec', 'kec.id', '=', 'b.kecamatan_id')
+                        ->leftJoin('kabupaten as kab', 'kab.id', '=', 'b.kabupaten_id')
+                        ->leftJoin('provinsi as prov', 'prov.id', '=', 'b.provinsi_id')
+                        ->leftJoin('negara as neg', 'neg.id', '=', 'b.negara_id');
                     break;
+
                 case 'pendidikan_terakhir':
                     $select[] = 'b.jenjang_pendidikan_terakhir as jenjang_pendidikan_terakhir';
                     $select[] = 'b.nama_pendidikan_terakhir as nama_pendidikan_terakhir';
+
+                    $groupBy[] = 'b.jenjang_pendidikan_terakhir';
+                    $groupBy[] = 'b.nama_pendidikan_terakhir';
                     break;
+
                 case 'email':
                 case 'no_telepon':
                     $select[] = "b.$field";
+                    $groupBy[] = "b.$field";
                     break;
+
                 case 'lembaga':
                     $select[] = 'l.nama_lembaga';
+                    $groupBy[] = 'l.nama_lembaga';
                     break;
+
                 case 'golongan':
                     $select[] = 'g.nama_golongan';
+                    $groupBy[] = 'g.nama_golongan';
                     break;
+
                 case 'jabatan':
                     $select[] = 'pengajar.jabatan';
+                    $groupBy[] = 'pengajar.jabatan';
                     break;
+
                 case 'status_aktif':
                     $select[] = DB::raw("IF(pengajar.status_aktif = 1, 'Aktif', 'Nonaktif') as status_aktif");
+                    $groupBy[] = 'pengajar.status_aktif';
                     break;
             }
         }
 
-            return $query->select($select)->groupBy([
-                'b.nama',
-                'b.nik',
-                'b.no_passport',
-                'k.no_kk',
-                'wp.niup',
-                'b.jenis_kelamin',
-                'b.tempat_lahir',
-                'b.tanggal_lahir',
-                'b.jenjang_pendidikan_terakhir',
-                'b.nama_pendidikan_terakhir',
-                'b.email',
-                'b.no_telepon',
-                'b.jalan',
-                'kec.nama_kecamatan',
-                'kab.nama_kabupaten',
-                'prov.nama_provinsi',
-                'neg.nama_negara',
-                'l.nama_lembaga',
-                'g.nama_golongan',
-                'pengajar.jabatan',
-                'pengajar.status_aktif',
-                'pengajar.id'
-    ]);
+        // Tambahkan ID sebagai groupBy default
+        $groupBy[] = 'pengajar.id';
 
+        return $query->select($select)->groupBy($groupBy);
     }
     public function formatDataExport($results, $fields, $addNumber = false)
     {
