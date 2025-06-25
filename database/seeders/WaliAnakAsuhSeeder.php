@@ -13,101 +13,79 @@ class WaliAnakAsuhSeeder extends Seeder
      */
     public function run(): void
     {
-        // Disable FK checks
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
         DB::table('kewaliasuhan')->delete();
         DB::table('anak_asuh')->delete();
         DB::table('wali_asuh')->delete();
         DB::table('grup_wali_asuh')->delete();
-
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $santriList = DB::table('santri')->pluck('id')->toArray();
         shuffle($santriList);
 
         $wilayahList = DB::table('wilayah')->pluck('id')->toArray();
-
         $totalSantri = count($santriList);
-
-        // Tentukan jumlah grup wali asuh (antara 20 - 25 tergantung banyaknya santri)
-        $jumlahGrup = max(20, min(25, intdiv($totalSantri, 13))); // rata-rata 13 anak asuh per grup
+        $jumlahGrup = max(20, min(25, intdiv($totalSantri, 13)));
 
         $waliAsuhList = array_slice($santriList, 0, $jumlahGrup);
         $anakAsuhList = array_slice($santriList, $jumlahGrup);
 
+        // Ambil data biodata jenis kelamin
+        $biodataMap = DB::table('biodata')
+            ->join('santri', 'biodata.id', '=', 'santri.biodata_id')
+            ->pluck('biodata.jenis_kelamin', 'santri.id');
+
         // Buat grup wali asuh
         $grupWaliAsuhData = [];
-        $grupWaliAsuhJenisKelamin = [];
+        $waliAsuhData = [];
         foreach ($waliAsuhList as $index => $santriId) {
-            $jenisKelamin = ['l', 'p'][array_rand(['l', 'p'])];
-            $grupWaliAsuhData[] = [
+            $jk = $biodataMap[$santriId] ?? 'l';
+            $grupId = DB::table('grup_wali_asuh')->insertGetId([
                 'id_wilayah' => $wilayahList[array_rand($wilayahList)],
                 'nama_grup' => 'Grup Wali ' . ($index + 1),
-                'jenis_kelamin' => $jenisKelamin,
+                'jenis_kelamin' => $jk,
                 'created_by' => 1,
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
-            $grupWaliAsuhJenisKelamin[$index] = $jenisKelamin;
-        }
-        DB::table('grup_wali_asuh')->insert($grupWaliAsuhData);
-        $grupWaliAsuhList = DB::table('grup_wali_asuh')->get();
+            ]);
 
-        // Wali Asuh
-        $waliAsuhData = [];
-        foreach ($waliAsuhList as $index => $santriId) {
-            $waliAsuhData[] = [
+            $waliAsuhId = DB::table('wali_asuh')->insertGetId([
                 'id_santri' => $santriId,
-                'id_grup_wali_asuh' => $grupWaliAsuhList[$index]->id,
+                'id_grup_wali_asuh' => $grupId,
                 'tanggal_mulai' => now()->subYears(rand(1, 5)),
                 'tanggal_berakhir' => null,
                 'created_by' => 1,
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
+            ]);
+
+            // Simpan untuk pencocokan anak asuh nanti
+            $waliPool[] = [
+                'id' => $waliAsuhId,
+                'grup_id' => $grupId,
+                'jenis_kelamin' => $jk,
             ];
         }
-        DB::table('wali_asuh')->insert($waliAsuhData);
-        $waliAsuhRecords = DB::table('wali_asuh')->get();
-        $waliAsuhIdList = $waliAsuhRecords->pluck('id', 'id_santri')->toArray();
-        $grupByWaliId = $waliAsuhRecords->pluck('id_grup_wali_asuh', 'id')->toArray();
 
         // Anak Asuh
-        $anakAsuhData = [];
         foreach ($anakAsuhList as $santriId) {
-            $anakAsuhData[] = [
+            $anakAsuhId = DB::table('anak_asuh')->insertGetId([
                 'id_santri' => $santriId,
                 'created_by' => 1,
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
-        }
-        DB::table('anak_asuh')->insert($anakAsuhData);
-        $anakAsuhIdList = DB::table('anak_asuh')->pluck('id', 'id_santri')->toArray();
+            ]);
 
-        // Kewaliasuhan - berdasarkan kecocokan jenis kelamin antara anak asuh dan wali asuh
-        $kewaliasuhanData = [];
-        $anakAsuhAssigned = [];
-
-        foreach ($anakAsuhIdList as $santriId => $anakAsuhId) {
-            $biodata = DB::table('biodata')
-                ->join('santri', 'biodata.id', '=', 'santri.biodata_id')
-                ->where('santri.id', $santriId)
-                ->select('biodata.jenis_kelamin')
-                ->first();
-
-            $waliCocok = $waliAsuhRecords->filter(function ($wali) use ($grupWaliAsuhList, $grupByWaliId, $biodata) {
-                $grup = $grupWaliAsuhList->firstWhere('id', $wali->id_grup_wali_asuh);
-                return $grup && $grup->jenis_kelamin === $biodata->jenis_kelamin;
-            })->shuffle()->first();
+            $jkAnak = $biodataMap[$santriId] ?? 'l';
+            $waliCocok = collect($waliPool)->where('jenis_kelamin', $jkAnak)->shuffle()->first();
 
             if (! $waliCocok) continue;
 
-            $kewaliasuhanData[] = [
-                'id_wali_asuh' => $waliCocok->id,
+            DB::table('kewaliasuhan')->insert([
+                'id_wali_asuh' => $waliCocok['id'],
                 'id_anak_asuh' => $anakAsuhId,
                 'tanggal_mulai' => now()->subYears(rand(1, 5)),
                 'tanggal_berakhir' => null,
@@ -115,9 +93,7 @@ class WaliAnakAsuhSeeder extends Seeder
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
+            ]);
         }
-
-        DB::table('kewaliasuhan')->insert($kewaliasuhanData);
     }
 }

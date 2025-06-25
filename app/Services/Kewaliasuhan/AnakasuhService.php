@@ -98,14 +98,20 @@ class AnakasuhService
         $list = DB::table('anak_asuh as as')
             ->join('santri as s', 'as.id_santri', '=', 's.id')
             ->join('kewaliasuhan as k','k.id_anak_asuh','=','as.id')
+            ->join('wali_asuh as w','w.id','=','k.id_wali_asuh')
+            ->join('santri as sw','w.id_santri','=','sw.id')
+            ->join('biodata as b','sw.biodata_id','=','b.id')
             ->where('s.biodata_id', $bioId)
             ->select([
                 'as.id',
                 's.id as santriId',
                 's.nis',
+                'k.id_wali_asuh',
+                'b.nama as nama_waliasuh',
+                'k.id as kewid',
                 'k.tanggal_mulai',
                 'k.tanggal_berakhir',
-                's.status as status_anak_asuh',
+                'as.status as status_anak_asuh',
                 'k.status as status_kewaliasuhan',
             ])
             ->get();
@@ -116,6 +122,9 @@ class AnakasuhService
                 'id' => $item->id,
                 'id_santri' => $item->santriId,
                 'nis' => $item->nis,
+                'id_wali_asuh'  => $item->id_wali_asuh,
+                'nama_wali_asuh' => $item->nama_waliasuh,
+                'id_kewaliasuhan' => $item->kewid,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
                 'status_anak_asuh' => $item->status_anak_asuh,
@@ -331,8 +340,9 @@ class AnakasuhService
             // Ambil SATU data kewaliasuhan yang aktif untuk anak asuh ini
             // Jika ada banyak yang aktif, ini akan ambil yang pertama ditemukan
             $kewaliasuhanAktif = $as->kewaliasuhan() // Mengakses relasi sebagai query builder
-                ->where('status', true) // Filter langsung pada tabel kewaliasuhan
-                ->orderBy('tanggal_mulai', 'desc') // Ambil yang paling baru (jika ada lebih dari satu aktif)
+                // ->where('status', true)
+                ->orderBy('kewaliasuhan.tanggal_mulai', 'desc') // Ambil yang paling baru (jika ada lebih dari satu aktif)
+                ->with('WaliAsuh.santri.biodata')
                 ->first(); // Ambil hanya satu hasil
 
             // Jika tidak ada kewaliasuhan yang aktif ditemukan
@@ -345,8 +355,11 @@ class AnakasuhService
                 'data' => [
                     'id' => $as->id,
                     'nis' => $as->santri->nis,
+                    'id_wali_asuh' =>$kewaliasuhanAktif->id_wali_asuh,
+                    'nama_wali_asuh' =>$kewaliasuhanAktif->WaliAsuh->santri->biodata->nama,
+                    'id_kewaliasuhan' =>$kewaliasuhanAktif->id,
                     'tanggal_mulai' => $kewaliasuhanAktif->tanggal_mulai,
-                    'tanggal_berakhir' => $kewaliasuhanAktif->tanggal_berakhir,
+                    'tanggal_akhir' => $kewaliasuhanAktif->tanggal_berakhir,
                     'status_kewaliasuhan' => $kewaliasuhanAktif->status, // Menambahkan status kewaliasuhan
                     'status_anakasuh' => $as->status // Status dari anak asuh itu sendiri
                 ]
@@ -386,6 +399,94 @@ class AnakasuhService
         // ]];
     }
 
+    public function update(array $input, int $id): array
+    {
+        return DB::transaction(function () use ($input, $id) {
+            $anakAsuh = Anak_Asuh::with('santri.biodata')->find($id);
+
+            if (! $anakAsuh) {
+                return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
+            }
+
+            $biodata = $anakAsuh->santri->biodata ?? null;
+            if (! $biodata) {
+                return ['status' => false, 'message' => 'Data biodata anak asuh tidak ditemukan.'];
+            }
+
+            $waliAsuhBaru = Wali_Asuh::with('grupWaliAsuh')->find($input['id_wali_asuh']);
+            if (! $waliAsuhBaru || ! $waliAsuhBaru->grupWaliAsuh) {
+                return ['status' => false, 'message' => 'Wali asuh atau grup wali asuh tidak ditemukan.'];
+            }
+
+            // ✅ Validasi jenis kelamin
+            $jenisKelaminSantri = strtolower($biodata->jenis_kelamin);
+            $jenisKelaminGrup = strtolower($waliAsuhBaru->grupWaliAsuh->jenis_kelamin);
+
+            if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
+                return ['status' => false, 'message' => 'Jenis kelamin santri tidak cocok dengan grup wali asuh.'];
+            }
+
+            // Ambil relasi lama (aktif)
+            $kewaliasuhanLama = Kewaliasuhan::where('id_anak_asuh', $anakAsuh->id)
+                ->where('status', true)
+                ->first();
+
+            // Jika wali asuh tidak berubah
+            if ($kewaliasuhanLama && $input['id_wali_asuh'] == $kewaliasuhanLama->id_wali_asuh) {
+                return [
+                    'status' => false,
+                    'message' => 'Wali asuh sama dengan sebelumnya, tidak ada perubahan.',
+                ];
+            }
+
+            // Nonaktifkan relasi lama (jika ada)
+            if ($kewaliasuhanLama) {
+                $kewaliasuhanLama->update([
+                    'status' => false,
+                    'tanggal_berakhir' => now(),
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+
+                activity('kewaliasuhan_update')
+                    ->performedOn($anakAsuh)
+                    ->withProperties([
+                        'action' => 'nonaktifkan_wali_lama',
+                        'dari' => $kewaliasuhanLama->id_wali_asuh,
+                        'ke' => $input['id_wali_asuh'],
+                    ])
+                    ->log('Relasi lama dinonaktifkan karena penggantian wali asuh');
+            }
+
+            // Tambahkan relasi baru
+            $kewaliasuhanBaru = Kewaliasuhan::create([
+                'id_wali_asuh' => $input['id_wali_asuh'],
+                'id_anak_asuh' => $anakAsuh->id,
+                'tanggal_mulai' => now(),
+                'status' => true,
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            activity('kewaliasuhan_create')
+                ->performedOn($anakAsuh)
+                ->withProperties([
+                    'id_wali_asuh_baru' => $input['id_wali_asuh'],
+                    'id_anak_asuh' => $anakAsuh->id,
+                ])
+                ->log('Relasi kewaliasuhan baru dibuat setelah update');
+
+            return [
+                'status' => true,
+                'message' => 'Wali asuh berhasil diperbarui.',
+                'data' => [
+                    'anak_asuh' => $anakAsuh,
+                    'kewaliasuhan_baru' => $kewaliasuhanBaru,
+                ],
+            ];
+        });
+    }
 
     protected function assignToWaliAsuh($anakAsuhId, $waliAsuhId)
     {
@@ -423,6 +524,9 @@ class AnakasuhService
                 return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
             }
 
+            // Ambil jenis kelamin santri dari relasi
+            $jenisKelaminSantri = strtolower($anakAsuh->santri->biodata->jenis_kelamin ?? '');
+
             // Cek kewaliasuhan aktif
             $kewAliasuhLama = Kewaliasuhan::where('id_anak_asuh', $idAnakAsuh)
                 ->where('status', true)
@@ -439,6 +543,17 @@ class AnakasuhService
                 return ['status' => false, 'message' => 'Wali asuh baru tidak valid atau tidak aktif.'];
             }
 
+            $grupBaru = $waliBaru->grupWaliAsuh;
+            $jenisKelaminGrup = strtolower($grupBaru->jenis_kelamin ?? '');
+
+            // Validasi jenis kelamin
+            if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin santri tidak cocok dengan grup wali asuh baru.',
+                ];
+            }
+            
             $tanggalPindah = Carbon::parse($input['tanggal_mulai'] ?? now());
 
             if ($tanggalPindah->lt(Carbon::parse($kewAliasuhLama->tanggal_mulai))) {
@@ -505,12 +620,14 @@ class AnakasuhService
             $kewaliasuhan->update([
                 'tanggal_berakhir' => $tanggalKeluar,
                 'status' => false,
+                'updated_at' => now(),
                 'updated_by' => Auth::id(),
             ]);
 
             // Update status anak_asuh
             $anakAsuh->update([
                 'status' => false,
+                'updated_at' => now(),
                 'updated_by' => Auth::id(),
             ]);
 

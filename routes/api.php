@@ -208,6 +208,7 @@ Route::prefix('formulir')->middleware([
     Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
     Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
     Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
+    Route::put('{id}/anakasuh', [AnakAsuhController::class, 'update'])->middleware('role:superadmin|admin');;
 
     Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
     Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);

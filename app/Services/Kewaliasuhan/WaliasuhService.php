@@ -142,7 +142,7 @@ class WaliasuhService
 
             // 4. Cek apakah sudah menjadi anak asuh aktif
             $activeAnakAsuhExists = Kewaliasuhan::where('id_anak_asuh', $santri->id)
-                ->whereNull('tanggal_selesai')
+                ->whereNull('tanggal_berakhir')
                 ->exists();
 
             if ($activeAnakAsuhExists) {

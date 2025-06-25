@@ -181,6 +181,31 @@ class AnakasuhController extends Controller
         }
     }
 
+    public function update(tambahAnakasuhRequest $request, $id)
+    {
+        try {
+        $result = $this->anakasuhService->update($request->validated(), $id);
+        if (! $result['status']) {
+            return response()->json([
+                'message' => $result['message'] ??
+                    'Data tidak ditemukan.',
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'anakasuh berhasil diperbarui',
+            'data' => $result['data'],
+        ]);
+    } catch (\Exception $e) {
+            Log::error('Gagal update anakasuh: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function keluarAnakasuh(KeluarAnakasuhRequest $request, $id): JsonResponse
     {
         try {

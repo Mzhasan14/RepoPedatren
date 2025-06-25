@@ -80,8 +80,6 @@ return new class extends Migration
 
             $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
             $table->foreign('id_anak_asuh')->references('id')->on('anak_asuh')->onDelete('cascade');
-            // Constraint untuk memastikan satu anak asuh hanya punya satu wali asuh aktif
-            $table->unique(['id_anak_asuh', 'status'], 'unique_anak_aktif');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
