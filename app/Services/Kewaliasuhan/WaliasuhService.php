@@ -5,6 +5,7 @@ namespace App\Services\Kewaliasuhan;
 use App\Models\Biodata;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Illuminate\Http\Request;
@@ -141,12 +142,17 @@ class WaliasuhService
             }
 
             // 4. Cek apakah sudah menjadi anak asuh aktif
-            $activeAnakAsuhExists = Kewaliasuhan::where('id_anak_asuh', $santri->id)
-                ->whereNull('tanggal_berakhir')
-                ->exists();
+            $anakAsuh = Anak_asuh::where('id_santri', $santri->id)->first();
 
-            if ($activeAnakAsuhExists) {
-                return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai anak asuh aktif.'];
+            if ($anakAsuh) {
+                $activeAnakAsuhExists = Kewaliasuhan::where('id_anak_asuh', $anakAsuh->id)
+                    ->where('status', true)
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+                if ($activeAnakAsuhExists) {
+                    return ['status' => false, 'message' => 'Santri ini sudah terdaftar sebagai anak asuh aktif.'];
+                }
             }
 
             // 5. Cek apakah grup sesuai jenis kelamin santri
@@ -162,6 +168,18 @@ class WaliasuhService
                 return [
                     'status' => false,
                     'message' => 'Jenis kelamin santri tidak sesuai dengan grup wali asuh.'
+                ];
+            }
+
+            // Cek apakah sudah ada wali asuh aktif dalam grup ini
+            $waliAsuhAktifDiGrup = Wali_asuh::where('id_grup_wali_asuh', $grup->id)
+                ->where('status', true)
+                ->exists();
+
+            if ($waliAsuhAktifDiGrup) {
+                return [
+                    'status' => false,
+                    'message' => 'Sudah ada wali asuh aktif dalam grup ini. Tidak boleh lebih dari satu.',
                 ];
             }
 
