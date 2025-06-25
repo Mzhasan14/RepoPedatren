@@ -436,9 +436,23 @@ class PengajarService
             ];
         }
 
+        // Validasi dulu semua kode mata pelajaran sebelum masuk transaksi
+        foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
+            $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                ->where('status', true)
+                ->first();
+
+            if ($mapelAktif) {
+                return [
+                    'status' => false,
+                    'message' => 'Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".',
+                ];
+            }
+        }
+
+        // Eksekusi penyimpanan dengan transaksi
         try {
             return DB::transaction(function () use ($data, $pegawai) {
-                // Simpan data pengajar
                 $pengajar = Pengajar::create([
                     'pegawai_id'   => $pegawai->id,
                     'golongan_id'  => $data['golongan_id'],
@@ -451,16 +465,8 @@ class PengajarService
                     'updated_at'   => now(),
                 ]);
 
-                // Validasi dan Simpan mata pelajaran
+                // Simpan mata pelajaran
                 foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
-                    $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
-                        ->where('status', true)
-                        ->first();
-
-                    if ($mapelAktif) {
-                        throw new \Exception('Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".');
-                    }
-
                     MataPelajaran::create([
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
@@ -487,33 +493,48 @@ class PengajarService
             ];
         }
     }
-
     public function pindahPengajar(array $input, int $id): array
     {
+        // Validasi awal data
+        $old = Pengajar::with('mataPelajaran')->find($id);
+        if (! $old) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+        }
+
+        if ($old->tahun_akhir) {
+            return [
+                'status' => false,
+                'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
+            ];
+        }
+
+        $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
+        $hariIni = Carbon::now();
+
+        if ($tahunMasukBaru->lt($hariIni)) {
+            return [
+                'status' => false,
+                'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
+            ];
+        }
+
+        // Validasi kode mata pelajaran duluan (di luar transaksi)
+        foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
+            $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
+                ->where('status', true)
+                ->first();
+
+            if ($mapelAktif) {
+                return [
+                    'status' => false,
+                    'message' => 'Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".',
+                ];
+            }
+        }
+
+        // Eksekusi perubahan dalam transaksi
         try {
-            return DB::transaction(function () use ($input, $id) {
-                $old = Pengajar::with('mataPelajaran')->find($id);
-                if (! $old) {
-                    return ['status' => false, 'message' => 'Data tidak ditemukan.'];
-                }
-
-                if ($old->tahun_akhir) {
-                    return [
-                        'status' => false,
-                        'message' => 'Data pengajar sudah memiliki tahun akhir, tidak dapat diganti.',
-                    ];
-                }
-
-                $tahunMasukBaru = Carbon::parse($input['tahun_masuk'] ?? '');
-                $hariIni = Carbon::now();
-
-                if ($tahunMasukBaru->lt($hariIni)) {
-                    return [
-                        'status' => false,
-                        'message' => 'Tahun masuk baru tidak boleh sebelum hari ini.',
-                    ];
-                }
-
+            return DB::transaction(function () use ($input, $id, $old, $tahunMasukBaru, $hariIni) {
                 // Hapus jadwal & nonaktifkan mapel lama
                 foreach ($old->mataPelajaran as $mapel) {
                     $mapel->jadwalPelajaran()->delete();
@@ -525,14 +546,14 @@ class PengajarService
                     ]);
                 }
 
-                // Nonaktifkan data lama
+                // Nonaktifkan data pengajar lama
                 $old->update([
                     'status_aktif' => 'tidak aktif',
                     'tahun_akhir'  => $hariIni,
                     'updated_by'   => Auth::id(),
                 ]);
 
-                // Buat data pengajar baru
+                // Buat pengajar baru
                 $new = Pengajar::create([
                     'pegawai_id'   => $old->pegawai_id,
                     'golongan_id'  => $input['golongan_id'],
@@ -543,16 +564,8 @@ class PengajarService
                     'created_by'   => Auth::id(),
                 ]);
 
-                // Validasi dan simpan mata pelajaran baru
+                // Simpan mata pelajaran baru
                 foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
-                    $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
-                        ->where('status', true)
-                        ->first();
-
-                    if ($mapelAktif) {
-                        throw new \Exception('Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk mata pelajaran "' . $mapelAktif->nama_mapel . '".');
-                    }
-
                     MataPelajaran::create([
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
@@ -571,7 +584,7 @@ class PengajarService
                 ];
             });
         } catch (\Throwable $e) {
-            DB::rollBack(); // Untuk berjaga-jaga walau transaction() otomatis rollback
+            DB::rollBack(); // optional karena transaction() sudah auto rollback
             return [
                 'status'  => false,
                 'message' => 'Gagal memindah pengajar.',
@@ -579,6 +592,7 @@ class PengajarService
             ];
         }
     }
+
 
     public function keluarPengajar(array $input, int $id): array
     {
