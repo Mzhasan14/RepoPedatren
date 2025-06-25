@@ -60,7 +60,7 @@ class CreatePegawaiRequest extends FormRequest
             'no_kk' => 'nullable|digits:16',
 
             // ===== Warga Pesantren =====
-            'niup' => 'nullable|string|max:50',
+            'niup' => 'nullable|string|max:50|unique:warga_pesantren,niup',
 
             // ===== Karyawan =====
             'karyawan' => 'nullable|in:1,0',
@@ -153,6 +153,7 @@ class CreatePegawaiRequest extends FormRequest
             'no_kk.digits' => 'Nomor KK harus 16 digit.',
 
             // Warga Pesantren
+            'niup.unique' => 'NIUP Bersifat Unique dan sudah digunakan. Silakan gunakan nilai lain.',
             'niup.max' => 'NIUP maksimal 50 karakter.',
 
             // Karyawan
