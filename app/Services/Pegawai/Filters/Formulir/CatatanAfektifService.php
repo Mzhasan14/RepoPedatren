@@ -49,6 +49,7 @@ class CatatanAfektifService
                     'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
                     'status' => 'Wali Asuh',
+                    'status_aktif' => (bool) $item->status, 
                 ];
             });
 

@@ -15,6 +15,7 @@ class CatatanAfektifFactory extends Factory
 {
     protected $model = Catatan_afektif::class;
 
+
     /**
      * Define the model's default state.
      *
@@ -23,24 +24,39 @@ class CatatanAfektifFactory extends Factory
     public function definition(): array
     {
         $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
-        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
-            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
-            : null; // NULL jika masih menjabat
+        $status = $this->faker->boolean();
+        $tanggalSelesai = $status ? null : $this->faker->dateTimeBetween($tanggalMulai, 'now');
+
+        // Nilai kategori
+        $akhlak_nilai = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $kepedulian_nilai = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $kebersihan_nilai = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+
+        // Fungsi helper untuk tindak lanjut berdasarkan nilai
+        $generateTindakLanjut = function ($nilai) {
+            return match ($nilai) {
+                'A' => 'Bagus, harap dipertahankan',
+                'B' => 'Cukup baik, tetap ditingkatkan',
+                'C' => 'Perlu perhatian dan pembinaan',
+                'D' => 'Kurang, perlu bimbingan intensif',
+                'E' => 'Buruk, segera ditindaklanjuti secara serius',
+                default => 'Perlu evaluasi lanjutan',
+            };
+        };
 
         return [
-            'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_wali_asuh' => Wali_asuh::inRandomOrder()->first()->id,
-            'kepedulian_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'kepedulian_tindak_lanjut' => $this->faker->sentence(),
-            'kebersihan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'kebersihan_tindak_lanjut' => $this->faker->sentence(),
-            'akhlak_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'akhlak_tindak_lanjut' => $this->faker->sentence(),
+            'id_santri' => null,
+            'id_wali_asuh' => null,
+            'kepedulian_nilai' => $kepedulian_nilai,
+            'kepedulian_tindak_lanjut' => $generateTindakLanjut($kepedulian_nilai),
+            'kebersihan_nilai' => $kebersihan_nilai,
+            'kebersihan_tindak_lanjut' => $generateTindakLanjut($kebersihan_nilai),
+            'akhlak_nilai' => $akhlak_nilai,
+            'akhlak_tindak_lanjut' => $generateTindakLanjut($akhlak_nilai),
             'tanggal_buat' => $tanggalMulai,
             'tanggal_selesai' => $tanggalSelesai,
             'created_by' => 1,
-            'updated_by' => 1,
-            'status' => 1,
+            'status' => $status,
             'created_at' => now(),
             'updated_at' => now(),
         ];

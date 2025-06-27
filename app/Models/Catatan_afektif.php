@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Models\Kewaliasuhan\Wali_asuh;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Database\Factories\CatatanAfektifFactory;
 
 class Catatan_afektif extends Model
 {
-    use LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'catatan_afektif';
 
@@ -65,6 +67,10 @@ class Catatan_afektif extends Model
         });
     }
 
+    protected static function newFactory()
+    {
+        return CatatanAfektifFactory::new();
+    }
     public function waliAsuh()
     {
         return $this->belongsTo(Wali_asuh::class, 'id_wali_asuh');
