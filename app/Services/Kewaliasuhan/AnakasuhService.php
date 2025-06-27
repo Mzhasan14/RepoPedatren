@@ -2,16 +2,18 @@
 
 namespace App\Services\Kewaliasuhan;
 
+use Exception;
 use App\Models\Santri;
 use App\Models\Biodata;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 
 class AnakasuhService
 {
@@ -103,7 +105,7 @@ class AnakasuhService
             ->join('biodata as b','sw.biodata_id','=','b.id')
             ->where('s.biodata_id', $bioId)
             ->select([
-                'as.id',
+                'as.id as id_anak_asuh',
                 's.id as santriId',
                 's.nis',
                 'k.id_wali_asuh',
@@ -119,12 +121,12 @@ class AnakasuhService
         return [
             'status' => true,
             'data' => $list->map(fn($item) => [
-                'id' => $item->id,
+                'id' => $item->kewid,
+                'id_anak_asuh' => $item->id_anak_asuh,
                 'id_santri' => $item->santriId,
                 'nis' => $item->nis,
                 'id_wali_asuh'  => $item->id_wali_asuh,
                 'nama_wali_asuh' => $item->nama_waliasuh,
-                'id_kewaliasuhan' => $item->kewid,
                 'tanggal_mulai' => $item->tanggal_mulai,
                 'tanggal_akhir' => $item->tanggal_berakhir,
                 'status_anak_asuh' => $item->status_anak_asuh,
@@ -333,44 +335,35 @@ class AnakasuhService
 
     public function show(int $id): array
     {
-        try {
-            // Ambil Anak_asuh beserta santri-nya
-            $as = Anak_asuh::with('santri')->findOrFail($id);
+            // 1. Langsung ambil data Kewaliasuhan berdasarkan ID yang diberikan
+            $kewaliasuhan = Kewaliasuhan::with([
+                'anakAsuh.santri.biodata', 
+                'waliAsuh.santri.biodata'
+            ])->findOrFail($id);
 
-            // Ambil SATU data kewaliasuhan yang aktif untuk anak asuh ini
-            // Jika ada banyak yang aktif, ini akan ambil yang pertama ditemukan
-            $kewaliasuhanAktif = $as->kewaliasuhan() // Mengakses relasi sebagai query builder
-                // ->where('status', true)
-                ->orderBy('kewaliasuhan.tanggal_mulai', 'desc') // Ambil yang paling baru (jika ada lebih dari satu aktif)
-                ->with('WaliAsuh.santri.biodata')
-                ->first(); // Ambil hanya satu hasil
+            // Jika kewaliasuhan ditemukan, ambil data terkait
+            $anakAsuh = $kewaliasuhan->anakAsuh;
+            $waliAsuh = $kewaliasuhan->waliAsuh;
 
-            // Jika tidak ada kewaliasuhan yang aktif ditemukan
-            if (!$kewaliasuhanAktif) {
-                return ['status' => false, 'message' => 'Data anak asuh ditemukan, tetapi tidak ada kewaliasuhan aktif.'];
-            }
+            // Lakukan pengecekan null safety
+            $nis = $anakAsuh->santri->nis ?? null;
+            $namaWaliAsuh = $waliAsuh->santri->biodata->nama ?? null;
 
             return [
                 'status' => true,
                 'data' => [
-                    'id' => $as->id,
-                    'nis' => $as->santri->nis,
-                    'id_wali_asuh' =>$kewaliasuhanAktif->id_wali_asuh,
-                    'nama_wali_asuh' =>$kewaliasuhanAktif->WaliAsuh->santri->biodata->nama,
-                    'id_kewaliasuhan' =>$kewaliasuhanAktif->id,
-                    'tanggal_mulai' => $kewaliasuhanAktif->tanggal_mulai,
-                    'tanggal_akhir' => $kewaliasuhanAktif->tanggal_berakhir,
-                    'status_kewaliasuhan' => $kewaliasuhanAktif->status, // Menambahkan status kewaliasuhan
-                    'status_anakasuh' => $as->status // Status dari anak asuh itu sendiri
+                    'id' => $kewaliasuhan->id,
+                    'id_anak_asuh' => $anakAsuh->id,
+                    'nis' => $nis, 
+                    'id_wali_asuh' => $waliAsuh->id, 
+                    'nama_wali_asuh' => $namaWaliAsuh, 
+                    'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
+                    'tanggal_akhir' => $kewaliasuhan->tanggal_akhir, 
+                    'status_kewaliasuhan' => $kewaliasuhan->status,
+                    'status_anak_asuh' => $anakAsuh->status
                 ]
             ];
-        } catch (ModelNotFoundException $e) {
-            // Tangani jika Anak_asuh dengan ID tersebut tidak ditemukan
-            return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
-        } catch (\Exception $e) {
-            // Tangani error umum lainnya
-            return ['status' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()];
-        }
+
         // $as = Anak_asuh::with(['santri', 'kewaliasuhan'])->where('kewaliasuhan.status', true)->find($id);
 
         // if (! $as) {
@@ -402,7 +395,13 @@ class AnakasuhService
     public function update(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $anakAsuh = Anak_Asuh::with('santri.biodata')->find($id);
+            $kewaliasuhanSaatIni = Kewaliasuhan::find($id);
+
+            if (!$kewaliasuhanSaatIni) {
+                return ['status' => false, 'message' => 'Relasi kewaliasuhan tidak ditemukan.'];
+            }
+
+            $anakAsuh = Anak_Asuh::with('santri.biodata')->find($kewaliasuhanSaatIni->id_anak_asuh);
 
             if (! $anakAsuh) {
                 return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
@@ -418,7 +417,7 @@ class AnakasuhService
                 return ['status' => false, 'message' => 'Wali asuh atau grup wali asuh tidak ditemukan.'];
             }
 
-            // ✅ Validasi jenis kelamin
+            // Validasi jenis kelamin
             $jenisKelaminSantri = strtolower($biodata->jenis_kelamin);
             $jenisKelaminGrup = strtolower($waliAsuhBaru->grupWaliAsuh->jenis_kelamin);
 

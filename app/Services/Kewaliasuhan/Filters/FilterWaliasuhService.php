@@ -52,9 +52,6 @@ class FilterWaliasuhService
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
                             ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
-                } else {
-                    // Jika nilai kabupaten tidak valid, hasilkan query kosong
-                    $query->whereRaw('0 = 1');
                 }
             }
         }
@@ -164,15 +161,15 @@ class FilterWaliasuhService
         $query->where('l.nama_lembaga', $request->lembaga);
 
         if ($request->filled('jurusan')) {
-            $query->join('jurusan as j', 'rp.jurusan_id', '=', 'j.id')
+            $query->join('jurusan as j', 'pd.jurusan_id', '=', 'j.id')
                 ->where('j.nama_jurusan', $request->jurusan);
 
             if ($request->filled('kelas')) {
-                $query->join('kelas as kls', 'rp.kelas_id', '=', 'kls.id')
+                $query->join('kelas as kls', 'pd.kelas_id', '=', 'kls.id')
                     ->where('kls.nama_kelas', $request->kelas);
 
                 if ($request->filled('rombel')) {
-                    $query->join('rombel as r', 'rp.rombel_id', '=', 'r.id')
+                    $query->join('rombel as r', 'pd.rombel_id', '=', 'r.id')
                         ->where('r.nama_rombel', $request->rombel);
                 }
             }
@@ -204,18 +201,18 @@ class FilterWaliasuhService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->where(fn ($q) => $q->whereNull('rp.id')->orWhere('rp.status', '!=', 'aktif'));
+                    ->where(fn ($q) => $q->whereNull('pd.id')->orWhere('pd.status', '!=', 'aktif'));
                 break;
             case 'pelajar':
-                $query->where('rp.status', 'aktif');
+                $query->where('pd.status', 'aktif');
                 break;
             case 'pelajar non santri':
-                $query->where('rp.status', 'aktif')
+                $query->where('pd.status', 'aktif')
                     ->where('s.status', '!=', 'aktif');
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
-                $query->where('rp.status', 'aktif')
+                $query->where('pd.status', 'aktif')
                     ->where('s.status', 'aktif');
                 break;
             default:

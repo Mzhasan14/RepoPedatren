@@ -22,33 +22,31 @@ class FilterWaliService
 
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
+        // Cek pertama kali hanya untuk negara
         if (! $request->filled('negara')) {
-            return $query;
+            return $query; // Jika negara tidak diisi, tidak perlu filter lebih lanjut
         }
 
-        // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
-        if ($request->filled('negara')) {
-            $query->join('negara', 'b.negara_id', '=', 'negara.id')
-                ->where('negara.nama_negara', $request->negara);
+        // Filter berdasarkan negara
+        $query->join('negara', 'b.negara_id', '=', 'negara.id')
+            ->where('negara.nama_negara', $request->negara);
 
-            if ($request->filled('provinsi')) {
-                $query->leftJoin('provinsi', 'b.provinsi_id', '=', 'provinsi.id')
-                    ->where('provinsi.nama_provinsi', $request->provinsi);
+        // Filter berdasarkan provinsi (hanya jika diisi)
+        if ($request->filled('provinsi')) {
+            $query->leftJoin('provinsi', 'b.provinsi_id', '=', 'provinsi.id')
+                ->where('provinsi.nama_provinsi', $request->provinsi);
 
-                if ($request->filled('kabupaten')) {
-                    // Pastikan join ke tabel kabupaten dilakukan sebelum pemakaian filter
-                    $query->where('kb.nama_kabupaten', $request->kabupaten);
+            if ($request->filled('kabupaten')) {
+                $query->where('kb.nama_kabupaten', $request->kabupaten);
+            }
 
-                    if ($request->filled('kecamatan')) {
-                        $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
-                            ->where('kecamatan.nama_kecamatan', $request->kecamatan);
-                    }
-                } else {
-                    // Jika nilai kabupaten tidak valid, hasilkan query kosong
-                    $query->whereRaw('0 = 1');
-                }
+            if ($request->filled('kecamatan')) {
+                $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
+                    ->where('kecamatan.nama_kecamatan', $request->kecamatan);
             }
         }
+        // Jika provinsi tidak diisi, maka filter kabupaten, kecamatan, desa tidak akan diterapkan.
+        // Ini adalah perilaku yang benar.
 
         return $query;
     }
@@ -160,9 +158,9 @@ class FilterWaliService
         $wafat = strtolower($request->wafat);
 
         if ($wafat === 'sudah wafat') {
-            $query->where('o.wafat', true);
+            $query->where('b.wafat', true);
         } elseif ($wafat === 'masih hidup') {
-            $query->where('o.wafat', false);
+            $query->where('b.wafat', false);
         } else {
             // Jika nilai tidak valid, tidak menampilkan data apapun
             $query->whereRaw('0 = 1');

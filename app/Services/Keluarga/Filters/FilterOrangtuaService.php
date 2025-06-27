@@ -44,9 +44,6 @@ class FilterOrangtuaService
                         $query->leftJoin('kecamatan', 'b.kecamatan_id', '=', 'kecamatan.id')
                             ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
-                } else {
-                    // Jika nilai kabupaten tidak valid, hasilkan query kosong
-                    $query->whereRaw('0 = 1');
                 }
             }
         }
@@ -162,9 +159,9 @@ class FilterOrangtuaService
         $wafat = strtolower($request->wafat);
 
         if ($wafat === 'sudah wafat') {
-            $query->where('o.wafat', true);
+            $query->where('b.wafat', true);
         } elseif ($wafat === 'masih hidup') {
-            $query->where('o.wafat', false);
+            $query->where('b.wafat', false);
         } else {
             // Jika nilai tidak valid, tidak menampilkan data apapun
             $query->whereRaw('0 = 1');
