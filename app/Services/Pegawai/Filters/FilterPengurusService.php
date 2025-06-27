@@ -155,23 +155,32 @@ class FilterPengurusService
             case 'tidak ada berkas':
                 $query->whereNull('br.biodata_id');
                 break;
+
             case 'tidak ada foto diri':
-                $query->where('br.jenis_berkas_id', 4)->whereNull('br.file_path');
+                $query->where(function ($q) {
+                    $q->where('br.jenis_berkas_id', 4)->whereNull('br.file_path')
+                    ->orWhereNull('br.jenis_berkas_id');
+                });
                 break;
+
             case 'memiliki foto diri':
                 $query->where('br.jenis_berkas_id', 4)->whereNotNull('br.file_path');
                 break;
-            case 'tidak ada kk':
-                $query->where('br.jenis_berkas_id', 1)->whereNull('br.file_path');
+
+            case 'memiliki kk':
+                $query->where('br.jenis_berkas_id', 1)->whereNotNull('br.file_path');
                 break;
-            case 'tidak ada akta kelahiran':
-                $query->where('br.jenis_berkas_id', 3)->whereNull('br.file_path');
+
+            case 'memiliki akta kelahiran':
+                $query->where('br.jenis_berkas_id', 3)->whereNotNull('br.file_path');
                 break;
-            case 'tidak ada ijazah':
-                $query->where('br.jenis_berkas_id', 5)->whereNull('br.file_path');
+
+            case 'memiliki ijazah':
+                $query->where('br.jenis_berkas_id', 5)->whereNotNull('br.file_path');
                 break;
+
             default:
-                $query->whereRaw('0 = 1');
+                $query->whereRaw('0 = 1'); // fallback: tidak ada hasil
         }
 
         return $query;

@@ -23,30 +23,49 @@ class CatatanKognitifFactory extends Factory
     public function definition(): array
     {
         $tanggalMulai = $this->faker->dateTimeBetween('-10 years', 'now');
-        $tanggalSelesai = $this->faker->boolean(70) // 70% kemungkinan punya tanggal_selesai
-            ? $this->faker->dateTimeBetween($tanggalMulai, 'now')
-            : null; // NULL jika masih menjabat
+        $status = $this->faker->boolean();
+        $tanggalSelesai = $status ? null : $this->faker->dateTimeBetween($tanggalMulai, 'now');
+
+        // Fungsi helper tindak lanjut
+        $generateTindakLanjut = function ($nilai) {
+            return match ($nilai) {
+                'A' => 'Bagus, harap dipertahankan',
+                'B' => 'Cukup baik, tetap ditingkatkan',
+                'C' => 'Perlu perhatian dan pembinaan',
+                'D' => 'Kurang, perlu bimbingan intensif',
+                'E' => 'Buruk, segera ditindaklanjuti secara serius',
+                default => 'Perlu evaluasi lanjutan',
+            };
+        };
+
+        // Nilai acak untuk setiap kategori
+        $kebahasaan = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $kitab = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $tahfidz = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $furudul = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $tulis = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
+        $baca = $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']);
 
         return [
-            'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_wali_asuh' => Wali_asuh::inRandomOrder()->first()->id,
-            'kebahasaan_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'kebahasaan_tindak_lanjut' => $this->faker->sentence(),
-            'baca_kitab_kuning_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'baca_kitab_kuning_tindak_lanjut' => $this->faker->sentence(),
-            'hafalan_tahfidz_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'hafalan_tahfidz_tindak_lanjut' => $this->faker->sentence(),
-            'furudul_ainiyah_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'furudul_ainiyah_tindak_lanjut' => $this->faker->sentence(),
-            'tulis_alquran_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'tulis_alquran_tindak_lanjut' => $this->faker->sentence(),
-            'baca_alquran_nilai' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
-            'baca_alquran_tindak_lanjut' => $this->faker->sentence(),
+            'id_santri' => null,
+            'id_wali_asuh' => null,
+            'kebahasaan_nilai' => $kebahasaan,
+            'kebahasaan_tindak_lanjut' => $generateTindakLanjut($kebahasaan),
+            'baca_kitab_kuning_nilai' => $kitab,
+            'baca_kitab_kuning_tindak_lanjut' => $generateTindakLanjut($kitab),
+            'hafalan_tahfidz_nilai' => $tahfidz,
+            'hafalan_tahfidz_tindak_lanjut' => $generateTindakLanjut($tahfidz),
+            'furudul_ainiyah_nilai' => $furudul,
+            'furudul_ainiyah_tindak_lanjut' => $generateTindakLanjut($furudul),
+            'tulis_alquran_nilai' => $tulis,
+            'tulis_alquran_tindak_lanjut' => $generateTindakLanjut($tulis),
+            'baca_alquran_nilai' => $baca,
+            'baca_alquran_tindak_lanjut' => $generateTindakLanjut($baca),
             'tanggal_buat' => $tanggalMulai,
             'tanggal_selesai' => $tanggalSelesai,
             'created_by' => 1,
             'updated_by' => 1,
-            'status' => 1,
+            'status' => $status,
             'created_at' => now(),
             'updated_at' => now(),
         ];

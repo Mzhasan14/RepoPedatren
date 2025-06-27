@@ -3,7 +3,7 @@
 namespace App\Services\Administrasi\Filters;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
 class FilterCatatanAfektifService

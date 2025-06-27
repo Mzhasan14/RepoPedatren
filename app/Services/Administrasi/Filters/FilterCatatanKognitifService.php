@@ -3,7 +3,7 @@
 namespace App\Services\Administrasi\Filters;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 
 class FilterCatatanKognitifService
@@ -29,19 +29,19 @@ class FilterCatatanKognitifService
     private function applyNegaraFilter(Builder $query, Request $request): Builder
     {              // Filter berdasarkan lokasi (negara, provinsi, kabupaten, kecamatan, desa)
         if ($request->filled('negara')) {
-            $query->leftJoin('negara', 'cs.negara_id', '=', 'negara.id')
+            $query->leftJoin('negara', 'bs.negara_id', '=', 'negara.id')
                 ->where('negara.nama_negara', $request->negara);
 
             if ($request->filled('provinsi')) {
-                $query->leftJoin('provinsi', 'cs.provinsi_id', '=', 'provinsi.id')
+                $query->leftJoin('provinsi', 'bs.provinsi_id', '=', 'provinsi.id')
                     ->where('provinsi.nama_provinsi', $request->provinsi);
 
                 if ($request->filled('kabupaten')) {
-                    $query->leftJoin('kabupaten', 'cs.kabupaten_id', '=', 'kabupaten.id')
+                    $query->leftJoin('kabupaten', 'bs.kabupaten_id', '=', 'kabupaten.id')
                         ->where('kabupaten.nama_kabupaten', $request->kabupaten);
 
                     if ($request->filled('kecamatan')) {
-                        $query->leftJoin('kecamatan', 'cs.kecamatan_id', '=', 'kecamatan.id')
+                        $query->leftJoin('kecamatan', 'bs.kecamatan_id', '=', 'kecamatan.id')
                             ->where('kecamatan.nama_kecamatan', $request->kecamatan);
                     }
                 }
@@ -55,7 +55,7 @@ class FilterCatatanKognitifService
     {
         // Filter Search Nama
         if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(cs.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+            $query->whereRaw('MATCH(bs.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
         }
 
         return $query;
@@ -109,9 +109,9 @@ class FilterCatatanKognitifService
         if ($request->filled('jenis_kelamin')) {
             $jenis_kelamin = strtolower($request->jenis_kelamin);
             if ($jenis_kelamin == 'laki-laki') {
-                $query->where('cs.jenis_kelamin', 'l');
+                $query->where('bs.jenis_kelamin', 'l');
             } elseif ($jenis_kelamin == 'perempuan') {
-                $query->where('cs.jenis_kelamin', 'p');
+                $query->where('bs.jenis_kelamin', 'p');
             }
         }
 
@@ -124,12 +124,12 @@ class FilterCatatanKognitifService
         if ($request->filled('phone_number')) {
             $query->where(function ($q) use ($request) {
                 if (strtolower($request->phone_number) === 'mempunyai') {
-                    $q->whereNotNull('cs.no_telepon')
-                        ->where('cs.no_telepon', '!=', '');
+                    $q->whereNotNull('bs.no_telepon')
+                        ->where('bs.no_telepon', '!=', '');
                 } elseif (strtolower($request->phone_number) === 'tidak mempunyai') {
                     $q->where(function ($q2) {
-                        $q2->whereNull('cs.no_telepon')
-                            ->orWhere('cs.no_telepon', '');
+                        $q2->whereNull('bs.no_telepon')
+                            ->orWhere('bs.no_telepon', '');
                     });
                 }
             });

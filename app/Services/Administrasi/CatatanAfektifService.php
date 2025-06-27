@@ -4,6 +4,7 @@ namespace App\Services\Administrasi;
 
 use App\Models\Catatan_afektif;
 use App\Models\Santri;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,55 +12,56 @@ use Illuminate\Support\Facades\Log;
 
 class CatatanAfektifService
 {
+    public function baseCatatanAfektifQuery(Request $request)
+    {
+        $pasFotoId = DB::table('jenis_berkas')
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
+
+        $fotoLast = DB::table('berkas')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('jenis_berkas_id', $pasFotoId)
+            ->groupBy('biodata_id');
+
+        $query = DB::table('catatan_afektif')
+            ->join('santri as cs', 'cs.id', '=', 'catatan_afektif.id_santri')
+            ->join('biodata as bs', 'bs.id', '=', 'cs.biodata_id')
+            ->leftJoin('domisili_santri', 'domisili_santri.santri_id', '=', 'cs.id')
+            ->leftJoin('wilayah', 'wilayah.id', '=', 'domisili_santri.wilayah_id')
+            ->leftJoin('blok', 'blok.id', '=', 'domisili_santri.blok_id')
+            ->leftJoin('kamar', 'kamar.id', '=', 'domisili_santri.kamar_id')
+            ->leftJoin('pendidikan', 'pendidikan.biodata_id', '=', 'bs.id')
+            ->leftJoin('lembaga', 'lembaga.id', '=', 'pendidikan.lembaga_id')
+            ->leftJoin('jurusan', 'jurusan.id', '=', 'pendidikan.jurusan_id')
+            ->leftJoin('kelas', 'kelas.id', '=', 'pendidikan.kelas_id')
+            ->leftJoin('rombel', 'rombel.id', '=', 'pendidikan.rombel_id')
+            ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_afektif.id_wali_asuh')
+            ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
+            ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
+            
+            // Foto santri (catatan)
+            ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
+                $join->on('bs.id', '=', 'fotoLastCatatan.biodata_id');
+            })
+            ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
+
+            // Foto pencatat
+            ->leftJoinSub($fotoLast, 'fotoLastPencatat', function ($join) {
+                $join->on('bp.id', '=', 'fotoLastPencatat.biodata_id');
+            })
+            ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+
+            ->where('catatan_afektif.status', true)
+            ->whereNull('catatan_afektif.tanggal_selesai');
+
+        return $query;
+    }
     public function getAllCatatanAfektif(Request $request)
     {
         try {
-            // Ambil ID untuk jenis berkas "Pas foto"
-            $pasFotoId = DB::table('jenis_berkas')
-                ->where('nama_jenis_berkas', 'Pas foto')
-                ->value('id');
+            $query = $this->baseCatatanAfektifQuery($request);
 
-            if (!$pasFotoId) {
-                throw new \Exception('Jenis berkas "Pas foto" tidak ditemukan');
-            }
-
-            // Subquery: foto terakhir per biodata
-            $fotoLast = DB::table('berkas')
-                ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-                ->where('jenis_berkas_id', $pasFotoId)
-                ->groupBy('biodata_id');
-
-            return Catatan_afektif::Active()
-                ->join('santri as cs', 'cs.id', '=', 'catatan_afektif.id_santri')
-                ->join('biodata as bs', 'bs.id', '=', 'cs.biodata_id')
-                ->leftJoin('domisili_santri', 'domisili_santri.santri_id', '=', 'cs.id')
-                ->leftJoin('wilayah', 'wilayah.id', '=', 'domisili_santri.wilayah_id')
-                ->leftJoin('blok', 'blok.id', '=', 'domisili_santri.blok_id')
-                ->leftJoin('kamar', 'kamar.id', '=', 'domisili_santri.kamar_id')
-                ->leftJoin('pendidikan', 'pendidikan.biodata_id', '=', 'bs.id')
-                ->leftJoin('lembaga', 'lembaga.id', '=', 'pendidikan.lembaga_id')
-                ->leftJoin('jurusan', 'jurusan.id', '=', 'pendidikan.jurusan_id')
-                ->leftJoin('kelas', 'kelas.id', '=', 'pendidikan.kelas_id')
-                ->leftJoin('rombel', 'rombel.id', '=', 'pendidikan.rombel_id')
-                ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_afektif.id_wali_asuh')
-                ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
-                ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
-
-                // Join foto catatan
-                ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
-                    $join->on('bs.id', '=', 'fotoLastCatatan.biodata_id');
-                })
-                ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
-
-                // Join foto pencatat
-                ->leftJoinSub($fotoLast, 'fotoLastPencatat', function ($join) {
-                    $join->on('bp.id', '=', 'fotoLastPencatat.biodata_id');
-                })
-                ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
-
-                ->whereNull('catatan_afektif.deleted_at')
-
-                ->select(
+            return $query->select(
                     'catatan_afektif.id as id_catatan',
                     'bs.id as Biodata_uuid',
                     'bp.id as Pencatat_uuid',
@@ -98,7 +100,7 @@ class CatatanAfektifService
                     'FotoPencatat.file_path'
                 );
         } catch (\Exception $e) {
-            Log::error('Error fetching data Catatan Afektif: '.$e->getMessage());
+            Log::error('Error fetching data Catatan Afektif: ' . $e->getMessage());
 
             return response()->json([
                 'status' => 'error',
@@ -131,7 +133,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->akhlak_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -152,7 +154,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -173,7 +175,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -195,7 +197,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->akhlak_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -215,7 +217,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -235,7 +237,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => $item->created_at->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];

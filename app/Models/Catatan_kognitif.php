@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Models\Kewaliasuhan\Wali_asuh;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Database\Factories\CatatanKognitifFactory;
 
 class Catatan_kognitif extends Model
 {
-    use LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'catatan_kognitif';
 
@@ -67,7 +69,10 @@ class Catatan_kognitif extends Model
             $model->save();
         });
     }
-
+    protected static function newFactory()
+    {
+        return CatatanKognitifFactory::new();
+    }
     public function ScopeActive($query)
     {
         return $query->where('catatan_kognitif.status', true);
