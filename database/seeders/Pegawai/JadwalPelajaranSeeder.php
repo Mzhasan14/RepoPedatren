@@ -9,6 +9,7 @@ use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Lembaga;
 use App\Models\Pendidikan\Rombel;
+use App\Models\Semester;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -19,31 +20,53 @@ class JadwalPelajaranSeeder extends Seeder
      */
     public function run(): void
     {
-        $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        $kelasList = Kelas::pluck('id')->toArray();
-        $jamList = JamPelajaran::pluck('id')->toArray();
-        $mapelList = MataPelajaran::pluck('id')->toArray();
-        $rombelList = Rombel::pluck('id')->toArray();
-        $jurusanList = Jurusan::pluck('id')->toArray();
-        $lembagaList = Lembaga::pluck('id')->toArray();
+        $hariList     = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        $kelasList    = Kelas::pluck('id')->toArray();
+        $rombelList   = Rombel::pluck('id')->toArray();
+        $jurusanList  = Jurusan::pluck('id')->toArray();
+        $lembagaList  = Lembaga::pluck('id')->toArray();
+        $jamList      = JamPelajaran::pluck('id')->toArray();
+        $mapelList    = MataPelajaran::pluck('id')->toArray();
+        $semesterId   = Semester::value('id') ?? 1;
+        $createdBy    = 1;
+        $now          = now();
 
-        $semesterId = 1; // bisa diacak atau di-loop juga
-        $createdBy = 1;
+        $counter = 0;
+        $max = 5; // Batasi hanya X kombinasi lembaga-jurusan-kelas
 
-        foreach ($hariList as $hari) {
-            foreach ($kelasList as $kelasId) {
-                foreach ($jamList as $jamId) {
-                    JadwalPelajaran::create([
-                        'hari' => $hari,
-                        'semester_id' => $semesterId,
-                        'kelas_id' => $kelasId,
-                        'rombel_id' => fake()->optional()->randomElement($rombelList),
-                        'mata_pelajaran_id' => fake()->randomElement($mapelList),
-                        'jam_pelajaran_id' => $jamId,
-                        'jurusan_id' => fake()->randomElement($jurusanList), // atau optional() jika nullable
-                        'lembaga_id' => fake()->randomElement($lembagaList), // <- tanpa optional()
-                        'created_by' => $createdBy,
-                    ]);
+        foreach ($lembagaList as $lembagaId) {
+            foreach ($jurusanList as $jurusanId) {
+                foreach ($kelasList as $kelasId) {
+
+                    if (++$counter > $max) break 3;
+
+                    // ❗ Rombel hanya sekali dipilih untuk kombinasi ini
+                    $rombelId = fake()->optional()->randomElement($rombelList);
+
+                    // ❗ Untuk kombinasi ini, isi semua hari dan jam
+                    foreach ($hariList as $hari) {
+                        foreach ($jamList as $jamId) {
+                            JadwalPelajaran::updateOrInsert(
+                                [
+                                    'hari'             => $hari,
+                                    'kelas_id'         => $kelasId,
+                                    'jam_pelajaran_id' => $jamId,
+                                ],
+                                [
+                                    'semester_id'        => $semesterId,
+                                    'rombel_id'          => $rombelId,
+                                    'mata_pelajaran_id'  => fake()->randomElement($mapelList),
+                                    'jurusan_id'         => $jurusanId,
+                                    'lembaga_id'         => $lembagaId,
+                                    'created_by'         => $createdBy,
+                                    'created_at'         => $now,
+                                    'updated_at'         => $now,
+                                ]
+                            );
+                        }
+                    }
+
+                    // ❗ Setelah full 1 minggu, lanjut ke kombinasi berikut
                 }
             }
         }
