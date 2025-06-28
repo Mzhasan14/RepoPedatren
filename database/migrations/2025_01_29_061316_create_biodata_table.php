@@ -27,7 +27,7 @@ return new class extends Migration
             $table->char('nik', 16)->nullable();
             $table->string('no_telepon', 20)->nullable();
             $table->string('no_telepon_2', 20)->nullable();
-            $table->string('email', 100)->unique('bd_email_unique')->nullable();
+            $table->string('email', 100)->nullable();
             $table->enum(
                 'jenjang_pendidikan_terakhir',
                 ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
