@@ -433,8 +433,7 @@ class AnakasuhService
             // Jika wali asuh tidak berubah
             if ($kewaliasuhanLama && $input['id_wali_asuh'] == $kewaliasuhanLama->id_wali_asuh) {
                 return [
-                    'status' => false,
-                    'message' => 'Wali asuh sama dengan sebelumnya, tidak ada perubahan.',
+                    'status' => false, 'message' => 'Wali asuh sama dengan sebelumnya, tidak ada perubahan.',
                 ];
             }
 
@@ -487,38 +486,17 @@ class AnakasuhService
         });
     }
 
-    protected function assignToWaliAsuh($anakAsuhId, $waliAsuhId)
+    public function pindahAnakasuh(array $input, int $id): array
     {
-        // Validasi apakah wali asuh aktif
-        $waliAsuh = Wali_asuh::where('id', $waliAsuhId)
-            ->where('status', true)
-            ->firstOrFail();
+        return DB::transaction(function () use ($input, $id) {
+            $kewaliasuhanSaatIni = Kewaliasuhan::find($id);
 
-        // // Cek batas maksimal anak asuh per wali (contoh: maks 5)
-        // $jumlahAnakAsuh = Kewaliasuhan::where('id_wali_asuh', $waliAsuhId)
-        //     ->whereNull('tanggal_berakhir')
-        //     ->count();
+            if (!$kewaliasuhanSaatIni) {
+                return ['status' => false, 'message' => 'Relasi kewaliasuhan tidak ditemukan.'];
+            }
 
-        // if ($jumlahAnakAsuh >= 5) {
-        //     throw new \Exception("Wali asuh sudah mencapai batas maksimal anak asuh");
-        // }
+            $anakAsuh = Anak_Asuh::with('santri.biodata')->find($kewaliasuhanSaatIni->id_anak_asuh);
 
-        // Buat relasi kewaliasuhan
-        return Kewaliasuhan::create([
-            'id_wali_asuh' => $waliAsuhId,
-            'id_anak_asuh' => $anakAsuhId,
-            'tanggal_mulai' => now(),
-            'created_by' => Auth::id(),
-            'status' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    public function pindahAnakasuh(array $input, int $idAnakAsuh): array
-    {
-        return DB::transaction(function () use ($input, $idAnakAsuh) {
-            $anakAsuh = Anak_asuh::find($idAnakAsuh);
             if (! $anakAsuh) {
                 return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
             }
@@ -527,7 +505,7 @@ class AnakasuhService
             $jenisKelaminSantri = strtolower($anakAsuh->santri->biodata->jenis_kelamin ?? '');
 
             // Cek kewaliasuhan aktif
-            $kewAliasuhLama = Kewaliasuhan::where('id_anak_asuh', $idAnakAsuh)
+            $kewAliasuhLama = Kewaliasuhan::where('id_anak_asuh', $anakAsuh->id)
                 ->where('status', true)
                 ->first();
 
@@ -569,7 +547,7 @@ class AnakasuhService
             // Buat hubungan baru
             $kewAliasuhBaru = Kewaliasuhan::create([
                 'id_wali_asuh' => $waliBaruId,
-                'id_anak_asuh' => $idAnakAsuh,
+                'id_anak_asuh' => $anakAsuh->id,
                 'tanggal_mulai' => $tanggalPindah,
                 'status' => true,
                 'created_by' => Auth::id(),
@@ -590,13 +568,20 @@ class AnakasuhService
     public function keluarAnakasuh(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $anakAsuh = Anak_asuh::find($id);
+            $kewaliasuhanSaatIni = Kewaliasuhan::find($id);
+
+            if (!$kewaliasuhanSaatIni) {
+                return ['status' => false, 'message' => 'Relasi kewaliasuhan tidak ditemukan.'];
+            }
+
+            $anakAsuh = Anak_Asuh::with('santri.biodata')->find($kewaliasuhanSaatIni->id_anak_asuh);
+
             if (! $anakAsuh) {
                 return ['status' => false, 'message' => 'Data anak asuh tidak ditemukan.'];
             }
 
             // Ambil data kewaliasuhan yang aktif
-            $kewaliasuhan = Kewaliasuhan::where('id_anak_asuh', $id)
+            $kewaliasuhan = Kewaliasuhan::where('id_anak_asuh', $anakAsuh->id)
                 ->where('status', true)
                 ->first();
 
