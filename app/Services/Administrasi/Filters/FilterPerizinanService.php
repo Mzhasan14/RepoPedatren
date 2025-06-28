@@ -202,6 +202,8 @@ class FilterPerizinanService
             return $query;
         }
 
+        $query->whereNull('pr.tanggal_kembali');
+
         if ($request->masa_telat === 'lebih  dari seminggu') {
             return $query->whereRaw('DATEDIFF(NOW(), pr.tanggal_akhir) > 7');
         } elseif ($request->masa_telat === 'lebih dari 2 minggu') {

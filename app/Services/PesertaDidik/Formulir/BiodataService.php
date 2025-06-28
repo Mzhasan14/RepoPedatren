@@ -72,6 +72,12 @@ class BiodataService
             ];
         }
 
+        // Ambil data pekerjaan dan penghasilan dari orang_tua_wali jika ada
+        $orangTuaWali = \App\Models\OrangTuaWali::where('id_biodata', $biodata->id)->first();
+
+        $pekerjaan = $orangTuaWali ? $orangTuaWali->pekerjaan : null;
+        $penghasilan = $orangTuaWali ? $orangTuaWali->penghasilan : null;
+
         // Cari berkas dengan jenis "Pas foto"
         $pasFoto = $biodata->berkas
             ->firstWhere(fn($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas Foto');
@@ -105,9 +111,13 @@ class BiodataService
                 'kode_pos' => $biodata->kode_pos,
                 'wafat' => (bool) $biodata->wafat,
                 'pas_foto_url' => $pasFoto ? url($pasFoto->file_path) : null,
+                // Tambahkan dua baris di bawah ini
+                'pekerjaan' => $pekerjaan,
+                'penghasilan' => $penghasilan,
             ],
         ];
     }
+
 
     private function checkGenderConsistency($bioId, $newGender)
     {
@@ -227,7 +237,6 @@ class BiodataService
         $biodata->kode_pos = $input['kode_pos'] ?? $biodata->kode_pos;
         $biodata->wafat = (bool) $input['wafat'] ?? $biodata->wafat;
 
-        // Cek apakah ada data yang berubah
         if (! $biodata->isDirty()) {
             return [
                 'status' => false,
@@ -235,11 +244,23 @@ class BiodataService
             ];
         }
 
-        // Set siapa yang mengupdate
         $biodata->updated_by = Auth::id();
 
-        // Simpan perubahan
         $biodata->save();
+
+        $orangTuaWali = \App\Models\OrangTuaWali::where('id_biodata', $biodata->id)->first();
+        if ($orangTuaWali) {
+            $updateData = [];
+            if (array_key_exists('pekerjaan', $input)) {
+                $updateData['pekerjaan'] = $input['pekerjaan'];
+            }
+            if (array_key_exists('penghasilan', $input)) {
+                $updateData['penghasilan'] = $input['penghasilan'];
+            }
+            if (!empty($updateData)) {
+                $orangTuaWali->update($updateData);
+            }
+        }
 
         return [
             'status' => true,

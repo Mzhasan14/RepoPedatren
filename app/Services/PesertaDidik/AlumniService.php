@@ -43,7 +43,6 @@ class AlumniService
             ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'alumni'))
             ->leftJoinSub($rpLast, 'lr', fn ($j) => $j->on('lr.biodata_id', '=', 'b.id'))
             ->leftjoin('riwayat_pendidikan as rp', fn ($j) => $j->on('rp.biodata_id', '=', 'lr.biodata_id')->on('rp.tanggal_keluar', '=', 'lr.max_tanggal_keluar'))
-            ->leftjoin('pendidikan as pd', 'pd.biodata_id', '=', 'b.id')
             ->leftJoin('lembaga as l', 'rp.lembaga_id', '=', 'l.id')
             ->leftJoinSub($santriLast, 'ld', fn ($j) => $j->on('ld.id', '=', 's.id'))
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))

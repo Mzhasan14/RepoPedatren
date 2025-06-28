@@ -207,6 +207,7 @@ class DetailService
             ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
             ->join('kamar as km', 'ds.kamar_id', '=', 'km.id')
             ->where('b.id', $biodataId)
+            ->where('ds.status', 'aktif')
             ->select([
                 'ds.id',
                 'km.nama_kamar',
