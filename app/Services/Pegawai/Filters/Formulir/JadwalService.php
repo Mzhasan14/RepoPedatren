@@ -487,26 +487,27 @@ class JadwalService
 
         DB::beginTransaction();
         try {
-            // Hapus semua jadwal yang terkait dengan mata pelajaran
+            // Hapus semua jadwal pelajaran yang berelasi dengan mata pelajaran ini
             $mapel->jadwalPelajaran()->delete();
 
-            // Hapus mata pelajaran
-            $mapel->delete();
+            // Update status mata pelajaran menjadi nonaktif
+            $mapel->status = false; // atau bisa 'nonaktif' tergantung tipe kolom
+            $mapel->save();
 
             DB::commit();
 
             return [
                 'status' => true,
-                'message' => 'Mata pelajaran dan semua jadwalnya berhasil dihapus.',
+                'message' => 'Jadwal pelajaran berhasil dihapus dan mata pelajaran dinonaktifkan.',
             ];
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            Log::error('Gagal menghapus mata pelajaran: ' . $e->getMessage());
+            Log::error('Gagal memproses nonaktifkan mapel: ' . $e->getMessage());
 
             return [
                 'status' => false,
-                'message' => 'Terjadi kesalahan saat menghapus mata pelajaran.',
+                'message' => 'Terjadi kesalahan saat menonaktifkan mata pelajaran.',
                 'error' => $e->getMessage(),
             ];
         }
@@ -514,15 +515,24 @@ class JadwalService
     public function getAllJadwalQuery(Request $request)
     {
         return DB::table('jadwal_pelajaran as jp')
-            ->join('semester','jp.semester_id','=','semester.id')
-            ->join('mata_pelajaran as mp', 'mp.id', '=', 'jp.mata_pelajaran_id')
+            ->leftJoin('semester', 'jp.semester_id', '=', 'semester.id')
+            ->leftJoin('mata_pelajaran as mp', function ($join) {
+                $join->on('mp.id', '=', 'jp.mata_pelajaran_id')
+                    ->where('mp.status', true);
+            })
             ->join('lembaga as l', 'l.id', '=', 'jp.lembaga_id')
             ->join('jurusan as j', 'j.id', '=', 'jp.jurusan_id')
             ->join('kelas as k', 'k.id', '=', 'jp.kelas_id')
+            ->leftJoin('rombel as r', 'r.id', '=', 'jp.rombel_id')
             ->join('jam_pelajaran as jam', 'jam.id', '=', 'jp.jam_pelajaran_id')
             ->leftJoin('pengajar as p', 'p.id', '=', 'mp.pengajar_id')
             ->leftJoin('pegawai as pg', 'pg.id', '=', 'p.pegawai_id')
             ->leftJoin('biodata as b', 'b.id', '=', 'pg.biodata_id')
+            ->when($request->lembaga_id, fn($query, $value) => $query->where('jp.lembaga_id', $value))
+            ->when($request->jurusan_id, fn($query, $value) => $query->where('jp.jurusan_id', $value))
+            ->when($request->kelas_id, fn($query, $value) => $query->where('jp.kelas_id', $value))
+            ->when($request->rombel_id, fn($query, $value) => $query->where('jp.rombel_id', $value))
+            ->when($request->semester_id, fn($query, $value) => $query->where('jp.semester_id', $value))
             ->select([
                 'jp.id',
                 'l.id as lembaga_id',
@@ -531,6 +541,8 @@ class JadwalService
                 'j.nama_jurusan',
                 'k.id as kelas_id',
                 'k.nama_kelas',
+                'r.id as rombel_id',
+                'r.nama_rombel',
                 'semester.semester',
                 'mp.kode_mapel',
                 'mp.nama_mapel',
@@ -567,7 +579,7 @@ class JadwalService
             ];
         }
 
-        // Urutkan hari tetap (manual urutan)
+        // Urutkan hari secara manual
         $orderedDays = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $sorted = [];
 
@@ -584,19 +596,29 @@ class JadwalService
         DB::beginTransaction();
 
         try {
-            $mataPelajaran = MataPelajaran::findOrFail($input['mata_pelajaran_id']);
-            $pengajarId = $mataPelajaran->pengajar_id;
             $now = now();
             $jadwalTersimpan = [];
 
-            foreach ($input['jadwal'] ?? [] as $jadwal) {
-                $hari = $jadwal['hari'] ?? 'Hari tidak diketahui';
+            // Ambil informasi lembaga/jurusan/kelas/semester/rombel dari input global
+            $lembagaId  = $input['lembaga_id'];
+            $jurusanId  = $input['jurusan_id'];
+            $kelasId    = $input['kelas_id'];
+            $semesterId = $input['semester_id'];
+            $rombelId   = $input['rombel_id'] ?? null;
 
-                // Validasi bentrok kelas dari database
+            foreach ($input['jadwal'] ?? [] as $jadwal) {
+                $hari              = $jadwal['hari'] ?? 'Hari tidak diketahui';
+                $jamPelajaranId    = $jadwal['jam_pelajaran_id'];
+                $mataPelajaranId   = $jadwal['mata_pelajaran_id'];
+
+                $mataPelajaran = MataPelajaran::findOrFail($mataPelajaranId);
+                $pengajarId = $mataPelajaran->pengajar_id;
+
+                // Validasi bentrok kelas
                 $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
                     ->where('hari', $hari)
-                    ->where('kelas_id', $jadwal['kelas_id'])
-                    ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
+                    ->where('kelas_id', $kelasId)
+                    ->where('jam_pelajaran_id', $jamPelajaranId)
                     ->first();
 
                 if ($bentrokKelas) {
@@ -608,10 +630,10 @@ class JadwalService
                     throw new \Exception("Gagal menambahkan '{$mataPelajaran->nama_mapel}': kelas $kelasNama ($jurusanNama - $lembagaNama) sudah memiliki jadwal pada hari $hari, jam ke-$jamKe.");
                 }
 
-                // Validasi bentrok pengajar dari database
+                // Validasi bentrok pengajar
                 $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
                     ->where('hari', $hari)
-                    ->where('jam_pelajaran_id', $jadwal['jam_pelajaran_id'])
+                    ->where('jam_pelajaran_id', $jamPelajaranId)
                     ->whereHas('mataPelajaran', function ($query) use ($pengajarId) {
                         $query->where('pengajar_id', $pengajarId);
                     })
@@ -626,16 +648,16 @@ class JadwalService
                     throw new \Exception("Gagal menambahkan '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama).");
                 }
 
-                // Simpan ke database
+                // Simpan jadwal
                 $data = JadwalPelajaran::create([
                     'hari'               => $hari,
-                    'semester_id'        => $jadwal['semester_id'],
-                    'lembaga_id'         => $jadwal['lembaga_id'],
-                    'jurusan_id'         => $jadwal['jurusan_id'],
-                    'kelas_id'           => $jadwal['kelas_id'],
-                    'rombel_id'          => $jadwal['rombel_id'] ?? null,
-                    'mata_pelajaran_id'  => $mataPelajaran->id,
-                    'jam_pelajaran_id'   => $jadwal['jam_pelajaran_id'],
+                    'semester_id'        => $semesterId,
+                    'lembaga_id'         => $lembagaId,
+                    'jurusan_id'         => $jurusanId,
+                    'kelas_id'           => $kelasId,
+                    'rombel_id'          => $rombelId,
+                    'mata_pelajaran_id'  => $mataPelajaranId,
+                    'jam_pelajaran_id'   => $jamPelajaranId,
                     'created_by'         => Auth::id(),
                     'created_at'         => $now,
                     'updated_at'         => $now,
@@ -649,7 +671,7 @@ class JadwalService
             return [
                 'status' => true,
                 'message' => 'Jadwal berhasil ditambahkan.',
-                'data' => $mataPelajaran->load('jadwalPelajaran'),
+                'data' => $jadwalTersimpan,
             ];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -666,11 +688,6 @@ class JadwalService
         $jadwal = JadwalPelajaran::select([
                 'id',
                 'hari',
-                'semester_id',
-                'lembaga_id',
-                'jurusan_id',
-                'kelas_id',
-                'rombel_id',
                 'mata_pelajaran_id',
                 'jam_pelajaran_id'
             ])
@@ -694,6 +711,7 @@ class JadwalService
         DB::beginTransaction();
 
         try {
+            // Ambil data jadwal berdasarkan ID
             $jadwal = JadwalPelajaran::find($id);
             if (! $jadwal) {
                 return [
@@ -702,16 +720,30 @@ class JadwalService
                 ];
             }
 
-            $mataPelajaran = MataPelajaran::findOrFail($data['mata_pelajaran_id']);
+            // Validasi input manual jika belum menggunakan FormRequest
+            $validated = validator($data, [
+                'hari'               => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Ahad',
+                'mata_pelajaran_id'  => 'required|exists:mata_pelajaran,id',
+                'jam_pelajaran_id'   => 'required|exists:jam_pelajaran,id',
+            ], [
+                'hari.required'               => 'Hari wajib dipilih.',
+                'hari.in'                     => 'Hari harus diisi dengan nama hari yang valid.',
+                'mata_pelajaran_id.required' => 'Mata pelajaran wajib dipilih.',
+                'mata_pelajaran_id.exists'   => 'Mata pelajaran tidak ditemukan.',
+                'jam_pelajaran_id.required'  => 'Jam pelajaran wajib dipilih.',
+                'jam_pelajaran_id.exists'    => 'Jam pelajaran tidak ditemukan.',
+            ])->validate();
+
+            $hari   = $data['hari'];
+            $jamId  = $data['jam_pelajaran_id'];
+            $mataPelajaranId = $data['mata_pelajaran_id'];
+            $kelasId = $jadwal->kelas_id;
+
+            $mataPelajaran = MataPelajaran::findOrFail($mataPelajaranId);
             $pengajarId = $mataPelajaran->pengajar_id;
 
-            $hari     = $data['hari'];
-            $jamId    = $data['jam_pelajaran_id'];
-            $kelasId  = $data['kelas_id'];
-
-            // Cek bentrok kelas
-            $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
-                ->where('id', '!=', $id)
+            // Validasi bentrok kelas (kecuali data ini sendiri)
+            $bentrokKelas = JadwalPelajaran::where('id', '!=', $id)
                 ->where('hari', $hari)
                 ->where('kelas_id', $kelasId)
                 ->where('jam_pelajaran_id', $jamId)
@@ -726,9 +758,8 @@ class JadwalService
                 throw new \Exception("Gagal mengubah '{$mataPelajaran->nama_mapel}': kelas $kelasNama ($jurusanNama - $lembagaNama) sudah memiliki jadwal pada hari $hari, jam ke-$jamKe.");
             }
 
-            // Cek bentrok pengajar
-            $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
-                ->where('id', '!=', $id)
+            // Validasi bentrok pengajar
+            $bentrokPengajar = JadwalPelajaran::where('id', '!=', $id)
                 ->where('hari', $hari)
                 ->where('jam_pelajaran_id', $jamId)
                 ->whereHas('mataPelajaran', function ($q) use ($pengajarId) {
@@ -745,15 +776,10 @@ class JadwalService
                 throw new \Exception("Gagal mengubah '{$mataPelajaran->nama_mapel}': pengajar sudah mengajar pada hari $hari, jam ke-$jamKe di kelas $kelasNama ($jurusanNama - $lembagaNama).");
             }
 
-            // Update jadwal
+            // Simpan perubahan
             $jadwal->update([
                 'hari'               => $hari,
-                'semester_id'        => $data['semester_id'],
-                'lembaga_id'         => $data['lembaga_id'],
-                'jurusan_id'         => $data['jurusan_id'],
-                'kelas_id'           => $kelasId,
-                'rombel_id'          => $data['rombel_id'] ?? null,
-                'mata_pelajaran_id'  => $data['mata_pelajaran_id'],
+                'mata_pelajaran_id'  => $mataPelajaranId,
                 'jam_pelajaran_id'   => $jamId,
                 'updated_at'         => now(),
             ]);
@@ -764,7 +790,13 @@ class JadwalService
                 'status' => true,
                 'message' => 'Jadwal pelajaran berhasil diperbarui.',
                 'data' => $jadwal->fresh([
-                    'mataPelajaran', 'kelas', 'jurusan', 'lembaga', 'rombel', 'jamPelajaran', 'semester'
+                    'mataPelajaran:id,nama_mapel',
+                    'kelas:id,nama_kelas',
+                    'jurusan:id,nama_jurusan',
+                    'lembaga:id,nama_lembaga',
+                    'rombel:id,nama_rombel',
+                    'jamPelajaran:id,jam_ke,jam_mulai,jam_selesai',
+                    'semester:id,semester'
                 ]),
             ];
         } catch (\Exception $e) {
@@ -777,16 +809,9 @@ class JadwalService
             ];
         }
     }
-    public function deleteBatchByIds(array $ids): void
+    public function deleteById(int $id): void
     {
-        if (empty($ids)) {
-            throw ValidationException::withMessages([
-                'selected_ids' => ['Tidak ada data yang dipilih untuk dihapus.']
-            ]);
-        }
-
-        DB::table('jadwal_pelajaran')
-            ->whereIn('id', $ids)
-            ->delete();
+        $jadwal = JadwalPelajaran::findOrFail($id);
+        $jadwal->delete();
     }
 }

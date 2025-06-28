@@ -423,7 +423,7 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(fun
     Route::post('/jadwal-pelajaran', [MataPelajaranController::class,'storeJadwal']);
     Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'showJadwal']);
     Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'updateJadwal']);
-    Route::delete('/jadwal-pelajaran/batch-delete', [MataPelajaranController::class, 'batchDelete']);
+    Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 
 });
 

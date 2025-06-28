@@ -24,41 +24,42 @@ class StoreJadwalPelajaranRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'mata_pelajaran_id'               => 'required|exists:mata_pelajaran,id',
-            'jadwal'                          => 'required|array|min:1',
-
-            'jadwal.*.hari'                   => 'required|string',
-            'jadwal.*.semester_id'            => 'required|exists:semester,id',
-            'jadwal.*.jurusan_id'             => 'required|exists:jurusan,id',
-            'jadwal.*.kelas_id'               => 'required|exists:kelas,id',
-            'jadwal.*.lembaga_id'             => 'required|exists:lembaga,id',
-            'jadwal.*.jam_pelajaran_id'       => 'required|exists:jam_pelajaran,id',
-            'jadwal.*.rombel_id'              => 'nullable|exists:rombel,id',
+            'lembaga_id'         => 'required|exists:lembaga,id',
+            'jurusan_id'         => 'required|exists:jurusan,id',
+            'kelas_id'           => 'required|exists:kelas,id',
+            'semester_id'        => 'required|exists:semester,id',
+            'rombel_id'          => 'nullable|exists:rombel,id',
+            'jadwal'             => 'required|array|min:1',
+            'jadwal.*.hari'              => 'required|string',
+            'jadwal.*.jam_pelajaran_id'  => 'required|exists:jam_pelajaran,id',
+            'jadwal.*.mata_pelajaran_id' => 'required|exists:mata_pelajaran,id',
         ];
     }
+
 
     public function messages(): array
     {
         return [
-            'mata_pelajaran_id.required'         => 'Mata pelajaran wajib dipilih.',
-            'mata_pelajaran_id.exists'           => 'Mata pelajaran tidak ditemukan di sistem.',
-            'jadwal.required'                    => 'Setidaknya satu jadwal harus diisi.',
-            'jadwal.array'                       => 'Format jadwal tidak valid.',
-            'jadwal.min'                         => 'Minimal satu jadwal harus ditambahkan.',
+            'mata_pelajaran_id.required' => 'Mata pelajaran wajib dipilih.',
+            'mata_pelajaran_id.exists'   => 'Mata pelajaran tidak ditemukan di database.',
+            'lembaga_id.required'        => 'Lembaga wajib dipilih.',
+            'lembaga_id.exists'          => 'Lembaga tidak valid.',
+            'jurusan_id.required'        => 'Jurusan wajib dipilih.',
+            'jurusan_id.exists'          => 'Jurusan tidak ditemukan.',
+            'kelas_id.required'          => 'Kelas wajib dipilih.',
+            'kelas_id.exists'            => 'Kelas tidak ditemukan.',
+            'semester_id.required'       => 'Semester wajib dipilih.',
+            'semester_id.exists'         => 'Semester tidak ditemukan.',
+            'rombel_id.exists'           => 'Rombel tidak ditemukan.',
 
-            'jadwal.*.hari.required'             => 'Hari wajib diisi untuk setiap jadwal.',
-            'jadwal.*.hari.string'               => 'Hari harus berupa teks.',
-            'jadwal.*.semester_id.required'      => 'Semester wajib dipilih untuk setiap jadwal.',
-            'jadwal.*.semester_id.exists'        => 'Semester tidak ditemukan.',
-            'jadwal.*.jurusan_id.required'       => 'Jurusan wajib dipilih untuk setiap jadwal.',
-            'jadwal.*.jurusan_id.exists'         => 'Jurusan tidak ditemukan.',
-            'jadwal.*.kelas_id.required'         => 'Kelas wajib dipilih untuk setiap jadwal.',
-            'jadwal.*.kelas_id.exists'           => 'Kelas tidak ditemukan.',
-            'jadwal.*.lembaga_id.required'       => 'Lembaga wajib dipilih untuk setiap jadwal.',
-            'jadwal.*.lembaga_id.exists'         => 'Lembaga tidak ditemukan.',
-            'jadwal.*.jam_pelajaran_id.required' => 'Jam pelajaran wajib dipilih untuk setiap jadwal.',
+            'jadwal.required'            => 'Minimal satu jadwal harus diinput.',
+            'jadwal.array'               => 'Format jadwal tidak valid.',
+            'jadwal.min'                 => 'Minimal input satu baris jadwal.',
+
+            'jadwal.*.hari.required'             => 'Hari pada setiap jadwal wajib diisi.',
+            'jadwal.*.hari.string'               => 'Hari pada jadwal harus berupa teks.',
+            'jadwal.*.jam_pelajaran_id.required' => 'Jam pelajaran wajib dipilih pada setiap jadwal.',
             'jadwal.*.jam_pelajaran_id.exists'   => 'Jam pelajaran tidak ditemukan.',
-            'jadwal.*.rombel_id.exists'          => 'Rombel yang dipilih tidak ditemukan.',
         ];
     }
     protected function failedValidation(Validator $validator)

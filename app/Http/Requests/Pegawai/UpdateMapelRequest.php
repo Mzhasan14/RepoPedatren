@@ -5,6 +5,7 @@ namespace App\Http\Requests\Pegawai;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class UpdateMapelRequest extends FormRequest
 {
@@ -24,8 +25,13 @@ class UpdateMapelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kode_mapel' => 'required|string|max:20|unique:mata_pelajaran,kode_mapel,' . $this->route('id'),
+            'kode_mapel' => [
+                'required',
+                'string',
+                Rule::unique('mata_pelajaran', 'kode_mapel')->ignore($this->route('materiId')),
+            ],
             'nama_mapel' => 'required|string|max:255',
+            'pengajar_id'  => 'required|exists:pengajar,id',
         ];
     }
 
@@ -37,6 +43,8 @@ class UpdateMapelRequest extends FormRequest
             'kode_mapel.unique' => 'Kode mapel sudah digunakan.',
             'nama_mapel.required' => 'Nama mapel wajib diisi.',
             'nama_mapel.max' => 'Nama mapel maksimal 255 karakter.',
+            'pengajar_id.required' => 'Pengajar wajib dipilih.',
+            'pengajar_id.exists' => 'Pengajar yang dipilih tidak valid.',
         ];
     }
     protected function failedValidation(Validator $validator)

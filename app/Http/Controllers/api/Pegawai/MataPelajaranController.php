@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class MataPelajaranController extends Controller
 {
@@ -230,11 +231,13 @@ class MataPelajaranController extends Controller
     public function getAllJadwal(Request $request)
     {
         try {
-            // Pastikan semua parameter dikirim dan tidak kosong
+            // Validasi parameter wajib
             if (
                 blank($request->input('lembaga_id')) ||
                 blank($request->input('jurusan_id')) ||
-                blank($request->input('kelas_id'))
+                blank($request->input('kelas_id')) ||
+                blank($request->input('rombel_id')) ||
+                blank($request->input('semester_id'))
             ) {
                 return response()->json([
                     'status' => 'success',
@@ -243,11 +246,16 @@ class MataPelajaranController extends Controller
                 ]);
             }
 
-            // Proses query setelah semua filter valid
+            // Bangun query jadwal pelajaran
             $query = $this->JadwalService->getAllJadwalQuery($request);
+
+            // Terapkan filter tambahan (jika ada)
             $query = $this->FilterJadwalPelajaranService->applyJadwalFilters($query, $request);
+
+            // Ambil hasil akhir
             $results = $query->get();
 
+            // Format hasil sesuai hari
             $formatted = $this->JadwalService->groupJadwalByHari($results);
 
             $meta = $results->first();
@@ -255,6 +263,7 @@ class MataPelajaranController extends Controller
                 'lembaga' => $meta->nama_lembaga,
                 'jurusan' => $meta->nama_jurusan,
                 'kelas' => $meta->nama_kelas,
+                'rombel' => $meta->nama_rombel,
                 'semester' => 'Semester ' . $meta->semester
             ] : null;
 
@@ -264,7 +273,9 @@ class MataPelajaranController extends Controller
                 'data' => $formatted
             ]);
         } catch (\Throwable $e) {
-            Log::error("[JadwalPelajaranController] Error: {$e->getMessage()}");
+            Log::error("[JadwalPelajaranController] Error: {$e->getMessage()}", [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'status' => 'error',
@@ -311,22 +322,22 @@ class MataPelajaranController extends Controller
             'data' => $result['data'],
         ]);
     }
-    public function batchDelete(Request $request)
+    public function delete($id)
     {
         try {
-            $this->JadwalService->deleteBatchByIds($request->input('selected_ids', []));
+            $this->JadwalService->deleteById($id);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data jadwal pelajaran berhasil dihapus.',
             ]);
-        } catch (ValidationException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage(),
-            ], 422);
+                'message' => 'Jadwal pelajaran tidak ditemukan.',
+            ], 404);
         } catch (\Throwable $e) {
-            Log::error("[JadwalPelajaranController::batchDelete] Error: {$e->getMessage()}");
+            Log::error("[JadwalPelajaranController::delete] Error: {$e->getMessage()}");
 
             return response()->json([
                 'status' => 'error',

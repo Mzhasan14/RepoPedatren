@@ -354,7 +354,7 @@ class PengajarService
     public function showMapelById(int $id): array
     {
         try {
-            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel','status')
+            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel','pengajar_id','status')
                 ->findOrFail($id);
 
             return [
@@ -392,6 +392,7 @@ class PengajarService
             $materi->update([
                 'kode_mapel'  => $input['kode_mapel'], // sekarang boleh diubah
                 'nama_mapel'  => $input['nama_mapel'],
+                'pengajar_id'  => $input['pengajar_id'],
                 'updated_by'  => Auth::id(),
                 'updated_at'  => now(),
             ]);

@@ -22,6 +22,7 @@ class FilterMataPelajaranService
 
             $query->where(function ($q) use ($search) {
                 $q->where('mp.nama_mapel', 'like', '%' . $search . '%')
+                ->orWhere('mp.kode_mapel', 'like', '%' . $search . '%')
                 ->orWhere('b.nama', 'like', '%' . $search . '%');
             });
         }

@@ -24,11 +24,6 @@ class UpdateJadwalPelajaranRequest extends FormRequest
     {
         return [
             'hari'               => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
-            'semester_id'        => 'required|exists:semester,id',
-            'lembaga_id'         => 'required|exists:lembaga,id',
-            'jurusan_id'         => 'required|exists:jurusan,id',
-            'kelas_id'           => 'required|exists:kelas,id',
-            'rombel_id'          => 'nullable|exists:rombel,id',
             'mata_pelajaran_id'  => 'required|exists:mata_pelajaran,id',
             'jam_pelajaran_id'   => 'required|exists:jam_pelajaran,id',
         ];
@@ -37,21 +32,15 @@ class UpdateJadwalPelajaranRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'hari.required'               => 'Hari wajib diisi.',
-            'hari.in'                     => 'Hari harus berupa Senin sampai Minggu.',
-            'semester_id.required'        => 'Semester wajib dipilih.',
-            'semester_id.exists'          => 'Semester tidak ditemukan.',
-            'lembaga_id.required'         => 'Lembaga wajib dipilih.',
-            'lembaga_id.exists'           => 'Lembaga tidak ditemukan.',
-            'jurusan_id.required'         => 'Jurusan wajib dipilih.',
-            'jurusan_id.exists'           => 'Jurusan tidak ditemukan.',
-            'kelas_id.required'           => 'Kelas wajib dipilih.',
-            'kelas_id.exists'             => 'Kelas tidak ditemukan.',
-            'rombel_id.exists'            => 'Rombel tidak ditemukan.',
-            'mata_pelajaran_id.required'  => 'Mata pelajaran wajib dipilih.',
-            'mata_pelajaran_id.exists'    => 'Mata pelajaran tidak ditemukan.',
-            'jam_pelajaran_id.required'   => 'Jam pelajaran wajib dipilih.',
-            'jam_pelajaran_id.exists'     => 'Jam pelajaran tidak ditemukan.',
+            'hari.required'               => 'Hari wajib dipilih.',
+            'hari.string'                 => 'Hari harus berupa teks.',
+            'hari.in'                     => 'Hari harus diisi dengan nama hari yang valid (Senin s/d Ahad).',
+
+            'mata_pelajaran_id.required' => 'Mata pelajaran wajib dipilih.',
+            'mata_pelajaran_id.exists'   => 'Mata pelajaran tidak ditemukan',
+
+            'jam_pelajaran_id.required'  => 'Jam pelajaran wajib dipilih.',
+            'jam_pelajaran_id.exists'    => 'Jam pelajaran tidak ditemukan',
         ];
     }
     protected function failedValidation(Validator $validator)
