@@ -56,6 +56,7 @@ class PengajarService
         $query = $this->basePengajarQuery($request);
 
         $fields = [
+            'pengajar.id as pengajar_id',
             'pegawai.biodata_id as biodata_uuid',
             'b.nama',
             'wp.niup',
@@ -81,6 +82,7 @@ class PengajarService
         ];
 
         return $query->select($fields)->groupBy(
+            'pengajar.id',
             'pegawai.biodata_id',
             'b.nama',
             'wp.niup',
@@ -97,6 +99,7 @@ class PengajarService
     public function formatData($results)
     {
         return collect($results->items())->map(fn ($item) => [
+            'pengajar_id' => $item->pengajar_id,
             'biodata_id' => $item->biodata_uuid,
             'nama' => $item->nama,
             'niup' => $item->niup ?? '-',
