@@ -297,4 +297,42 @@ class CatatanAfektifService
             'data' => $catatan,
         ];
     }
+    public function updateKategori($id, Request $request)
+    {
+        $kategori = $request->kategori;
+        $nilai = $request->nilai;
+        $tindakLanjut = $request->tindak_lanjut;
+
+        $kolomNilai = "{$kategori}_nilai";
+        $kolomTindakLanjut = "{$kategori}_tindak_lanjut";
+
+        $allowedColumns = [
+            'akhlak_nilai', 'akhlak_tindak_lanjut',
+            'kepedulian_nilai', 'kepedulian_tindak_lanjut',
+            'kebersihan_nilai', 'kebersihan_tindak_lanjut',
+        ];
+
+        if (!in_array($kolomNilai, $allowedColumns) || !in_array($kolomTindakLanjut, $allowedColumns)) {
+            throw new \Exception("Kolom tidak valid.");
+        }
+
+        $catatan = Catatan_afektif::findOrFail($id);
+
+        // Cek kondisi sebelum update
+        if (!is_null($catatan->tanggal_selesai)) {
+            throw new \Exception("Data tidak bisa diubah karena sudah tidak aktif lagi.");
+        }
+
+        if ($catatan->status !== 1) {
+            throw new \Exception("Data tidak bisa diubah karena status tidak aktif.");
+        }
+
+        // Update jika lolos pengecekan
+        $catatan->$kolomNilai = $nilai;
+        $catatan->$kolomTindakLanjut = $tindakLanjut;
+        $catatan->updated_by = Auth::id();
+        $catatan->save();
+
+        return $catatan->refresh(); // Mengembalikan data terbaru
+    }
 }

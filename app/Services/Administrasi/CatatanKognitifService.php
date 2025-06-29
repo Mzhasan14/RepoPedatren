@@ -144,7 +144,7 @@ class CatatanKognitifService
                 $entries[] = [
                     'Biodata_uuid' => $item->Biodata_uuid,
                     'Pencatat_uuid' => $item->Pencatat_uuid,
-                    'id_santri' => $item->id,
+                    'id_catatan' => $item->id,
                     'nama_santri' => $item->nama,
                     'blok' => $item->blok,
                     'wilayah' => $item->wilayah,
@@ -219,5 +219,46 @@ class CatatanKognitifService
             'message' => 'Catatan kognitif berhasil ditambahkan.',
             'data' => $catatan,
         ];
+    }
+    public function updateKategori($id, Request $request)
+    {
+        $kategori = $request->kategori;
+        $nilai = $request->nilai;
+        $tindakLanjut = $request->tindak_lanjut;
+
+        $kolomNilai = "{$kategori}_nilai";
+        $kolomTL = "{$kategori}_tindak_lanjut";
+
+        $allowedColumns = [
+            'kebahasaan_nilai', 'kebahasaan_tindak_lanjut',
+            'baca_kitab_kuning_nilai', 'baca_kitab_kuning_tindak_lanjut',
+            'hafalan_tahfidz_nilai', 'hafalan_tahfidz_tindak_lanjut',
+            'furudul_ainiyah_nilai', 'furudul_ainiyah_tindak_lanjut',
+            'tulis_alquran_nilai', 'tulis_alquran_tindak_lanjut',
+            'baca_alquran_nilai', 'baca_alquran_tindak_lanjut'
+        ];
+
+        if (!in_array($kolomNilai, $allowedColumns) || !in_array($kolomTL, $allowedColumns)) {
+            throw new \Exception("Kolom tidak valid.");
+        }
+
+        $catatan = Catatan_kognitif::findOrFail($id);
+
+        // Cek kondisi sebelum update
+        if (!is_null($catatan->tanggal_selesai)) {
+            throw new \Exception("Data tidak bisa diubah karena sudah tidak aktif lagi.");
+        }
+
+        if ((int)$catatan->status !== 1) {
+            throw new \Exception("Data tidak bisa diubah karena status tidak aktif.");
+        }
+
+        // Update jika lolos pengecekan
+        $catatan->$kolomNilai = $nilai;
+        $catatan->$kolomTL = $tindakLanjut;
+        $catatan->updated_by = Auth::id();
+        $catatan->save();
+
+        return $catatan->fresh(); // Mengembalikan data terkini setelah update
     }
 }

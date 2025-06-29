@@ -7,6 +7,7 @@ use App\Http\Requests\Administrasi\CatatanKognitifRequest;
 use App\Http\Requests\Administrasi\CreateCatatanKognitifRequest;
 use App\Http\Requests\Administrasi\Formulir\Catatan\UpdateKognitifRequest;
 use App\Http\Requests\Administrasi\KeluarKognitifRequest;
+use App\Http\Requests\Administrasi\UpdateKategoriKognitifRequest;
 use App\Services\Administrasi\CatatanKognitifService;
 use App\Services\Administrasi\Filters\FilterCatatanKognitifService;
 use App\Services\Pegawai\Filters\Formulir\CatatanKognitifService as FormulirCatatanKognitifService;
@@ -128,7 +129,29 @@ class CatatanKognitifController extends Controller
             ], 500);
         }
     }
+    public function Listedit($id)
+    {
+        try {
+            $result = $this->formulirCatatan->Listedit($id);
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
+                ], 200);
+            }
 
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail catatan-afektif: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function update(UpdateKognitifRequest $request, $id)
     {
         try {
@@ -212,6 +235,22 @@ class CatatanKognitifController extends Controller
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+    public function updateKategori(UpdateKategoriKognitifRequest $request, $id)
+    {
+        try {
+            $updatedCatatan = $this->catatanService->updateKategori($id, $request);
+
+            return response()->json([
+                'message' => 'Kategori kognitif berhasil diperbarui',
+                'data' => $updatedCatatan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal memperbarui kategori',
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

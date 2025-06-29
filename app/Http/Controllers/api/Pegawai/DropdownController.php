@@ -9,6 +9,7 @@ use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
 use App\Models\Pegawai\Pengurus;
+use App\Models\Semester;
 use Illuminate\Support\Facades\DB;
 
 class DropdownController extends Controller
@@ -561,5 +562,13 @@ class DropdownController extends Controller
             'status' => true,
             'data' => $wali,
         ]);
+    }
+    public function semester()
+    {
+        $semesters = Semester::where('status', true)
+                        ->select('id', 'semester')
+                        ->get();
+
+        return response()->json($semesters);
     }
 }

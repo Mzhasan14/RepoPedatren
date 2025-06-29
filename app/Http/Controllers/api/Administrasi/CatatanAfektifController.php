@@ -7,6 +7,7 @@ use App\Http\Requests\Administrasi\CatatanAfektifRequest;
 use App\Http\Requests\Administrasi\CreateCatatanAfektifRequest;
 use App\Http\Requests\Administrasi\Formulir\Catatan\UpdateAfektifRequest;
 use App\Http\Requests\Administrasi\KeluarAfektifRequest;
+use App\Http\Requests\Administrasi\UpdateKategoriRequest;
 use App\Services\Administrasi\CatatanAfektifService;
 use App\Services\Administrasi\Filters\FilterCatatanAfektifService;
 use App\Services\Pegawai\Filters\Formulir\CatatanAfektifService as FormulirCatatanAfektifService;
@@ -102,7 +103,29 @@ class CatatanAfektifController extends Controller
             ], 500);
         }
     }
+    public function Listedit($id)
+    {
+        try {
+            $result = $this->formulirCatatan->Listshow($id);
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
+                ], 200);
+            }
 
+            return response()->json([
+                'message' => 'Detail data berhasil ditampilkan',
+                'data' => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal ambil detail catatan-afektif: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menampilkan data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function update(UpdateAfektifRequest $request, $id)
     {
         try {
@@ -212,6 +235,22 @@ class CatatanAfektifController extends Controller
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+    public function updateKategori(UpdateKategoriRequest $request, $id)
+    {
+        try {
+            $updatedCatatan = $this->catatanService->updateKategori($id, $request);
+
+            return response()->json([
+                'message' => 'Kategori berhasil diperbarui',
+                'data' => $updatedCatatan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal memperbarui kategori',
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

@@ -76,6 +76,27 @@ class CatatanAfektifService
 
         return ['status' => true, 'data' => $afektif];
     }
+    public function Listshow($id): array
+    {
+        $afektif = Catatan_afektif::select(
+            'id',
+            'id_santri',
+            'id_wali_asuh',
+            'kepedulian_nilai',
+            'kepedulian_tindak_lanjut',
+            'kebersihan_nilai',
+            'kebersihan_tindak_lanjut',
+            'akhlak_nilai',
+            'akhlak_tindak_lanjut',
+            'tanggal_buat',
+            'tanggal_selesai',
+        )->find($id);
+        if (! $afektif) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        }
+
+        return ['status' => true, 'data' => $afektif];
+    }
 
     public function update(array $input, string $id): array
     {

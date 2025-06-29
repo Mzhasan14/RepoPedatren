@@ -116,6 +116,11 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
     Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
+    Route::put('/catatan-afektif/{id}/kategori', [AdministrasiCatatanAfektifController::class, 'updateKategori']);
+    Route::get('/catatan-afektif/{id}/show', [AdministrasiCatatanAfektifController::class, 'Listedit']);
+    Route::put('/catatan-kognitif/{id}/kategori', [CatatanKognitifController::class, 'updateKategori']);
+    Route::get('/catatan-kognitif/{id}/show', [CatatanKognitifController::class, 'Listedit']);
+
 
     // 🏫 Keluarga
     Route::get('/keluarga', [KeluargaController::class, 'getAllKeluarga']);
@@ -473,7 +478,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/angkatan', [DropdownController::class, 'getAngkatan']);
     Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
-    Route::get('/materi-ajar', [DropdownController::class, 'menuMateriAjar']);
+    Route::get('/semester', [DropdownController::class, 'semester']);
 
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);

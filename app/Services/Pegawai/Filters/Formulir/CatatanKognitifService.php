@@ -90,6 +90,35 @@ class CatatanKognitifService
 
         return ['status' => true, 'data' => $kognitif];
     }
+    public function Listedit($id): array
+    {
+        $kognitif = Catatan_kognitif::select(
+            'id',
+            'id_santri',
+            'id_wali_asuh',
+            'kebahasaan_nilai',
+            'kebahasaan_tindak_lanjut',
+            'baca_kitab_kuning_nilai',
+            'baca_kitab_kuning_tindak_lanjut',
+            'hafalan_tahfidz_nilai',
+            'hafalan_tahfidz_tindak_lanjut',
+            'furudul_ainiyah_nilai',
+            'furudul_ainiyah_tindak_lanjut',
+            'tulis_alquran_nilai',
+            'tulis_alquran_tindak_lanjut',
+            'baca_alquran_nilai',
+            'baca_alquran_tindak_lanjut',
+            'tanggal_buat',
+            'tanggal_selesai',
+            DB::raw("CASE WHEN status = 1 THEN 'aktif' ELSE 'tidak aktif' END AS status_aktif")
+        )->find($id);
+
+        if (! $kognitif) {
+            return ['status' => false, 'message' => 'Data tidak ditemukan'];
+        }
+
+        return ['status' => true, 'data' => $kognitif];
+    }
 
     public function update(array $input, string $id): array
     {

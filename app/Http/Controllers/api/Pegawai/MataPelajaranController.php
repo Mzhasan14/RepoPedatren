@@ -211,19 +211,21 @@ class MataPelajaranController extends Controller
 
             if (! $result['status']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Gagal menghapus materi.',
+                    'message' => $result['message'] ?? 'Gagal menonaktifkan materi.',
                 ], 200); // masih 200 seperti di contohmu
             }
 
             return response()->json([
-                'message' => 'Materi berhasil dihapus.',
+                'status' => true,
+                'message' => 'Materi berhasil dinonaktifkan.',
                 'data' => $result['data'] ?? null,
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal nonaktifkan materi ajar: '.$e->getMessage());
 
             return response()->json([
-                'message' => 'Terjadi kesalahan saat menghapus materi.',
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menonaktifkan materi.',
                 'error' => $e->getMessage(),
             ], 500);
         }
