@@ -374,8 +374,10 @@ class JadwalService
                 'mp.id',
                 'mp.kode_mapel',
                 'mp.nama_mapel',
+                'p.id as pengajar_id',
                 'b.nama as nama_pengajar',
                 'b.nik as nik_pengajar',
+                'mp.status'
             ]);
     }
 
@@ -386,8 +388,10 @@ class JadwalService
                 'id' => $item->id,
                 'kode_mapel' => $item->kode_mapel,
                 'nama_mapel' => $item->nama_mapel,
+                'pengajar_id' => $item->pengajar_id,
                 'nama_pengajar' => $item->nama_pengajar ?? '-',
                 'nik_pengajar' => $item->nik_pengajar ?? '-',
+                'status' => $item->status == 1 ? 'Aktif' : 'Tidak Aktif',
             ];
         });
     }
