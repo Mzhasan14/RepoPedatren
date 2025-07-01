@@ -483,7 +483,32 @@ class DropdownController extends Controller
 
         return response()->json($result);
     }
+    public function menuKategoriGolonganGabungan()
+    {
+        $query = KategoriGolongan::leftJoin('golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
+            ->select(
+                'kategori_golongan.id as kategoriGolongan_id',
+                'kategori_golongan.nama_kategori_golongan as kategoriGolongan_nama',
+                'golongan.id as golongan_id',
+                'golongan.nama_golongan as golongan_nama'
+            )
+            ->whereNotNull('golongan.id') // hanya ambil data yang punya golongan
+            ->orderBy('kategori_golongan.id')
+            ->get();
 
+        $combinedOptions = [];
+
+        foreach ($query as $row) {
+            $combinedOptions[] = [
+                'id' => $row->golongan_id,
+                'GolonganNama' => "{$row->kategoriGolongan_nama} - {$row->golongan_nama}"
+            ];
+        }
+
+        return response()->json([
+            'combined' => $combinedOptions
+        ]);
+    }
     public function getPeriodeOptions()
     {
         $periodeAfektif = Catatan_afektif::Active()

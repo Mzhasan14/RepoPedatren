@@ -478,6 +478,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/angkatan', [DropdownController::class, 'getAngkatan']);
     Route::get('/periode', [DropdownController::class, 'getPeriodeOptions']);
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
+    Route::get('/golongan-gabungan', [DropdownController::class, 'menuKategoriGolonganGabungan']);
     Route::get('/semester', [DropdownController::class, 'semester']);
 
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
