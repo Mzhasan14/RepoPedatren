@@ -55,7 +55,7 @@ use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\Api\Pegawai\MataPelajaranController;
+use App\Http\Controllers\api\Pegawai\MataPelajaranController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
