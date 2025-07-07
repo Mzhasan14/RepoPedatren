@@ -260,14 +260,27 @@ class MataPelajaranController extends Controller
             // Format hasil sesuai hari
             $formatted = $this->JadwalService->groupJadwalByHari($results);
 
-            $meta = $results->first();
-            $metaInfo = $meta ? [
-                'lembaga' => $meta->nama_lembaga,
-                'jurusan' => $meta->nama_jurusan,
-                'kelas' => $meta->nama_kelas,
-                'rombel' => $meta->nama_rombel,
-                'semester' => 'Semester ' . $meta->semester
-            ] : null;
+            if ($results->isNotEmpty()) {
+                $meta = $results->first();
+                $metaInfo = [
+                    'lembaga' => $meta->nama_lembaga,
+                    'jurusan' => $meta->nama_jurusan,
+                    'kelas' => $meta->nama_kelas,
+                    'rombel' => $meta->nama_rombel,
+                    'semester' => 'Semester ' . $meta->semester
+                ];
+            } else {
+                // Ambil data referensi jika jadwal kosong
+                $metaInfo = [
+                    'lembaga' => optional(DB::table('lembaga')->find($request->lembaga_id))->nama_lembaga,
+                    'jurusan' => optional(DB::table('jurusan')->find($request->jurusan_id))->nama_jurusan,
+                    'kelas' => optional(DB::table('kelas')->find($request->kelas_id))->nama_kelas,
+                    'rombel' => optional(DB::table('rombel')->find($request->rombel_id))->nama_rombel,
+                    'semester' => optional(DB::table('semester')->find($request->semester_id))->semester
+                        ? 'Semester ' . DB::table('semester')->find($request->semester_id)->semester
+                        : null,
+                ];
+            }
 
             return response()->json([
                 'status' => 'success',
