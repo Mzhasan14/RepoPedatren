@@ -370,6 +370,7 @@ class JadwalService
             ->leftJoin('pengajar as p', 'p.id', '=', 'mp.pengajar_id')
             ->leftJoin('pegawai as pg', 'pg.id', '=', 'p.pegawai_id')
             ->leftJoin('biodata as b', 'b.id', '=', 'pg.biodata_id')
+            ->where('mp.status',1)
             ->select([
                 'mp.id',
                 'mp.kode_mapel',
