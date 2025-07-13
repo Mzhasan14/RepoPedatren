@@ -27,6 +27,7 @@ class MataPelajaranFactory extends Factory
         //     'Pendidikan Agama', 'Seni Budaya', 'PJOK'
         // ]);
         return [
+            'lembaga_id' => Lembaga::inRandomOrder()->value('id'),
             'kode_mapel' => $this->faker->unique()->bothify('MP-###'),
             'nama_mapel' => $this->faker->word(),
             'pengajar_id' => 1, // tidak dipakai, akan ditentukan di seeder

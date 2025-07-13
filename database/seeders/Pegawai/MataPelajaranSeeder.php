@@ -27,14 +27,15 @@ class MataPelajaranSeeder extends Seeder
         ];
 
         $kodeIndex = 1;
-
         $pengajarList = Pengajar::all();
+        $lembagaIds = Lembaga::pluck('id')->toArray();
 
         foreach ($pengajarList as $pengajar) {
             $jumlahMapel = rand(1, 2); // tiap pengajar dapat 1 atau 2 mapel
 
             for ($i = 0; $i < $jumlahMapel && $kodeIndex <= count($mapelList); $i++) {
                 MataPelajaran::create([
+                    'lembaga_id' => $lembagaIds[array_rand($lembagaIds)], // pilih acak
                     'kode_mapel' => 'MP-' . str_pad($kodeIndex, 3, '0', STR_PAD_LEFT),
                     'nama_mapel' => $mapelList[$kodeIndex - 1],
                     'pengajar_id' => $pengajar->id,

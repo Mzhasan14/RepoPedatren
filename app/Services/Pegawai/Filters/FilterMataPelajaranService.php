@@ -11,6 +11,7 @@ class FilterMataPelajaranService
     public function applyMapelFilters($query, Request $request)
     {
         $query = $this->applyMapellFilters($query, $request);
+        $query = $this->applyLembagaFilter($query, $request);
 
         return $query;
     }
@@ -25,6 +26,14 @@ class FilterMataPelajaranService
                 ->orWhere('mp.kode_mapel', 'like', '%' . $search . '%')
                 ->orWhere('b.nama', 'like', '%' . $search . '%');
             });
+        }
+
+        return $query;
+    }
+    private function applyLembagaFilter(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('lembaga')) {
+            $query->whereRaw('LOWER(l.nama_lembaga) = ?', [strtolower($request->lembaga)]);
         }
 
         return $query;

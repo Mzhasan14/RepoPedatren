@@ -349,6 +349,7 @@ class PegawaiService
                     }
 
                     MataPelajaran::create([
+                        'lembaga_id'   => $pengajar->lembaga_id, // ambil dari pengajar
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
                         'pengajar_id'  => $pengajar->id,

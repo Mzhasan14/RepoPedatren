@@ -32,6 +32,7 @@ class UpdateMapelRequest extends FormRequest
             ],
             'nama_mapel' => 'required|string|max:255',
             'pengajar_id'  => 'required|exists:pengajar,id',
+            'lembaga_id' => 'required|exists:lembaga,id',
         ];
     }
 
@@ -45,6 +46,8 @@ class UpdateMapelRequest extends FormRequest
             'nama_mapel.max' => 'Nama mapel maksimal 255 karakter.',
             'pengajar_id.required' => 'Pengajar wajib dipilih.',
             'pengajar_id.exists' => 'Pengajar yang dipilih tidak valid.',
+            'lembaga_id.required' => 'Lembaga wajib dipilih untuk setiap mata pelajaran.', // Tambahkan ini!
+            'lembaga_id.exists' => 'Lembaga yang dipilih tidak valid.', 
         ];
     }
     protected function failedValidation(Validator $validator)

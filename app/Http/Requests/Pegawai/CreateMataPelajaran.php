@@ -27,6 +27,7 @@ class CreateMataPelajaran extends FormRequest
             'mata_pelajaran' => 'required|array|min:1',
             'mata_pelajaran.*.kode_mapel' => 'required|string|max:50',
             'mata_pelajaran.*.nama_mapel' => 'required|string|max:100',
+            'mata_pelajaran.*.lembaga_id' => 'required|exists:lembaga,id',
         ];
     }
 
@@ -39,6 +40,8 @@ class CreateMataPelajaran extends FormRequest
             'mata_pelajaran.array' => 'Format mata pelajaran tidak valid.',
             'mata_pelajaran.*.kode_mapel.required' => 'Kode mata pelajaran wajib diisi.',
             'mata_pelajaran.*.nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
+            'mata_pelajaran.*.lembaga_id.required' => 'Lembaga wajib dipilih untuk setiap mata pelajaran.', // Tambahkan ini!
+            'mata_pelajaran.*.lembaga_id.exists' => 'Lembaga yang dipilih tidak valid.', // Tambahkan ini!
         ];
     }
     protected function failedValidation(Validator $validator)

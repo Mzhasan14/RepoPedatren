@@ -354,7 +354,7 @@ class PengajarService
     public function showMapelById(int $id): array
     {
         try {
-            $materi = MataPelajaran::select('id', 'kode_mapel', 'nama_mapel','pengajar_id','status')
+            $materi = MataPelajaran::select('id', 'lembaga_id','kode_mapel', 'nama_mapel','pengajar_id','status')
                 ->findOrFail($id);
 
             return [
@@ -390,7 +390,8 @@ class PengajarService
             }
 
             $materi->update([
-                'kode_mapel'  => $input['kode_mapel'], // sekarang boleh diubah
+                'lembaga_id'  => $input['lembaga_id'],
+                'kode_mapel'  => $input['kode_mapel'],
                 'nama_mapel'  => $input['nama_mapel'],
                 'pengajar_id'  => $input['pengajar_id'],
                 'updated_by'  => Auth::id(),
@@ -469,6 +470,7 @@ class PengajarService
                 // Simpan mata pelajaran
                 foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
                     MataPelajaran::create([
+                        'lembaga_id'   => $pengajar->lembaga_id, // tambah baris ini
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
                         'pengajar_id'  => $pengajar->id,
@@ -568,6 +570,7 @@ class PengajarService
                 // Simpan mata pelajaran baru
                 foreach ($input['mata_pelajaran'] ?? [] as $mapel) {
                     MataPelajaran::create([
+                        'lembaga_id'   => $new->lembaga_id, // <-- tambahkan baris ini
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
                         'pengajar_id'  => $new->id,
@@ -718,6 +721,7 @@ class PengajarService
                 }
 
                 MataPelajaran::create([
+                    'lembaga_id'   => $pengajar->lembaga_id, // Tambahkan ini!
                     'kode_mapel'   => $mapelInput['kode_mapel'],
                     'nama_mapel'   => $mapelInput['nama_mapel'],
                     'pengajar_id'  => $pengajar->id,

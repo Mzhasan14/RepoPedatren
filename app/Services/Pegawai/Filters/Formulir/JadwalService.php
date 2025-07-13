@@ -367,19 +367,22 @@ class JadwalService
     public function getAllMapelQuery(Request $request)
     {
         return DB::table('mata_pelajaran as mp')
+            ->leftJoin('lembaga as l', 'l.id', '=', 'mp.lembaga_id')
             ->leftJoin('pengajar as p', 'p.id', '=', 'mp.pengajar_id')
             ->leftJoin('pegawai as pg', 'pg.id', '=', 'p.pegawai_id')
             ->leftJoin('biodata as b', 'b.id', '=', 'pg.biodata_id')
             ->where('mp.status',1)
             ->select([
                 'mp.id',
+                'l.nama_lembaga',
                 'mp.kode_mapel',
                 'mp.nama_mapel',
                 'p.id as pengajar_id',
                 'b.nama as nama_pengajar',
                 'b.nik as nik_pengajar',
                 'mp.status'
-            ]);
+            ])
+            ->orderBy('l.nama_lembaga');
     }
 
     public function formatData($results)
@@ -387,6 +390,7 @@ class JadwalService
         return $results->map(function ($item) {
             return [
                 'id' => $item->id,
+                'lembaga' => $item->nama_lembaga,
                 'kode_mapel' => $item->kode_mapel,
                 'nama_mapel' => $item->nama_mapel,
                 'pengajar_id' => $item->pengajar_id,
@@ -408,10 +412,18 @@ class JadwalService
 
         $pengajar = Pengajar::find($input['pengajar_id']);
 
-        if (! $pengajar) {
+        if (!$pengajar) {
             return [
                 'status' => false,
                 'message' => 'Pengajar tidak ditemukan.',
+            ];
+        }
+
+        // Tambahkan validasi status_aktif = 'aktif'
+        if ($pengajar->status_aktif !== 'aktif') {
+            return [
+                'status' => false,
+                'message' => 'Pengajar tidak aktif.',
             ];
         }
 
@@ -446,11 +458,12 @@ class JadwalService
                     DB::rollBack();
                     return [
                         'status'  => false,
-                        'message' => 'Kode mata pelajaran '.$mapel['kode_mapel'].' sudah digunakan untuk data aktif.',
+                        'message' => 'Kode mata pelajaran ' . $mapel['kode_mapel'] . ' sudah digunakan untuk data aktif.',
                     ];
                 }
 
                 MataPelajaran::create([
+                    'lembaga_id'  => $mapel['lembaga_id'],
                     'kode_mapel'  => $mapel['kode_mapel'],
                     'nama_mapel'  => $mapel['nama_mapel'],
                     'pengajar_id' => $pengajar->id,
@@ -470,7 +483,7 @@ class JadwalService
             ];
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Gagal menambahkan mata pelajaran: '.$e->getMessage());
+            Log::error('Gagal menambahkan mata pelajaran: ' . $e->getMessage());
 
             return [
                 'status'  => false,
@@ -611,13 +624,27 @@ class JadwalService
             $semesterId = $input['semester_id'];
             $rombelId   = $input['rombel_id'] ?? null;
 
+            // Ambil nama lembaga dari input untuk error message
+            $lembagaInput = Lembaga::find($lembagaId);
+            $lembagaInputNama = $lembagaInput ? $lembagaInput->nama_lembaga : "(Lembaga tidak ditemukan)";
+
             foreach ($input['jadwal'] ?? [] as $jadwal) {
                 $hari              = $jadwal['hari'] ?? 'Hari tidak diketahui';
                 $jamPelajaranId    = $jadwal['jam_pelajaran_id'];
                 $mataPelajaranId   = $jadwal['mata_pelajaran_id'];
 
-                $mataPelajaran = MataPelajaran::findOrFail($mataPelajaranId);
+                // Ambil data mata pelajaran beserta relasi lembaga
+                $mataPelajaran = MataPelajaran::with('lembaga')->findOrFail($mataPelajaranId);
                 $pengajarId = $mataPelajaran->pengajar_id;
+
+                $lembagaMapelNama = $mataPelajaran->lembaga ? $mataPelajaran->lembaga->nama_lembaga : "(Lembaga tidak ditemukan)";
+
+                // Validasi lembaga_id harus sama
+                if ($mataPelajaran->lembaga_id != $lembagaId) {
+                    throw new \Exception(
+                        "Gagal menambahkan jadwal untuk '{$mataPelajaran->nama_mapel}': lembaga pada mata pelajaran ($lembagaMapelNama) tidak cocok dengan lembaga jadwal ($lembagaInputNama)."
+                    );
+                }
 
                 // Validasi bentrok kelas
                 $bentrokKelas = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
@@ -725,27 +752,27 @@ class JadwalService
                 ];
             }
 
-            // Validasi input manual jika belum menggunakan FormRequest
-            $validated = validator($data, [
-                'hari'               => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Ahad',
-                'mata_pelajaran_id'  => 'required|exists:mata_pelajaran,id',
-                'jam_pelajaran_id'   => 'required|exists:jam_pelajaran,id',
-            ], [
-                'hari.required'               => 'Hari wajib dipilih.',
-                'hari.in'                     => 'Hari harus diisi dengan nama hari yang valid.',
-                'mata_pelajaran_id.required' => 'Mata pelajaran wajib dipilih.',
-                'mata_pelajaran_id.exists'   => 'Mata pelajaran tidak ditemukan.',
-                'jam_pelajaran_id.required'  => 'Jam pelajaran wajib dipilih.',
-                'jam_pelajaran_id.exists'    => 'Jam pelajaran tidak ditemukan.',
-            ])->validate();
-
             $hari   = $data['hari'];
             $jamId  = $data['jam_pelajaran_id'];
             $mataPelajaranId = $data['mata_pelajaran_id'];
             $kelasId = $jadwal->kelas_id;
+            $lembagaId = $jadwal->lembaga_id; // Lembaga pada jadwal
 
-            $mataPelajaran = MataPelajaran::findOrFail($mataPelajaranId);
+            // Ambil data mata pelajaran beserta relasi lembaga
+            $mataPelajaran = MataPelajaran::with('lembaga')->findOrFail($mataPelajaranId);
             $pengajarId = $mataPelajaran->pengajar_id;
+
+            // --- Validasi lembaga_id ---
+            $lembagaInput = Lembaga::find($lembagaId);
+            $lembagaInputNama = $lembagaInput ? $lembagaInput->nama_lembaga : "(Lembaga tidak ditemukan)";
+            $lembagaMapelNama = $mataPelajaran->lembaga ? $mataPelajaran->lembaga->nama_lembaga : "(Lembaga tidak ditemukan)";
+
+            if ($mataPelajaran->lembaga_id != $lembagaId) {
+                throw new \Exception(
+                    "Gagal mengubah jadwal untuk '{$mataPelajaran->nama_mapel}': lembaga pada mata pelajaran ($lembagaMapelNama) tidak cocok dengan lembaga jadwal ($lembagaInputNama)."
+                );
+            }
+            // --------------------------
 
             // Validasi bentrok kelas (kecuali data ini sendiri)
             $bentrokKelas = JadwalPelajaran::where('id', '!=', $id)
