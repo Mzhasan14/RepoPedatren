@@ -374,6 +374,7 @@ class JadwalService
             ->where('mp.status',1)
             ->select([
                 'mp.id',
+                'l.id as lembaga_id',
                 'l.nama_lembaga',
                 'mp.kode_mapel',
                 'mp.nama_mapel',
@@ -390,6 +391,7 @@ class JadwalService
         return $results->map(function ($item) {
             return [
                 'id' => $item->id,
+                'lembaga_id' => $item->lembaga_id,
                 'lembaga' => $item->nama_lembaga,
                 'kode_mapel' => $item->kode_mapel,
                 'nama_mapel' => $item->nama_mapel,
