@@ -77,7 +77,7 @@ class PengajarService
     public function update(array $input, string $id): array
     {
         return DB::transaction(function () use ($input, $id) {
-            $pengajar = Pengajar::with('materiAjar')->find($id);
+            $pengajar = Pengajar::with('mataPelajaran')->find($id);
             if (! $pengajar) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
@@ -90,14 +90,27 @@ class PengajarService
                 ];
             }
 
+            $oldLembagaId = $pengajar->lembaga_id;
+            $newLembagaId = $input['lembaga_id'];
+
             // Update data pengajar biasa
             $pengajar->update([
                 'golongan_id' => $input['golongan_id'],
-                'lembaga_id' => $input['lembaga_id'],
+                'lembaga_id' => $newLembagaId,
                 'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
                 'tahun_masuk' => Carbon::parse($input['tahun_masuk']) ?? now(),
                 'updated_by' => Auth::id(),
             ]);
+
+            // Jika lembaga_id berubah, update juga di semua mata_pelajaran
+            if ($oldLembagaId != $newLembagaId) {
+                foreach ($pengajar->mataPelajaran as $mapel) {
+                    $mapel->update([
+                        'lembaga_id' => $newLembagaId,
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
+            }
 
             return [
                 'status' => true,
