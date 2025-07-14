@@ -263,12 +263,25 @@ class JadwalService
         DB::beginTransaction();
 
         try {
-            // Cek apakah jam_ke sudah digunakan
+            // Validasi jam_ke sudah digunakan
             $existing = JamPelajaran::where('jam_ke', $input['jam_ke'])->exists();
             if ($existing) {
                 return [
                     'status' => false,
-                    'message' => 'Jam ke-' . $input['jam_ke'] . ' sudah terdaftar.'
+                    'message' => 'Maaf, Jam ke-' . $input['jam_ke'] . ' sudah digunakan. Silakan pilih nomor jam pelajaran lain.'
+                ];
+            }
+
+            // Validasi jam_mulai dan jam_selesai tidak overlap dengan yang sudah ada
+            $overlap = JamPelajaran::where(function($query) use ($input) {
+                $query->where('jam_mulai', '<', $input['jam_selesai'])
+                    ->where('jam_selesai', '>', $input['jam_mulai']);
+            })->exists();
+
+            if ($overlap) {
+                return [
+                    'status' => false,
+                    'message' => 'Rentang waktu ' . $input['jam_mulai'] . ' - ' . $input['jam_selesai'] . ' tumpang tindih dengan jam pelajaran lain. Silakan pilih waktu yang tidak bertabrakan.'
                 ];
             }
 
@@ -287,7 +300,10 @@ class JadwalService
             DB::rollBack();
             Log::error('Gagal menambah jam pelajaran: ' . $e->getMessage());
 
-            return ['status' => false, 'message' => 'Gagal menambah jam pelajaran.'];
+            return [
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menambah jam pelajaran. Silakan coba lagi.'
+            ];
         }
     }
     public function show($id)
