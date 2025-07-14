@@ -24,7 +24,7 @@ class CreateJadwalPelajaranRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'jam_ke' => 'required|integer|unique:jam_pelajaran,jam_ke',
+            'jam_ke' => 'required|integer',
             'label' => 'nullable|string|max:50',
             'jam_mulai' => 'required|date_format:H:i',
             'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
@@ -35,7 +35,6 @@ class CreateJadwalPelajaranRequest extends FormRequest
         return [
             'jam_ke.required' => 'Kolom jam ke wajib diisi.',
             'jam_ke.integer' => 'Jam ke harus berupa angka.',
-            'jam_ke.unique' => 'Jam ke sudah digunakan.',
             'label.string' => 'Label harus berupa teks.',
             'label.max' => 'Label tidak boleh lebih dari 50 karakter.',
             'jam_mulai.required' => 'Jam mulai wajib diisi.',
