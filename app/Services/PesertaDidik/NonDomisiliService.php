@@ -28,6 +28,10 @@ class NonDomisiliService
             ->where('status', true)
             ->groupBy('biodata_id');
 
+        $keluargaLast = DB::table('keluarga')
+            ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+            ->groupBy('id_biodata');
+
         // Query utama: data peserta_didik all
         return DB::table('santri AS s')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
@@ -39,7 +43,8 @@ class NonDomisiliService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
+            ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
+            ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('s.status', 'aktif')
             ->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')

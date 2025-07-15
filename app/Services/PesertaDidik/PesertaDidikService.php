@@ -32,22 +32,27 @@ class PesertaDidikService
             ->where('status', true)
             ->groupBy('biodata_id');
 
+        $keluargaLast = DB::table('keluarga')
+            ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+            ->groupBy('id_biodata');
+
         $query = DB::table('biodata as b')
-            ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
-            ->leftJoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
+            ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
+            ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             // Tambahkan default join lain jika dibutuhkan oleh kebanyakan fitur
-            ->where(fn ($q) => $q->where('s.status', 'aktif')
+            ->where(fn($q) => $q->where('s.status', 'aktif')
                 ->orWhere('pd.status', '=', 'aktif'))
-            ->where(fn ($q) => $q->whereNull('b.deleted_at')
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'));
 
         return $query;
@@ -81,7 +86,7 @@ class PesertaDidikService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_id,
             'nik_or_passport' => $item->identitas,
             'nama' => $item->nama,
@@ -175,7 +180,7 @@ class PesertaDidikService
             } else {
                 // Buat smartcard dan id unik
                 do {
-                    $smartcard = 'SC-'.strtoupper(Str::random(10));
+                    $smartcard = 'SC-' . strtoupper(Str::random(10));
                 } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
                 do {
@@ -664,10 +669,10 @@ class PesertaDidikService
                         }
                         break;
                     case 'nis':
-                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -682,13 +687,13 @@ class PesertaDidikService
                         $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';

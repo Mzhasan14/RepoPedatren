@@ -34,16 +34,21 @@ class KhadamService
             ->where('status', true)
             ->groupBy('biodata_id');
 
+        $keluargaLast = DB::table('keluarga')
+            ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
+            ->groupBy('id_biodata');
+
         $query = DB::table('khadam as kh')
             ->join('biodata as b', 'kh.biodata_id', '=', 'b.id')
-            ->leftJoin('santri AS s', fn ($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('santri AS s', fn($j) => $j->on('b.id', '=', 's.biodata_id')->where('s.status', 'aktif'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id')
+            ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
+            ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('kh.status', true)
-            ->where(fn ($q) => $q->whereNull('b.deleted_at')
+            ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('kh.deleted_at'));
 
@@ -73,7 +78,7 @@ class KhadamService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_id,
             'id_khadam' => $item->id,
             'niup' => $item->niup ?? '-',
@@ -142,7 +147,7 @@ class KhadamService
                 $biodataId = $existingBiodata->id;
             } else {
                 do {
-                    $smartcard = 'SC-'.strtoupper(Str::random(10));
+                    $smartcard = 'SC-' . strtoupper(Str::random(10));
                 } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
                 do {
@@ -223,7 +228,7 @@ class KhadamService
         }
         if (in_array('domisili_santri', $fields)) {
             // Tambahkan join domisili_santri, wilayah, blok, kamar,
-            $query->leftJoin('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
+            $query->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'));
             $query->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id');
             $query->leftJoin('blok as bl2', 'ds.blok_id', '=', 'bl2.id');
             $query->leftJoin('kamar as km2', 'ds.kamar_id', '=', 'km2.id');
@@ -233,7 +238,7 @@ class KhadamService
             in_array('jurusan', $fields) || in_array('kelas', $fields) || in_array('rombel', $fields)
         ) {
             // JOIN pendidikan dan relasi pendukungnya
-            $query->leftJoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'));
+            $query->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'));
         }
         if (in_array('lembaga', $fields)) {
             $query->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id');
@@ -382,16 +387,16 @@ class KhadamService
                         }
                         break;
                     case 'keterangan':
-                        $data['Keterangan'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['Keterangan'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'tanggal_mulai':
-                        $data['Tanggal Mulai'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['Tanggal Mulai'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nis':
-                        $data['NIS'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIS'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'no_induk':
-                        $data['No. Induk'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. Induk'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'lembaga':
                         $data['Lembaga'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
@@ -406,13 +411,13 @@ class KhadamService
                         $data['Rombel'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'no_kk':
-                        $data['No. KK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['No. KK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'nik':
-                        $data['NIK'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIK'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'niup':
-                        $data['NIUP'] = ' '.($itemArr[array_keys($itemArr)[$i++]] ?? '');
+                        $data['NIUP'] = ' ' . ($itemArr[array_keys($itemArr)[$i++]] ?? '');
                         break;
                     case 'anak_ke':
                         $data['Anak ke'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
