@@ -15,8 +15,12 @@ class Angkatan extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'boolean',
+    ];
+
     public function tahunAjaran()
     {
-        return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id', 'id');
+        return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
     }
 }

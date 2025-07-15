@@ -9,18 +9,17 @@ class Semester extends Model
     protected $table = 'semester';
 
     protected $fillable = [
-        'semester',
         'tahun_ajaran_id',
+        'semester',
         'status',
+    ];
+
+    protected $casts = [
+        'status' => 'boolean',
     ];
 
     public function tahunAjaran()
     {
-        return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id', 'id');
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
+        return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
     }
 }

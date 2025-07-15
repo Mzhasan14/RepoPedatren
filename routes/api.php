@@ -29,6 +29,9 @@ use App\Http\Controllers\api\PesertaDidik\PelajarController;
 use App\Http\Controllers\api\keluarga\OrangTuaWaliController;
 use App\Http\Controllers\api\kewaliasuhan\AnakasuhController;
 use App\Http\Controllers\api\kewaliasuhan\WaliasuhController;
+use App\Http\Controllers\api\Pegawai\MataPelajaranController;
+use App\Http\Controllers\api\PesertaDidik\AngkatanController;
+use App\Http\Controllers\api\PesertaDidik\SemesterController;
 use App\Http\Controllers\api\Administrasi\PerizinanController;
 use App\Http\Controllers\api\Pegawai\GolonganJabatanController;
 use App\Http\Controllers\api\PesertaDidik\BersaudaraController;
@@ -36,6 +39,7 @@ use App\Http\Controllers\api\Administrasi\PelanggaranController;
 use App\Http\Controllers\api\Pegawai\KategoriGolonganController;
 use App\Http\Controllers\api\PesertaDidik\AnakPegawaiController;
 use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
+use App\Http\Controllers\api\PesertaDidik\TahunAjaranController;
 use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
 use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
@@ -55,7 +59,6 @@ use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\Pegawai\MataPelajaranController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -97,6 +100,18 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
     Route::get('/alumni/{id}', [DetailController::class, 'getDetail']);
     Route::get('/anakpegawai', [AnakPegawaiController::class, 'getAllAnakpegawai']);
     Route::get('/anakpegawai/{id}', [DetailController::class, 'getDetail']);
+
+    // Tahun ajaran
+    Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+    Route::get('/tahun-ajaran/{id}', [TahunAjaranController::class, 'show']);
+
+    // Angkatan 
+    Route::get('/angkatan', [AngkatanController::class, 'index']);
+    Route::get('/angkatan/{id}', [AngkatanController::class, 'show']);
+
+    // Semester
+    Route::get('/semester', [SemesterController::class, 'index']);
+    Route::get('/semester/{id}', [SemesterController::class, 'show']);
 
     // Khadam
     Route::get('/khadam', [KhadamController::class, 'getAllKhadam']);
@@ -152,7 +167,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
 });
 
 // Export
-Route::prefix('export')->middleware([ 'throttle:15,1'])->group(function () {
+Route::prefix('export')->middleware(['throttle:15,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'exportExcel'])->name('nondomisili.export');
@@ -217,7 +232,7 @@ Route::prefix('formulir')->middleware([
 
     Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
     Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
-    
+
     // Khadam
     Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
     Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
@@ -325,6 +340,21 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(fun
     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
 
+    // tahun ajaran
+    Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+    Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
+    Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+
+    // angkatan
+    Route::post('/angkatan', [AngkatanController::class, 'store']);
+    Route::put('/angkatan/{id}', [AngkatanController::class, 'update']);
+    Route::delete('/angkatan/{id}', [AngkatanController::class, 'destroy']);
+
+    // semester
+    Route::post('/semester', [SemesterController::class, 'store']);
+    Route::put('/semester/{id}', [SemesterController::class, 'update']);
+    Route::delete('/semester/{id}', [SemesterController::class, 'destroy']);
+
     // perizinan
     Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
     Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
@@ -416,7 +446,7 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(fun
     Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 
-        // Jam Pelajaran
+    // Jam Pelajaran
     Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
     Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
     Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
@@ -424,12 +454,11 @@ Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(fun
     Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
 
     // Jadwal Pelajaran
-    Route::get('/jadwal-pelajaran', [MataPelajaranController::class,'getAllJadwal']);
-    Route::post('/jadwal-pelajaran', [MataPelajaranController::class,'storeJadwal']);
-    Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'showJadwal']);
-    Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class,'updateJadwal']);
+    Route::get('/jadwal-pelajaran', [MataPelajaranController::class, 'getAllJadwal']);
+    Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
+    Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'showJadwal']);
+    Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
     Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
-
 });
 
 Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {

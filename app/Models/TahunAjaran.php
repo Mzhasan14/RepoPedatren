@@ -9,14 +9,15 @@ class TahunAjaran extends Model
     protected $table = 'tahun_ajaran';
 
     protected $fillable = [
-        'nama',
+        'tahun_ajaran',
         'tanggal_mulai',
         'tanggal_selesai',
         'status',
     ];
 
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
+    protected $casts = [
+        'status' => 'boolean',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
+    ];
 }
