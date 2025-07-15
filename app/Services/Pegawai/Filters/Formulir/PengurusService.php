@@ -4,6 +4,7 @@ namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengurus;
+use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -94,6 +95,19 @@ class PengurusService
 
     public function store(array $data, string $bioId): array
     {
+        // 1. Cek apakah masih ada santri aktif untuk biodata ini
+        $santriAktif = Santri::where('biodata_id', $bioId)
+            ->where('status', 'aktif')
+            ->first();
+
+        if ($santriAktif) {
+            return [
+                'status' => false,
+                'message' => 'Data masih terdaftar sebagai Santri aktif. Tidak bisa menjadi Pengurus.',
+            ];
+        }
+
+        // 2. Cek apakah sudah ada pengurus aktif untuk biodata ini
         $exist = Pengurus::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
@@ -105,6 +119,7 @@ class PengurusService
             ];
         }
 
+        // 3. Cari pegawai berdasarkan biodata
         $pegawai = Pegawai::where('biodata_id', $bioId)->latest()->first();
 
         if (! $pegawai) {
@@ -114,6 +129,7 @@ class PengurusService
             ];
         }
 
+        // 4. Buat Pengurus Baru
         $pengurus = Pengurus::create([
             'pegawai_id' => $pegawai->id,
             'golongan_jabatan_id' => $data['golongan_jabatan_id'],

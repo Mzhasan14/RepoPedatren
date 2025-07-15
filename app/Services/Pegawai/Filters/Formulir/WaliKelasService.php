@@ -4,6 +4,7 @@ namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\WaliKelas;
+use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,19 @@ class WaliKelasService
 
     public function store(array $data, string $bioId): array
     {
+        // 1. Validasi: cek apakah masih ada santri aktif untuk biodata ini
+        $santriAktif = Santri::where('biodata_id', $bioId)
+            ->where('status', 'aktif')
+            ->first();
+
+        if ($santriAktif) {
+            return [
+                'status' => false,
+                'message' => 'Data masih terdaftar sebagai Santri aktif. Tidak bisa menjadi Wali Kelas.',
+            ];
+        }
+
+        // 2. Cek apakah sudah ada wali kelas aktif untuk biodata ini
         $exist = WaliKelas::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
@@ -75,6 +89,7 @@ class WaliKelasService
             ];
         }
 
+        // 3. Cari pegawai berdasarkan biodata
         $pegawai = Pegawai::where('biodata_id', $bioId)->latest()->first();
 
         if (! $pegawai) {
@@ -84,18 +99,19 @@ class WaliKelasService
             ];
         }
 
+        // 4. Buat Wali Kelas baru
         $waliKelas = WaliKelas::create([
-            'pegawai_id' => $pegawai->id,
-            'lembaga_id' => $data['lembaga_id'] ?? null,
-            'jurusan_id' => $data['jurusan_id'] ?? null,
-            'kelas_id' => $data['kelas_id'] ?? null,
-            'rombel_id' => $data['rombel_id'] ?? null,
-            'jumlah_murid' => $data['jumlah_murid'],
-            'periode_awal' => $data['periode_awal'] ?? now(),
-            'status_aktif' => 'aktif',
-            'created_by' => Auth::id(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'pegawai_id'    => $pegawai->id,
+            'lembaga_id'    => $data['lembaga_id'] ?? null,
+            'jurusan_id'    => $data['jurusan_id'] ?? null,
+            'kelas_id'      => $data['kelas_id'] ?? null,
+            'rombel_id'     => $data['rombel_id'] ?? null,
+            'jumlah_murid'  => $data['jumlah_murid'],
+            'periode_awal'  => $data['periode_awal'] ?? now(),
+            'status_aktif'  => 'aktif',
+            'created_by'    => Auth::id(),
+            'created_at'    => now(),
+            'updated_at'    => now(),
         ]);
 
         return [

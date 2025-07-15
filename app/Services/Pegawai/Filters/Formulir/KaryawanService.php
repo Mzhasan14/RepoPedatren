@@ -4,6 +4,7 @@ namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
+use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +61,19 @@ class KaryawanService
 
     public function store(array $data, string $bioId): array
     {
-        // Periksa apakah Pegawai sudah memiliki karyawan aktif
+        // 1. Validasi Santri Aktif
+        $santriAktif = Santri::where('biodata_id', $bioId)
+            ->where('status', 'aktif')
+            ->first();
+
+        if ($santriAktif) {
+            return [
+                'status' => false,
+                'message' => 'Data masih terdaftar sebagai Santri aktif. Tidak bisa menjadi Pengajar.',
+            ];
+        }
+
+        // 2. Validasi Karyawan Aktif
         $exist = Karyawan::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
@@ -72,7 +85,7 @@ class KaryawanService
             ];
         }
 
-        // Cari Pegawai berdasarkan biodata_id
+        // 3. Cari Pegawai berdasarkan biodata_id
         $pegawai = Pegawai::where('biodata_id', $bioId)
             ->latest()
             ->first();
@@ -84,7 +97,7 @@ class KaryawanService
             ];
         }
 
-        // Buat Karyawan Baru
+        // 4. Buat Karyawan Baru
         $karyawan = Karyawan::create([
             'pegawai_id' => $pegawai->id,
             'golongan_jabatan_id' => $data['golongan_jabatan_id'],

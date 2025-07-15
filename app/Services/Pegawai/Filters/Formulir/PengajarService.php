@@ -11,6 +11,7 @@ use App\Models\Pegawai\Pengajar;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Lembaga;
+use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -429,7 +430,19 @@ class PengajarService
 
     public function store(array $data, string $bioId): array
     {
-        // Cek apakah sudah ada pengajar aktif untuk biodata ini
+        // 1. Cek apakah masih ada santri aktif untuk biodata ini
+        $santriAktif = Santri::where('biodata_id', $bioId)
+            ->where('status', 'aktif')
+            ->first();
+
+        if ($santriAktif) {
+            return [
+                'status' => false,
+                'message' => 'Data masih terdaftar sebagai Santri aktif. Tidak bisa menjadi Pengajar',
+            ];
+        }
+
+        // 2. Cek apakah sudah ada pengajar aktif untuk biodata ini
         $exist = Pengajar::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
@@ -441,7 +454,7 @@ class PengajarService
             ];
         }
 
-        // Cari pegawai berdasarkan biodata
+        // 3. Cari pegawai berdasarkan biodata
         $pegawai = Pegawai::where('biodata_id', $bioId)->latest()->first();
 
         if (! $pegawai) {
@@ -451,7 +464,7 @@ class PengajarService
             ];
         }
 
-        // Validasi dulu semua kode mata pelajaran sebelum masuk transaksi
+        // 4. Validasi kode mata pelajaran (sebelum transaksi)
         foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
             $mapelAktif = MataPelajaran::where('kode_mapel', $mapel['kode_mapel'])
                 ->where('status', true)
@@ -465,7 +478,7 @@ class PengajarService
             }
         }
 
-        // Eksekusi penyimpanan dengan transaksi
+        // 5. Eksekusi penyimpanan dengan transaksi
         try {
             return DB::transaction(function () use ($data, $pegawai) {
                 $pengajar = Pengajar::create([
@@ -483,7 +496,7 @@ class PengajarService
                 // Simpan mata pelajaran
                 foreach ($data['mata_pelajaran'] ?? [] as $mapel) {
                     MataPelajaran::create([
-                        'lembaga_id'   => $pengajar->lembaga_id, // tambah baris ini
+                        'lembaga_id'   => $pengajar->lembaga_id,
                         'kode_mapel'   => $mapel['kode_mapel'],
                         'nama_mapel'   => $mapel['nama_mapel'] ?? '(tidak diketahui)',
                         'pengajar_id'  => $pengajar->id,

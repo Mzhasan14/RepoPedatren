@@ -17,6 +17,7 @@ use App\Models\Pegawai\WaliKelas;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Lembaga;
+use App\Models\Santri;
 use App\Models\WargaPesantren;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -179,8 +180,20 @@ class PegawaiService
                 if ($existingPegawai) {
                     return [
                         'status' => false,
-                        'message' => 'Pegawai untuk biodata ini sudah ada dengan status aktif. Silahkan cek kembali di fitur Pegawai.',
+                        'message' => "Pegawai atas nama {$existingBiodata->nama} sudah terdaftar sebagai pegawai aktif. Silakan periksa kembali di menu Pegawai.",
                         'data' => ['pegawai' => $existingPegawai],
+                    ];
+                }
+                    // === PENAMBAHAN CEK SANTRI AKTIF ===
+                $santriAktif = Santri::where('biodata_id', $existingBiodata->id)
+                    ->where('status', 'aktif')
+                    ->first();
+
+                if ($santriAktif) {
+                    return [
+                        'status' => false,
+                        'message' =>"{$existingBiodata->nama} masih terdaftar sebagai santri aktif. Tidak dapat didaftarkan sebagai pegawai.",
+                        'data' => ['santri' => $santriAktif],
                     ];
                 }
 
@@ -265,8 +278,8 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan keluarga
-            if (! empty($input['no_kk'])) {
+            // Keluarga 
+            if (! $isExisting && ! empty($input['no_kk'])) {
                 Keluarga::create([
                     'id_biodata' => $biodata->id,
                     'no_kk' => $input['no_kk'],
@@ -275,8 +288,8 @@ class PegawaiService
                 ]);
             }
 
-            // Simpan warga pesantren
-            if (! empty($input['niup'])) {
+            // Warga pesantren 
+            if (! $isExisting && ! empty($input['niup'])) {
                 WargaPesantren::create([
                     'biodata_id' => $biodata->id,
                     'niup' => $input['niup'],
@@ -292,6 +305,20 @@ class PegawaiService
                         throw new \Exception('Berkas tidak valid');
                     }
 
+                    // Untuk BIODATA lama, CEGAH duplikat SEMUA jenis berkas
+                    if ($isExisting) {
+                        $jenisBerkasId = (int) $item['jenis_berkas_id'];
+                        $berkasExist = Berkas::where('biodata_id', $biodata->id)
+                            ->where('jenis_berkas_id', $jenisBerkasId)
+                            ->first();
+
+                        // Jika sudah ada, skip/bypass
+                        if ($berkasExist) {
+                            continue;
+                        }
+                    }
+
+                    // Proses upload & create seperti biasa
                     $path = $item['file_path']->store('berkas', 'public');
 
                     Berkas::create([
@@ -393,7 +420,7 @@ class PegawaiService
             return [
                 'status' => true,
                 'message' => $isExisting
-                    ? 'Pegawai baru berhasil ditambahkan untuk biodata yang sudah terdaftar.'
+                    ? "Pegawai baru berhasil ditambahkan dengan menggunakan biodata lama atas nama {$biodata->nama} yang sudah terdaftar di sistem."
                     : 'Pegawai baru berhasil ditambahkan.',
                 'data' => array_merge(['pegawai' => $pegawai], $resultData),
             ];
