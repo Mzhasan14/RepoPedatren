@@ -95,7 +95,9 @@ class SemesterController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Setidaknya harus ada satu semester aktif dalam tahun ajaran ini.',
-                        'data' => null,
+                        'data' => [
+                            'semester' => ['Setidaknya harus ada satu semester aktif dalam tahun ajaran ini.']
+                        ],
                     ], 422);
                 }
             }
