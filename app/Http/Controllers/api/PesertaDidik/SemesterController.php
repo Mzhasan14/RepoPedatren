@@ -95,9 +95,6 @@ class SemesterController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Setidaknya harus ada satu semester aktif dalam tahun ajaran ini.',
-                        'data' => [
-                            'semester' => ['Setidaknya harus ada satu semester aktif dalam tahun ajaran ini.']
-                        ],
                     ], 422);
                 }
             }
@@ -116,7 +113,7 @@ class SemesterController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Semester berhasil diperbarui.',
-                'data' => $semester->refresh()->loadMissing('tahunAjaran'),
+                'data' => $semester->load('tahunAjaran'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -128,11 +125,9 @@ class SemesterController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui semester.',
-                'data' => null,
             ], 500);
         }
     }
-
 
 
     public function destroy($id)

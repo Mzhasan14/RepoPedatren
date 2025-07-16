@@ -88,9 +88,6 @@ class TahunAjaranController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Setidaknya harus ada satu tahun ajaran yang aktif.',
-                        'data' => [
-                            'status' => ['Setidaknya harus ada satu tahun ajaran yang aktif.']
-                        ],
                     ], 422);
                 }
             }
