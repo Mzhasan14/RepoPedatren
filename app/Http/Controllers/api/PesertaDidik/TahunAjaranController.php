@@ -75,8 +75,25 @@ class TahunAjaranController extends Controller
         DB::beginTransaction();
         try {
             $tahunAjaran = TahunAjaran::findOrFail($id);
+            $newStatus = $request->boolean('status');
+            $oldStatus = $tahunAjaran->status;
 
-            if ($request->boolean('status')) {
+            // Cek: Jika sebelumnya aktif dan mau di-nonaktifkan
+            if (!$newStatus && $oldStatus) {
+                $cekLainAktif = TahunAjaran::where('status', true)
+                    ->where('id', '!=', $tahunAjaran->id)
+                    ->exists();
+
+                if (!$cekLainAktif) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Setidaknya harus ada satu tahun ajaran yang aktif.',
+                    ], 422);
+                }
+            }
+
+            // Jika status akan di-set aktif, nonaktifkan yang lain
+            if ($newStatus) {
                 TahunAjaran::where('status', true)
                     ->where('id', '!=', $tahunAjaran->id)
                     ->update(['status' => false]);
@@ -84,6 +101,7 @@ class TahunAjaranController extends Controller
 
             $tahunAjaran->update($request->validated());
             DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tahun ajaran berhasil diperbarui.',
@@ -102,6 +120,7 @@ class TahunAjaranController extends Controller
             ], 500);
         }
     }
+
 
     public function destroy($id)
     {

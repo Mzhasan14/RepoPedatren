@@ -49,7 +49,6 @@ use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BerkasController;
 use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
 use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
-use App\Http\Controllers\api\pendidikan\DropdownPendidikanController;
 use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BiodataController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;

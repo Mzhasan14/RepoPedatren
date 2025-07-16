@@ -81,7 +81,26 @@ class SemesterController extends Controller
         try {
             $semester = Semester::findOrFail($id);
 
-            if ($request->boolean('status')) {
+            $newStatus = $request->boolean('status');
+            $oldStatus = $semester->status;
+
+            // Cegah jika akan menonaktifkan satu-satunya semester aktif di tahun ajaran tersebut
+            if (!$newStatus && $oldStatus) {
+                $cekLainAktif = Semester::where('tahun_ajaran_id', $request->tahun_ajaran_id)
+                    ->where('id', '!=', $semester->id)
+                    ->where('status', true)
+                    ->exists();
+
+                if (!$cekLainAktif) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Setidaknya harus ada satu semester aktif dalam tahun ajaran ini.',
+                    ], 422);
+                }
+            }
+
+            // Jika akan diaktifkan, nonaktifkan semester lain dalam tahun ajaran yang sama
+            if ($newStatus) {
                 Semester::where('tahun_ajaran_id', $request->tahun_ajaran_id)
                     ->where('id', '!=', $semester->id)
                     ->where('status', true)
@@ -90,6 +109,7 @@ class SemesterController extends Controller
 
             $semester->update($request->validated());
             DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Semester berhasil diperbarui.',
@@ -108,6 +128,7 @@ class SemesterController extends Controller
             ], 500);
         }
     }
+
 
     public function destroy($id)
     {
