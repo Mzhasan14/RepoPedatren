@@ -88,6 +88,7 @@ class TahunAjaranController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Setidaknya harus ada satu tahun ajaran yang aktif.',
+                        'data' => null,
                     ], 422);
                 }
             }
@@ -105,7 +106,7 @@ class TahunAjaranController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Tahun ajaran berhasil diperbarui.',
-                'data' => $tahunAjaran,
+                'data' => $tahunAjaran->refresh(),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -117,6 +118,7 @@ class TahunAjaranController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui tahun ajaran.',
+                'data' => null,
             ], 500);
         }
     }
