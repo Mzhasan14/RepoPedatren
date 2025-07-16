@@ -25,7 +25,7 @@ class AngkatanRequest extends FormRequest
 
     public function rules()
     {
-        $id = $this->route('angkatan') ? $this->route('angkatan')->id : $this->route('id');
+        $id = $this->route('id') ? $this->route('id')->id : $this->route('id');
 
         return [
             'angkatan' => [

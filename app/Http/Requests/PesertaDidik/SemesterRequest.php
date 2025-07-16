@@ -16,7 +16,7 @@ class SemesterRequest extends FormRequest
 
     public function rules()
     {
-        $id = $this->route('semester') ? $this->route('semester')->id : $this->route('id');
+        $id = $this->route('id') ? $this->route('id')->id : $this->route('id');
 
         return [
             'tahun_ajaran_id' => [

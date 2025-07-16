@@ -25,7 +25,7 @@ class TahunAjaranRequest extends FormRequest
     public function rules()
     {
         $today = now()->toDateString();
-        $id = $this->route('tahun_ajaran') ? $this->route('tahun_ajaran')->id : null;
+        $id = $this->route('id') ? $this->route('id')->id : null;
 
         return [
             'tahun_ajaran' => [
