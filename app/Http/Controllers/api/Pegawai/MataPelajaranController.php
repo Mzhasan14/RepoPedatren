@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Pegawai;
+namespace App\Http\Controllers\api\Pegawai;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\CreateJadwalPelajaranRequest;
