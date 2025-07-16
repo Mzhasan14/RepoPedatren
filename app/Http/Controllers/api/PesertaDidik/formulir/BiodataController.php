@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\api\PesertaDidik\Formulir;
+namespace App\Http\Controllers\api\PesertaDidik\formulir;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\formulir\BiodataRequest;
