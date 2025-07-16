@@ -46,18 +46,18 @@ use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
 use App\Http\Controllers\api\Biometric\BiometricProfileController;
 use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
 use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\BerkasController;
+use App\Http\Controllers\api\PesertaDidik\formulir\BerkasController;
 use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
 use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
 use App\Http\Controllers\api\pendidikan\DropdownPendidikanController;
 use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\BiodataController;
+use App\Http\Controllers\api\PesertaDidik\formulir\BiodataController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\DomisiliController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\KhadamFormController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\PendidikanController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\StatusSantriController;
-use App\Http\Controllers\api\PesertaDidik\Formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
+use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
+use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
+use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
+use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
 
 // Auth
