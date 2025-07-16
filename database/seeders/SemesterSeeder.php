@@ -19,12 +19,14 @@ class SemesterSeeder extends Seeder
                 [
                     'tahun_ajaran_id' => $activeTahunAjaran->id,
                     'semester' => 'ganjil',
+                    'status' => true, 
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],
                 [
                     'tahun_ajaran_id' => $activeTahunAjaran->id,
                     'semester' => 'genap',
+                    'status' => false, 
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],

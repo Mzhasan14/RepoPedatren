@@ -108,6 +108,14 @@ class TahunAjaranController extends Controller
         DB::beginTransaction();
         try {
             $tahunAjaran = TahunAjaran::findOrFail($id);
+
+            if ($tahunAjaran->status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus tahun ajaran yang sedang aktif.',
+                ], 403);
+            }
+
             $tahunAjaran->delete();
             DB::commit();
             return response()->json([

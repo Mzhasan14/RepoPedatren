@@ -49,7 +49,6 @@ class SemesterController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Jika ingin hanya satu semester aktif per tahun ajaran, otomatis non-aktifkan yang lain
             if ($request->boolean('status')) {
                 Semester::where('tahun_ajaran_id', $request->tahun_ajaran_id)
                     ->where('status', true)
@@ -115,6 +114,14 @@ class SemesterController extends Controller
         DB::beginTransaction();
         try {
             $semester = Semester::findOrFail($id);
+
+            if ($semester->status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus semester yang sedang aktif.',
+                ], 403);
+            }
+
             $semester->delete();
             DB::commit();
             return response()->json([
