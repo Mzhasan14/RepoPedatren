@@ -25,10 +25,10 @@ class OrangtuaWaliRequest extends FormRequest
     {
         return [
             // ======= Alamat ==========
-            'negara' => 'required|string|max:255',
-            'provinsi' => 'nullable|string|max:255',
-            'kabupaten' => 'nullable|string|max:255',
-            'kecamatan' => 'nullable|string|max:255',
+            'negara_id' => 'required|exists:negara,id',
+            'provinsi_id' => 'nullable|exists:provinsi,id',
+            'kabupaten_id' => 'nullable|exists:kabupaten,id',
+            'kecamatan_id' => 'nullable|exists:kecamatan,id',
             'jalan' => 'required|string|max:255',
             'kode_pos' => 'nullable|string|max:10',
 
