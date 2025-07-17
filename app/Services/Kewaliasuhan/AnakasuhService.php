@@ -696,7 +696,6 @@ class AnakasuhService
         $query = $this->getAllAnakasuh($request);
 
         $select = [];
-
         foreach ($fields as $field) {
             switch ($field) {
                 case 'nis':
@@ -706,7 +705,7 @@ class AnakasuhService
                     $select[] = 'b.nama';
                     break;
                 case 'kamar':
-                    $select[] = DB::raw("CONCAT(km.nama_kamar,' - ',w.nama_wilayah) AS kamar");
+                    $select[] = DB::raw("CONCAT(km.nama_kamar, ' - ', w.nama_wilayah) as kamar");
                     break;
                 case 'grup':
                     $select[] = 'gs.nama_grup';
@@ -715,7 +714,7 @@ class AnakasuhService
                     $select[] = DB::raw('YEAR(s.tanggal_masuk) as angkatan');
                     break;
                 case 'kota_asal':
-                    $select[] = 'kb.nama_kabupaten AS kota_asal';
+                    $select[] = 'kb.nama_kabupaten as kota_asal';
                     break;
                 case 'tanggal_input':
                     $select[] = 's.created_at';
@@ -724,7 +723,6 @@ class AnakasuhService
                     $select[] = DB::raw('
                     GREATEST(
                         s.updated_at,
-                        COALESCE(as.updated_at, s.updated_at),
                         COALESCE(gs.updated_at, s.updated_at)
                     ) AS updated_at
                 ');
@@ -737,47 +735,54 @@ class AnakasuhService
         return $query;
     }
 
+
     public function formatDataExportAnakasuh($results, array $fields, bool $addNumber = false)
     {
         return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
             $data = [];
-
             if ($addNumber) {
                 $data['No'] = $idx + 1;
             }
 
+            $itemArr = (array) $item;
+            $i = 0;
             foreach ($fields as $field) {
                 switch ($field) {
                     case 'nis':
-                        $data['NIS'] = $item->nis ?? '';
+                        $data['NIS'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'nama':
-                        $data['Nama'] = $item->nama ?? '';
+                        $data['Nama'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'kamar':
-                        $data['Kamar'] = $item->kamar ?? '';
+                        $data['Kamar'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'grup':
-                        $data['Grup'] = $item->nama_grup ?? '';
+                        $data['Grup'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'angkatan':
-                        $data['Angkatan'] = $item->angkatan ?? '';
+                        $data['Angkatan'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'kota_asal':
-                        $data['Kota Asal'] = $item->kota_asal ?? '';
+                        $data['Kota Asal'] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                         break;
                     case 'tanggal_input':
-                        $data['Tanggal Input'] = Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') ?? '-';
+                        $val = $itemArr[array_keys($itemArr)[$i++]] ?? null;
+                        $data['Tanggal Input'] = $val ? Carbon::parse($val)->translatedFormat('d F Y H:i:s') : '-';
                         break;
                     case 'tanggal_update':
-                        $data['Tanggal Update'] = Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-';
+                        $val = $itemArr[array_keys($itemArr)[$i++]] ?? null;
+                        $data['Tanggal Update'] = $val ? Carbon::parse($val)->translatedFormat('d F Y H:i:s') : '-';
                         break;
+                    default:
+                        $data[$field] = $itemArr[array_keys($itemArr)[$i++]] ?? '';
                 }
             }
 
             return $data;
         });
     }
+
 
     public function getFieldExportAnakasuhHeadings(array $fields, bool $addNumber = false)
     {
@@ -804,6 +809,7 @@ class AnakasuhService
 
         return $headings;
     }
+
 
 
 }

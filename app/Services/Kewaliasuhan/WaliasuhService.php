@@ -392,6 +392,32 @@ class WaliasuhService
     {
         $query = $this->getAllWaliasuh($request);
 
+        // JOIN dinamis dengan alias unik
+        if (in_array('kota_asal', $fields)) {
+            $query->leftJoin('kabupaten as kb2', 'b.kabupaten_id', '=', 'kb2.id');
+        }
+
+        if (in_array('nama_kamar', $fields)) {
+            $query->leftJoin('kamar as km2', 'ds.kamar_id', '=', 'km2.id');
+        }
+
+        if (in_array('nama_blok', $fields)) {
+            $query->leftJoin('blok as bl2', 'ds.blok_id', '=', 'bl2.id');
+        }
+
+        if (in_array('nama_wilayah', $fields)) {
+            $query->leftJoin('wilayah as w2', 'ds.wilayah_id', '=', 'w2.id');
+        }
+
+        // Tambahan untuk melihat grup dan jenis kelamin wali asuh
+        if (in_array('grup_wali_asuh', $fields)) {
+            $query->leftJoin('grup_wali_asuh as gwa', 'ws.id_grup_wali_asuh', '=', 'gwa.id');
+        }
+
+        if (in_array('jenis_kelamin', $fields)) {
+            $query->leftJoin('biodata as bw', 'ws.id_biodata', '=', 'bw.id');
+        }
+
         $select = [];
 
         foreach ($fields as $field) {
@@ -403,29 +429,35 @@ class WaliasuhService
                     $select[] = 'b.nama';
                     break;
                 case 'nama_kamar':
-                    $select[] = 'km.nama_kamar';
+                    $select[] = 'km2.nama_kamar';
                     break;
                 case 'nama_blok':
-                    $select[] = 'bl.nama_blok';
+                    $select[] = 'bl2.nama_blok';
                     break;
                 case 'nama_wilayah':
-                    $select[] = 'w.nama_wilayah';
+                    $select[] = 'w2.nama_wilayah';
                     break;
                 case 'angkatan':
                     $select[] = DB::raw('YEAR(s.tanggal_masuk) as angkatan');
                     break;
                 case 'kota_asal':
-                    $select[] = 'kb.nama_kabupaten as kota_asal';
+                    $select[] = 'kb2.nama_kabupaten as kota_asal';
+                    break;
+                case 'grup_wali_asuh':
+                    $select[] = 'gwa.nama_grup as grup_wali_asuh';
+                    break;
+                case 'jenis_kelamin':
+                    $select[] = 'bw.jenis_kelamin as jenis_kelamin';
                     break;
                 case 'created_at':
                     $select[] = 'ws.created_at';
                     break;
                 case 'updated_at':
                     $select[] = DB::raw('GREATEST(
-            ws.updated_at,
-            COALESCE(s.updated_at, ws.updated_at),
-            COALESCE(b.updated_at, ws.updated_at)
-        ) as updated_at');
+                    ws.updated_at,
+                    COALESCE(s.updated_at, ws.updated_at),
+                    COALESCE(b.updated_at, ws.updated_at)
+                ) as updated_at');
                     break;
             }
         }
@@ -433,23 +465,6 @@ class WaliasuhService
         $query->select($select);
 
         return $query;
-    }
-
-    public function formatDataExportWaliasuh($results, array $fields, bool $translate = false)
-    {
-        return collect($results)->map(function ($item) use ($fields, $translate) {
-            $row = [];
-
-            foreach ($fields as $field) {
-                if (in_array($field, ['created_at', 'updated_at']) && $translate) {
-                    $row[$field] = Carbon::parse($item->{$field})->translatedFormat('d F Y H:i:s');
-                } else {
-                    $row[$field] = $item->{$field} ?? '-';
-                }
-            }
-
-            return $row;
-        });
     }
 
     public function getFieldExportWaliasuhHeadings(array $fields, bool $translate = false)
@@ -462,10 +477,32 @@ class WaliasuhService
             'nama_wilayah' => 'Wilayah',
             'angkatan' => 'Angkatan',
             'kota_asal' => 'Kota Asal',
+            'grup_wali_asuh' => 'Grup Wali Asuh',
+            'jenis_kelamin' => 'Jenis Kelamin',
             'created_at' => 'Tanggal Input',
             'updated_at' => 'Tanggal Update',
         ];
 
         return collect($fields)->map(fn($field) => $translate ? ($headings[$field] ?? $field) : $field)->toArray();
+    }
+
+    public function formatDataExportWaliasuh($results, array $fields, bool $translate = false)
+    {
+        return collect($results)->map(function ($item) use ($fields, $translate) {
+            $row = [];
+
+            foreach ($fields as $field) {
+                if ($field === 'jenis_kelamin') {
+                    $jk = strtolower($item->{$field} ?? '');
+                    $row['jenis_kelamin'] = $jk === 'l' ? 'Laki-laki' : ($jk === 'p' ? 'Perempuan' : '-');
+                } elseif (in_array($field, ['created_at', 'updated_at']) && $translate) {
+                    $row[$field] = Carbon::parse($item->{$field})->translatedFormat('d F Y H:i:s');
+                } else {
+                    $row[$field] = $item->{$field} ?? '-';
+                }
+            }
+
+            return $row;
+        });
     }
 }

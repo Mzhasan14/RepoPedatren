@@ -325,8 +325,20 @@ class GrupWaliasuhService
         });
     }
 
-    public function getExportGrupWaliasuhQuery(Request $request)
+    public function getExportGrupWaliasuhQuery(array $fields, Request $request)
     {
+        $defaultFields = [
+            'gs.id',
+            'gs.nama_grup',
+            's.nis',
+            'b.nama as nama_wali_asuh',
+            'w.nama_wilayah',
+            DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
+            'gs.created_at',
+            'gs.updated_at',
+            'gs.status',
+        ];
+
         $query = DB::table('grup_wali_asuh AS gs')
             ->leftJoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
             ->leftJoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
@@ -334,17 +346,7 @@ class GrupWaliasuhService
             ->leftJoin('santri AS s', 'ws.id_santri', '=', 's.id')
             ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
-            ->select([
-                'gs.id',
-                'gs.nama_grup',
-                's.nis',
-                'b.nama as nama_wali_asuh',
-                'w.nama_wilayah',
-                DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
-                'gs.created_at',
-                'gs.updated_at',
-                'gs.status',
-            ])
+            ->select($defaultFields) // Tetap pakai default, karena COUNT tidak fleksibel
             ->groupBy(
                 'gs.id',
                 'gs.nama_grup',
@@ -357,45 +359,82 @@ class GrupWaliasuhService
             )
             ->orderBy('gs.id');
 
+        // Tambahkan filter request opsional jika perlu
+        if ($request->filled('wilayah')) {
+            $query->where('w.id', $request->wilayah);
+        }
+
         return $query;
     }
 
-    public function formatDataExportGrupWaliasuh($results, $addNumber = false)
+    public function formatDataExportGrupWaliasuh($results, array $fields, $addNumber = false)
     {
-        return collect($results)->map(function ($item, $idx) use ($addNumber) {
-            $data = [];
+        return collect($results)->map(function ($item, $idx) use ($fields, $addNumber) {
+            $row = [];
+
             if ($addNumber) {
-                $data['No'] = $idx + 1;
+                $row['No'] = $idx + 1;
             }
 
-            $data['Nama Grup'] = $item->nama_grup;
-            $data['NIS Wali Asuh'] = $item->nis;
-            $data['Nama Wali Asuh'] = $item->nama_wali_asuh;
-            $data['Wilayah'] = $item->nama_wilayah;
-            $data['Jumlah Anak Asuh'] = $item->jumlah_anak_asuh;
-            $data['Tanggal Input'] = $item->created_at ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') : '-';
-            $data['Tanggal Update'] = $item->updated_at ? Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') : '-';
-            $data['Status'] = $item->status ? 'Aktif' : 'Nonaktif';
+            foreach ($fields as $field) {
+                switch ($field) {
+                    case 'nama_grup':
+                        $row['Nama Grup'] = $item->nama_grup ?? '-';
+                        break;
+                    case 'nis':
+                        $row['NIS Wali Asuh'] = $item->nis ?? '-';
+                        break;
+                    case 'nama_wali_asuh':
+                        $row['Nama Wali Asuh'] = $item->nama_wali_asuh ?? '-';
+                        break;
+                    case 'nama_wilayah':
+                        $row['Wilayah'] = $item->nama_wilayah ?? '-';
+                        break;
+                    case 'jumlah_anak_asuh':
+                        $row['Jumlah Anak Asuh'] = $item->jumlah_anak_asuh ?? 0;
+                        break;
+                    case 'created_at':
+                        $row['Tanggal Input'] = $item->created_at
+                            ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s')
+                            : '-';
+                        break;
+                    case 'updated_at':
+                        $row['Tanggal Update'] = $item->updated_at
+                            ? Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s')
+                            : '-';
+                        break;
+                    case 'status':
+                        $row['Status'] = $item->status ? 'Aktif' : 'Nonaktif';
+                        break;
+                }
+            }
 
-            return $data;
+            return $row;
         })->values();
     }
 
-    public function getGrupWaliasuhHeadings($addNumber = false)
+    public function getFieldExportGrupWaliasuhHeadings(array $fields, bool $addNumber = false): array
     {
-        $headings = [
-            'Nama Grup',
-            'NIS Wali Asuh',
-            'Nama Wali Asuh',
-            'Wilayah',
-            'Jumlah Anak Asuh',
-            'Tanggal Input',
-            'Tanggal Update',
-            'Status',
+        $map = [
+            'nama_grup' => 'Nama Grup',
+            'nis' => 'NIS Wali Asuh',
+            'nama_wali_asuh' => 'Nama Wali Asuh',
+            'nama_wilayah' => 'Wilayah',
+            'jumlah_anak_asuh' => 'Jumlah Anak Asuh',
+            'created_at' => 'Tanggal Input',
+            'updated_at' => 'Tanggal Update',
+            'status' => 'Status',
         ];
 
+        $headings = [];
         if ($addNumber) {
-            array_unshift($headings, 'No');
+            $headings[] = 'No';
+        }
+
+        foreach ($fields as $field) {
+            if (isset($map[$field])) {
+                $headings[] = $map[$field];
+            }
         }
 
         return $headings;

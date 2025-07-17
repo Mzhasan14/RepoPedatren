@@ -280,22 +280,54 @@ class WaliasuhController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $fields = $request->input('fields', [
+        $defaultExportFields = [
             'nis',
             'nama',
             'nama_kamar',
             'nama_blok',
             'nama_wilayah',
+            'grup_wali_asuh',
             'angkatan',
             'kota_asal',
             'created_at',
-            'updated_at'
-        ]);
+            'updated_at',
+        ];
 
-        $query = $this->waliasuhService->getExportWaliasuhQuery($fields, $request)->get();
-        $data = $this->waliasuhService->formatDataExportWaliasuh($query, $fields, true);
-        $headings = $this->waliasuhService->getFieldExportWaliasuhHeadings($fields, true);
+        $columnOrder = [
+            'nis',
+            'nama',
+            'nama_kamar',
+            'nama_blok',
+            'nama_wilayah',
+            'grup_wali_asuh',
+            'angkatan',
+            'kota_asal',
+            'created_at',
+            'updated_at',
+        ];
 
-        return Excel::download(new BaseExport($data, $headings), 'wali-asuh.xlsx');
+        // Ambil kolom dari checkbox user (opsional)
+        $optionalFields = $request->input('fields', []);
+
+        // Gabungkan default dan optional (hindari duplikat & atur urutan)
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Ambil query dari service
+        $query = $this->waliasuhService->getExportWaliasuhQuery($fields, $request);
+
+        // Ambil semua atau limit berdasarkan request
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        // Format data & heading
+        $addNumber = true;
+        $formatted = $this->waliasuhService->formatDataExportWaliasuh($results, $fields, $addNumber);
+        $headings = $this->waliasuhService->getFieldExportWaliasuhHeadings($fields, $addNumber);
+
+        $filename = 'wali_asuh_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new \App\Exports\BaseExport($formatted, $headings), $filename);
     }
 }

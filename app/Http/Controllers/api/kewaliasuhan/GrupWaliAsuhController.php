@@ -253,12 +253,34 @@ class GrupWaliAsuhController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $service = app(GrupWaliasuhService::class);
-        $query = $service->getExportGrupWaliasuhQuery($request)->get();
+        $defaultFields = [
+            'nama_grup',
+            'nis',
+            'nama_wali_asuh',
+            'nama_wilayah',
+            'jumlah_anak_asuh',
+            'created_at',
+            'updated_at',
+            'status',
+        ];
 
-        $data = $service->formatDataExportGrupWaliasuh($query, true);
-        $headings = $service->getGrupWaliasuhHeadings(true);
+        $optionalFields = $request->input('fields', []);
+        $columnOrder = $defaultFields;
 
-        return Excel::download(new BaseExport($data, $headings), 'grup-wali-asuh.xlsx');
+        $fields = array_unique(array_merge($defaultFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        $service = app(\App\Services\Kewaliasuhan\GrupWaliasuhService::class);
+
+        $query = $service->getExportGrupWaliasuhQuery($fields, $request);
+
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $formatted = $service->formatDataExportGrupWaliasuh($results, $fields, true);
+        $headings = $service->getFieldExportGrupWaliasuhHeadings($fields, true);
+
+        return Excel::download(new \App\Exports\BaseExport($formatted, $headings), 'grup_wali_asuh.xlsx');
     }
 }
