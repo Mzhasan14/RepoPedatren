@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api\kewaliasuhan;
 
 use App\Models\Santri;
 use App\Models\Biodata;
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use App\Models\Peserta_didik;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
 use Illuminate\Support\Facades\Validator;
@@ -314,6 +316,27 @@ class AnakasuhController extends Controller
         });
 
         return response()->json(['message' => 'Anak asuh dihapus']);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $fields = [
+            'nis', 
+            'nama', 
+            'kamar', 
+            'grup', 
+            'angkatan', 
+            'kota_asal', 
+            'tanggal_input', 
+            'tanggal_update'];
+
+        $service = app(AnakasuhService::class);
+        $query = $service->getExportAnakasuhQuery($fields, $request)->get();
+
+        $data = $service->formatDataExportAnakasuh($query, $fields, true);
+        $headings = $service->getFieldExportAnakasuhHeadings($fields, true);
+
+        return Excel::download(new BaseExport($data, $headings), 'anak-asuh.xlsx');
     }
     /**
      * Display a listing of the resource.

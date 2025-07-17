@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Kewaliasuhan\KeluarWaliasuhRequest;
-use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
 use App\Models\Biodata;
-use App\Models\Kewaliasuhan\Kewaliasuhan;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Services\Kewaliasuhan\DetailWaliasuhService;
-use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
-use App\Services\Kewaliasuhan\WaliasuhService;
-use Illuminate\Http\JsonResponse;
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Kewaliasuhan\Wali_asuh;
+use App\Models\Kewaliasuhan\Kewaliasuhan;
+use App\Services\Kewaliasuhan\WaliasuhService;
+use App\Http\Requests\Kewaliasuhan\waliAsuhRequest;
+use App\Services\Kewaliasuhan\DetailWaliasuhService;
+use App\Http\Requests\Kewaliasuhan\KeluarWaliasuhRequest;
+use App\Services\Kewaliasuhan\Filters\FilterWaliasuhService;
 
 class WaliasuhController extends Controller
 {
@@ -274,5 +276,26 @@ class WaliasuhController extends Controller
             });
 
         return response()->json($data);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $fields = $request->input('fields', [
+            'nis',
+            'nama',
+            'nama_kamar',
+            'nama_blok',
+            'nama_wilayah',
+            'angkatan',
+            'kota_asal',
+            'created_at',
+            'updated_at'
+        ]);
+
+        $query = $this->waliasuhService->getExportWaliasuhQuery($fields, $request)->get();
+        $data = $this->waliasuhService->formatDataExportWaliasuh($query, $fields, true);
+        $headings = $this->waliasuhService->getFieldExportWaliasuhHeadings($fields, true);
+
+        return Excel::download(new BaseExport($data, $headings), 'wali-asuh.xlsx');
     }
 }

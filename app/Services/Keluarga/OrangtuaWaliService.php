@@ -143,48 +143,13 @@ class OrangtuaWaliService
         return DB::transaction(function () use ($data): array {
 
             try {
-                // Buat Negara
-                $negara = Negara::create([
-                    'nama_negara' => $data['negara'],
-                    'created_by' => Auth::id(),
-                    'status' => true,
-                    'created_at' => Carbon::now(),
-                ]);
-
-                // Buat Provinsi
-                $provinsi = Provinsi::create([
-                    'negara_id' => $negara->id,
-                    'nama_provinsi' => $data['provinsi'],
-                    'created_by' => Auth::id(),
-                    'status' => true,
-                    'created_at' => Carbon::now(),
-                ]);
-
-                // Buat Kabupaten
-                $kabupaten = Kabupaten::create([
-                    'provinsi_id' => $provinsi->id,
-                    'nama_kabupaten' => $data['kabupaten'],
-                    'created_by' => Auth::id(),
-                    'status' => true,
-                    'created_at' => Carbon::now(),
-                ]);
-
-                // Buat Kecamatan
-                $kecamatan = Kecamatan::create([
-                    'kabupaten_id' => $kabupaten->id,
-                    'nama_kecamatan' => $data['kecamatan'],
-                    'created_by' => Auth::id(),
-                    'status' => true,
-                    'created_at' => Carbon::now(),
-                ]);
-
                 // Buat Biodata
                 $biodata = Biodata::create([
                     'id' => Str::uuid(),
-                    'negara_id' => $negara->id,
-                    'provinsi_id' => $provinsi->id,
-                    'kabupaten_id' => $kabupaten->id,
-                    'kecamatan_id' => $kecamatan->id,
+                    'negara_id' => $data['negara_id'],
+                    'provinsi_id' => $data['provinsi_id'],
+                    'kabupaten_id' => $data['kabupaten_id'],
+                    'kecamatan_id' => $data['kecamatan_id'],
                     'jalan' => $data['jalan'],
                     'kode_pos' => $data['kode_pos'],
                     'nama' => $data['nama'],

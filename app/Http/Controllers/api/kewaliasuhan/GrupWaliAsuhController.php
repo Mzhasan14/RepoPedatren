@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers\api\kewaliasuhan;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
-use App\Http\Resources\PdResource;
-use App\Models\Biodata;
-use App\Models\Kewaliasuhan\Grup_WaliAsuh;
-use App\Models\Kewaliasuhan\Wali_asuh;
-use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
-use App\Services\Kewaliasuhan\GrupWaliasuhService;
 use id;
-use Illuminate\Http\JsonResponse;
+use App\Models\Biodata;
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\PdResource;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Kewaliasuhan\Grup_WaliAsuh;
+use App\Services\Kewaliasuhan\GrupWaliasuhService;
+use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
+use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
 
 class GrupWaliAsuhController extends Controller
 {
@@ -247,5 +249,16 @@ class GrupWaliAsuhController extends Controller
                 'message' => 'Grup wali asuh berhasil diaktifkan kembali',
             ]);
         });
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $service = app(GrupWaliasuhService::class);
+        $query = $service->getExportGrupWaliasuhQuery($request)->get();
+
+        $data = $service->formatDataExportGrupWaliasuh($query, true);
+        $headings = $service->getGrupWaliasuhHeadings(true);
+
+        return Excel::download(new BaseExport($data, $headings), 'grup-wali-asuh.xlsx');
     }
 }

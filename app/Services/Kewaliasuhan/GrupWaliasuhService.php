@@ -146,14 +146,44 @@ class GrupWaliasuhService
         return DB::transaction(function () use ($data, $id) {
             $grup = Grup_WaliAsuh::find($id);
 
-            if (! $grup) {
+            if (!$grup) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            }
+
+            $jenisKelaminBaru = $data['jenis_kelamin'];
+
+            // Validasi: pastikan semua wali dan anak dalam grup memiliki jenis kelamin sesuai
+            $anggotaTidakSesuai = DB::table('wali_asuh')
+                ->join('santri', 'wali_asuh.id_santri', '=', 'santri.id')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->where('wali_asuh.id_grup_wali_asuh', $id)
+                ->where('biodata.jenis_kelamin', '!=', $jenisKelaminBaru)
+                ->exists();
+
+            $anakTidakSesuai = DB::table('anak_asuh')
+                ->join('kewaliasuhan', 'anak_asuh.id', '=', 'kewaliasuhan.id_anak_asuh')
+                ->join('santri', 'anak_asuh.id_santri', '=', 'santri.id')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->whereIn('kewaliasuhan.id_wali_asuh', function ($query) use ($id) {
+                    $query->select('id')
+                        ->from('wali_asuh')
+                        ->where('id_grup_wali_asuh', $id);
+                })
+                ->where('biodata.jenis_kelamin', '!=', $jenisKelaminBaru)
+                ->exists();
+
+            // Jika ada anggota tidak sesuai jenis kelamin baru, gagalkan
+            if ($anggotaTidakSesuai || $anakTidakSesuai) {
+                return [
+                    'status' => false,
+                    'message' => 'Tidak bisa mengubah jenis kelamin grup karena ada anggota yang tidak sesuai.'
+                ];
             }
 
             $updateData = [
                 'id_wilayah' => $data['id_wilayah'],
                 'nama_grup' => $data['nama_grup'],
-                'jenis_kelamin' => $data['jenis_kelamin'],
+                'jenis_kelamin' => $jenisKelaminBaru,
                 'updated_by' => Auth::id(),
                 'status' => $data['status'] ?? true,
                 'updated_at' => now(),
@@ -163,7 +193,7 @@ class GrupWaliasuhService
 
             $grup->fill($updateData);
 
-            if (! $grup->isDirty()) {
+            if (!$grup->isDirty()) {
                 return ['status' => false, 'message' => 'Tidak ada perubahan'];
             }
 
@@ -174,13 +204,14 @@ class GrupWaliasuhService
             activity('grup_update')
                 ->performedOn($grup)
                 ->withProperties(['before' => $before, 'after' => $grup->getChanges()])
-                ->tap(fn ($activity) => $activity->batch_uuid = $batchUuid)
+                ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
                 ->event('update_grup')
                 ->log('Data Grup waliasuh diperbarui');
 
             return ['status' => true, 'data' => $grup];
         });
     }
+
 
     public function destroy($id)
     {
@@ -293,4 +324,81 @@ class GrupWaliasuhService
             ]);
         });
     }
+
+    public function getExportGrupWaliasuhQuery(Request $request)
+    {
+        $query = DB::table('grup_wali_asuh AS gs')
+            ->leftJoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
+            ->leftJoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
+            ->leftJoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
+            ->leftJoin('santri AS s', 'ws.id_santri', '=', 's.id')
+            ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
+            ->select([
+                'gs.id',
+                'gs.nama_grup',
+                's.nis',
+                'b.nama as nama_wali_asuh',
+                'w.nama_wilayah',
+                DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
+                'gs.created_at',
+                'gs.updated_at',
+                'gs.status',
+            ])
+            ->groupBy(
+                'gs.id',
+                'gs.nama_grup',
+                's.nis',
+                'b.nama',
+                'w.nama_wilayah',
+                'gs.created_at',
+                'gs.updated_at',
+                'gs.status'
+            )
+            ->orderBy('gs.id');
+
+        return $query;
+    }
+
+    public function formatDataExportGrupWaliasuh($results, $addNumber = false)
+    {
+        return collect($results)->map(function ($item, $idx) use ($addNumber) {
+            $data = [];
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
+
+            $data['Nama Grup'] = $item->nama_grup;
+            $data['NIS Wali Asuh'] = $item->nis;
+            $data['Nama Wali Asuh'] = $item->nama_wali_asuh;
+            $data['Wilayah'] = $item->nama_wilayah;
+            $data['Jumlah Anak Asuh'] = $item->jumlah_anak_asuh;
+            $data['Tanggal Input'] = $item->created_at ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') : '-';
+            $data['Tanggal Update'] = $item->updated_at ? Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') : '-';
+            $data['Status'] = $item->status ? 'Aktif' : 'Nonaktif';
+
+            return $data;
+        })->values();
+    }
+
+    public function getGrupWaliasuhHeadings($addNumber = false)
+    {
+        $headings = [
+            'Nama Grup',
+            'NIS Wali Asuh',
+            'Nama Wali Asuh',
+            'Wilayah',
+            'Jumlah Anak Asuh',
+            'Tanggal Input',
+            'Tanggal Update',
+            'Status',
+        ];
+
+        if ($addNumber) {
+            array_unshift($headings, 'No');
+        }
+
+        return $headings;
+    }
+
 }

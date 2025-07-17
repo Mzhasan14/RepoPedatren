@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class WaliAnakAsuhSeeder extends Seeder
@@ -20,8 +21,18 @@ class WaliAnakAsuhSeeder extends Seeder
         DB::table('grup_wali_asuh')->delete();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $santriList = DB::table('santri')->pluck('id')->toArray();
+        $santriList = DB::table('santri')
+            ->where('status', 'aktif')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('domisili_santri')
+                    ->whereRaw('domisili_santri.santri_id = santri.id');
+            })
+            ->pluck('id')
+            ->toArray();
+
         shuffle($santriList);
+
 
         $wilayahList = DB::table('wilayah')->pluck('id')->toArray();
         $totalSantri = count($santriList);
@@ -39,11 +50,23 @@ class WaliAnakAsuhSeeder extends Seeder
         $grupWaliAsuhData = [];
         $waliAsuhData = [];
         foreach ($waliAsuhList as $index => $santriId) {
-            $jk = $biodataMap[$santriId] ?? 'l';
+            $jkSantri = $biodataMap[$santriId] ?? 'l';
+
+            // Pilih wilayah acak
+            $wilayah = DB::table('wilayah')->inRandomOrder()->first();
+
+            // Tentukan jenis kelamin grup berdasar kategori wilayah
+            $jenisKelaminGrup = Str::contains(Str::lower($wilayah->kategori), 'putri') ? 'p' : 'l';
+
+            // Jika jenis kelamin santri tidak sesuai grup, skip
+            if ($jkSantri !== $jenisKelaminGrup) {
+                continue;
+            }
+
             $grupId = DB::table('grup_wali_asuh')->insertGetId([
-                'id_wilayah' => $wilayahList[array_rand($wilayahList)],
+                'id_wilayah' => $wilayah->id,
                 'nama_grup' => 'Grup Wali ' . ($index + 1),
-                'jenis_kelamin' => $jk,
+                'jenis_kelamin' => $jenisKelaminGrup,
                 'created_by' => 1,
                 'status' => true,
                 'created_at' => now(),
@@ -61,11 +84,10 @@ class WaliAnakAsuhSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            // Simpan untuk pencocokan anak asuh nanti
             $waliPool[] = [
                 'id' => $waliAsuhId,
                 'grup_id' => $grupId,
-                'jenis_kelamin' => $jk,
+                'jenis_kelamin' => $jenisKelaminGrup,
             ];
         }
 

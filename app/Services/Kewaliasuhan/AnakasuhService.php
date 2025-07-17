@@ -690,4 +690,120 @@ class AnakasuhService
             ]);
         });
     }
+
+    public function getExportAnakasuhQuery(array $fields, Request $request)
+    {
+        $query = $this->getAllAnakasuh($request);
+
+        $select = [];
+
+        foreach ($fields as $field) {
+            switch ($field) {
+                case 'nis':
+                    $select[] = 's.nis';
+                    break;
+                case 'nama':
+                    $select[] = 'b.nama';
+                    break;
+                case 'kamar':
+                    $select[] = DB::raw("CONCAT(km.nama_kamar,' - ',w.nama_wilayah) AS kamar");
+                    break;
+                case 'grup':
+                    $select[] = 'gs.nama_grup';
+                    break;
+                case 'angkatan':
+                    $select[] = DB::raw('YEAR(s.tanggal_masuk) as angkatan');
+                    break;
+                case 'kota_asal':
+                    $select[] = 'kb.nama_kabupaten AS kota_asal';
+                    break;
+                case 'tanggal_input':
+                    $select[] = 's.created_at';
+                    break;
+                case 'tanggal_update':
+                    $select[] = DB::raw('
+                    GREATEST(
+                        s.updated_at,
+                        COALESCE(as.updated_at, s.updated_at),
+                        COALESCE(gs.updated_at, s.updated_at)
+                    ) AS updated_at
+                ');
+                    break;
+            }
+        }
+
+        $query->select($select);
+
+        return $query;
+    }
+
+    public function formatDataExportAnakasuh($results, array $fields, bool $addNumber = false)
+    {
+        return collect($results)->values()->map(function ($item, $idx) use ($fields, $addNumber) {
+            $data = [];
+
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
+
+            foreach ($fields as $field) {
+                switch ($field) {
+                    case 'nis':
+                        $data['NIS'] = $item->nis ?? '';
+                        break;
+                    case 'nama':
+                        $data['Nama'] = $item->nama ?? '';
+                        break;
+                    case 'kamar':
+                        $data['Kamar'] = $item->kamar ?? '';
+                        break;
+                    case 'grup':
+                        $data['Grup'] = $item->nama_grup ?? '';
+                        break;
+                    case 'angkatan':
+                        $data['Angkatan'] = $item->angkatan ?? '';
+                        break;
+                    case 'kota_asal':
+                        $data['Kota Asal'] = $item->kota_asal ?? '';
+                        break;
+                    case 'tanggal_input':
+                        $data['Tanggal Input'] = Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') ?? '-';
+                        break;
+                    case 'tanggal_update':
+                        $data['Tanggal Update'] = Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-';
+                        break;
+                }
+            }
+
+            return $data;
+        });
+    }
+
+    public function getFieldExportAnakasuhHeadings(array $fields, bool $addNumber = false)
+    {
+        $map = [
+            'nis' => 'NIS',
+            'nama' => 'Nama',
+            'kamar' => 'Kamar',
+            'grup' => 'Grup',
+            'angkatan' => 'Angkatan',
+            'kota_asal' => 'Kota Asal',
+            'tanggal_input' => 'Tanggal Input',
+            'tanggal_update' => 'Tanggal Update',
+        ];
+
+        $headings = [];
+
+        foreach ($fields as $field) {
+            $headings[] = $map[$field] ?? $field;
+        }
+
+        if ($addNumber) {
+            array_unshift($headings, 'No');
+        }
+
+        return $headings;
+    }
+
+
 }
