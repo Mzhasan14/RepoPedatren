@@ -324,4 +324,81 @@ class GrupWaliasuhService
             ]);
         });
     }
+
+    public function getExportGrupWaliasuhQuery(Request $request)
+    {
+        $query = DB::table('grup_wali_asuh AS gs')
+            ->leftJoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
+            ->leftJoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
+            ->leftJoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
+            ->leftJoin('santri AS s', 'ws.id_santri', '=', 's.id')
+            ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
+            ->select([
+                'gs.id',
+                'gs.nama_grup',
+                's.nis',
+                'b.nama as nama_wali_asuh',
+                'w.nama_wilayah',
+                DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
+                'gs.created_at',
+                'gs.updated_at',
+                'gs.status',
+            ])
+            ->groupBy(
+                'gs.id',
+                'gs.nama_grup',
+                's.nis',
+                'b.nama',
+                'w.nama_wilayah',
+                'gs.created_at',
+                'gs.updated_at',
+                'gs.status'
+            )
+            ->orderBy('gs.id');
+
+        return $query;
+    }
+
+    public function formatDataExportGrupWaliasuh($results, $addNumber = false)
+    {
+        return collect($results)->map(function ($item, $idx) use ($addNumber) {
+            $data = [];
+            if ($addNumber) {
+                $data['No'] = $idx + 1;
+            }
+
+            $data['Nama Grup'] = $item->nama_grup;
+            $data['NIS Wali Asuh'] = $item->nis;
+            $data['Nama Wali Asuh'] = $item->nama_wali_asuh;
+            $data['Wilayah'] = $item->nama_wilayah;
+            $data['Jumlah Anak Asuh'] = $item->jumlah_anak_asuh;
+            $data['Tanggal Input'] = $item->created_at ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') : '-';
+            $data['Tanggal Update'] = $item->updated_at ? Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') : '-';
+            $data['Status'] = $item->status ? 'Aktif' : 'Nonaktif';
+
+            return $data;
+        })->values();
+    }
+
+    public function getGrupWaliasuhHeadings($addNumber = false)
+    {
+        $headings = [
+            'Nama Grup',
+            'NIS Wali Asuh',
+            'Nama Wali Asuh',
+            'Wilayah',
+            'Jumlah Anak Asuh',
+            'Tanggal Input',
+            'Tanggal Update',
+            'Status',
+        ];
+
+        if ($addNumber) {
+            array_unshift($headings, 'No');
+        }
+
+        return $headings;
+    }
+
 }

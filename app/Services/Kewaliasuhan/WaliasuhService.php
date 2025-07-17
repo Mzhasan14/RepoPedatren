@@ -41,11 +41,11 @@ class WaliasuhService
             ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftjoin('pendidikan AS pd', fn ($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ws.status', true)
@@ -75,7 +75,7 @@ class WaliasuhService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_id,
             'id' => $item->id,
             'nis' => $item->nis,
@@ -107,7 +107,7 @@ class WaliasuhService
 
         return [
             'status' => true,
-            'data' => $list->map(fn ($item) => [
+            'data' => $list->map(fn($item) => [
                 'id' => $item->id,
                 'nis' => $item->nis,
                 'tanggal_mulai' => $item->tanggal_mulai,
@@ -122,13 +122,13 @@ class WaliasuhService
         return DB::transaction(function () use ($input, $bioId) {
             // 1. Validasi biodata
             $biodata = Biodata::find($bioId);
-            if (! $biodata) {
+            if (!$biodata) {
                 return ['status' => false, 'message' => 'Biodata tidak ditemukan.'];
             }
 
             // 2. Cek apakah santri sudah ada
             $santri = Santri::where('biodata_id', $bioId)->first();
-            if (! $santri) {
+            if (!$santri) {
                 return ['status' => false, 'message' => 'Data santri tidak ditemukan.'];
             }
 
@@ -157,7 +157,7 @@ class WaliasuhService
 
             // 5. Cek apakah grup sesuai jenis kelamin santri
             $grup = Grup_WaliAsuh::find($input['id_grup_wali_asuh'] ?? null);
-            if (! $grup) {
+            if (!$grup) {
                 return ['status' => false, 'message' => 'Grup wali asuh tidak ditemukan.'];
             }
 
@@ -214,17 +214,20 @@ class WaliasuhService
     {
         $wa = Wali_asuh::with(['santri', 'grupWaliAsuh'])->find($id);
 
-        if (! $wa) {
+        if (!$wa) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
-        return ['status' => true, 'data' => [
-            'id' => $wa->id,
-            'nis' => $wa->santri->nis,
-            'grup' => $wa->grupWaliAsuh->nama_grup,
-            'tanggal_mulai' => $wa->tanggal_mulai,
-            'tanggal_akhir' => $wa->tanggal_berakhir,
-        ]];
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $wa->id,
+                'nis' => $wa->santri->nis,
+                'grup' => $wa->grupWaliAsuh->nama_grup,
+                'tanggal_mulai' => $wa->tanggal_mulai,
+                'tanggal_akhir' => $wa->tanggal_berakhir,
+            ]
+        ];
     }
 
     public function update(array $input, int $id): array
@@ -232,12 +235,12 @@ class WaliasuhService
         return DB::transaction(function () use ($input, $id) {
             $waliAsuh = Wali_Asuh::find($id);
 
-            if (! $waliAsuh) {
+            if (!$waliAsuh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
             // Cegah perubahan jika sudah punya tanggal berakhir
-            if (! is_null($waliAsuh->tanggal_berakhir)) {
+            if (!is_null($waliAsuh->tanggal_berakhir)) {
                 return [
                     'status' => false,
                     'message' => 'Data ini sudah memiliki tanggal berakhir dan tidak dapat diubah lagi demi menjaga histori.',
@@ -301,7 +304,7 @@ class WaliasuhService
     {
         return DB::transaction(function () use ($input, $id) {
             $kh = Wali_asuh::find($id);
-            if (! $kh) {
+            if (!$kh) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
@@ -324,7 +327,7 @@ class WaliasuhService
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            if (! Auth::id()) {
+            if (!Auth::id()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Pengguna tidak terautentikasi',
@@ -333,7 +336,7 @@ class WaliasuhService
 
             $waliAsuh = Wali_asuh::withTrashed()->find($id);
 
-            if (! $waliAsuh) {
+            if (!$waliAsuh) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Data wali asuh tidak ditemukan',
@@ -383,5 +386,86 @@ class WaliasuhService
                 ],
             ]);
         });
+    }
+
+    public function getExportWaliasuhQuery(array $fields, Request $request)
+    {
+        $query = $this->getAllWaliasuh($request);
+
+        $select = [];
+
+        foreach ($fields as $field) {
+            switch ($field) {
+                case 'nis':
+                    $select[] = 's.nis';
+                    break;
+                case 'nama':
+                    $select[] = 'b.nama';
+                    break;
+                case 'nama_kamar':
+                    $select[] = 'km.nama_kamar';
+                    break;
+                case 'nama_blok':
+                    $select[] = 'bl.nama_blok';
+                    break;
+                case 'nama_wilayah':
+                    $select[] = 'w.nama_wilayah';
+                    break;
+                case 'angkatan':
+                    $select[] = DB::raw('YEAR(s.tanggal_masuk) as angkatan');
+                    break;
+                case 'kota_asal':
+                    $select[] = 'kb.nama_kabupaten as kota_asal';
+                    break;
+                case 'created_at':
+                    $select[] = 'ws.created_at';
+                    break;
+                case 'updated_at':
+                    $select[] = DB::raw('GREATEST(
+            ws.updated_at,
+            COALESCE(s.updated_at, ws.updated_at),
+            COALESCE(b.updated_at, ws.updated_at)
+        ) as updated_at');
+                    break;
+            }
+        }
+
+        $query->select($select);
+
+        return $query;
+    }
+
+    public function formatDataExportWaliasuh($results, array $fields, bool $translate = false)
+    {
+        return collect($results)->map(function ($item) use ($fields, $translate) {
+            $row = [];
+
+            foreach ($fields as $field) {
+                if (in_array($field, ['created_at', 'updated_at']) && $translate) {
+                    $row[$field] = Carbon::parse($item->{$field})->translatedFormat('d F Y H:i:s');
+                } else {
+                    $row[$field] = $item->{$field} ?? '-';
+                }
+            }
+
+            return $row;
+        });
+    }
+
+    public function getFieldExportWaliasuhHeadings(array $fields, bool $translate = false)
+    {
+        $headings = [
+            'nis' => 'NIS',
+            'nama' => 'Nama',
+            'nama_kamar' => 'Kamar',
+            'nama_blok' => 'Blok',
+            'nama_wilayah' => 'Wilayah',
+            'angkatan' => 'Angkatan',
+            'kota_asal' => 'Kota Asal',
+            'created_at' => 'Tanggal Input',
+            'updated_at' => 'Tanggal Update',
+        ];
+
+        return collect($fields)->map(fn($field) => $translate ? ($headings[$field] ?? $field) : $field)->toArray();
     }
 }
