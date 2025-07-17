@@ -153,14 +153,14 @@ class OrangtuaWaliService
                     $namaHubungan = strtolower($hubungan->nama_status);
                     if (
                         in_array($namaHubungan, $hubunganLakiLaki) &&
-                        strtolower($data['jenis_kelamin']) !== 'laki-laki'
+                        strtolower($data['jenis_kelamin']) !== 'l'
                     ) {
                         return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
                     }
 
                     if (
                         in_array($namaHubungan, $hubunganPerempuan) &&
-                        strtolower($data['jenis_kelamin']) !== 'perempuan'
+                        strtolower($data['jenis_kelamin']) !== 'p'
                     ) {
                         return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
                     }
