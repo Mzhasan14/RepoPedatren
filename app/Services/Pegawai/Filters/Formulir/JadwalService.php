@@ -589,7 +589,7 @@ class JadwalService
                 'jam.jam_selesai',
                 'jp.hari',
             ])
-            ->orderByRaw("FIELD(jp.hari, 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu')")
+            ->orderByRaw("FIELD(jp.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
             ->orderBy('jam.jam_ke');
     }
 
@@ -616,7 +616,7 @@ class JadwalService
         }
 
         // Urutkan hari secara manual
-        $orderedDays = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $orderedDays = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu','Minggu'];
         $sorted = [];
 
         foreach ($orderedDays as $day) {

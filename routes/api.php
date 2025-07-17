@@ -58,6 +58,7 @@ use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\Api\PDF\PDFController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -184,6 +185,9 @@ Route::prefix('export')->middleware(['throttle:15,1'])->group(function () {
     Route::get('/karyawan', [KaryawanController::class, 'KaryawanExcel'])->name('karyawan.export');
     Route::get('/pengajar', [PengajarController::class, 'pengajarExport'])->name('pengajar.export');
     Route::get('/pengurus', [PengurusController::class, 'pengurusExport'])->name('pengurus.export');
+
+    // Cetak Pdf
+    Route::get('/jadwal/download-pdf', [PDFController::class, 'downloadPdf']);
 });
 
 // Formulir Peserta Didik
