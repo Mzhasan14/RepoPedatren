@@ -33,7 +33,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_hubungan_keluarga')->nullable();
             $table->boolean('wali')->default(false);
             $table->string('pekerjaan')->nullable();
-            $table->integer('penghasilan')->nullable();
+            $table->string('penghasilan')->nullable();
             $table->boolean('status');
             $table->softDeletes();
             $table->unsignedBigInteger('created_by');
