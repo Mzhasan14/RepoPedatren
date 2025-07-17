@@ -418,7 +418,7 @@ class DropdownController extends Controller
 
         return response()->json([
             'message' => 'Sukses ambil data',
-            'data' => $result,
+            'lembaga' => $result,
         ]);
     }
 
