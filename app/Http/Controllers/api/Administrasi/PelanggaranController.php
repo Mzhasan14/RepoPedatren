@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\api\Administrasi;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Administrasi\BerkasPelanggaranRequest;
-use App\Http\Requests\Administrasi\PelanggaranRequest;
-use App\Services\Administrasi\Filters\FilterPelanggaranService;
-use App\Services\Administrasi\PelanggaranService;
+use App\Exports\BaseExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Services\Administrasi\PelanggaranService;
+use App\Http\Requests\Administrasi\PelanggaranRequest;
+use App\Http\Requests\Administrasi\BerkasPelanggaranRequest;
+use App\Services\Administrasi\Filters\FilterPelanggaranService;
 
 class PelanggaranController extends Controller
 {
@@ -75,7 +77,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data pelanggaran: '.$e->getMessage());
+            Log::error('Gagal ambil data pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -99,7 +101,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah pelanggaran: '.$e->getMessage());
+            Log::error('Gagal tambah pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -123,7 +125,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail pelanggaran: '.$e->getMessage());
+            Log::error('Gagal ambil detail pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -147,7 +149,7 @@ class PelanggaranController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update pelanggaran: '.$e->getMessage());
+            Log::error('Gagal update pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -171,12 +173,84 @@ class PelanggaranController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah berkas pelanggaran: '.$e->getMessage());
+            Log::error('Gagal tambah berkas pelanggaran: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        // **Default fields cerdas (paling penting + umum)**
+        $defaultExportFields = [
+            'nama_santri',
+            'nis',
+            'jenis_kelamin',
+            'wilayah',
+            'blok',
+            'kamar',
+            'lembaga',
+            'kelas',
+            'rombel',
+            'status_pelanggaran',
+            'jenis_pelanggaran',
+            'jenis_putusan',
+            'diproses_mahkamah',
+            'pencatat',
+            'keterangan',
+        ];
+
+        // Semua kemungkinan kolom (untuk urutan dan validasi)
+        $columnOrder = [
+            'nama_santri',
+            'nis',
+            'jenis_kelamin',
+            'wilayah',
+            'blok',
+            'kamar',
+            'lembaga',
+            'jurusan',
+            'kelas',
+            'rombel',
+            'status_pelanggaran',
+            'jenis_pelanggaran',
+            'jenis_putusan',
+            'diproses_mahkamah',
+            'pencatat',
+            'keterangan',
+        ];
+
+        $optionalFields = $request->input('fields', []);
+
+        // Gabungkan default + optional lalu pastikan urutan valid
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
+        $fields = array_values(array_intersect($columnOrder, $fields));
+
+        // Ambil data query export dari service
+        $query = $this->pelanggaran->getExportPelanggaranQuery($fields, $request);
+
+        // Terapkan filter jika ada
+        if (method_exists($this->filter, 'pelanggaranFilters')) {
+            $query = $this->filter->pelanggaranFilters($query, $request);
+        }
+
+        $query = $query->latest('pl.id');
+
+        // Jika all, ambil semua; kalau tidak, ambil limit
+        $results = $request->input('all') === 'true'
+            ? $query->get()
+            : $query->limit((int) $request->input('limit', 100))->get();
+
+        $addNumber = true;
+        $formatted = $this->pelanggaran->formatDataExport($results, $fields, $addNumber);
+        $headings = $this->pelanggaran->getFieldExportHeadings($fields, $addNumber);
+
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "pelanggaran_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

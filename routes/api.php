@@ -174,6 +174,7 @@ Route::prefix('export')->middleware(['throttle:15,1'])->group(function () {
     Route::get('/bersaudara', [BersaudaraController::class, 'exportExcel'])->name('bersaudara.export');
     Route::get('/khadam', [KhadamController::class, 'exportExcel'])->name('khadam.export');
     Route::get('/perizinan', [PerizinanController::class, 'exportExcel'])->name('perizinan.export');
+    Route::get('/pelanggaran', [PelanggaranController::class, 'exportExcel'])->name('pelanggaran.export');
     Route::get('/alumni', [AlumniController::class, 'exportExcel'])->name('alumni.export');
     Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'exportExcel'])->name('grupwaliasuh.export');
     Route::get('/waliasuh', [WaliasuhController::class, 'exportExcel'])->name('Waliasuh.export');
