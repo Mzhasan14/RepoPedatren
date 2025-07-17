@@ -29,6 +29,7 @@ class Grup_WaliAsuh extends Model
     protected $fillable = [
         'id_wilayah',
         'nama_grup',
+        'jenis_kelamin',
         'created_by',
         'updated_by',
         'status',

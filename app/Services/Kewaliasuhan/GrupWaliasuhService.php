@@ -146,14 +146,44 @@ class GrupWaliasuhService
         return DB::transaction(function () use ($data, $id) {
             $grup = Grup_WaliAsuh::find($id);
 
-            if (! $grup) {
+            if (!$grup) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
+            }
+
+            $jenisKelaminBaru = $data['jenis_kelamin'];
+
+            // Validasi: pastikan semua wali dan anak dalam grup memiliki jenis kelamin sesuai
+            $anggotaTidakSesuai = DB::table('wali_asuh')
+                ->join('santri', 'wali_asuh.id_santri', '=', 'santri.id')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->where('wali_asuh.id_grup_wali_asuh', $id)
+                ->where('biodata.jenis_kelamin', '!=', $jenisKelaminBaru)
+                ->exists();
+
+            $anakTidakSesuai = DB::table('anak_asuh')
+                ->join('kewaliasuhan', 'anak_asuh.id', '=', 'kewaliasuhan.id_anak_asuh')
+                ->join('santri', 'anak_asuh.id_santri', '=', 'santri.id')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->whereIn('kewaliasuhan.id_wali_asuh', function ($query) use ($id) {
+                    $query->select('id')
+                        ->from('wali_asuh')
+                        ->where('id_grup_wali_asuh', $id);
+                })
+                ->where('biodata.jenis_kelamin', '!=', $jenisKelaminBaru)
+                ->exists();
+
+            // Jika ada anggota tidak sesuai jenis kelamin baru, gagalkan
+            if ($anggotaTidakSesuai || $anakTidakSesuai) {
+                return [
+                    'status' => false,
+                    'message' => 'Tidak bisa mengubah jenis kelamin grup karena ada anggota yang tidak sesuai.'
+                ];
             }
 
             $updateData = [
                 'id_wilayah' => $data['id_wilayah'],
                 'nama_grup' => $data['nama_grup'],
-                'jenis_kelamin' => $data['jenis_kelamin'],
+                'jenis_kelamin' => $jenisKelaminBaru,
                 'updated_by' => Auth::id(),
                 'status' => $data['status'] ?? true,
                 'updated_at' => now(),
@@ -163,7 +193,7 @@ class GrupWaliasuhService
 
             $grup->fill($updateData);
 
-            if (! $grup->isDirty()) {
+            if (!$grup->isDirty()) {
                 return ['status' => false, 'message' => 'Tidak ada perubahan'];
             }
 
@@ -174,13 +204,14 @@ class GrupWaliasuhService
             activity('grup_update')
                 ->performedOn($grup)
                 ->withProperties(['before' => $before, 'after' => $grup->getChanges()])
-                ->tap(fn ($activity) => $activity->batch_uuid = $batchUuid)
+                ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
                 ->event('update_grup')
                 ->log('Data Grup waliasuh diperbarui');
 
             return ['status' => true, 'data' => $grup];
         });
     }
+
 
     public function destroy($id)
     {
