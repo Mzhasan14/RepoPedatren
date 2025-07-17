@@ -2,19 +2,20 @@
 
 namespace App\Services\Keluarga;
 
-use App\Models\Alamat\Kabupaten;
-use App\Models\Alamat\Kecamatan;
-use App\Models\Alamat\Negara;
-use App\Models\Alamat\Provinsi;
 use App\Models\Biodata;
 use App\Models\Keluarga;
+use Illuminate\Support\Str;
 use App\Models\OrangTuaWali;
 use Illuminate\Http\Request;
+use App\Models\Alamat\Negara;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Alamat\Provinsi;
+use App\Models\Alamat\Kabupaten;
+use App\Models\Alamat\Kecamatan;
+use App\Models\HubunganKeluarga;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class OrangtuaWaliService
 {
@@ -141,8 +142,46 @@ class OrangtuaWaliService
     public function store(array $data)
     {
         return DB::transaction(function () use ($data): array {
-
             try {
+                // Ambil semua hubungan keluarga yang hanya boleh untuk laki-laki
+                $hubunganLakiLaki = ['ayah kandung', 'kakek kandung', 'paman', 'ayah sambung'];
+                $hubunganPerempuan = ['ibu kandung', 'nenek kandung', 'bibi', 'ibu sambung'];
+
+                // Validasi jenis kelamin vs hubungan keluarga
+                $hubungan = HubunganKeluarga::find($data['id_hubungan_keluarga']);
+                if ($hubungan) {
+                    $namaHubungan = strtolower($hubungan->nama_status);
+                    if (
+                        in_array($namaHubungan, $hubunganLakiLaki) &&
+                        strtolower($data['jenis_kelamin']) !== 'laki-laki'
+                    ) {
+                        return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
+                    }
+
+                    if (
+                        in_array($namaHubungan, $hubunganPerempuan) &&
+                        strtolower($data['jenis_kelamin']) !== 'perempuan'
+                    ) {
+                        return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
+                    }
+                }
+
+                // Validasi No KK jika sudah ada anggota keluarga
+                if (!empty($data['no_kk'])) {
+                    $kkExists = Keluarga::where('no_kk', $data['no_kk'])->exists();
+                    if (!$kkExists) {
+                        return ['status' => false, 'message' => 'Nomor KK tidak cocok dengan keluarga manapun'];
+                    }
+                }
+
+                if (empty($data['nik']) && empty($data['no_kk']) && empty($data['no_passport'])) {
+                    return ['status' => false, 'message' => 'Minimal salah satu dari NIK, No KK, atau No Passport harus diisi'];
+                }
+
+                if (!empty($data['nik']) && Biodata::where('nik', $data['nik'])->exists()) {
+                    return ['status' => false, 'message' => 'NIK sudah terdaftar'];
+                }
+
                 // Buat Biodata
                 $biodata = Biodata::create([
                     'id' => Str::uuid(),
@@ -153,7 +192,7 @@ class OrangtuaWaliService
                     'jalan' => $data['jalan'],
                     'kode_pos' => $data['kode_pos'],
                     'nama' => $data['nama'],
-                    'no_passport' => $data['no_passport'],
+                    'no_passport' => $data['no_passport'] ?? null,
                     'tanggal_lahir' => Carbon::parse($data['tanggal_lahir']),
                     'jenis_kelamin' => $data['jenis_kelamin'],
                     'tempat_lahir' => $data['tempat_lahir'],
@@ -166,13 +205,19 @@ class OrangtuaWaliService
                     'anak_keberapa' => $data['anak_keberapa'],
                     'dari_saudara' => $data['dari_saudara'],
                     'status' => true,
-                    'wafat' => $data['wafat'],
                     'created_by' => Auth::id(),
                     'created_at' => Carbon::now(),
                 ]);
 
-                // Jika ada KK, buat data keluarga
-                if (! empty($data['no_kk'])) {
+                if (empty($data['no_kk']) && !empty($data['id_biodata'])) {
+                    $noKK = Keluarga::where('id_biodata', $data['id_biodata'])->value('no_kk');
+                    if ($noKK) {
+                        $data['no_kk'] = $noKK;
+                    }
+                }
+
+                // Tambah ke keluarga jika ada no_kk
+                if (!empty($data['no_kk'])) {
                     Keluarga::create([
                         'id_biodata' => $biodata->id,
                         'no_kk' => $data['no_kk'],
@@ -182,7 +227,14 @@ class OrangtuaWaliService
                     ]);
                 }
 
-                // Buat Data Orang Tua
+                // Jika dia ditandai sebagai wali, nonaktifkan wali sebelumnya
+                if (!empty($data['wali']) && $data['wali']) {
+                    OrangTuaWali::whereHas('biodata.keluarga', function ($q) use ($data) {
+                        $q->where('no_kk', $data['no_kk']);
+                    })->where('wali', true)->update(['wali' => false]);
+                }
+
+                // Buat Orang Tua/Wali
                 $ortu = OrangTuaWali::create([
                     'id_biodata' => $biodata->id,
                     'id_hubungan_keluarga' => $data['id_hubungan_keluarga'] ?? null,
@@ -195,7 +247,6 @@ class OrangtuaWaliService
                     'updated_at' => now(),
                 ]);
 
-                // Logging aktivitas
                 activity('ortu_create')
                     ->performedOn($ortu)
                     ->withProperties(['new' => $ortu->getAttributes()])
@@ -203,12 +254,14 @@ class OrangtuaWaliService
                     ->log('Data orang tua baru disimpan');
 
                 return ['status' => true, 'data' => $ortu];
+
             } catch (\Exception $e) {
-                Log::error('Error creating orangtua: '.$e->getMessage());
+                Log::error('Error creating orangtua: ' . $e->getMessage());
                 throw $e;
             }
         });
     }
+
 
     public function show(int $id): array
     {

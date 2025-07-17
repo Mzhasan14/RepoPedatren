@@ -24,21 +24,17 @@ class OrangtuaWaliRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // ======= Alamat ==========
+            // ======= Biodata ==========
             'negara_id' => 'required|exists:negara,id',
             'provinsi_id' => 'nullable|exists:provinsi,id',
             'kabupaten_id' => 'nullable|exists:kabupaten,id',
             'kecamatan_id' => 'nullable|exists:kecamatan,id',
             'jalan' => 'required|string|max:255',
             'kode_pos' => 'nullable|string|max:10',
-
-            // ======= Biodata ==========
             'nama' => 'required|string|max:255',
-            'no_passport' => 'nullable|string|max:50',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:l,p',
             'tempat_lahir' => 'required|string|max:255',
-            'nik' => 'nullable|string|max:16',
             'no_telepon' => 'nullable|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',
@@ -46,16 +42,17 @@ class OrangtuaWaliRequest extends FormRequest
             'nama_pendidikan_terakhir' => 'nullable|string|max:255',
             'anak_keberapa' => 'nullable|integer',
             'dari_saudara' => 'nullable|integer',
-            'wafat' => 'required|boolean|in:0,1',
 
-            // ======= Keluarga (Opsional) =======
-            'no_kk' => 'nullable|string|max:16',
+            // Aturan fleksibel antara nik/no_kk dan passport
+            'nik' => 'nullable|required_without_all:no_passport|digits:16',
+            'no_kk' => 'nullable|required_without_all:no_passport|digits:16',
+            'no_passport' => 'nullable|required_without_all:nik,no_kk|string|max:20',
 
             // ====== Orangtua ======
             'id_hubungan_keluarga' => 'nullable|exists:hubungan_keluarga,id',
             'wali' => 'nullable|boolean',
             'pekerjaan' => 'nullable|string',
-            'penghasilan' => 'nullable|string',
+            'penghasilan' => 'nullable|numeric',
         ];
     }
 
