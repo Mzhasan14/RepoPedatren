@@ -16,6 +16,9 @@ class Angkatan extends Model
         'kategori',
         'tahun_ajaran_id',
         'status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [

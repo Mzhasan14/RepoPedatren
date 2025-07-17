@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\PesertaDidik\AngkatanRequest;
 
 class AngkatanController extends Controller
@@ -49,7 +50,11 @@ class AngkatanController extends Controller
     {
         DB::beginTransaction();
         try {
-            $angkatan = Angkatan::create($request->validated());
+            $data = $request->validated();
+            $data['created_by'] = Auth::id();
+            $data['updated_by'] = Auth::id();
+
+            $angkatan = Angkatan::create($data);
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -71,7 +76,10 @@ class AngkatanController extends Controller
         DB::beginTransaction();
         try {
             $angkatan = Angkatan::findOrFail($id);
-            $angkatan->update($request->validated());
+            $data = $request->validated();
+            $data['updated_by'] = Auth::id();
+
+            $angkatan->update($data);
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -97,6 +105,8 @@ class AngkatanController extends Controller
         DB::beginTransaction();
         try {
             $angkatan = Angkatan::findOrFail($id);
+            $angkatan->deleted_by = Auth::id();
+            $angkatan->save();
             $angkatan->delete();
             DB::commit();
             return response()->json([

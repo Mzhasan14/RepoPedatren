@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\PesertaDidik\SemesterRequest;
 
 class SemesterController extends Controller
@@ -55,7 +56,10 @@ class SemesterController extends Controller
                     ->update(['status' => false]);
             }
 
-            $semester = Semester::create($request->validated());
+            $data = $request->validated();
+            $data['created_by'] = Auth::id();
+
+            $semester = Semester::create($data);
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -107,7 +111,11 @@ class SemesterController extends Controller
                     ->update(['status' => false]);
             }
 
-            $semester->update($request->validated());
+            $data = $request->validated();
+            $data['updated_by'] = Auth::id();
+
+            $semester->update($data);
+
             DB::commit();
 
             return response()->json([
@@ -143,6 +151,8 @@ class SemesterController extends Controller
                 ], 403);
             }
 
+            $semester->deleted_by = Auth::id();
+            $semester->save();
             $semester->delete();
             DB::commit();
             return response()->json([

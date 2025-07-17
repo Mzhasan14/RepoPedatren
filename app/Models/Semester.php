@@ -15,6 +15,9 @@ class Semester extends Model
         'tahun_ajaran_id',
         'semester',
         'status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [
