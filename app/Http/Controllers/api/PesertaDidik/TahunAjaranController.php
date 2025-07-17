@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\PesertaDidik\TahunAjaranRequest;
 
 class TahunAjaranController extends Controller
@@ -49,11 +50,14 @@ class TahunAjaranController extends Controller
     {
         DB::beginTransaction();
         try {
+            $data = $request->validated();
+            $data['created_by'] = Auth::id();
+
             if ($request->boolean('status')) {
                 TahunAjaran::where('status', true)->update(['status' => false]);
             }
 
-            $tahunAjaran = TahunAjaran::create($request->validated());
+            $tahunAjaran = TahunAjaran::create($data);
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -99,7 +103,10 @@ class TahunAjaranController extends Controller
                     ->update(['status' => false]);
             }
 
-            $tahunAjaran->update($request->validated());
+            $data = $request->validated();
+            $data['updated_by'] = Auth::id();
+
+            $tahunAjaran->update($data);
             DB::commit();
 
             return response()->json([
@@ -135,7 +142,10 @@ class TahunAjaranController extends Controller
                 ], 403);
             }
 
+            $tahunAjaran->deleted_by = Auth::id();
+            $tahunAjaran->save();
             $tahunAjaran->delete();
+            
             DB::commit();
             return response()->json([
                 'success' => true,

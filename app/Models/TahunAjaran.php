@@ -15,6 +15,9 @@ class TahunAjaran extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [
