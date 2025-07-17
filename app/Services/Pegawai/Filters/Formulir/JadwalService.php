@@ -669,6 +669,7 @@ class JadwalService
                     ->where('hari', $hari)
                     ->where('kelas_id', $kelasId)
                     ->where('jam_pelajaran_id', $jamPelajaranId)
+                    ->where('semester_id', $semesterId)
                     ->first();
 
                 if ($bentrokKelas) {
@@ -684,6 +685,7 @@ class JadwalService
                 $bentrokPengajar = JadwalPelajaran::with(['kelas', 'jurusan', 'lembaga', 'jamPelajaran'])
                     ->where('hari', $hari)
                     ->where('jam_pelajaran_id', $jamPelajaranId)
+                    ->where('semester_id', $semesterId)
                     ->whereHas('mataPelajaran', function ($query) use ($pengajarId) {
                         $query->where('pengajar_id', $pengajarId);
                     })

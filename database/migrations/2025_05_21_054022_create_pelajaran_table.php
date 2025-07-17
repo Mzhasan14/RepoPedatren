@@ -63,7 +63,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Relasi foreign key
-            $table->unique(['hari', 'kelas_id', 'jam_pelajaran_id'], 'jadwal_unik_kelas_jam');
+            // $table->unique(['hari', 'kelas_id', 'jam_pelajaran_id'], 'jadwal_unik_kelas_jam');
+            $table->unique(['semester_id', 'hari', 'kelas_id', 'jam_pelajaran_id'], 'jadwal_unik_semester_kelas_jam');
             $table->foreign('semester_id')->references('id')->on('semester')->onDelete('cascade');
             $table->foreign('lembaga_id')->references('id')->on('lembaga')->onDelete('cascade');
             $table->foreign('jurusan_id')->references('id')->on('jurusan')->onDelete('cascade');
