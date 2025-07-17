@@ -329,97 +329,81 @@ class DropdownController extends Controller
 
     public function menuLembagaJurusanKelasRombel()
     {
-        $lembagaList = DB::table('lembaga')->where('status', 1)->get();
-
-        $lembaga = [];
-        foreach ($lembagaList as $l) {
-            $lembaga[$l->id] = [
-                'id' => $l->id,
-                'nama_lembaga' => $l->nama_lembaga,
-                'jurusan' => [],
-            ];
-        }
-
-        $data = DB::table('jurusan')
+        $data = DB::table('lembaga as l')
+            ->leftJoin('jurusan as j', 'l.id', '=', 'j.lembaga_id')
+            ->leftJoin('kelas as k', 'j.id', '=', 'k.jurusan_id')
+            ->leftJoin('rombel as r', 'k.id', '=', 'r.kelas_id')
             ->select(
-                'lembaga.id as lembaga_id',
-                'lembaga.nama_lembaga',
-                'jurusan.id as jurusan_id',
-                'jurusan.nama_jurusan',
-                'kelas.id as kelas_id',
-                'kelas.nama_kelas',
-                'rombel.id as rombel_id',
-                'rombel.nama_rombel'
+                'l.id as lembaga_id',
+                'l.nama_lembaga',
+                'j.id as jurusan_id',
+                'j.lembaga_id',
+                'j.nama_jurusan',
+                'k.id as kelas_id',
+                'k.jurusan_id',
+                'k.nama_kelas',
+                'r.id as rombel_id',
+                'r.kelas_id',
+                'r.nama_rombel'
             )
-            ->rightJoin('lembaga', 'jurusan.lembaga_id', '=', 'lembaga.id')
-            ->leftJoin('kelas', function ($join) {
-                $join->on('kelas.jurusan_id', '=', 'jurusan.id')
-                    ->where('kelas.status', 1);
-            })
-            ->leftJoin('rombel', function ($join) {
-                $join->on('rombel.kelas_id', '=', 'kelas.id')
-                    ->where('rombel.status', 1);
-            })
-            ->where('lembaga.status', 1)
-            ->where(function ($query) {
-                $query->whereNull('jurusan.id')
-                    ->orWhere('jurusan.status', 1);
-            })
-            ->orderBy('lembaga.nama_lembaga')
-            ->orderBy('jurusan.nama_jurusan')
-            ->orderBy('kelas.nama_kelas')
-            ->orderBy('rombel.nama_rombel')
+            ->orderBy('l.id') // Urutkan berdasarkan lembaga.id
             ->get();
 
+        $lembaga = [];
+
         foreach ($data as $row) {
-            // Skip jika lembaga tidak terdaftar (harusnya tidak terjadi)
             if (! isset($lembaga[$row->lembaga_id])) {
-                continue;
+                $lembaga[$row->lembaga_id] = [
+                    'id' => $row->lembaga_id,
+                    'nama_lembaga' => $row->nama_lembaga,
+                    'jurusan' => [],
+                ];
             }
 
-            // Tambahkan jurusan jika ada dan belum dimasukkan
             if (! is_null($row->jurusan_id) && ! isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id])) {
                 $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id] = [
                     'id' => $row->jurusan_id,
+                    'lembaga_id' => $row->lembaga_id,
                     'nama_jurusan' => $row->nama_jurusan,
                     'kelas' => [],
                 ];
             }
 
-            // Tambahkan kelas jika ada dan belum dimasukkan
             if (! is_null($row->kelas_id) && ! isset($lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id])) {
                 $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id] = [
                     'id' => $row->kelas_id,
+                    'jurusan_id' => $row->jurusan_id,
                     'nama_kelas' => $row->nama_kelas,
                     'rombel' => [],
                 ];
             }
 
-            // Tambahkan rombel jika ada
             if (! is_null($row->rombel_id)) {
                 $lembaga[$row->lembaga_id]['jurusan'][$row->jurusan_id]['kelas'][$row->kelas_id]['rombel'][] = [
                     'id' => $row->rombel_id,
+                    'kelas_id' => $row->kelas_id,
                     'nama_rombel' => $row->nama_rombel,
                 ];
             }
         }
 
-        // Hapus indeks angka pada array jurusan dan kelas
-        $result = array_map(function ($item) {
-            $item['jurusan'] = array_values($item['jurusan']);
-            foreach ($item['jurusan'] as &$jurusan) {
-                $jurusan['kelas'] = array_values($jurusan['kelas']);
-                foreach ($jurusan['kelas'] as &$kelas) {
-                    $kelas['rombel'] = array_values($kelas['rombel']);
-                }
-            }
-            return $item;
-        }, array_values($lembaga));
+        $result = [
+            'lembaga' => array_values(array_map(function ($lembagaItem) {
+                $lembagaItem['jurusan'] = array_values(array_map(function ($jurusan) {
+                    $jurusan['kelas'] = array_values(array_map(function ($kelas) {
+                        $kelas['rombel'] = array_values($kelas['rombel']);
 
-        return response()->json([
-            'message' => 'Sukses ambil data',
-            'lembaga' => $result,
-        ]);
+                        return $kelas;
+                    }, $jurusan['kelas']));
+
+                    return $jurusan;
+                }, $lembagaItem['jurusan']));
+
+                return $lembagaItem;
+            }, $lembaga)),
+        ];
+
+        return response()->json($result);
     }
 
     public function getAngkatan()
@@ -607,8 +591,8 @@ class DropdownController extends Controller
     public function semester()
     {
         $semesters = Semester::where('status', true)
-            ->select('id', 'semester')
-            ->get();
+                        ->select('id', 'semester')
+                        ->get();
 
         return response()->json($semesters);
     }
