@@ -143,14 +143,15 @@ class OrangtuaWaliService
     {
         return DB::transaction(function () use ($data): array {
             try {
-                // Ambil semua hubungan keluarga yang hanya boleh untuk laki-laki
+                // Definisi daftar hubungan berdasarkan gender
                 $hubunganLakiLaki = ['ayah kandung', 'kakek kandung', 'paman', 'ayah sambung'];
                 $hubunganPerempuan = ['ibu kandung', 'nenek kandung', 'bibi', 'ibu sambung'];
 
                 // Validasi jenis kelamin vs hubungan keluarga
                 $hubungan = HubunganKeluarga::find($data['id_hubungan_keluarga']);
+                $namaHubungan = strtolower($hubungan->nama_status ?? '');
+
                 if ($hubungan) {
-                    $namaHubungan = strtolower($hubungan->nama_status);
                     if (
                         in_array($namaHubungan, $hubunganLakiLaki) &&
                         strtolower($data['jenis_kelamin']) !== 'l'
@@ -164,9 +165,25 @@ class OrangtuaWaliService
                     ) {
                         return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
                     }
+
+                    // Validasi hanya satu ayah/ibu kandung per no_kk
+                    if (!empty($data['no_kk']) && in_array($namaHubungan, ['ayah kandung', 'ibu kandung'])) {
+                        $sudahAda = OrangTuaWali::whereHas('biodata.keluarga', function ($query) use ($data) {
+                            $query->where('no_kk', $data['no_kk']);
+                        })->whereHas('hubunganKeluarga', function ($query) use ($namaHubungan) {
+                            $query->whereRaw('LOWER(nama_status) = ?', [$namaHubungan]);
+                        })->exists();
+
+                        if ($sudahAda) {
+                            return [
+                                'status' => false,
+                                'message' => ucfirst($namaHubungan) . ' sudah terdaftar dalam keluarga ini'
+                            ];
+                        }
+                    }
                 }
 
-                // Validasi No KK jika sudah ada anggota keluarga
+                // Validasi No KK jika ada
                 if (!empty($data['no_kk'])) {
                     $kkExists = Keluarga::where('no_kk', $data['no_kk'])->exists();
                     if (!$kkExists) {
@@ -174,10 +191,12 @@ class OrangtuaWaliService
                     }
                 }
 
+                // Validasi minimal identitas
                 if (empty($data['nik']) && empty($data['no_kk']) && empty($data['no_passport'])) {
                     return ['status' => false, 'message' => 'Minimal salah satu dari NIK, No KK, atau No Passport harus diisi'];
                 }
 
+                // Validasi unik NIK
                 if (!empty($data['nik']) && Biodata::where('nik', $data['nik'])->exists()) {
                     return ['status' => false, 'message' => 'NIK sudah terdaftar'];
                 }
@@ -206,9 +225,10 @@ class OrangtuaWaliService
                     'dari_saudara' => $data['dari_saudara'],
                     'status' => true,
                     'created_by' => Auth::id(),
-                    'created_at' => Carbon::now(),
+                    'created_at' => now(),
                 ]);
 
+                // Isi no_kk dari id_biodata jika kosong
                 if (empty($data['no_kk']) && !empty($data['id_biodata'])) {
                     $noKK = Keluarga::where('id_biodata', $data['id_biodata'])->value('no_kk');
                     if ($noKK) {
@@ -227,14 +247,14 @@ class OrangtuaWaliService
                     ]);
                 }
 
-                // Jika dia ditandai sebagai wali, nonaktifkan wali sebelumnya
+                // Nonaktifkan wali sebelumnya jika perlu
                 if (!empty($data['wali']) && $data['wali']) {
                     OrangTuaWali::whereHas('biodata.keluarga', function ($q) use ($data) {
                         $q->where('no_kk', $data['no_kk']);
                     })->where('wali', true)->update(['wali' => false]);
                 }
 
-                // Buat Orang Tua/Wali
+                // Buat data Orang Tua / Wali
                 $ortu = OrangTuaWali::create([
                     'id_biodata' => $biodata->id,
                     'id_hubungan_keluarga' => $data['id_hubungan_keluarga'] ?? null,
@@ -318,12 +338,66 @@ class OrangtuaWaliService
     {
         return DB::transaction(function () use ($data, $id) {
             $ortu = OrangTuaWali::find($id);
-
-            if (! $ortu) {
+            if (!$ortu) {
                 return ['status' => false, 'message' => 'Data tidak ditemukan'];
             }
 
-            $updateData = [
+            $biodata = $ortu->biodata;
+
+            // Ambil semua hubungan keluarga yang hanya boleh untuk laki-laki
+            $hubunganLakiLaki = ['ayah kandung', 'kakek kandung', 'paman', 'ayah sambung'];
+            $hubunganPerempuan = ['ibu kandung', 'nenek kandung', 'bibi', 'ibu sambung'];
+
+            // Ambil hubungan keluarga
+            $hubungan = HubunganKeluarga::find($data['id_hubungan_keluarga']);
+            if ($hubungan) {
+                $namaHubungan = strtolower($hubungan->nama_status);
+
+                if (in_array($namaHubungan, $hubunganLakiLaki) && strtolower($data['jenis_kelamin']) !== 'l') {
+                    return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
+                }
+
+                if (in_array($namaHubungan, $hubunganPerempuan) && strtolower($data['jenis_kelamin']) !== 'p') {
+                    return ['status' => false, 'message' => 'Jenis kelamin tidak sesuai dengan hubungan keluarga'];
+                }
+
+                // Cek duplikasi ayah kandung / ibu kandung di keluarga
+                if (!empty($data['no_kk']) && in_array($namaHubungan, ['ayah kandung', 'ibu kandung'])) {
+                    $sudahAda = OrangTuaWali::whereHas('biodata.keluarga', function ($query) use ($data) {
+                        $query->where('no_kk', $data['no_kk']);
+                    })->whereHas('hubungan', function ($query) use ($namaHubungan) {
+                        $query->whereRaw('LOWER(nama_status) = ?', [$namaHubungan]);
+                    })->where('id', '!=', $id)->exists();
+
+                    if ($sudahAda) {
+                        return ['status' => false, 'message' => ucfirst($namaHubungan) . ' sudah terdaftar dalam keluarga ini'];
+                    }
+                }
+            }
+
+            if (!empty($data['no_kk'])) {
+                $kkExists = Keluarga::where('no_kk', $data['no_kk'])->exists();
+                if (!$kkExists) {
+                    return ['status' => false, 'message' => 'Nomor KK tidak cocok dengan keluarga manapun'];
+                }
+            }
+
+            if (empty($data['nik']) && empty($data['no_kk']) && empty($data['no_passport'])) {
+                return ['status' => false, 'message' => 'Minimal salah satu dari NIK, No KK, atau No Passport harus diisi'];
+            }
+
+            if (!empty($data['nik']) && $data['nik'] !== $biodata->nik) {
+                $nikExists = Biodata::where('nik', $data['nik'])->exists();
+                if ($nikExists) {
+                    return ['status' => false, 'message' => 'NIK sudah terdaftar'];
+                }
+            }
+
+            $before = $ortu->getOriginal();
+            $beforeBiodata = $biodata->getOriginal();
+
+            // Update Biodata
+            $biodata->update([
                 'negara_id' => $data['negara_id'],
                 'provinsi_id' => $data['provinsi_id'] ?? null,
                 'kabupaten_id' => $data['kabupaten_id'] ?? null,
@@ -343,31 +417,50 @@ class OrangtuaWaliService
                 'nama_pendidikan_terakhir' => $data['nama_pendidikan_terakhir'] ?? null,
                 'anak_keberapa' => $data['anak_keberapa'] ?? null,
                 'dari_saudara' => $data['dari_saudara'] ?? null,
-                'no_kk' => $data['no_kk'],
+                'updated_by' => Auth::id(),
+                'updated_at' => now(),
+            ]);
+
+            // Update KK
+            if (!empty($data['no_kk'])) {
+                Keluarga::updateOrCreate(
+                    ['id_biodata' => $biodata->id],
+                    [
+                        'no_kk' => $data['no_kk'],
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]
+                );
+            }
+
+            // Jika dia sekarang jadi wali, nonaktifkan wali lainnya di KK yang sama
+            if (!empty($data['wali']) && $data['wali']) {
+                OrangTuaWali::whereHas('biodata.keluarga', function ($q) use ($data) {
+                    $q->where('no_kk', $data['no_kk']);
+                })->where('wali', true)->where('id', '!=', $id)->update(['wali' => false]);
+            }
+
+            // Update OrangTuaWali
+            $ortu->update([
                 'id_hubungan_keluarga' => $data['id_hubungan_keluarga'],
                 'wali' => $data['wali'] ?? false,
                 'pekerjaan' => $data['pekerjaan'] ?? null,
                 'penghasilan' => $data['penghasilan'] ?? null,
                 'updated_by' => Auth::id(),
                 'updated_at' => now(),
-            ];
-
-            $before = $ortu->getOriginal();
-
-            $ortu->fill($updateData);
-
-            if (! $ortu->isDirty()) {
-                return ['status' => false, 'message' => 'Tidak ada perubahan'];
-            }
-
-            $ortu->save();
+            ]);
 
             $batchUuid = Str::uuid();
 
             activity('ortu_update')
                 ->performedOn($ortu)
-                ->withProperties(['before' => $before, 'after' => $ortu->getChanges()])
-                ->tap(fn ($activity) => $activity->batch_uuid = $batchUuid)
+                ->withProperties([
+                    'before_ortu' => $before,
+                    'before_biodata' => $beforeBiodata,
+                    'after_ortu' => $ortu->getChanges(),
+                    'after_biodata' => $biodata->getChanges()
+                ])
+                ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
                 ->event('update_ortu')
                 ->log('Data orang tua diperbarui');
 
