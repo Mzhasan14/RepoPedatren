@@ -23,6 +23,7 @@ class TahunAjaranSeeder extends Seeder
                 'tanggal_mulai' => Carbon::create($startYear + $i, 7, 1),
                 'tanggal_selesai' => Carbon::create($startYear + $i + 1, 6, 30),
                 'status' => $i === 9, // aktifkan hanya yang terakhir (2029/2030)
+                'created_by' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

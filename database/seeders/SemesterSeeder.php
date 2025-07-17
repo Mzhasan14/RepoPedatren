@@ -22,6 +22,7 @@ class SemesterSeeder extends Seeder
                     'status' => true, 
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'created_by' => 1,
                 ],
                 [
                     'tahun_ajaran_id' => $activeTahunAjaran->id,
@@ -29,6 +30,7 @@ class SemesterSeeder extends Seeder
                     'status' => false, 
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'created_by' => 1,
                 ],
             ]);
         }

@@ -38,6 +38,7 @@ class AngkatanSeeder extends Seeder
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,
                 'created_at' => now(),
+                'created_by' => 1,
                 'updated_at' => now(),
             ];
         }
@@ -50,6 +51,7 @@ class AngkatanSeeder extends Seeder
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,
                 'created_at' => now(),
+                'created_by' => 1,
                 'updated_at' => now(),
             ];
         }
