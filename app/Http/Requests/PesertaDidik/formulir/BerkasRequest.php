@@ -25,7 +25,7 @@ class BerkasRequest extends FormRequest
     {
         return [
             'jenis_berkas_id' => 'required|exists:jenis_berkas,id',
-            'file_path' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'file_path' => 'required|file|mimes:jpg,jpeg,png,webp,bmp|max:2048',
         ];
     }
 
