@@ -39,6 +39,7 @@ class AnakasuhService
         return DB::table('anak_asuh AS as')
             ->join('santri AS s', 'as.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->join('keluarga as k','k.id_biodata','=','b.id')
             ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'as.id')
             ->join('wali_asuh as ws', 'ks.id_wali_asuh', '=', 'ws.id')
             ->join('grup_wali_asuh as gs', 'ws.id_grup_wali_asuh', '=', 'gs.id')
@@ -734,8 +735,8 @@ class AnakasuhService
             $query->leftJoin('biodata as b_ibu2', 'ibu2.id_biodata_ibu', '=', 'b_ibu2.id');
         }
         if (in_array('wali_asuh',$fields)) {
-            $query->leftjoin('kewaliasuhan as k','k.id_anak_asuh','=','as.id')
-            ->leftjoin('wali_asuh as wa','wa.id','=','k.id_wali_asuh')
+            $query->leftjoin('kewaliasuhan as kw','kw.id_anak_asuh','=','as.id')
+            ->leftjoin('wali_asuh as wa','wa.id','=','kw.id_wali_asuh')
             ->leftjoin('santri as sw','wa.id_santri','=','sw.id')
             ->leftjoin('biodata as bw','sw.biodata_id','=','bw.id');
         }

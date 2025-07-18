@@ -327,50 +327,102 @@ class GrupWaliasuhService
 
     public function getExportGrupWaliasuhQuery(array $fields, Request $request)
     {
-        $defaultFields = [
+        $query = $this->getAllGrupWaliasuh($request);
+
+        // Dynamic joins
+        if (in_array('no_kk', $fields)) {
+            $query->leftJoin('keluarga as k', 'k.id_biodata', '=', 'b.id');
+        }
+
+        if (in_array('niup', $fields)) {
+            $query->leftJoin('warga_pesantren as wp', 'wp.biodata_id', '=', 'b.id');
+        }
+
+        if (in_array('angkatan_santri', $fields)) {
+            $query->leftJoin('angkatan as as', 's.angkatan_id', '=', 'as.id');
+        }
+
+        // Select fields
+    $select = [];
+
+    foreach ($fields as $field) {
+        switch ($field) {
+            case 'id':
+                $select[] = 'gs.id';
+                break;
+            case 'nama_grup':
+                $select[] = 'gs.nama_grup';
+                break;
+            case 'nama_wilayah':
+                $select[] = 'w.nama_wilayah';
+                break;
+            case 'nis':
+                $select[] = 's.nis';
+                break;
+            case 'nama_wali_asuh':
+                $select[] = 'b.nama as nama_wali_asuh';
+                break;
+            case 'no_kk':
+                $select[] = 'k.no_kk as no_kk';
+                break;
+            case 'nik':
+                $select[] = DB::raw('COALESCE(b.nik, b.no_passport) as nik');
+                break;
+            case 'niup':
+                $select[] = 'wp.niup as niup';
+                break;
+            case 'jenis_kelamin_wali_asuh':
+                $select[] = 'b.jenis_kelamin as jenis_kelamin_wali_asuh';
+                break;
+            case 'angkatan_santri':
+                $select[] = 'as.angkatan as angkatan_santri';
+                break;
+            case 'jumlah_anak_asuh':
+                $select[] = DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh");
+                break;
+            case 'created_at':
+                $select[] = 'gs.created_at';
+                break;
+            case 'updated_at':
+                $select[] = 'gs.updated_at';
+                break;
+            case 'status':
+                $select[] = 'gs.status';
+                break;
+            }
+        }
+
+        $groupBy = [
             'gs.id',
             'gs.nama_grup',
             'w.nama_wilayah',
-            DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
             's.nis',
-            'b.nama as nama_wali_asuh',
-            'k.no_kk as no_kk_wali_asuh',
-            'b.nik as nik_wali_asuh',
-            'wp.niup as niup_wali_asuh',
-            'b.jenis_kelamin as jenis_kelamin_wali_asuh',
-            'as.angkatan as angkatan_santri',
+            'b.nama',
+            'b.jenis_kelamin',
             'gs.created_at',
             'gs.updated_at',
-            'gs.status',
+            'gs.status'
         ];
 
-        $query = DB::table('grup_wali_asuh AS gs')
-            ->leftJoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
-            ->leftJoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
-            ->leftJoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
-            ->leftJoin('santri AS s', 'ws.id_santri', '=', 's.id')
-            ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftJoin('keluarga AS k','k.id_biodata','=','b.id')
-            ->leftJoin('warga_pesantren as wp','wp.biodata_id','=','b.id')
-            ->leftJoin('angkatan as as', 's.angkatan_id', '=', 'as.id')
-            ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
-            ->select($defaultFields)
-            ->groupBy(
-                'gs.id',
-                'gs.nama_grup',
-                'w.nama_wilayah',
-                's.nis',
-                'b.nama',
-                'k.no_kk',
-                'b.nik',
-                'wp.niup',
-                'b.jenis_kelamin',
-                'as.angkatan',
-                'gs.created_at',
-                'gs.updated_at',
-                'gs.status'
-            )
-            ->orderBy('gs.id');
+        if (in_array('no_kk', $fields)) {
+            $groupBy[] = 'k.no_kk';
+        }
+
+        if (in_array('nik', $fields)) {
+            $groupBy[] = DB::raw('COALESCE(b.nik, b.no_passport)');
+        }
+
+        if (in_array('niup', $fields)) {
+            $groupBy[] = 'wp.niup';
+        }
+
+        if (in_array('angkatan_santri', $fields)) {
+            $groupBy[] = 'as.angkatan';
+        }
+
+        $query->groupBy(...$groupBy);
+
+        $query->select($select);
 
         return $query;
     }
@@ -406,14 +458,14 @@ class GrupWaliasuhService
                         $jk = strtolower($item->jenis_kelamin_wali_asuh ?? '');
                         $row['Jenis Kelamin Wali Asuh'] = $jk === 'l' ? 'Laki-laki' : ($jk === 'p' ? 'Perempuan' : '');
                         break;;
-                    case 'no_kk_wali_asuh':
-                        $row['No KK Wali Asuh'] = ' ' . $item->no_kk_wali_asuh ?? '';
+                    case 'no_kk':
+                        $row['No KK Wali Asuh'] = ' ' . $item->no_kk ?? '';
                         break;
-                    case 'nik_wali_asuh':
-                        $row['NIK Wali Asuh'] = ' ' . $item->nik_wali_asuh ?? '';
+                    case 'nik':
+                        $row['NIK Wali Asuh'] = ' ' . ($item->nik ?? $item->no_passport ?? '');
                         break;
-                    case 'niup_wali_asuh':
-                        $row['NIUP Wali Asuh'] = ' ' . $item->niup_wali_asuh ?? '';
+                    case 'niup':
+                        $row['NIUP Wali Asuh'] = ' ' . $item->niup ?? '';
                         break;
                     case 'angkatan_santri':
                         $row['Angkatan Santri'] = ' ' . $item->angkatan_santri ?? '';
@@ -444,11 +496,12 @@ class GrupWaliasuhService
             'nama_grup' => 'Nama Grup',
             'nama_wilayah' => 'Wilayah',
             'jumlah_anak_asuh' => 'Jumlah Anak Asuh',
+            'no_kk' => 'No KK Wali Asuh',
+            'nik' => 'NIK Wali Asuh',
+            'niup' => 'NIUP Wali Asuh',
             'nis' => 'NIS Wali Asuh',
             'nama_wali_asuh' => 'Nama Wali Asuh',
-            'no_kk_wali_asuh' => 'No KK Wali Asuh',
-            'nik_wali_asuh' => 'NIK Wali Asuh',
-            'niup_wali_asuh' => 'NIUP Wali Asuh',
+            'jenis_kelamin_wali_asuh' => 'Jenis Kelamin Wali Asuh',
             'angkatan_santri' => 'Angkatan Santri',
             'created_at' => 'Tanggal Input',
             'updated_at' => 'Tanggal Update',

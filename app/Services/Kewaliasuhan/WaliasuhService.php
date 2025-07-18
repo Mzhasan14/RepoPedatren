@@ -37,6 +37,7 @@ class WaliasuhService
         return DB::table('wali_asuh AS ws')
             ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->join('keluarga as k','k.id_biodata','=','b.id')
             ->leftJoin('domisili_santri AS ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
@@ -606,22 +607,22 @@ class WaliasuhService
                         $data['NIUP'] = ' ' . ($itemArr['niup'] ?? '');
                         break;
                     case 'anak_ke':
-                        $data['Anak ke'] = $itemArr['anak_ke'] ?? '';
+                        $data['Anak ke'] = $itemArr['anak_keberapa'] ?? '';
                         break;
                     case 'jumlah_saudara':
-                        $data['Jumlah Saudara'] = $itemArr['jumlah_saudara'] ?? '';
+                        $data['Jumlah Saudara'] = $itemArr['dari_saudara'] ?? '';
                         break;
                     case 'alamat':
                         $data['Jalan'] = $itemArr['jalan'] ?? '';
-                        $data['Kecamatan'] = $itemArr['kecamatan'] ?? '';
-                        $data['Kabupaten'] = $itemArr['kabupaten'] ?? '';
-                        $data['Provinsi'] = $itemArr['provinsi'] ?? '';
-                        $data['Negara'] = $itemArr['negara'] ?? '';
+                        $data['Kecamatan'] = $itemArr['nama_kecamatan'] ?? '';
+                        $data['Kabupaten'] = $itemArr['nama_kabupaten'] ?? '';
+                        $data['Provinsi'] = $itemArr['nama_provinsi'] ?? '';
+                        $data['Negara'] = $itemArr['nama_negara'] ?? '';
                         break;
                     case 'domisili_santri':
-                        $data['Wilayah'] = $itemArr['wilayah'] ?? '';
-                        $data['Blok'] = $itemArr['blok'] ?? '';
-                        $data['Kamar'] = $itemArr['kamar'] ?? '';
+                        $data['Wilayah'] = $itemArr['dom_wilayah'] ?? '';
+                        $data['Blok'] = $itemArr['dom_blok'] ?? '';
+                        $data['Kamar'] = $itemArr['dom_kamar'] ?? '';
                         break;
                     case 'angkatan_santri':
                         $data['Angkatan Santri'] = $itemArr['angkatan_santri'] ?? '';
@@ -643,7 +644,7 @@ class WaliasuhService
                         $data['Status'] = $itemArr['status'] ?? '';
                         break;
                     case 'ibu_kandung':
-                        $data['Ibu Kandung'] = $itemArr['ibu_kandung'] ?? '';
+                        $data['Ibu Kandung'] = $itemArr['nama_ibu'] ?? '';
                         break;
                     default:
                         // translate untuk created_at / updated_at
