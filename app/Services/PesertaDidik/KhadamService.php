@@ -138,6 +138,7 @@ class KhadamService
                 'anak_keberapa' => $data['anak_keberapa'] ?? null,
                 'dari_saudara' => $data['dari_saudara'] ?? null,
                 'tinggal_bersama' => $data['tinggal_bersama'] ?? null,
+                'smartcard' => $data['smartcard'] ?? null,
                 'updated_by' => $userId,
                 'updated_at' => $now,
             ];

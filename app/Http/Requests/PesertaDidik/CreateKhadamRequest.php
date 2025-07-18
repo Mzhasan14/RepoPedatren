@@ -112,6 +112,8 @@ class CreateKhadamRequest extends FormRequest
             'keterangan.string' => 'Keterangan khadam harus berupa teks.',
             'tanggal_mulai.required' => 'Tanggal mulai khadam wajib diisi.',
             'tanggal_mulai.date' => 'Tanggal mulai khadam harus berupa tanggal yang valid.',
+
+            'smartcard' => 'nullable|string',
         ];
     }
 
