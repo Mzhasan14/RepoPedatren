@@ -443,7 +443,7 @@ class PesertaDidikService
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $biodataId,
                     'nis' => $data['nis'],
-                    'tanggal_masuk' => $data['tanggal_masuk_santri'],
+                    'tanggal_masuk' => $data['tanggal_masuk_santri'] ?? $now,
                     'angkatan_id' => $data['angkatan_santri_id'],
                     'status' => 'aktif',
                     'created_by' => $userId,
