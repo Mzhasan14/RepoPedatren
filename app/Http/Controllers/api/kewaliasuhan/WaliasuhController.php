@@ -281,53 +281,65 @@ class WaliasuhController extends Controller
     public function exportExcel(Request $request)
     {
         $defaultExportFields = [
-            'nis',
             'nama',
-            'nama_kamar',
-            'nama_blok',
-            'nama_wilayah',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'angkatan_pelajar',
             'grup_wali_asuh',
-            'angkatan',
-            'kota_asal',
             'created_at',
             'updated_at',
         ];
 
         $columnOrder = [
-            'nis',
+            'no_kk',           // di depan
+            'nik',
+            'niup',
             'nama',
-            'nama_kamar',
-            'nama_blok',
-            'nama_wilayah',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'status',
+            'no_induk',
+            'pendidikan',
+            'angkatan_pelajar',
             'grup_wali_asuh',
-            'angkatan',
-            'kota_asal',
+            'ibu_kandung',
             'created_at',
             'updated_at',
         ];
 
-        // Ambil kolom dari checkbox user (opsional)
+        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
         $optionalFields = $request->input('fields', []);
 
-        // Gabungkan default dan optional (hindari duplikat & atur urutan)
+        // Gabung kolom default export + kolom optional (hindari duplikat)
         $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
         $fields = array_values(array_intersect($columnOrder, $fields));
 
-        // Ambil query dari service
+        // Gunakan query khusus untuk export (boleh mirip dengan list)
         $query = $this->waliasuhService->getExportWaliasuhQuery($fields, $request);
+        $query = $this->filterWaliasuhService->WaliasuhFilters($query, $request);
 
-        // Ambil semua atau limit berdasarkan request
+        $query = $query->latest('b.created_at');
+
+        // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'
             ? $query->get()
             : $query->limit((int) $request->input('limit', 100))->get();
 
-        // Format data & heading
-        $addNumber = true;
+        // Format data sesuai urutan dan field export
+        $addNumber = true; // Supaya kolom No selalu muncul
         $formatted = $this->waliasuhService->formatDataExportWaliasuh($results, $fields, $addNumber);
         $headings = $this->waliasuhService->getFieldExportWaliasuhHeadings($fields, $addNumber);
 
-        $filename = 'wali_asuh_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "data_waliasuh_{$now}.xlsx";
 
-        return Excel::download(new \App\Exports\BaseExport($formatted, $headings), $filename);
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

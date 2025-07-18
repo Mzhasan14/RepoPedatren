@@ -330,10 +330,15 @@ class GrupWaliasuhService
         $defaultFields = [
             'gs.id',
             'gs.nama_grup',
-            's.nis',
-            'b.nama as nama_wali_asuh',
             'w.nama_wilayah',
             DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
+            's.nis',
+            'b.nama as nama_wali_asuh',
+            'k.no_kk as no_kk_wali_asuh',
+            'b.nik as nik_wali_asuh',
+            'wp.niup as niup_wali_asuh',
+            'b.jenis_kelamin as jenis_kelamin_wali_asuh',
+            'as.angkatan as angkatan_santri',
             'gs.created_at',
             'gs.updated_at',
             'gs.status',
@@ -345,27 +350,31 @@ class GrupWaliasuhService
             ->leftJoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
             ->leftJoin('santri AS s', 'ws.id_santri', '=', 's.id')
             ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('keluarga AS k','k.id_biodata','=','b.id')
+            ->leftJoin('warga_pesantren as wp','wp.biodata_id','=','b.id')
+            ->leftJoin('angkatan as as', 's.angkatan_id', '=', 'as.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
-            ->select($defaultFields) // Tetap pakai default, karena COUNT tidak fleksibel
+            ->select($defaultFields)
             ->groupBy(
                 'gs.id',
                 'gs.nama_grup',
+                'w.nama_wilayah',
                 's.nis',
                 'b.nama',
-                'w.nama_wilayah',
+                'k.no_kk',
+                'b.nik',
+                'wp.niup',
+                'b.jenis_kelamin',
+                'as.angkatan',
                 'gs.created_at',
                 'gs.updated_at',
                 'gs.status'
             )
             ->orderBy('gs.id');
 
-        // Tambahkan filter request opsional jika perlu
-        if ($request->filled('wilayah')) {
-            $query->where('w.id', $request->wilayah);
-        }
-
         return $query;
     }
+
 
     public function formatDataExportGrupWaliasuh($results, array $fields, $addNumber = false)
     {
@@ -393,6 +402,22 @@ class GrupWaliasuhService
                     case 'jumlah_anak_asuh':
                         $row['Jumlah Anak Asuh'] = $item->jumlah_anak_asuh ?? 0;
                         break;
+                    case 'jenis_kelamin_wali_asuh':
+                        $jk = strtolower($item->jenis_kelamin_wali_asuh ?? '');
+                        $row['Jenis Kelamin Wali Asuh'] = $jk === 'l' ? 'Laki-laki' : ($jk === 'p' ? 'Perempuan' : '');
+                        break;;
+                    case 'no_kk_wali_asuh':
+                        $row['No KK Wali Asuh'] = ' ' . $item->no_kk_wali_asuh ?? '';
+                        break;
+                    case 'nik_wali_asuh':
+                        $row['NIK Wali Asuh'] = ' ' . $item->nik_wali_asuh ?? '';
+                        break;
+                    case 'niup_wali_asuh':
+                        $row['NIUP Wali Asuh'] = ' ' . $item->niup_wali_asuh ?? '';
+                        break;
+                    case 'angkatan_santri':
+                        $row['Angkatan Santri'] = ' ' . $item->angkatan_santri ?? '';
+                        break;
                     case 'created_at':
                         $row['Tanggal Input'] = $item->created_at
                             ? Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s')
@@ -417,27 +442,39 @@ class GrupWaliasuhService
     {
         $map = [
             'nama_grup' => 'Nama Grup',
-            'nis' => 'NIS Wali Asuh',
-            'nama_wali_asuh' => 'Nama Wali Asuh',
             'nama_wilayah' => 'Wilayah',
             'jumlah_anak_asuh' => 'Jumlah Anak Asuh',
+            'nis' => 'NIS Wali Asuh',
+            'nama_wali_asuh' => 'Nama Wali Asuh',
+            'no_kk_wali_asuh' => 'No KK Wali Asuh',
+            'nik_wali_asuh' => 'NIK Wali Asuh',
+            'niup_wali_asuh' => 'NIUP Wali Asuh',
+            'angkatan_santri' => 'Angkatan Santri',
             'created_at' => 'Tanggal Input',
             'updated_at' => 'Tanggal Update',
             'status' => 'Status',
         ];
-
         $headings = [];
-        if ($addNumber) {
-            $headings[] = 'No';
-        }
-
         foreach ($fields as $field) {
-            if (isset($map[$field])) {
-                $headings[] = $map[$field];
+            if (array_key_exists($field, $map)) {
+                $mapped = $map[$field];
+                if (is_array($mapped)) {
+                    foreach ($mapped as $h) {
+                        $headings[] = $h;
+                    }
+                } else {
+                    $headings[] = $mapped;
+                }
+            } else {
+                $headings[] = $field; // fallback kalau field tidak ada di map
             }
+        }
+        if ($addNumber) {
+            array_unshift($headings, 'No');
         }
 
         return $headings;
+
     }
 
 }
