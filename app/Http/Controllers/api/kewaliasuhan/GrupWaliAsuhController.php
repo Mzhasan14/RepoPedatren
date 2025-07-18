@@ -253,34 +253,62 @@ class GrupWaliAsuhController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $defaultFields = [
+        $defaultExportFields = [
             'nama_grup',
-            'nis',
-            'nama_wali_asuh',
             'nama_wilayah',
             'jumlah_anak_asuh',
+            'nis',
+            'nama_wali_asuh',
+            'jenis_kelamin_wali_asuh',
+            'angkatan_santri',
             'created_at',
             'updated_at',
             'status',
         ];
 
-        $optionalFields = $request->input('fields', []);
-        $columnOrder = $defaultFields;
+        $columnOrder = [
+            'nama_grup',
+            'nama_wilayah',
+            'jumlah_anak_asuh',
+            'no_kk_wali_asuh',
+            'nik_wali_asuh',
+            'niup_wali_asuh',
+            'nis',
+            'nama_wali_asuh',
+            'jenis_kelamin_wali_asuh',
+            'angkatan_santri',
+            'created_at',
+            'updated_at',
+            'status',
+        ];
 
-        $fields = array_unique(array_merge($defaultFields, $optionalFields));
+
+        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
+        $optionalFields = $request->input('fields', []);
+
+        // Gabung kolom default export + kolom optional (hindari duplikat)
+        $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
         $fields = array_values(array_intersect($columnOrder, $fields));
 
-        $service = app(\App\Services\Kewaliasuhan\GrupWaliasuhService::class);
+        // Gunakan query khusus untuk export (boleh mirip dengan list)
+        $query = $this->grupWaliasuhService->getExportGrupWaliasuhQuery($fields, $request);
+        $query = $this->filterGrupWaliasuhService->GrupWaliasuhFIlters($query, $request);
 
-        $query = $service->getExportGrupWaliasuhQuery($fields, $request);
+        $query = $query->latest('b.created_at');
 
+        // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'
             ? $query->get()
             : $query->limit((int) $request->input('limit', 100))->get();
 
-        $formatted = $service->formatDataExportGrupWaliasuh($results, $fields, true);
-        $headings = $service->getFieldExportGrupWaliasuhHeadings($fields, true);
+        // Format data sesuai urutan dan field export
+        $addNumber = true; // Supaya kolom No selalu muncul
+        $formatted = $this->grupWaliasuhService->formatDataExportGrupWaliasuh($results, $fields, $addNumber);
+        $headings = $this->grupWaliasuhService->getFieldExportGrupWaliasuhHeadings($fields, $addNumber);
 
-        return Excel::download(new \App\Exports\BaseExport($formatted, $headings), 'grup_wali_asuh.xlsx');
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "data_grup_waliasuh_{$now}.xlsx";
+
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 }

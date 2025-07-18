@@ -321,53 +321,68 @@ class AnakasuhController extends Controller
     public function exportExcel(Request $request)
     {
         $defaultExportFields = [
-            'nis',
             'nama',
-            'kamar',
+            'jenis_kelamin',
+            'nis',
+            'angkatan_santri',
+            'angkatan_pelajar',
             'grup',
-            'angkatan',
-            'kota_asal',
-            'tanggal_input',
-            'tanggal_update'
+            'wali_asuh',
+            'created_at',
+            'updated_at',
         ];
 
         $columnOrder = [
-            'nis',
+            'no_kk',           // di depan
+            'nik',
+            'niup',
             'nama',
-            'kamar',
+            'tempat_tanggal_lahir',
+            'jenis_kelamin',
+            'anak_ke',
+            'jumlah_saudara',
+            'alamat',
+            'nis',
+            'domisili_santri',
+            'angkatan_santri',
+            'status',
+            'no_induk',
+            'pendidikan',
+            'angkatan_pelajar',
+            'ibu_kandung',
             'grup',
-            'angkatan',
-            'kota_asal',
-            'tanggal_input',
-            'tanggal_update'
+            'wali_asuh',
+            'created_at',
+            'updated_at',
         ];
 
-        // Ambil kolom dari checkbox user (opsional)
+        // Ambil kolom optional tambahan dari checkbox user (misal ['no_kk','nik',...])
         $optionalFields = $request->input('fields', []);
 
-        // Gabungkan default dan optional (hindari duplikat & atur urutan)
+        // Gabung kolom default export + kolom optional (hindari duplikat)
         $fields = array_unique(array_merge($defaultExportFields, $optionalFields));
         $fields = array_values(array_intersect($columnOrder, $fields));
 
-        /** @var AnakasuhService $service */
-        $service = app(AnakasuhService::class);
+        // Gunakan query khusus untuk export (boleh mirip dengan list)
+        $query = $this->anakasuhService->getExportAnakasuhQuery($fields, $request);
+        $query = $this->filterAnakasuhService->AnakasuhFilters($query, $request);
 
-        // Ambil query dari service (sudah bisa disaring via request)
-        $query = $service->getExportAnakasuhQuery($fields, $request);
+        $query = $query->latest('b.created_at');
 
-        // Ambil semua atau per halaman berdasarkan request
+        // Jika user centang "all", ambil semua, else gunakan limit/pagination
         $results = $request->input('all') === 'true'
             ? $query->get()
             : $query->limit((int) $request->input('limit', 100))->get();
 
-        // Format data dan heading
-        $addNumber = true;
-        $formatted = $service->formatDataExportAnakasuh($results, $fields, $addNumber);
-        $headings = $service->getFieldExportAnakasuhHeadings($fields, $addNumber);
+        // Format data sesuai urutan dan field export
+        $addNumber = true; // Supaya kolom No selalu muncul
+        $formatted = $this->anakasuhService->formatDataExportAnakasuh($results, $fields, $addNumber);
+        $headings = $this->anakasuhService->getFieldExportAnakasuhHeadings($fields, $addNumber);
 
-        $filename = 'anak_asuh_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $now = now()->format('Y-m-d_H-i-s');
+        $filename = "data_anakasuh_{$now}.xlsx";
 
-        return Excel::download(new \App\Exports\BaseExport($formatted, $headings), $filename);
+        return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
 
     /**
