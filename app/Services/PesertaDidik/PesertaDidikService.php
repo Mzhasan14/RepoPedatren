@@ -169,6 +169,7 @@ class PesertaDidikService
                 'anak_keberapa' => $data['anak_keberapa'] ?? null,
                 'dari_saudara' => $data['dari_saudara'] ?? null,
                 'tinggal_bersama' => $data['tinggal_bersama'] ?? null,
+                'smartcard' => $data['smarcard'] ?? null,
                 'updated_by' => $userId,
                 'updated_at' => $now,
             ];
@@ -179,9 +180,9 @@ class PesertaDidikService
                 $biodataId = $existingBiodata->id;
             } else {
                 // Buat smartcard dan id unik
-                do {
-                    $smartcard = 'SC-' . strtoupper(Str::random(10));
-                } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
+                // do {
+                //     $smartcard = 'SC-' . strtoupper(Str::random(10));
+                // } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
                 do {
                     $biodataId = Str::uuid()->toString();
@@ -189,7 +190,7 @@ class PesertaDidikService
 
                 DB::table('biodata')->insert(array_merge($biodataData, [
                     'id' => $biodataId,
-                    'smartcard' => $smartcard,
+                    // 'smartcard' => $smartcard,
                     'status' => true,
                     'created_by' => $userId,
                     'created_at' => $now,
@@ -299,6 +300,28 @@ class PesertaDidikService
                         'created_by' => $userId,
                         'created_at' => $now,
                     ]);
+                }
+
+                // --- Cek jika orang tua adalah pegawai ---
+                $pegawai = DB::table('pegawai')->where('nik', $data[$nikKey] ?? null)->first();
+
+                if ($pegawai) {
+                    // Cek apakah sudah tercatat sebagai anak pegawai
+                    $sudahTerdaftar = DB::table('anak_pegawai')
+                        ->where('pegawai_id', $pegawai->id)
+                        ->where('biodata_id', $biodataId)
+                        ->exists();
+
+                    if (! $sudahTerdaftar) {
+                        DB::table('anak_pegawai')->insert([
+                            'pegawai_id' => $pegawai->id,
+                            'biodata_id' => $biodataId,
+                            'status' => true,
+                            'created_by' => $userId,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
                 }
             }
 

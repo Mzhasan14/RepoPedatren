@@ -72,6 +72,7 @@ class BiodataRequest extends FormRequest
             'wafat' => 'required|integer|in:0,1',
             'pekerjaan' => 'nullable|string',
             'penghasilan' => 'nullable|string',
+            'smartcard' => 'nullable|string',
         ];
     }
 

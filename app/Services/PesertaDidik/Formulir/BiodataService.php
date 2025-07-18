@@ -235,6 +235,7 @@ class BiodataService
         $biodata->kecamatan_id = $input['kecamatan_id'] ?? $biodata->kecamatan_id;
         $biodata->jalan = $input['jalan'] ?? $biodata->jalan;
         $biodata->kode_pos = $input['kode_pos'] ?? $biodata->kode_pos;
+        $biodata->kode_pos = $input['smartcard'] ?? $biodata->smartcard;
         $biodata->wafat = (bool) $input['wafat'] ?? $biodata->wafat;
 
         if (! $biodata->isDirty()) {
