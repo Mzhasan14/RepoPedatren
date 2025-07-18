@@ -499,7 +499,7 @@ class AnakPegawaiService
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $biodataId,
                     'nis' => $data['nis'],
-                    'tanggal_masuk' => $now,
+                    'tanggal_masuk' => $data['tanggal_masuk_santri'],
                     'angkatan_id' => $data['angkatan_santri_id'],
                     'status' => 'aktif',
                     'created_by' => $userId,

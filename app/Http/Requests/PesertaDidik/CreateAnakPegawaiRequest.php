@@ -86,6 +86,7 @@ class CreateAnakPegawaiRequest extends FormRequest
 
             'mondok' => 'nullable|integer|in:0,1',
             'nis' => 'nullable|string|max:15|min:10|unique:santri,nis',
+            'tanggal_masuk_santri' => 'nullable|date',
 
             // Rencana Pendidikan
             'no_induk' => 'nullable|string',
