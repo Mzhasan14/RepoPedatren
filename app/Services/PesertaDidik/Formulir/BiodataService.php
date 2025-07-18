@@ -109,6 +109,7 @@ class BiodataService
                 'kecamatan_id' => $biodata->kecamatan_id,
                 'jalan' => $biodata->jalan,
                 'kode_pos' => $biodata->kode_pos,
+                'smartcard' => $biodata->smartcard,
                 'wafat' => (bool) $biodata->wafat,
                 'pas_foto_url' => $pasFoto ? url($pasFoto->file_path) : null,
                 // Tambahkan dua baris di bawah ini
