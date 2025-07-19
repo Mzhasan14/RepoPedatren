@@ -125,7 +125,7 @@ class KhadamService
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'jalan' => $data['jalan'] ?? null,
                 'kode_pos' => $data['kode_pos'] ?? null,
-                'no_passport' => $data['no_passport'] ?? null,
+                'no_passport' => $data['passport'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'tanggal_lahir' => $data['tanggal_lahir'],
                 'tempat_lahir' => $data['tempat_lahir'],

@@ -215,7 +215,7 @@ class AnakPegawaiService
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'jalan' => $data['jalan'] ?? null,
                 'kode_pos' => $data['kode_pos'] ?? null,
-                'no_passport' => $data['no_passport'] ?? null,
+                'no_passport' => $data['passport'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'tanggal_lahir' => $data['tanggal_lahir'],
                 'tempat_lahir' => $data['tempat_lahir'],
@@ -255,6 +255,20 @@ class AnakPegawaiService
             }
 
             // --- 4. Validasi KK tidak boleh beda kombinasi ortu ---
+            if (! isset($data['no_kk']) || empty($data['no_kk'])) {
+                if (! empty($data['passport'])) {
+                    do {
+                        $generatedNoKK = 'WNA' . str_pad((string)random_int(0, 9999999999999), 13, '0', STR_PAD_LEFT);
+                    } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
+
+                    $data['no_kk'] = $generatedNoKK;
+                } else {
+                    throw ValidationException::withMessages([
+                        'no_kk' => ['No KK wajib diisi jika tidak mengisi paspor.'],
+                    ]);
+                }
+            }
+
             $existingParents = DB::table('keluarga')->where('no_kk', $data['no_kk'])->pluck('id_biodata');
             if ($existingParents->isNotEmpty()) {
                 $registeredNiks = DB::table('biodata')->whereIn('id', $existingParents)->pluck('nik');

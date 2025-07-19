@@ -156,7 +156,7 @@ class PesertaDidikService
                 'kecamatan_id' => $data['kecamatan_id'] ?? null,
                 'jalan' => $data['jalan'] ?? null,
                 'kode_pos' => $data['kode_pos'] ?? null,
-                'no_passport' => $data['no_passport'] ?? null,
+                'no_passport' => $data['passport'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'tanggal_lahir' => $data['tanggal_lahir'],
                 'tempat_lahir' => $data['tempat_lahir'],
@@ -201,9 +201,9 @@ class PesertaDidikService
 
             // --- Generate no_kk otomatis jika no_passport diisi dan no_kk kosong ---
             if (! isset($data['no_kk']) || empty($data['no_kk'])) {
-                if (! empty($data['no_passport'])) {
+                if (! empty($data['passport'])) {
                     do {
-                        $generatedNoKK = 'WNA-' . strtoupper(Str::random(10));
+                        $generatedNoKK = 'WNA' . str_pad((string)random_int(0, 9999999999999), 13, '0', STR_PAD_LEFT);
                     } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
 
                     $data['no_kk'] = $generatedNoKK;
