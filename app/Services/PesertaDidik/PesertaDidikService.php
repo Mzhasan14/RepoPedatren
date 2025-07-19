@@ -198,6 +198,22 @@ class PesertaDidikService
             }
 
             // --- 2. VALIDASI & PROSES KELUARGA ---
+
+            // --- Generate no_kk otomatis jika no_passport diisi dan no_kk kosong ---
+            if (! isset($data['no_kk']) || empty($data['no_kk'])) {
+                if (! empty($data['no_passport'])) {
+                    do {
+                        $generatedNoKK = 'WNA-' . strtoupper(Str::random(10));
+                    } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
+
+                    $data['no_kk'] = $generatedNoKK;
+                } else {
+                    throw ValidationException::withMessages([
+                        'no_kk' => ['No KK wajib diisi jika tidak mengisi paspor.'],
+                    ]);
+                }
+            }
+
             $existingParents = DB::table('keluarga')->where('no_kk', $data['no_kk'])->pluck('id_biodata');
             if ($existingParents->isNotEmpty()) {
                 $registeredNiks = DB::table('biodata')->whereIn('id', $existingParents)->pluck('nik');
@@ -304,8 +320,8 @@ class PesertaDidikService
 
                 // --- Cek jika orang tua adalah pegawai ---
                 $pegawai = DB::table('pegawai')
-                ->leftjoin('biodata as b_pegawai', 'pegawai.biodata_id', '=', 'b_pegawai.id')
-                ->where('b_pegawai.nik', $data[$nikKey] ?? null)->first();
+                    ->leftjoin('biodata as b_pegawai', 'pegawai.biodata_id', '=', 'b_pegawai.id')
+                    ->where('b_pegawai.nik', $data[$nikKey] ?? null)->first();
 
                 if ($pegawai) {
                     // Cek apakah sudah tercatat sebagai anak pegawai
