@@ -320,19 +320,21 @@ class PesertaDidikService
 
                 // --- Cek jika orang tua adalah pegawai ---
                 $pegawai = DB::table('pegawai')
-                    ->leftjoin('biodata as b_pegawai', 'pegawai.biodata_id', '=', 'b_pegawai.id')
-                    ->where('b_pegawai.nik', $data[$nikKey] ?? null)->first();
+                    ->select('pegawai.id as pegawai_id') // Ambil ID asli dari tabel pegawai
+                    ->leftJoin('biodata as b_pegawai', 'pegawai.biodata_id', '=', 'b_pegawai.id')
+                    ->where('b_pegawai.nik', $data[$nikKey] ?? null)
+                    ->first();
 
                 if ($pegawai) {
                     // Cek apakah sudah tercatat sebagai anak pegawai
                     $sudahTerdaftar = DB::table('anak_pegawai')
-                        ->where('pegawai_id', $pegawai->id)
+                        ->where('pegawai_id', $pegawai->pegawai_id)
                         ->where('biodata_id', $biodataId)
                         ->exists();
 
                     if (! $sudahTerdaftar) {
                         DB::table('anak_pegawai')->insert([
-                            'pegawai_id' => $pegawai->id,
+                            'pegawai_id' => $pegawai->pegawai_id, // ← Sekarang sudah pasti ID pegawai
                             'biodata_id' => $biodataId,
                             'status' => true,
                             'created_by' => $userId,
