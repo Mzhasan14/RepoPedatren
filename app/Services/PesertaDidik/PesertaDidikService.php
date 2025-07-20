@@ -220,6 +220,7 @@ class PesertaDidikService
             if (! isset($data['no_kk']) || empty($data['no_kk'])) {
                 if (! empty($data['passport'])) {
                     do {
+                        // WNA + 13 digit angka = 16 karakter
                         $generatedNoKK = 'WNA' . str_pad((string)random_int(0, 9999999999999), 13, '0', STR_PAD_LEFT);
                     } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
 
