@@ -185,17 +185,27 @@ class BiodataService
 
         // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
         if (! empty($input['no_passport'])) {
-            $negara = DB::table('negara')->where('id', $input['negara_id'])->first();
-
-            if (! $negara) {
+            // Pastikan negara_id ada dulu
+            if (empty($input['negara_id'])) {
                 throw ValidationException::withMessages([
-                    'negara_id' => ['Negara tidak ditemukan.'],
+                    'negara_id' => ['Negara wajib dipilih jika mengisi paspor.'],
                 ]);
             }
 
-            if (strtolower($negara->nama) === 'indonesia') {
+            // Ambil input negara berdasarkan ID
+            $negara = DB::table('negara')->where('id', $input['negara_id'])->first();
+
+            // Cek jika negara tidak ditemukan (mungkin karena data di DB kosong)
+            if (! $negara) {
                 throw ValidationException::withMessages([
-                    'no_passport' => ['Jika nomor paspor terisi, negara asal tidak boleh Indonesia.'],
+                    'negara_id' => ['Negara tidak ditemukan di database.'],
+                ]);
+            }
+
+            // Jika negara asal adalah Indonesia, tolak pengisian paspor
+            if (strtolower(trim($negara->nama_negara)) === 'indonesia') {
+                throw ValidationException::withMessages([
+                    'no_passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
                 ]);
             }
         }

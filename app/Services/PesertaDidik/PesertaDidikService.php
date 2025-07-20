@@ -108,21 +108,32 @@ class PesertaDidikService
             $now = now();
 
             // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
-            // if (! empty($data['passport'])) {
-            //     $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
+            if (! empty($data['passport'])) {
+                // Pastikan negara_id ada dulu
+                if (empty($data['negara_id'])) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara wajib dipilih jika mengisi paspor.'],
+                    ]);
+                }
 
-            //     if (! $negara) {
-            //         throw ValidationException::withMessages([
-            //             'negara_id' => ['Negara tidak ditemukan.'],
-            //         ]);
-            //     }
+                // Ambil data negara berdasarkan ID
+                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
 
-            //     if (strtolower($negara->nama_negara) === 'indonesia') {
-            //         throw ValidationException::withMessages([
-            //             'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
-            //         ]);
-            //     }
-            // }
+                // Cek jika negara tidak ditemukan (mungkin karena data di DB kosong)
+                if (! $negara) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara tidak ditemukan di database.'],
+                    ]);
+                }
+
+                // Jika negara asal adalah Indonesia, tolak pengisian paspor
+                if (strtolower(trim($negara->nama_negara)) === 'indonesia') {
+                    throw ValidationException::withMessages([
+                        'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
+                    ]);
+                }
+            }
+
 
             // --- 1. VALIDASI & PROSES BIODATA ---
             $nik = $data['nik'] ?? null;
@@ -220,8 +231,9 @@ class PesertaDidikService
             if (! isset($data['no_kk']) || empty($data['no_kk'])) {
                 if (! empty($data['passport'])) {
                     do {
-                        // WNA + 13 digit angka = 16 karakter
-                        $generatedNoKK = 'WNA' . str_pad((string)random_int(0, 9999999999999), 13, '0', STR_PAD_LEFT);
+                        // Generate angka antara 1000000000000 (13 digit) s.d. 9999999999999
+                        $angka13Digit = (string) random_int(1000000000000, 9999999999999);
+                        $generatedNoKK = 'WNA' . $angka13Digit;
                     } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
 
                     $data['no_kk'] = $generatedNoKK;
@@ -231,6 +243,7 @@ class PesertaDidikService
                     ]);
                 }
             }
+
 
             $existingParents = DB::table('keluarga')->where('no_kk', $data['no_kk'])->pluck('id_biodata');
             if ($existingParents->isNotEmpty()) {

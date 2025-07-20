@@ -153,15 +153,25 @@ class AnakPegawaiService
 
             // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
             if (! empty($data['passport'])) {
-                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
-
-                if (! $negara) {
+                // Pastikan negara_id ada dulu
+                if (empty($data['negara_id'])) {
                     throw ValidationException::withMessages([
-                        'negara_id' => ['Negara tidak ditemukan.'],
+                        'negara_id' => ['Negara wajib dipilih jika mengisi paspor.'],
                     ]);
                 }
 
-                if (strtolower($negara->nama_negara) === 'indonesia') {
+                // Ambil data negara berdasarkan ID
+                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
+
+                // Cek jika negara tidak ditemukan (mungkin karena data di DB kosong)
+                if (! $negara) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara tidak ditemukan di database.'],
+                    ]);
+                }
+
+                // Jika negara asal adalah Indonesia, tolak pengisian paspor
+                if (strtolower(trim($negara->nama_negara)) === 'indonesia') {
                     throw ValidationException::withMessages([
                         'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
                     ]);
