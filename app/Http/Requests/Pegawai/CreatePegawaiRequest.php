@@ -30,7 +30,7 @@ class CreatePegawaiRequest extends FormRequest
             'jenis_kelamin' => 'required|in:l,p',
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
-            'no_passport' => 'nullable|string|max:50',
+            'passport' => 'nullable|required_without_all:nik,no_kk|string|max:20',
             'no_telepon' => [
                 'required',
                 'string',

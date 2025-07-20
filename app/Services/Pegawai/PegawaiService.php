@@ -159,16 +159,55 @@ class PegawaiService
         try {
             $isExisting = false;
             $resultData = [];
+            // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
+            if (! empty($input['passport'])) {
+                // Pastikan negara_id ada dulu
+                if (empty($input['negara_id'])) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara wajib dipilih jika mengisi paspor.'],
+                    ]);
+                }
 
+                // Ambil data negara berdasarkan ID
+                $negara = DB::table('negara')->where('id', $input['negara_id'])->first();
+
+                // Cek jika negara tidak ditemukan (mungkin karena data di DB kosong)
+                if (! $negara) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara tidak ditemukan di database.'],
+                    ]);
+                }
+
+                // Jika negara asal adalah Indonesia, tolak pengisian paspor
+                if (strtolower(trim($negara->nama_negara)) === 'indonesia') {
+                    throw ValidationException::withMessages([
+                        'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
+                    ]);
+                }
+            }
+            if (! isset($input['no_kk']) || empty($input['no_kk'])) {
+                if (! empty($input['passport'])) {
+                    do {
+                        // Generate angka antara 1000000000000 (13 digit) s.d. 9999999999999
+                        $angka13Digit = (string) random_int(1000000000000, 9999999999999);
+                        $generatedNoKK = 'WNA' . $angka13Digit;
+                    } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
+
+                    $input['no_kk'] = $generatedNoKK;
+                } else {
+                    throw ValidationException::withMessages([
+                        'no_kk' => ['No KK wajib diisi jika tidak mengisi paspor.'],
+                    ]);
+                }
+            }
             // Cari data biodata berdasarkan NIK atau no_passport
             $existingBiodata = null;
 
             if (!empty($input['nik'])) {
                 $existingBiodata = Biodata::where('nik', $input['nik'])->first();
-            } elseif (!empty($input['no_passport'])) {
-                $existingBiodata = Biodata::where('no_passport', $input['no_passport'])->first();
+            } elseif (!empty($input['passport'])) {
+                $existingBiodata = Biodata::where('no_passport', $input['passport'])->first();
             }
-
             if ($existingBiodata) {
                 $isExisting = true;
 
@@ -209,38 +248,44 @@ class PegawaiService
                     ];
 
                     foreach ($roleTables as $key => $model) {
-                        if (! empty($input[$key])) {
-                            $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
-                                ->where('status_aktif', 'aktif')
-                                ->first();
+                        // Tidak lagi tergantung input, semua peran dicek
+                        $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
+                            ->where('status_aktif', 'aktif')
+                            ->first();
 
-                            if ($role) {
-                                $dataUpdate = ['status_aktif' => 'tidak aktif'];
+                        if ($role) {
+                            $dataUpdate = ['status_aktif' => 'tidak aktif'];
 
-                                switch ($key) {
-                                    case 'karyawan':
-                                        $dataUpdate['tanggal_selesai'] = now();
-                                        break;
-                                    case 'pengajar':
-                                        $dataUpdate['tahun_akhir'] = now();
-                                        MateriAjar::where('pengajar_id', $role->id)
-                                            ->where('status_aktif', 'aktif')
-                                            ->update([
-                                                'status_aktif' => 'tidak aktif',
-                                                'tahun_akhir' => now(),
-                                                'updated_at' => now(),
-                                            ]);
-                                        break;
-                                    case 'pengurus':
-                                        $dataUpdate['tanggal_akhir'] = now();
-                                        break;
-                                    case 'wali_kelas':
-                                        $dataUpdate['periode_akhir'] = now();
-                                        break;
-                                }
+                            switch ($key) {
+                                case 'karyawan':
+                                    $dataUpdate['tanggal_selesai'] = now();
+                                    break;
+                                case 'pengajar':
+                                    $dataUpdate['tahun_akhir'] = now();
 
-                                $role->update($dataUpdate);
+                                    $mapelList = MataPelajaran::with('jadwalPelajaran')
+                                        ->where('pengajar_id', $role->id)
+                                        ->where('status', true)
+                                        ->get();
+
+                                    foreach ($mapelList as $mapel) {
+                                        // Hapus semua jadwal pelajaran terkait
+                                        $mapel->jadwalPelajaran()->delete();
+
+                                        // Nonaktifkan mata pelajaran
+                                        $mapel->status = false;
+                                        $mapel->save();
+                                    }
+                                    break;
+                                case 'pengurus':
+                                    $dataUpdate['tanggal_akhir'] = now();
+                                    break;
+                                case 'wali_kelas':
+                                    $dataUpdate['periode_akhir'] = now();
+                                    break;
                             }
+
+                            $role->update($dataUpdate);
                         }
                     }
                 }
@@ -257,7 +302,7 @@ class PegawaiService
                     'jalan' => $input['jalan'],
                     'kode_pos' => $input['kode_pos'],
                     'nama' => $input['nama'],
-                    'no_passport' => $input['no_passport'],
+                    'no_passport' => $input['passport'],
                     'tanggal_lahir' => Carbon::parse($input['tanggal_lahir']),
                     'jenis_kelamin' => $input['jenis_kelamin'],
                     'tempat_lahir' => $input['tempat_lahir'],
@@ -338,6 +383,19 @@ class PegawaiService
                 'created_by' => Auth::id(),
             ]);
 
+            $hasRole =
+                !empty($input['karyawan']) ||
+                !empty($input['pengajar']) ||
+                !empty($input['pengurus']) ||
+                !empty($input['wali_kelas']);
+
+            if (! $hasRole) {
+                DB::rollBack(); // rollback dulu karena pegawai sudah terbuat
+                return [
+                    'status' => false,
+                    'message' => 'Gagal menambahkan pegawai. Setidaknya satu peran (Karyawan, Pengajar, Pengurus, atau Wali Kelas) harus diisi.',
+                ];
+            }
             // Karyawan
             if (! empty($input['karyawan'])) {
                 $resultData['karyawan'] = Karyawan::create([
