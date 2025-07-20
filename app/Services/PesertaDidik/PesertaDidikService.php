@@ -117,7 +117,7 @@ class PesertaDidikService
                     ]);
                 }
 
-                if (strtolower($negara->nama) === 'indonesia') {
+                if (strtolower($negara->nama_negara) === 'indonesia') {
                     throw ValidationException::withMessages([
                         'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
                     ]);

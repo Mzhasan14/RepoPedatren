@@ -161,7 +161,7 @@ class AnakPegawaiService
                     ]);
                 }
 
-                if (strtolower($negara->nama) === 'indonesia') {
+                if (strtolower($negara->nama_negara) === 'indonesia') {
                     throw ValidationException::withMessages([
                         'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
                     ]);
@@ -276,6 +276,7 @@ class AnakPegawaiService
             if (! isset($data['no_kk']) || empty($data['no_kk'])) {
                 if (! empty($data['passport'])) {
                     do {
+                        // WNA + 13 digit angka = 16 karakter
                         $generatedNoKK = 'WNA' . str_pad((string)random_int(0, 9999999999999), 13, '0', STR_PAD_LEFT);
                     } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
 
