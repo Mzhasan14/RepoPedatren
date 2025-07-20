@@ -70,7 +70,7 @@ class CreatePesertaDidikRequest extends FormRequest
             'tanggal_lahir_ibu' => 'required|date',
             'no_telepon_ibu' => 'required|string|max:20',
             'pekerjaan_ibu' => 'required|string|max:100',
-            'pendidikan_terakhir_ibu' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'pendidikan_terakhir_ibu' => 're    quired|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'penghasilan_ibu' => 'required|string|max:100',
             'wafat_ibu' => 'required|integer|in:0,1',
 

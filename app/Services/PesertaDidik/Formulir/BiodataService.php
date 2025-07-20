@@ -12,6 +12,7 @@ use App\Models\Pendidikan\Rombel;
 use Illuminate\Support\Facades\DB;
 use App\Models\Kewilayahan\Wilayah;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class BiodataService
 {
@@ -180,6 +181,23 @@ class BiodataService
                 'status' => false,
                 'message' => 'Data tidak ditemukan.',
             ];
+        }
+
+        // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
+        if (! empty($input['no_passport'])) {
+            $negara = DB::table('negara')->where('id', $input['negara_id'])->first();
+
+            if (! $negara) {
+                throw ValidationException::withMessages([
+                    'negara_id' => ['Negara tidak ditemukan.'],
+                ]);
+            }
+
+            if (strtolower($negara->nama) === 'indonesia') {
+                throw ValidationException::withMessages([
+                    'no_passport' => ['Jika nomor paspor terisi, negara asal tidak boleh Indonesia.'],
+                ]);
+            }
         }
 
         // Cek jika ada perubahan jenis_kelamin

@@ -151,6 +151,24 @@ class AnakPegawaiService
             $userId = Auth::id();
             $now = now();
 
+            // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
+            if (! empty($data['passport'])) {
+                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
+
+                if (! $negara) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara tidak ditemukan.'],
+                    ]);
+                }
+
+                if (strtolower($negara->nama) === 'indonesia') {
+                    throw ValidationException::withMessages([
+                        'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
+                    ]);
+                }
+            }
+
+
             // --- 1. Validasi minimal salah satu orang tua adalah pegawai aktif ---
             $pegawaiNikList = DB::table('pegawai')
                 ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')

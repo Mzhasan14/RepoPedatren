@@ -97,6 +97,24 @@ class KhadamService
             $userId = Auth::id();
             $now = now();
 
+            // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
+            if (! empty($data['passport'])) {
+                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
+
+                if (! $negara) {
+                    throw ValidationException::withMessages([
+                        'negara_id' => ['Negara tidak ditemukan.'],
+                    ]);
+                }
+
+                if (strtolower($negara->nama) === 'indonesia') {
+                    throw ValidationException::withMessages([
+                        'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
+                    ]);
+                }
+            }
+
+
             // Biodata
             $nik = $data['nik'] ?? null;
             $existingBiodata = $nik ? DB::table('biodata')->where('nik', $nik)->first() : null;
