@@ -108,21 +108,21 @@ class PesertaDidikService
             $now = now();
 
             // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
-            if (! empty($data['passport'])) {
-                $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
+            // if (! empty($data['passport'])) {
+            //     $negara = DB::table('negara')->where('id', $data['negara_id'])->first();
 
-                if (! $negara) {
-                    throw ValidationException::withMessages([
-                        'negara_id' => ['Negara tidak ditemukan.'],
-                    ]);
-                }
+            //     if (! $negara) {
+            //         throw ValidationException::withMessages([
+            //             'negara_id' => ['Negara tidak ditemukan.'],
+            //         ]);
+            //     }
 
-                if (strtolower($negara->nama_negara) === 'indonesia') {
-                    throw ValidationException::withMessages([
-                        'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
-                    ]);
-                }
-            }
+            //     if (strtolower($negara->nama_negara) === 'indonesia') {
+            //         throw ValidationException::withMessages([
+            //             'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
+            //         ]);
+            //     }
+            // }
 
             // --- 1. VALIDASI & PROSES BIODATA ---
             $nik = $data['nik'] ?? null;
