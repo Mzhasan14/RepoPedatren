@@ -407,7 +407,7 @@ class PengajarController extends Controller
 
     public function PengajarExport(Request $request)
     {
-        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai', 'tanggal_selesai', 'status_aktif'];
+        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai'];
 
         $columnOrder = [
             'nama_lengkap',
@@ -423,8 +423,7 @@ class PengajarController extends Controller
             'no_telepon',
             'lembaga',
             'golongan',
-            'jabatan',
-            'status_aktif',
+            'tanggal_mulai'
         ];
 
         $optionalFields = $request->input('fields', []);

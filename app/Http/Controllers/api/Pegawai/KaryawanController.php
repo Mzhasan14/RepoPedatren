@@ -218,7 +218,7 @@ class KaryawanController extends Controller
 
     public function KaryawanExcel(Request $request)
     {
-        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai', 'tanggal_selesai', 'status_aktif'];
+        $defaultFields = ['nama_lengkap', 'jenis_kelamin', 'tanggal_mulai'];
 
         $columnOrder = [
             'no_kk',
@@ -236,8 +236,6 @@ class KaryawanController extends Controller
             'jabatan',
             'keterangan_jabatan',
             'tanggal_mulai',
-            'tanggal_selesai',
-            'status_aktif',
         ];
 
         $optionalFields = $request->input('fields', []);

@@ -164,10 +164,10 @@ class KaryawanService
                     $select[] = "b.$field";
                     break;
                 case 'lembaga':
-                    $select[] = 'l.nama_lembaga';
+                    $select[] = 'l.nama_lembaga as lembaga';
                     break;
                 case 'golongan_jabatan':
-                    $select[] = 'g.nama_golongan_jabatan';
+                    $select[] = 'g.nama_golongan_jabatan as golongan_jabatan';
                     break;
                 case 'jabatan':
                     $select[] = 'karyawan.jabatan';
@@ -177,12 +177,6 @@ class KaryawanService
                     break;
                 case 'tanggal_mulai':
                     $select[] = 'karyawan.tanggal_mulai';
-                    break;
-                case 'tanggal_selesai':
-                    $select[] = 'karyawan.tanggal_selesai';
-                    break;
-                case 'status_aktif':
-                    $select[] = DB::raw("CASE WHEN pegawai.status_aktif = 'aktif' THEN 'Aktif' ELSE 'Nonaktif' END as status_aktif");
                     break;
             }
         }
@@ -202,8 +196,7 @@ class KaryawanService
             foreach ($fields as $field) {
                 switch ($field) {
                     case 'tanggal_mulai':
-                    case 'tanggal_selesai':
-                        $formatted[] = optional($row->{$field})->format('d-m-Y');
+                        $formatted[] = $row->{$field} ? Carbon::parse($row->{$field})->format('d-m-Y') : '-';
                         break;
 
                     case 'tempat_tanggal_lahir':
@@ -256,13 +249,11 @@ class KaryawanService
             'pendidikan_terakhir' => 'Pendidikan Terakhir',
             'email'               => 'Email',
             'no_telepon'          => 'No Telepon',
-            'lembaga'             => 'Lembaga',
+            'nama_lembaga'             => 'Lembaga',
             'golongan_jabatan'    => 'Golongan Jabatan',
             'jabatan'             => 'Jabatan',
             'keterangan_jabatan'  => 'Keterangan Jabatan',
             'tanggal_mulai'       => 'Tanggal Mulai',
-            'tanggal_selesai'     => 'Tanggal Selesai',
-            'status_aktif'        => 'Status Aktif',
         ];
 
         $headings = [];

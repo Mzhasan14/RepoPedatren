@@ -105,7 +105,7 @@
     @endforeach
 
     <div class="footer">
-        <p>Probolinggo, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
+        <p>Probolinggo, {{ \Carbon\Carbon::now()->setTimezone('Asia/Jakarta')->translatedFormat('d F Y') }}</p>
         <br><br><br>
         <p><strong>Kepala Sekolah</strong></p>
         <p style="margin-top:60px;"><strong>( ______________________ )</strong></p>

@@ -204,10 +204,9 @@ class PengajarService
                     $select[] = 'pengajar.jabatan';
                     $groupBy[] = 'pengajar.jabatan';
                     break;
-
-                case 'status_aktif':
-                    $select[] = DB::raw("IF(pengajar.status_aktif = 1, 'Aktif', 'Nonaktif') as status_aktif");
-                    $groupBy[] = 'pengajar.status_aktif';
+                case 'tanggal_mulai':
+                    $select[] = 'pengajar.tahun_masuk as tanggal_mulai';
+                    $groupBy[] = 'pengajar.tahun_masuk';
                     break;
             }
         }
@@ -254,15 +253,22 @@ class PengajarService
                         $data['No KK'] = ' ' . ($itemArr[$i++] ?? '');
                         break;
                     case 'jalan':
-                        $data['Jalan'] = $itemArr[$i++] ?? '';
-                        $data['Kecamatan'] = $itemArr[$i++] ?? '';
-                        $data['Kabupaten'] = $itemArr[$i++] ?? '';
-                        $data['Provinsi'] = $itemArr[$i++] ?? '';
-                        $data['Negara'] = $itemArr[$i++] ?? '';
+                        $alamat = [
+                            $itemArr[$i++] ?? '', // jalan
+                            $itemArr[$i++] ?? '', // kecamatan
+                            $itemArr[$i++] ?? '', // kabupaten
+                            $itemArr[$i++] ?? '', // provinsi
+                            $itemArr[$i++] ?? '', // negara
+                        ];
+                        $data['Alamat'] = implode(', ', array_filter($alamat, fn($val) => trim($val) !== ''));
                         break;
                     case 'pendidikan_terakhir':
                         $data['Jenjang Pendidikan Terakhir'] = $itemArr[$i++] ?? '';
                         $data['Nama Pendidikan Terakhir'] = $itemArr[$i++] ?? '';
+                        break;
+                    case 'tanggal_mulai':
+                        $tgl = $itemArr[$i++] ?? '';
+                        $data['Tanggal Mulai'] = $tgl ? Carbon::parse($tgl)->format('d-m-Y') : '';
                         break;
                     default:
                         $data[ucwords(str_replace('_', ' ', $field))] = $itemArr[$i++] ?? '';
@@ -288,8 +294,8 @@ class PengajarService
             'lembaga' => 'Lembaga',
             'golongan' => 'Golongan',
             'jabatan' => 'Jabatan',
-            'status_aktif' => 'Status Aktif',
-            'jalan' => ['Jalan', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Negara'],
+            'jalan' => 'Alamat',
+            'tanggal_mulai' => 'Tanggal Mulai',
         ];
 
         $headings = [];

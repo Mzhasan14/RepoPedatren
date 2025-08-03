@@ -58,7 +58,7 @@ use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\Api\PDF\PDFController;
+use App\Http\Controllers\api\PDF\PDFController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
