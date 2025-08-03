@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\PDF;
+namespace App\Http\Controllers\api\PDF;
 
 use App\Http\Controllers\Controller;
 use App\Services\Pegawai\Filters\Formulir\JadwalService;
