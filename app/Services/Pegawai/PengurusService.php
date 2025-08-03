@@ -188,8 +188,8 @@ class PengurusService
                 case 'keterangan_jabatan':
                     $select[] = 'pengurus.keterangan_jabatan';
                     break;
-                case 'status_aktif':
-                    $select[] = DB::raw("IF(pengurus.status_aktif = 1, 'Aktif', 'Nonaktif') as status_aktif");
+                case 'tanggal_mulai':
+                    $select[] = 'pengurus.tanggal_mulai';
                     break;
             }
         }
@@ -232,10 +232,11 @@ class PengurusService
                         $data['No. KK'] = ' ' . ($itemArr[$i++] ?? '');
                         break;
                     case 'alamat':
-                        $data['Jalan'] = $itemArr[$i++] ?? '';
-                        $data['Kecamatan'] = $itemArr[$i++] ?? '';
-                        $data['Kabupaten'] = $itemArr[$i++] ?? '';
-                        $data['Provinsi'] = $itemArr[$i++] ?? '';
+                        $jalan = $itemArr[$i++] ?? '';
+                        $kec = $itemArr[$i++] ?? '';
+                        $kab = $itemArr[$i++] ?? '';
+                        $prov = $itemArr[$i++] ?? '';
+                        $data['Alamat'] = trim("{$jalan}, Kec. {$kec}, Kab. {$kab}, Prov. {$prov}", ', ');
                         break;
                     case 'pendidikan_terakhir':
                         $data['Jenjang Pendidikan Terakhir'] = $itemArr[$i++] ?? '';
@@ -259,8 +260,9 @@ class PengurusService
                     case 'keterangan_jabatan':
                         $data['Keterangan Jabatan'] = $itemArr[$i++] ?? '';
                         break;
-                    case 'status_aktif':
-                        $data['Status Aktif'] = $itemArr[$i++] ?? '';
+                    case 'tanggal_mulai':
+                        $tgl = $itemArr[$i++] ?? '';
+                        $data['Tanggal Mulai'] = $tgl ? Carbon::parse($tgl)->format('d-m-Y') : '';
                         break;
                 }
             }
@@ -283,7 +285,7 @@ class PengurusService
             'golongan_jabatan' => 'Golongan Jabatan',
             'jabatan' => 'Jabatan',
             'keterangan_jabatan' => 'Keterangan Jabatan',
-            'status_aktif' => 'Status Aktif',
+            'tanggal_mulai' => 'Tanggal Mulai',
         ];
 
         $headings = [];
@@ -298,14 +300,14 @@ class PengurusService
                     $headings[] = 'Tanggal Lahir';
                     break;
                 case 'alamat':
-                    $headings[] = 'Jalan';
-                    $headings[] = 'Kecamatan';
-                    $headings[] = 'Kabupaten';
-                    $headings[] = 'Provinsi';
+                    $headings[] = 'Alamat';
                     break;
                 case 'pendidikan_terakhir':
                     $headings[] = 'Jenjang Pendidikan Terakhir';
                     $headings[] = 'Nama Pendidikan Terakhir';
+                    break;
+                case 'tanggal_mulai':
+                    $headings[] = 'Tanggal Mulai';
                     break;
                 default:
                     $headings[] = $labels[$field] ?? ucwords(str_replace('_', ' ', $field));

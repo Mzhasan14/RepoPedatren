@@ -224,7 +224,7 @@ class PengurusController extends Controller
 
     public function pengurusExport(Request $request)
     {
-        $defaultExportFields = ['nama_lengkap', 'jenis_kelamin', 'status_aktif'];
+        $defaultExportFields = ['nama_lengkap', 'jenis_kelamin','tanggal_mulai'];
 
         $columnOrder = [
             'no_kk',
@@ -241,7 +241,7 @@ class PengurusController extends Controller
             'golongan_jabatan',
             'jabatan',
             'keterangan_jabatan',
-            'status_aktif',
+            'tanggal_mulai'
         ];
 
         $optionalFields = $request->input('fields', []);
