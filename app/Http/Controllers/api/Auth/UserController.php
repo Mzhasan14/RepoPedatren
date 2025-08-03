@@ -3,57 +3,90 @@
 namespace App\Http\Controllers\api\Auth;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        $users = User::with('roles')->paginate(10);
-        return response()->json($users);
+        try {
+            $users = User::with('roles')->paginate(10);
+            return response()->json($users);
+        } catch (\Throwable $e) {
+            Log::error('Error fetching users: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['message' => 'Failed to fetch users'], 500);
+        }
     }
 
-    public function store(UserRequest $request)
+    public function store(UserRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $data['password'] = Hash::make($data['password']);
-
-        $user = User::create($data);
-        $user->syncRoles([$data['role']]);
-
-        return response()->json(['message' => 'User created successfully', 'data' => $user->load('roles')], 201);
-    }
-
-    public function show(User $user)
-    {
-        return response()->json($user->load('roles'));
-    }
-
-    public function update(UserRequest $request, User $user)
-    {
-        $data = $request->validated();
-
-        if (!empty($data['password'])) {
+        try {
+            $data = $request->validated();
             $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
+
+            $user = User::create($data);
+            $user->syncRoles([$data['role']]);
+
+            return response()->json([
+                'message' => 'User created successfully',
+                'data' => $user->load('roles')
+            ], 201);
+        } catch (\Throwable $e) {
+            Log::error('Error creating user: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['message' => 'Failed to create user'], 500);
         }
-
-        $user->update($data);
-
-        if (!empty($data['role'])) {
-            $user->syncRoles([]); 
-            $user->assignRole($data['role']);
-        }
-
-        return response()->json(['message' => 'User updated successfully', 'data' => $user->load('roles')]);
     }
 
-    public function destroy(User $user)
+    public function show(User $user): JsonResponse
     {
-        $user->delete();
-        return response()->json(['message' => 'User deleted successfully']);
+        try {
+            return response()->json($user->load('roles'));
+        } catch (\Throwable $e) {
+            Log::error("Error showing user {$user->id}: " . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['message' => 'Failed to retrieve user'], 500);
+        }
+    }
+
+    public function update(UserRequest $request, User $user): JsonResponse
+    {
+        try {
+            $data = $request->validated();
+
+            if (!empty($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            } else {
+                unset($data['password']);
+            }
+
+            $user->update($data);
+
+            if (!empty($data['role'])) {
+                $user->syncRoles([]);
+                $user->assignRole($data['role']);
+            }
+
+            return response()->json([
+                'message' => 'User updated successfully',
+                'data' => $user->load('roles')
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Error updating user {$user->id}: " . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['message' => 'Failed to update user'], 500);
+        }
+    }
+
+    public function destroy(User $user): JsonResponse
+    {
+        try {
+            $user->delete();
+            return response()->json(['message' => 'User deleted successfully']);
+        } catch (\Throwable $e) {
+            Log::error("Error deleting user {$user->id}: " . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['message' => 'Failed to delete user'], 500);
+        }
     }
 }
