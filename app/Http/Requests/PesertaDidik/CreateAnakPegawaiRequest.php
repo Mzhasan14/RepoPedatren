@@ -44,7 +44,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'tempat_lahir' => 'required|string|max:50',
             'no_telepon' => 'required|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
-            'email' => 'required|email|max:100|unique:biodata,email',
+            'email' => 'nullable|email|max:100|unique:biodata,email',
 
             'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'nama_pendidikan_terakhir' => 'nullable|string|max:100',
@@ -149,9 +149,9 @@ class CreateAnakPegawaiRequest extends FormRequest
                 }
             }
 
-            if ($this->filled('no_induk') && ! $this->filled('lembaga_id')) {
-                $validator->errors()->add('lembaga_id', 'Lembaga wajib diisi jika No Induk diisi.');
-            }
+            // if ($this->filled('no_induk') && ! $this->filled('lembaga_id')) {
+            //     $validator->errors()->add('lembaga_id', 'Lembaga wajib diisi jika No Induk diisi.');
+            // }
 
             // Validasi: jika wilayah diisi, maka blok, kamar, dan tanggal masuk domisili wajib
             if ($this->filled('wilayah_id')) {

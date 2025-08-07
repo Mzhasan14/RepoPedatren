@@ -64,7 +64,7 @@ use App\Http\Controllers\api\PDF\PDFController;
 Route::post('register', [AuthController::class, 'register'])
     ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 
-Route::apiResource('pengguna', UserController::class); 
+Route::apiResource('users', UserController::class); 
 
 Route::post('login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1')
