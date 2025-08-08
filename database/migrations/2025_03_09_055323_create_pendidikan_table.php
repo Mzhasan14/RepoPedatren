@@ -38,6 +38,11 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
+
+            $table->index('lembaga_id', 'idx_pendidikan_lembaga_id');
+            $table->index('jurusan_id', 'idx_pendidikan_jurusan_id');
+            $table->index('kelas_id', 'idx_pendidikan_kelas_id');
+            $table->index('rombel_id', 'idx_pendidikan_rombel_id');
         });
     }
 

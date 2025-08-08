@@ -33,6 +33,10 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
+
+            $table->index('wilayah_id', 'idx_domisili_wilayah_id');
+            $table->index('blok_id', 'idx_domisili_blok_id');
+            $table->index('kamar_id', 'idx_domisili_kabupaten_id');
         });
     }
 
