@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\api\PesertaDidik;
 
 use App\Exports\BaseExport;
+use Illuminate\Http\Request;
+use App\Imports\SantriImport;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Services\PesertaDidik\PesertaDidikService;
 use App\Http\Requests\PesertaDidik\CreatePesertaDidikRequest;
 use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
-use App\Services\PesertaDidik\PesertaDidikService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
 
 class PesertaDidikController extends Controller
 {
@@ -151,5 +153,22 @@ class PesertaDidikController extends Controller
         $filename = "peserta_didik_{$now}.xlsx";
 
         return Excel::download(new BaseExport($formatted, $headings), $filename);
+    }
+
+    public function importSantri(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+        $user = Auth::id();
+        try {
+            Excel::import(new SantriImport($user), $request->file('file'));
+            return response()->json(['message' => 'Import berhasil'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Import gagal',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 }

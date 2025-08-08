@@ -168,8 +168,12 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
+Route::prefix('import')->middleware(['throttle:200,1'])->group(function () {
+    Route::post('/santri', [PesertaDidikController::class, 'importSantri']);
+});
+
 // Export
-Route::prefix('export')->middleware(['throttle:15,1'])->group(function () {
+Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:200,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'exportExcel'])->name('nondomisili.export');
