@@ -170,6 +170,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
 
 Route::prefix('import')->middleware(['throttle:200,1'])->group(function () {
     Route::post('/santri', [PesertaDidikController::class, 'importSantri']);
+    Route::post('/pegawai', [PegawaiController::class, 'importPegawai']);
 });
 
 // Export

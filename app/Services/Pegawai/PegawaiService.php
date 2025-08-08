@@ -5,18 +5,12 @@ namespace App\Services\Pegawai;
 use App\Models\Berkas;
 use App\Models\Biodata;
 use App\Models\Keluarga;
-use App\Models\Pegawai\JadwalPelajaran;
-use App\Models\Pegawai\JamPelajaran;
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\MataPelajaran;
-use App\Models\Pegawai\MateriAjar;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
 use App\Models\Pegawai\WaliKelas;
-use App\Models\Pendidikan\Jurusan;
-use App\Models\Pendidikan\Kelas;
-use App\Models\Pendidikan\Lembaga;
 use App\Models\Santri;
 use App\Models\WargaPesantren;
 use Illuminate\Http\Request;
@@ -81,9 +75,7 @@ class PegawaiService
                     ->whereNull('wali_kelas.periode_akhir');
             })
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->whereNull('pegawai.deleted_at')
-            ->where('pegawai.status_aktif', 'aktif');
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
 
         return $query;
     }
@@ -96,18 +88,20 @@ class PegawaiService
             $fields = $fields ?? [
                 'pegawai.biodata_id as biodata_uuid',
                 'b.nama',
-                'wp.niup',
-                'pengurus.id as pengurus',
-                'karyawan.id as karyawan',
-                'pengajar.id as pengajar',
-                DB::raw('TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) AS umur'),
+                DB::raw('COALESCE(b.nik, b.no_passport) AS identitas'),
+                DB::raw("CASE 
+                    WHEN b.jenis_kelamin = 'l' THEN 'Laki-laki' 
+                    WHEN b.jenis_kelamin = 'p' THEN 'Perempuan' 
+                    ELSE 'Tidak diketahui' 
+                END AS jenis_kelamin"),
                 DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
                             GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
                             GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
-                            GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', ')
+                            GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', '),
+                            GROUP_CONCAT(DISTINCT CASE WHEN wali_kelas.id IS NOT NULL THEN 'Wali Kelas' END SEPARATOR ', ')
                         )) as status"),
-                'b.nama_pendidikan_terakhir as pendidikanTerkahir',
                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil"),
+                'pegawai.status_aktif'
             ];
 
             return $query
@@ -115,12 +109,10 @@ class PegawaiService
                 ->groupBy(
                     'pegawai.biodata_id',
                     'b.nama',
-                    'wp.niup',
-                    'pengurus.id',
-                    'karyawan.id',
-                    'pengajar.id',
-                    'b.tanggal_lahir',
-                    'b.nama_pendidikan_terakhir'
+                    'b.nik',
+                    'b.no_passport',
+                    'b.jenis_kelamin',
+                    'pegawai.status_aktif'
                 )
                 ->distinct();
         } catch (\Exception $e) {
@@ -139,16 +131,13 @@ class PegawaiService
         return collect($results->items())->map(fn ($item) => [
             'biodata_id' => $item->biodata_uuid,
             'nama' => $item->nama,
-            'niup' => $item->niup ?? '-',
-            'umur' => $item->umur,
+            'nik_or_passport' => $item->identitas ?? '-',
+            'jenis_kelamin' => $item->jenis_kelamin,
             'status' => $item->status,
-            'pendidikanTerkahir' => $item->pendidikanTerkahir,
-            'pengurus' => $item->pengurus ? true : false,
-            'karyawan' => $item->karyawan ? true : false,
-            'pengajar' => $item->pengajar ? true : false,
             'foto_profil' => $item->foto_profil
             ? asset($item->foto_profil)
             : null,
+            'status_aktif' => $item->status_aktif,
         ]);
     }
 
