@@ -6,10 +6,12 @@ use App\Exports\BaseExport;
 use App\Exports\Pegawai\PegawaiExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pegawai\CreatePegawaiRequest;
+use App\Imports\PegawaiImport;
 use App\Models\Pegawai\Pegawai;
 use App\Services\Pegawai\Filters\FilterPegawaiService as FiltersFilterPegawaiService;
 use App\Services\Pegawai\PegawaiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -154,5 +156,21 @@ class PegawaiController extends Controller
         $filename = "pegawai_{$now}.xlsx";
 
         return Excel::download(new BaseExport($formatted, $headings), $filename);
+    }
+    public function importPegawai(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+        $user = Auth::id();
+        try {
+            Excel::import(new PegawaiImport($user), $request->file('file'));
+            return response()->json(['message' => 'Import berhasil'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Import gagal',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 }
