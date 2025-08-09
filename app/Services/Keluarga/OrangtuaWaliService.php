@@ -36,7 +36,7 @@ class OrangtuaWaliService
         return DB::table('orang_tua_wali AS o')
             ->join('biodata AS b', 'o.id_biodata', '=', 'b.id')
             // join berkas pas foto terakhir
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->join('hubungan_keluarga AS hk', 'hk.id', '=', 'o.id_hubungan_keluarga')
             ->join('keluarga AS kel', 'b.id', '=', 'kel.id_biodata') // dari orangtua ke tabel keluarga
@@ -44,7 +44,7 @@ class OrangtuaWaliService
             ->join('biodata as ba', 'ka.id_biodata', '=', 'ba.id') // dari keluarga ke anak
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             // hanya yang berstatus aktif
-            ->where(fn ($q) => $q->where('o.status', true))
+            ->where(fn($q) => $q->where('o.status', true))
             ->select([
                 'o.id_biodata AS biodata_id',
                 'o.id',
@@ -79,12 +79,12 @@ class OrangtuaWaliService
                 'kel.updated_at',
                 'br.file_path',
             ])
-            ->orderBy('o.id');
+            ->latest('b.created_at');
     }
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_id,
             'id' => $item->id,
             'nik' => $item->identitas,
@@ -106,7 +106,7 @@ class OrangtuaWaliService
 
         return [
             'status' => true,
-            'data' => $list->map(fn ($item) => [
+            'data' => $list->map(fn($item) => [
                 'id' => $item->id,
                 'id_biodata' => $item->id_biodata,
                 'no_passport' => $item->biodata->no_passport,
@@ -274,7 +274,6 @@ class OrangtuaWaliService
                     ->log('Data orang tua baru disimpan');
 
                 return ['status' => true, 'data' => $ortu];
-
             } catch (\Exception $e) {
                 Log::error('Error creating orangtua: ' . $e->getMessage());
                 throw $e;
@@ -484,7 +483,7 @@ class OrangtuaWaliService
             activity('ortu_delete')
                 ->performedOn($ortu)
                 ->withProperties(['deleted' => $ortu])
-                ->tap(fn ($activity) => $activity->batch_uuid = $batchUuid)
+                ->tap(fn($activity) => $activity->batch_uuid = $batchUuid)
                 ->event('delete_ortu')
                 ->log('Data orang tua dihapus');
 
