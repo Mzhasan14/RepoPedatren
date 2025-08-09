@@ -160,15 +160,36 @@ class PesertaDidikController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx,xls'
         ]);
+
         $user = Auth::id();
+
         try {
             Excel::import(new SantriImport($user), $request->file('file'));
             return response()->json(['message' => 'Import berhasil'], 200);
         } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+
+            // Parsing baris error
+            if (preg_match('/baris (\d+)/i', $errorMessage, $matches)) {
+                $line = $matches[1];
+                $friendlyMessage = "Terjadi kesalahan pada baris ke-$line dalam file Excel. ";
+
+                // Ambil pesan setelah tanda "→" jika ada
+                $parts = explode('→', $errorMessage);
+                if (isset($parts[1])) {
+                    $friendlyMessage .= trim($parts[1]);
+                } else {
+                    $friendlyMessage .= $errorMessage;
+                }
+            } else {
+                // Jika tidak ada info baris, tampilkan pesan error asli supaya user dapat detail
+                $friendlyMessage = "Terjadi kesalahan saat import: " . $errorMessage;
+            }
+
             return response()->json([
                 'message' => 'Import gagal',
-                'error'   => $e->getMessage()
-            ], 500);
+                'error' => $friendlyMessage,
+            ], 422);
         }
     }
 }

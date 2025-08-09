@@ -65,6 +65,9 @@ Route::post('register', [AuthController::class, 'register'])
     ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 
 Route::apiResource('users', UserController::class); 
+// Route::post('users/change-status/{user}', [UserController::class, 'changeStatus'])
+//     ->middleware(['auth:sanctum', 'role:admin|superadmin'])
+//     ->name('users.changeStatus');
 
 Route::post('login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1')

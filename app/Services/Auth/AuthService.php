@@ -52,6 +52,15 @@ class AuthService
             ];
         }
 
+        if (! $user->status) {
+            return [
+                'success' => false,
+                'message' => 'User is inactive.',
+                'data' => null,
+                'status' => 200,
+            ];
+        }
+
         if (! Hash::check($password, $user->password)) {
             return [
                 'success' => false,

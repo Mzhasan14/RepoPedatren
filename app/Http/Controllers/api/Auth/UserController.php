@@ -89,4 +89,20 @@ class UserController extends Controller
             return response()->json(['message' => 'Failed to delete user'], 500);
         }
     }
+
+    // public function changeStatus(User $user): JsonResponse
+    // {
+    //     try {
+    //         $user->status = !$user->status;
+    //         $user->save();
+
+    //         return response()->json([
+    //             'message' => 'User status updated successfully',
+    //             'data' => $user
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         Log::error("Error changing status for user {$user->id}: " . $e->getMessage(), ['exception' => $e]);
+    //         return response()->json(['message' => 'Failed to change user status'], 500);
+    //     }
+    // }
 }

@@ -17,13 +17,13 @@ return new class extends Migration
             $table->unsignedBigInteger('provinsi_id')->nullable();
             $table->unsignedBigInteger('kabupaten_id')->nullable();
             $table->unsignedBigInteger('kecamatan_id')->nullable();
-            $table->string('jalan')->nullable();
+            $table->string('jalan')->nullable()->nullable();
             $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
             $table->string('no_passport')->nullable();
             $table->enum('jenis_kelamin', ['l', 'p']);
-            $table->date('tanggal_lahir');
-            $table->string('tempat_lahir', 50);
+            $table->date('tanggal_lahir')->nullable();
+            $table->string('tempat_lahir', 50)->nullable();
             $table->char('nik', 16)->nullable();
             $table->string('no_telepon', 20)->nullable();
             $table->string('no_telepon_2', 20)->nullable();

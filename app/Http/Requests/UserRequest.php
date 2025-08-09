@@ -30,6 +30,7 @@ class UserRequest extends FormRequest
             'email' => "required|email|max:255|unique:users,email,$userId",
             'password' => $this->isMethod('post') ? 'required|string|min:6' : 'nullable|string|min:6',
             'role' => 'required|string|exists:roles,name',
+            'status' => 'required|integer|in:0,1',
         ];
     }
 
