@@ -31,12 +31,34 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
         DB::beginTransaction();
         try {
+            $processedNiks = [];
             foreach ($rows as $index => $rawRow) {
                 $excelRow = $index + 2; // +2 karena heading row di baris 1
 
                 // Normalisasi keys header → jadi array biasa dengan key terstandard
                 $row = $this->normalizeRow($rawRow->toArray());
+                // Validasi minimal satu role aktif
+                $statusKaryawan = isset($row['status_karyawan']) ? strtolower((string)$row['status_karyawan']) : 'tidak';
+                $statusPengurus = isset($row['status_pengurus']) ? strtolower((string)$row['status_pengurus']) : 'tidak';
+                $statusPengajar = isset($row['status_pengajar']) ? strtolower((string)$row['status_pengajar']) : 'tidak';
+                $statusWaliKelas = isset($row['status_wali_kelas']) ? strtolower((string)$row['status_wali_kelas']) : 'tidak';
 
+                if (
+                    $statusKaryawan !== 'iya' &&
+                    $statusPengurus !== 'iya' &&
+                    $statusPengajar !== 'iya' &&
+                    $statusWaliKelas !== 'iya'
+                ) {
+                    throw new \Exception("Minimal satu dari 'status_karyawan', 'status_pengurus', 'status_pengajar', atau 'status_wali_kelas' harus diisi 'iya' di baris {$excelRow}.");
+                }
+                $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
+
+                if ($nikRaw !== '') {
+                    if (in_array($nikRaw, $processedNiks)) {
+                        throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow}).");
+                    }
+                    $processedNiks[] = $nikRaw;
+                }
                 // ===== Insert Biodata =====
                 $biodataId = Str::uuid()->toString();
 
@@ -60,6 +82,10 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 if ($kewarganegaraan === 'WNA' && $nikRaw !== '') {
                     throw new \Exception("Kewarganegaraan 'WNA' — kolom 'nik' harus dikosongkan di baris {$excelRow}.");
                 }
+                // 3) Minimal salah satu wajib diisi (NIK atau No Passport)
+                if ($nikRaw === '' && $noPassportRaw === '') {
+                    throw new \Exception("Minimal kolom 'nik' atau 'no_passport' harus diisi di baris {$excelRow}.");
+                }
 
                 // Tetapkan nilai final untuk insert (mengikuti logic semula)
                 $nik = null;
@@ -73,7 +99,20 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     if ($nikRaw !== '') $nik = $nikRaw;
                     if ($noPassportRaw !== '') $noPassport = $noPassportRaw;
                 }
+                // ===== CEK DUPLIKASI NIK / NO PASSPORT =====
+                if (!empty($nikRaw)) {
+                    $exists = DB::table('biodata')->where('nik', $nikRaw)->exists();
+                    if ($exists) {
+                        throw new \Exception("NIK '{$nikRaw}' sudah terdaftar di database (baris {$excelRow}).");
+                    }
+                }
 
+                if (!empty($noPassportRaw)) {
+                    $exists = DB::table('biodata')->where('no_passport', $noPassportRaw)->exists();
+                    if ($exists) {
+                        throw new \Exception("No Passport '{$noPassportRaw}' sudah terdaftar di database (baris {$excelRow}).");
+                    }
+                }
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
                     'nama' => $row['nama_lengkap'] ?? null,

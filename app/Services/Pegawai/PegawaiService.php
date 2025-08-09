@@ -225,59 +225,59 @@ class PegawaiService
                     ];
                 }
 
-                // Nonaktifkan role-role sebelumnya
-                $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)->latest()->first();
+                // // Nonaktifkan role-role sebelumnya
+                // $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)->latest()->first();
 
-                if ($pegawaiNonaktif) {
-                    $roleTables = [
-                        'karyawan' => Karyawan::class,
-                        'pengajar' => Pengajar::class,
-                        'pengurus' => Pengurus::class,
-                        'wali_kelas' => WaliKelas::class,
-                    ];
+                // if ($pegawaiNonaktif) {
+                //     $roleTables = [
+                //         'karyawan' => Karyawan::class,
+                //         'pengajar' => Pengajar::class,
+                //         'pengurus' => Pengurus::class,
+                //         'wali_kelas' => WaliKelas::class,
+                //     ];
 
-                    foreach ($roleTables as $key => $model) {
-                        // Tidak lagi tergantung input, semua peran dicek
-                        $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
-                            ->where('status_aktif', 'aktif')
-                            ->first();
+                //     foreach ($roleTables as $key => $model) {
+                //         // Tidak lagi tergantung input, semua peran dicek
+                //         $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
+                //             ->where('status_aktif', 'aktif')
+                //             ->first();
 
-                        if ($role) {
-                            $dataUpdate = ['status_aktif' => 'tidak aktif'];
+                //         if ($role) {
+                //             $dataUpdate = ['status_aktif' => 'tidak aktif'];
 
-                            switch ($key) {
-                                case 'karyawan':
-                                    $dataUpdate['tanggal_selesai'] = now();
-                                    break;
-                                case 'pengajar':
-                                    $dataUpdate['tahun_akhir'] = now();
+                //             switch ($key) {
+                //                 case 'karyawan':
+                //                     $dataUpdate['tanggal_selesai'] = now();
+                //                     break;
+                //                 case 'pengajar':
+                //                     $dataUpdate['tahun_akhir'] = now();
 
-                                    $mapelList = MataPelajaran::with('jadwalPelajaran')
-                                        ->where('pengajar_id', $role->id)
-                                        ->where('status', true)
-                                        ->get();
+                //                     $mapelList = MataPelajaran::with('jadwalPelajaran')
+                //                         ->where('pengajar_id', $role->id)
+                //                         ->where('status', true)
+                //                         ->get();
 
-                                    foreach ($mapelList as $mapel) {
-                                        // Hapus semua jadwal pelajaran terkait
-                                        $mapel->jadwalPelajaran()->delete();
+                //                     foreach ($mapelList as $mapel) {
+                //                         // Hapus semua jadwal pelajaran terkait
+                //                         $mapel->jadwalPelajaran()->delete();
 
-                                        // Nonaktifkan mata pelajaran
-                                        $mapel->status = false;
-                                        $mapel->save();
-                                    }
-                                    break;
-                                case 'pengurus':
-                                    $dataUpdate['tanggal_akhir'] = now();
-                                    break;
-                                case 'wali_kelas':
-                                    $dataUpdate['periode_akhir'] = now();
-                                    break;
-                            }
+                //                         // Nonaktifkan mata pelajaran
+                //                         $mapel->status = false;
+                //                         $mapel->save();
+                //                     }
+                //                     break;
+                //                 case 'pengurus':
+                //                     $dataUpdate['tanggal_akhir'] = now();
+                //                     break;
+                //                 case 'wali_kelas':
+                //                     $dataUpdate['periode_akhir'] = now();
+                //                     break;
+                //             }
 
-                            $role->update($dataUpdate);
-                        }
-                    }
-                }
+                //             $role->update($dataUpdate);
+                //         }
+                //     }
+                // }
 
                 $biodata = $existingBiodata;
             } else {
