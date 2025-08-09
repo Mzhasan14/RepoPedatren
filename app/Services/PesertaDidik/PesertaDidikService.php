@@ -52,6 +52,7 @@ class PesertaDidikService
             // Tambahkan default join lain jika dibutuhkan oleh kebanyakan fitur
             ->where(fn($q) => $q->where('s.status', 'aktif')
                 ->orWhere('pd.status', '=', 'aktif'))
+            ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'));
 

@@ -48,6 +48,7 @@ class KhadamService
             ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('kh.status', true)
+            ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('kh.deleted_at'));

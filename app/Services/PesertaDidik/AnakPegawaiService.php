@@ -65,6 +65,7 @@ class AnakPegawaiService
             ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('ap.status', true)
+            ->where('b.status', true)
             ->where(function ($q) {
                 $q->where('s.status', 'aktif')
                     ->orWhere('pd.status', 'aktif');
