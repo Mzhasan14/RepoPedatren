@@ -86,7 +86,19 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 if ($nikRaw === '' && $noPassportRaw === '') {
                     throw new \Exception("Minimal kolom 'nik' atau 'no_passport' harus diisi di baris {$excelRow}.");
                 }
-
+                // ===== START penambahan validasi no_kk sesuai kewarganegaraan =====
+                $noKkRaw = null;
+                if ($kewarganegaraan === 'WNA') {
+                    $angka13Digit = (string) random_int(1000000000000, 9999999999999);
+                    $noKkRaw = 'WNA' . $angka13Digit;
+                } elseif ($kewarganegaraan === 'WNI') {
+                    $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : '';
+                    if ($noKkRaw === '') {
+                        throw new \Exception("Kolom 'no_kk' harus diisi untuk kewarganegaraan WNI di baris {$excelRow}.");
+                    }
+                } else {
+                    $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : null;
+                }
                 // Tetapkan nilai final untuk insert (mengikuti logic semula)
                 $nik = null;
                 $noPassport = null;
@@ -133,13 +145,35 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     'jalan' => $row['jalan'] ?? null,
                     'kode_pos' => $row['kode_pos'] ?? null,
                     'smartcard' => $row['smartcard'] ?? null,
+                    'anak_keberapa' => $row['anak_keberapa'] ?? null,
+                    'dari_saudara' => $row['dari_saudara'] ?? null,
+                    'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
                     'status' => true,
                     'wafat' => false,
                     'created_at' => now(),
                     'updated_at' => now(),
                     'created_by' => $this->userId ?? 1
                 ]);
-
+                DB::table('keluarga')->insert([
+                    'id_biodata' => $biodataId,
+                    'no_kk' => $noKkRaw,
+                    'status' => 1,
+                    'created_by' => $this->userId ?? 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                // ===== Insert Warga Pesantren (opsional) jika ada =====
+                $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : null;
+                if ($niupRaw) {
+                    DB::table('warga_pesantren')->insert([
+                        'biodata_id' => $biodataId,
+                        'niup' => $niupRaw,
+                        'status' => 1,
+                        'created_by' => $this->userId ?? 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
                 // ===== Insert Pegawai =====
                 $pegawaiId = DB::table('pegawai')->insertGetId([
                     'biodata_id' => $biodataId,
