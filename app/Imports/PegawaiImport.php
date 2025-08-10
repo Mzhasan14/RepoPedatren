@@ -37,28 +37,57 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                 // Normalisasi keys header → jadi array biasa dengan key terstandard
                 $row = $this->normalizeRow($rawRow->toArray());
-                // Validasi minimal satu role aktif
-                $statusKaryawan = isset($row['status_karyawan']) ? strtolower((string)$row['status_karyawan']) : 'tidak';
-                $statusPengurus = isset($row['status_pengurus']) ? strtolower((string)$row['status_pengurus']) : 'tidak';
-                $statusPengajar = isset($row['status_pengajar']) ? strtolower((string)$row['status_pengajar']) : 'tidak';
-                $statusWaliKelas = isset($row['status_wali_kelas']) ? strtolower((string)$row['status_wali_kelas']) : 'tidak';
 
-                if (
-                    $statusKaryawan !== 'iya' &&
-                    $statusPengurus !== 'iya' &&
-                    $statusPengajar !== 'iya' &&
-                    $statusWaliKelas !== 'iya'
-                ) {
-                    throw new \Exception("Minimal satu dari 'status_karyawan', 'status_pengurus', 'status_pengajar', atau 'status_wali_kelas' harus diisi 'iya' di baris {$excelRow}.");
+                // =========================
+                // Deteksi otomatis role berdasarkan keberadaan data kolom entitas
+                // (TIDAK lagi memeriksa kolom status_karyawan/status_pengajar/...)
+                // =========================
+                $willInsertKaryawan = (
+                    (isset($row['karyawan_golongan_jabatan']) && trim((string)$row['karyawan_golongan_jabatan']) !== '') ||
+                    (isset($row['karyawan_lembaga']) && trim((string)$row['karyawan_lembaga']) !== '') ||
+                    (isset($row['karyawan_jabatan']) && trim((string)$row['karyawan_jabatan']) !== '') ||
+                    (isset($row['karyawan_keterangan_jabatan']) && trim((string)$row['karyawan_keterangan_jabatan']) !== '') ||
+                    (isset($row['karyawan_tanggal_mulai']) && trim((string)$row['karyawan_tanggal_mulai']) !== '')
+                );
+
+                $willInsertPengajar = (
+                    (isset($row['pengajar_kategori_golongan']) && trim((string)$row['pengajar_kategori_golongan']) !== '') ||
+                    (isset($row['pengajar_golongan']) && trim((string)$row['pengajar_golongan']) !== '') ||
+                    (isset($row['pengajar_lembaga']) && trim((string)$row['pengajar_lembaga']) !== '') ||
+                    (isset($row['pengajar_jabatan']) && trim((string)$row['pengajar_jabatan']) !== '') ||
+                    (isset($row['pengajar_tahun_masuk']) && trim((string)$row['pengajar_tahun_masuk']) !== '')
+                );
+
+                $willInsertPengurus = (
+                    (isset($row['pengurus_golongan_jabatan']) && trim((string)$row['pengurus_golongan_jabatan']) !== '') ||
+                    (isset($row['pengurus_satuan_kerja']) && trim((string)$row['pengurus_satuan_kerja']) !== '') ||
+                    (isset($row['pengurus_jabatan']) && trim((string)$row['pengurus_jabatan']) !== '') ||
+                    (isset($row['pengurus_keterangan_jabatan']) && trim((string)$row['pengurus_keterangan_jabatan']) !== '') ||
+                    (isset($row['pengurus_tanggal_mulai']) && trim((string)$row['pengurus_tanggal_mulai']) !== '')
+                );
+
+                $willInsertWali = (
+                    (isset($row['wali_lembaga']) && trim((string)$row['wali_lembaga']) !== '') ||
+                    (isset($row['wali_jurusan']) && trim((string)$row['wali_jurusan']) !== '') ||
+                    (isset($row['wali_kelas']) && trim((string)$row['wali_kelas']) !== '') ||
+                    (isset($row['wali_rombel']) && trim((string)$row['wali_rombel']) !== '') ||
+                    (isset($row['wali_periode_awal']) && trim((string)$row['wali_periode_awal']) !== '')
+                );
+
+                // Validasi: minimal satu role harus ada datanya (berdasarkan kolom entitas)
+                if (!($willInsertKaryawan || $willInsertPengajar || $willInsertPengurus || $willInsertWali)) {
+                    throw new \Exception("Minimal satu role (karyawan, pengajar, pengurus, atau wali kelas) harus memiliki data di baris {$excelRow}.");
                 }
-                $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
 
+                // ====== NIK DUPLIKAT FILE CHECK ======
+                $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
                 if ($nikRaw !== '') {
                     if (in_array($nikRaw, $processedNiks)) {
                         throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow}).");
                     }
                     $processedNiks[] = $nikRaw;
                 }
+
                 // ===== Insert Biodata =====
                 $biodataId = Str::uuid()->toString();
 
@@ -70,23 +99,20 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
 
                 // ===== VALIDASI BARU: NIK ↔ NO PASSPORT =====
-                // 1) Tidak boleh diisi bersamaan
                 if ($nikRaw !== '' && $noPassportRaw !== '') {
                     throw new \Exception("Kolom 'nik' dan 'no_passport' tidak boleh diisi bersamaan di baris {$excelRow}.");
                 }
-
-                // 2) Konsistensi dengan kewarganegaraan (opsional tapi berguna)
                 if ($kewarganegaraan === 'WNI' && $noPassportRaw !== '') {
                     throw new \Exception("Kewarganegaraan 'WNI' — kolom 'no_passport' harus dikosongkan di baris {$excelRow}.");
                 }
                 if ($kewarganegaraan === 'WNA' && $nikRaw !== '') {
                     throw new \Exception("Kewarganegaraan 'WNA' — kolom 'nik' harus dikosongkan di baris {$excelRow}.");
                 }
-                // 3) Minimal salah satu wajib diisi (NIK atau No Passport)
                 if ($nikRaw === '' && $noPassportRaw === '') {
                     throw new \Exception("Minimal kolom 'nik' atau 'no_passport' harus diisi di baris {$excelRow}.");
                 }
-                // ===== START penambahan validasi no_kk sesuai kewarganegaraan =====
+
+                // ===== No KK berdasarkan kewarganegaraan =====
                 $noKkRaw = null;
                 if ($kewarganegaraan === 'WNA') {
                     $angka13Digit = (string) random_int(1000000000000, 9999999999999);
@@ -99,7 +125,8 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 } else {
                     $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : null;
                 }
-                // Tetapkan nilai final untuk insert (mengikuti logic semula)
+
+                // Tetapkan nilai final untuk insert
                 $nik = null;
                 $noPassport = null;
                 if ($kewarganegaraan === 'WNI') {
@@ -107,11 +134,11 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 } elseif ($kewarganegaraan === 'WNA') {
                     $noPassport = $noPassportRaw ?: null;
                 } else {
-                    // Jika kewarganegaraan tidak diisi atau lain, gunakan apa yang ada (tetap jaga eksklusif)
                     if ($nikRaw !== '') $nik = $nikRaw;
                     if ($noPassportRaw !== '') $noPassport = $noPassportRaw;
                 }
-                // ===== CEK DUPLIKASI NIK / NO PASSPORT =====
+
+                // ===== CEK DUPLIKASI NIK / NO PASSPORT DI DB =====
                 if (!empty($nikRaw)) {
                     $exists = DB::table('biodata')->where('nik', $nikRaw)->exists();
                     if ($exists) {
@@ -125,6 +152,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         throw new \Exception("No Passport '{$noPassportRaw}' sudah terdaftar di database (baris {$excelRow}).");
                     }
                 }
+
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
                     'nama' => $row['nama_lengkap'] ?? null,
@@ -154,6 +182,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     'updated_at' => now(),
                     'created_by' => $this->userId ?? 1
                 ]);
+
                 DB::table('keluarga')->insert([
                     'id_biodata' => $biodataId,
                     'no_kk' => $noKkRaw,
@@ -162,6 +191,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
                 // ===== Insert Warga Pesantren (opsional) jika ada =====
                 $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : null;
                 if ($niupRaw) {
@@ -174,6 +204,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         'updated_at' => now(),
                     ]);
                 }
+
                 // ===== Insert Pegawai =====
                 $pegawaiId = DB::table('pegawai')->insertGetId([
                     'biodata_id' => $biodataId,
@@ -184,7 +215,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 ]);
 
                 // ===== Role: KARYAWAN =====
-                if (isset($row['status_karyawan']) && strtolower((string)$row['status_karyawan']) === 'iya') {
+                if ($willInsertKaryawan) {
                     DB::table('karyawan')->insert([
                         'pegawai_id' => $pegawaiId,
                         'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['karyawan_golongan_jabatan'] ?? null, $excelRow, false),
@@ -200,7 +231,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 }
 
                 // ===== Role: PENGAJAR =====
-                if (isset($row['status_pengajar']) && strtolower((string)$row['status_pengajar']) === 'iya') {
+                if ($willInsertPengajar) {
                     $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
                     $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
 
@@ -218,7 +249,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 }
 
                 // ===== Role: PENGURUS =====
-                if (isset($row['status_pengurus']) && strtolower((string)$row['status_pengurus']) === 'iya') {
+                if ($willInsertPengurus) {
                     DB::table('pengurus')->insert([
                         'pegawai_id' => $pegawaiId,
                         'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['pengurus_golongan_jabatan'] ?? null, $excelRow, false),
@@ -234,7 +265,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 }
 
                 // ===== Role: WALI KELAS =====
-                if (isset($row['status_wali_kelas']) && strtolower((string)$row['status_wali_kelas']) === 'iya') {
+                if ($willInsertWali) {
                     DB::table('wali_kelas')->insert([
                         'pegawai_id' => $pegawaiId,
                         'lembaga_id' => $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false),
@@ -259,6 +290,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             throw new \Exception("Error di baris Excel: {$line} → " . $e->getMessage());
         }
     }
+
 
     /**
      * Normalize keys dari header Excel:
