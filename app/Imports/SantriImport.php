@@ -197,21 +197,22 @@ class SantriImport implements ToCollection, WithHeadingRow
                     throw new \Exception("Kolom 'Nomor KK' wajib diisi untuk WNI di baris {$excelRow}");
                 }
 
-                $existsKeluarga = DB::table('keluarga')
-                    ->where('no_kk', $generatedNoKK)
-                    ->where('id_biodata', $biodataId)
-                    ->exists();
+                // $existsKeluarga = DB::table('keluarga')
+                //     ->where('no_kk', $generatedNoKK)
+                //     ->where('id_biodata', $biodataId)
+                //     ->exists();
 
-                if ($existsKeluarga) {
-                    DB::table('keluarga')->insert([
-                        'no_kk' => $generatedNoKK,
-                        'id_biodata' => $biodataId,
-                        'status' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
-                }
+                // if ($existsKeluarga) {
+                // }
+
+                DB::table('keluarga')->insert([
+                    'no_kk' => $generatedNoKK,
+                    'id_biodata' => $biodataId,
+                    'status' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'created_by' => $this->userId ?? 1
+                ]);
 
                 // Ayah
                 // Ayah
