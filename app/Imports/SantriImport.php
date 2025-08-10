@@ -29,6 +29,21 @@ class SantriImport implements ToCollection, WithHeadingRow
             return;
         }
 
+        // Filter hanya row yang punya minimal 1 kolom terisi
+        $rows = $rows->filter(function ($row) {
+            // Cek apakah ada kolom yang tidak kosong
+            foreach ($row as $value) {
+                if (trim((string) $value) !== '') {
+                    return true; // ada data
+                }
+            }
+            return false; // semua kolom kosong
+        });
+
+        if ($rows->isEmpty()) {
+            return; // Tidak ada data valid
+        }
+
         DB::beginTransaction();
 
         try {
@@ -303,10 +318,9 @@ class SantriImport implements ToCollection, WithHeadingRow
                     }
                 }
 
-
                 $mondokVal = strtolower((string)($row['status_mondok'] ?? ''));
 
-                if ($mondokVal === 'iya') {
+                if ($mondokVal === '' || $mondokVal === 'iya') {
                     $santriId = DB::table('santri')->insertGetId([
                         'biodata_id' => $biodataId,
                         'nis' => $row['no_induk_santri'] ?? null,
@@ -592,9 +606,9 @@ class SantriImport implements ToCollection, WithHeadingRow
     protected function findAngkatanId($value, $kategori, int $excelRow, bool $required = true)
     {
         if (!isset($value) || trim((string)$value) === '') {
-            if ($required) {
-                throw new \Exception("Angkatan untuk kategori '{$kategori}' kosong di baris {$excelRow}.");
-            }
+            // if ($required) {
+            //     throw new \Exception("Angkatan untuk kategori '{$kategori}' kosong di baris {$excelRow}.");
+            // }
             return null;
         }
 
@@ -606,9 +620,9 @@ class SantriImport implements ToCollection, WithHeadingRow
             ->first();
 
         if (!$record) {
-            if ($required) {
-                throw new \Exception("Angkatan '{$search}' untuk kategori '{$kategori}' tidak ditemukan di baris {$excelRow}.");
-            }
+            // if ($required) {
+            //     throw new \Exception("Angkatan '{$search}' untuk kategori '{$kategori}' tidak ditemukan di baris {$excelRow}.");
+            // }
             return null;
         }
 

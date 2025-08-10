@@ -204,8 +204,8 @@ class DetailService
             ->join('santri AS s', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('s.status', 'aktif'))
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
-            ->join('blok as bl', 'ds.blok_id', '=', 'bl.id')
-            ->join('kamar as km', 'ds.kamar_id', '=', 'km.id')
+            ->leftJoin('blok as bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftjoin('kamar as km', 'ds.kamar_id', '=', 'km.id')
             ->where('b.id', $biodataId)
             ->where('ds.status', 'aktif')
             ->select([
@@ -224,8 +224,8 @@ class DetailService
             ->join('santri as s', 'rd.santri_id', 's.id')
             ->join('biodata as b', 's.biodata_id', 'b.id')
             ->join('wilayah as w', 'rd.wilayah_id', '=', 'w.id')
-            ->join('blok as bl', 'rd.blok_id', '=', 'bl.id')
-            ->join('kamar as km', 'rd.kamar_id', '=', 'km.id')
+            ->leftjoin('blok as bl', 'rd.blok_id', '=', 'bl.id')
+            ->leftjoin('kamar as km', 'rd.kamar_id', '=', 'km.id')
             ->where('b.id', $biodataId)
             ->select([
                 'rd.id',
