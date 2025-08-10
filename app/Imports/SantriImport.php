@@ -36,6 +36,24 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $excelRow = $index + 3; // data mulai dari baris 3 (baris 1 kosong, baris 2 header)
                 $row = $this->normalizeRow($rawRow->toArray());
 
+                // --- CEK NIK SANTRI PALING AWAL ---
+                $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
+                if ($kewarganegaraan === 'WNI') {
+                    $nik = preg_replace('/\D/', '', (string)($row['nik'] ?? ''));
+                    if (empty($nik)) {
+                        throw new \Exception("Kolom 'NIK' wajib diisi untuk WNI di baris {$excelRow}, kolom 'nik'.");
+                    }
+
+                    $existsNik = DB::table('biodata')
+                        ->where('nik', $nik)
+                        ->exists();
+
+                    if ($existsNik) {
+                        throw new \Exception("NIK '{$nik}' sudah terdaftar di baris {$excelRow}, kolom 'nik' pada file Excel.");
+                    }
+                }
+                // --- AKHIR CEK NIK SANTRI ---
+
                 if (empty($row['nama_lengkap'])) {
                     throw new \Exception("Kolom 'Nama Lengkap' wajib diisi di baris {$excelRow}");
                 }
@@ -160,14 +178,25 @@ class SantriImport implements ToCollection, WithHeadingRow
                 }
 
                 // Santri
-                DB::table('keluarga')->insert([
-                    'no_kk' => $generatedNoKK,
-                    'id_biodata' => $biodataId,
-                    'status' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'created_by' => $this->userId ?? 1
-                ]);
+                if (empty($generatedNoKK)) {
+                    throw new \Exception("Kolom 'Nomor KK' wajib diisi untuk WNI di baris {$excelRow}");
+                }
+
+                $existsKeluarga = DB::table('keluarga')
+                    ->where('no_kk', $generatedNoKK)
+                    ->where('id_biodata', $biodataId)
+                    ->exists();
+
+                if ($existsKeluarga) {
+                    DB::table('keluarga')->insert([
+                        'no_kk' => $generatedNoKK,
+                        'id_biodata' => $biodataId,
+                        'status' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                        'created_by' => $this->userId ?? 1
+                    ]);
+                }
 
                 // Ayah
                 // Ayah
