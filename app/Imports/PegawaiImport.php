@@ -152,6 +152,27 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         throw new \Exception("No Passport '{$noPassportRaw}' sudah terdaftar di database (baris {$excelRow}).");
                     }
                 }
+                // ===== CEK DUPLIKASI NIUP DI DB & EXCEL =====
+
+                // Simpan semua NIUP yang sudah dibaca: key = NIUP, value = baris pertama muncul
+                static $niupSeen = [];
+
+                $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : '';
+
+                if ($niupRaw !== '') {
+
+                    // 1️⃣ Cek duplikasi di file Excel itu sendiri
+                    if (isset($niupSeen[$niupRaw])) {
+                        throw new \Exception("NIUP '{$niupRaw}' duplikat di file Excel: baris {$excelRow} sama dengan baris {$niupSeen[$niupRaw]}.");
+                    }
+                    $niupSeen[$niupRaw] = $excelRow;
+
+                    // 2️⃣ Cek duplikasi di database
+                    $existsNiup = DB::table('warga_pesantren')->where('niup', $niupRaw)->exists();
+                    if ($existsNiup) {
+                        throw new \Exception("NIUP '{$niupRaw}' sudah terdaftar di database (baris {$excelRow}).");
+                    }
+                }
 
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
@@ -177,7 +198,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     'dari_saudara' => $row['dari_saudara'] ?? null,
                     'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
                     'status' => true,
-                    'wafat' => false,
+                    'wafat' => isset($row['wafat']) && strtolower($row['wafat']) === 'ya',
                     'created_at' => now(),
                     'updated_at' => now(),
                     'created_by' => $this->userId ?? 1
@@ -235,7 +256,8 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
                     $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
 
-                    DB::table('pengajar')->insert([
+                    // Insert ke tabel pengajar & ambil ID-nya
+                    $pengajarId = DB::table('pengajar')->insertGetId([
                         'pegawai_id' => $pegawaiId,
                         'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
                         'golongan_id' => $golonganId,
@@ -246,6 +268,22 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         'updated_at' => now(),
                         'created_by' => $this->userId ?? 1
                     ]);
+
+                    // Insert ke tabel mata_pelajaran (jika ada data di Excel)
+                    if (!empty($row['pengajar_kode_mapel']) && !empty($row['pengajar_nama_mapel'])) {
+                        DB::table('mata_pelajaran')->insert([
+                            'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+                            'kode_mapel' => $row['pengajar_kode_mapel'],
+                            'nama_mapel' => $row['pengajar_nama_mapel'],
+                            'pengajar_id' => $pengajarId,
+                            'status' => 1, // default aktif
+                            'created_by' => $this->userId ?? 1,
+                            'updated_by' => null,
+                            'deleted_by' => null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
 
                 // ===== Role: PENGURUS =====
@@ -307,15 +345,48 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             $key = (string)$k;
             $key = trim($key);
             $key = mb_strtolower($key);
-            // replace dot and asterisk and multiple spaces with underscore
             $key = str_replace(['*', '.', ' '], ['', '_', '_'], $key);
-            // remove anything not a-z0-9_
             $key = preg_replace('/[^a-z0-9_]/u', '', $key);
-            // collapse multiple underscores
             $key = preg_replace('/_+/', '_', $key);
             $key = trim($key, '_');
 
             $normalized[$key] = $v;
+        }
+
+        // Mapping manual header Excel → key yang dipakai di kode
+        $mapping = [
+            'nomor_kk'                    => 'no_kk',
+            'nomor_telepon_1'              => 'no_telp',
+            'nomor_telepon_2'              => 'no_telp_2',
+            'lembaga_pengajar'             => 'pengajar_lembaga',
+            'golongan_pengajar'            => 'pengajar_golongan',
+            'jenis_jabatan_pengajar'       => 'pengajar_jabatan',
+            'tanggal_masuk_pengajar'       => 'pengajar_tahun_masuk',
+            'kode_mapel_pengajar'          => 'pengajar_kode_mapel', 
+            'nama_mapel_pengajar'          => 'pengajar_nama_mapel',
+            'golongan_jabatan_karyawan'    => 'karyawan_golongan_jabatan',
+            'lembaga_karyawan'             => 'karyawan_lembaga',
+            'keterangan_jabatan_karyawan'  => 'karyawan_keterangan_jabatan',
+            'jabatanjenis_kontrak_karyawan'=> 'karyawan_jabatan',
+            'tanggal_mulai_karyawan'       => 'karyawan_tanggal_mulai',
+            'golongan_jabatan_pengurus'    => 'pengurus_golongan_jabatan',
+            'satuan_kerja_pengurus'        => 'pengurus_satuan_kerja',
+            'keterangan_jabatan_pengurus'  => 'pengurus_keterangan_jabatan',
+            'jabatanjenis_kontrak_pengurus'=> 'pengurus_jabatan',
+            'tanggal_mulai_pengurus'       => 'pengurus_tanggal_mulai',
+            'lembaga_wali_kelas'           => 'wali_lembaga',
+            'jurusan_wali_kelas'           => 'wali_jurusan',
+            'kelas_wali_kelas'             => 'wali_kelas',
+            'rombel_wali_kelas'            => 'wali_rombel',
+            'jumlah_murid_wali_kelas'      => 'wali_jumlah_murid',
+            'periode_awal_wali_kelas'      => 'wali_periode_awal'
+        ];
+
+        // Terapkan mapping
+        foreach ($mapping as $from => $to) {
+            if (array_key_exists($from, $normalized) && !array_key_exists($to, $normalized)) {
+                $normalized[$to] = $normalized[$from];
+            }
         }
 
         return $normalized;
