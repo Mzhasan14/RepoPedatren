@@ -170,40 +170,110 @@ class SantriImport implements ToCollection, WithHeadingRow
                 ]);
 
                 // Ayah
+                // Ayah
+                if (!empty($row['nik_ayah'])) {
+                    // Cari berdasarkan NIK
+                    $ayahBiodataId = DB::table('biodata')->where('nik', $row['nik_ayah'])->value('id');
+                } elseif (!empty($row['nama_ayah'])) {
+                    // Cari berdasarkan nama
+                    $ayahBiodataId = DB::table('biodata')
+                        ->whereRaw('LOWER(nama) = ?', [mb_strtolower($row['nama_ayah'])])
+                        ->value('id');
+                }
+
                 if ($ayahBiodataId) {
-                    DB::table('keluarga')->insertOrIgnore([
-                        'no_kk' => $generatedNoKK,
-                        'id_biodata' => $ayahBiodataId,
-                        'status' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
+                    $existsAyah = DB::table('keluarga as k')
+                        ->join('biodata as b', 'b.id', '=', 'k.id_biodata')
+                        ->where('k.no_kk', $generatedNoKK)
+                        ->where(function ($q) use ($row) {
+                            if (!empty($row['nik_ayah'])) {
+                                $q->where('b.nik', $row['nik_ayah']);
+                            } else {
+                                $q->whereRaw('LOWER(b.nama) = ?', [mb_strtolower($row['nama_ayah'])]);
+                            }
+                        })
+                        ->exists();
+
+                    if (!$existsAyah) {
+                        DB::table('keluarga')->insertOrIgnore([
+                            'no_kk' => $generatedNoKK,
+                            'id_biodata' => $ayahBiodataId,
+                            'status' => true,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                            'created_by' => $this->userId ?? 1
+                        ]);
+                    }
                 }
 
                 // Ibu
-                if ($ibuBiodataId) {
-                    DB::table('keluarga')->insertOrIgnore([
-                        'no_kk' => $generatedNoKK,
-                        'id_biodata' => $ibuBiodataId,
-                        'status' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
+                if (!empty($row['nik_ibu'])) {
+                    $ibuBiodataId = DB::table('biodata')->where('nik', $row['nik_ibu'])->value('id');
+                } elseif (!empty($row['nama_ibu'])) {
+                    $ibuBiodataId = DB::table('biodata')
+                        ->whereRaw('LOWER(nama) = ?', [mb_strtolower($row['nama_ibu'])])
+                        ->value('id');
                 }
 
-                // Wali (kalau bukan ayah/ibu)
-                if ($waliBiodataId && $waliBiodataId !== $ayahBiodataId && $waliBiodataId !== $ibuBiodataId) {
-                    DB::table('keluarga')->insertOrIgnore([
-                        'no_kk' => $generatedNoKK,
-                        'id_biodata' => $waliBiodataId,
-                        'status' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
+                if ($ibuBiodataId) {
+                    $existsIbu = DB::table('keluarga as k')
+                        ->join('biodata as b', 'b.id', '=', 'k.id_biodata')
+                        ->where('k.no_kk', $generatedNoKK)
+                        ->where(function ($q) use ($row) {
+                            if (!empty($row['nik_ibu'])) {
+                                $q->where('b.nik', $row['nik_ibu']);
+                            } else {
+                                $q->whereRaw('LOWER(b.nama) = ?', [mb_strtolower($row['nama_ibu'])]);
+                            }
+                        })
+                        ->exists();
+
+                    if (!$existsIbu) {
+                        DB::table('keluarga')->insertOrIgnore([
+                            'no_kk' => $generatedNoKK,
+                            'id_biodata' => $ibuBiodataId,
+                            'status' => true,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                            'created_by' => $this->userId ?? 1
+                        ]);
+                    }
                 }
+
+                // Wali
+                if (!empty($row['nik_wali'])) {
+                    $waliBiodataId = DB::table('biodata')->where('nik', $row['nik_wali'])->value('id');
+                } elseif (!empty($row['nama_wali'])) {
+                    $waliBiodataId = DB::table('biodata')
+                        ->whereRaw('LOWER(nama) = ?', [mb_strtolower($row['nama_wali'])])
+                        ->value('id');
+                }
+
+                if ($waliBiodataId && $waliBiodataId !== ($ayahBiodataId ?? null) && $waliBiodataId !== ($ibuBiodataId ?? null)) {
+                    $existsWali = DB::table('keluarga as k')
+                        ->join('biodata as b', 'b.id', '=', 'k.id_biodata')
+                        ->where('k.no_kk', $generatedNoKK)
+                        ->where(function ($q) use ($row) {
+                            if (!empty($row['nik_wali'])) {
+                                $q->where('b.nik', $row['nik_wali']);
+                            } else {
+                                $q->whereRaw('LOWER(b.nama) = ?', [mb_strtolower($row['nama_wali'])]);
+                            }
+                        })
+                        ->exists();
+
+                    if (!$existsWali) {
+                        DB::table('keluarga')->insertOrIgnore([
+                            'no_kk' => $generatedNoKK,
+                            'id_biodata' => $waliBiodataId,
+                            'status' => true,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                            'created_by' => $this->userId ?? 1
+                        ]);
+                    }
+                }
+
 
                 $mondokVal = strtolower((string)($row['status_mondok'] ?? ''));
 
@@ -358,6 +428,30 @@ class SantriImport implements ToCollection, WithHeadingRow
         return $parentId;
     }
 
+    protected function insertKeluargaIfNotExists($noKK, $biodataId)
+    {
+        if (!$noKK || !$biodataId) {
+            return;
+        }
+
+        $exists = DB::table('keluarga')
+            ->where('no_kk', $noKK)
+            ->where('id_biodata', $biodataId)
+            ->exists();
+
+        if (!$exists) {
+            DB::table('keluarga')->insert([
+                'no_kk' => $noKK,
+                'id_biodata' => $biodataId,
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'created_by' => $this->userId ?? 1
+            ]);
+        }
+    }
+
+
     protected function insertOrangTuaRelation(string $childBiodataId, ?string $parentBiodataId, string $tipe, array $row, int $excelRow, bool $isWali = false)
     {
         if (!$parentBiodataId) {
@@ -381,8 +475,24 @@ class SantriImport implements ToCollection, WithHeadingRow
         $penghasilanKey = "penghasilan_{$tipe}";
         $statusWafatKey = "status_wafat_{$tipe}";
 
-        Log::info("Inserting hubungan keluarga '{$tipe}' untuk biodata anak {$childBiodataId} dengan parent {$parentBiodataId} pada baris {$excelRow}");
+        // ✅ Cek apakah sudah ada data orang_tua_wali dengan id_biodata + id_hubungan_keluarga yang sama
+        $exists = DB::table('orang_tua_wali')
+            ->where('id_biodata', $parentBiodataId)
+            ->where('id_hubungan_keluarga', $idHubungan)
+            ->exists();
 
+        if ($exists) {
+            // Kalau sudah ada, tapi ini wali, pastikan kolom wali = true
+            if ($isWali) {
+                DB::table('orang_tua_wali')
+                    ->where('id_biodata', $parentBiodataId)
+                    ->where('id_hubungan_keluarga', $idHubungan)
+                    ->update(['wali' => true, 'updated_at' => now()]);
+            }
+            return; // ❌ Tidak insert ulang
+        }
+
+        // ✅ Insert baru kalau belum ada
         DB::table('orang_tua_wali')->insert([
             'id_biodata' => $parentBiodataId,
             'id_hubungan_keluarga' => $idHubungan,
@@ -396,9 +506,8 @@ class SantriImport implements ToCollection, WithHeadingRow
             'updated_at' => now(),
             'created_by' => $this->userId ?? 1
         ]);
-
-        Log::info("Insert hubungan keluarga '{$tipe}' selesai pada baris {$excelRow}");
     }
+
 
     protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
     {
