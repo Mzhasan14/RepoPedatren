@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -56,6 +57,19 @@ class UserController extends Controller
         try {
             $data = $request->validated();
 
+            // Cegah user menonaktifkan akun miliknya sendiri
+            if (
+                isset($data['status']) &&
+                (bool) $user->status === true &&     // status lama aktif
+                (bool) $data['status'] === false &&  // status baru nonaktif
+                Auth::id() === $user->id           // user edit dirinya sendiri
+            ) {
+                return response()->json([
+                    'message' => 'Aksi ini tidak dapat dilakukan pada akun yang sedang digunakan.'
+                ], 403);
+            }
+
+            // Hash password jika ada
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             } else {
@@ -64,6 +78,7 @@ class UserController extends Controller
 
             $user->update($data);
 
+            // Update role jika ada
             if (!empty($data['role'])) {
                 $user->syncRoles([]);
                 $user->assignRole($data['role']);
@@ -78,6 +93,7 @@ class UserController extends Controller
             return response()->json(['message' => 'Failed to update user'], 500);
         }
     }
+
 
     public function destroy(User $user): JsonResponse
     {
