@@ -562,7 +562,7 @@ Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group
     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'role:superadmin|admi`n', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
     Route::post('/tahfidz', [TahfidzController::class, 'store']);
     Route::get('/setoran-tahfidz/{id}', [TahfidzController::class, 'listSetoran']);
