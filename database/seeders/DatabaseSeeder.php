@@ -65,6 +65,7 @@ class DatabaseSeeder extends Seeder
             MataPelajaranSeeder::class,
             JamPelajaranSeeder::class,
             JadwalPelajaranSeeder::class,
+            LogPresensiSeeder::class,
 
         ]);
 

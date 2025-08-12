@@ -58,6 +58,7 @@ use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
@@ -572,4 +573,9 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->g
     Route::post('/nadhoman', [NadhomanController::class, 'store']);
     Route::get('/setoran-nadhoman/{id}', [NadhomanController::class, 'listSetoran']);
     Route::get('/rekap-nadhoman{id}', [NadhomanController::class, 'listRekap']);
+});
+
+Route::prefix('presensi')->group(function () {
+    Route::post('scan', [PresensiJamaahController::class, 'scan']); // POST /api/presensi/scan
+    Route::get('/', [PresensiJamaahController::class, 'index']);   // GET /api/presensi
 });

@@ -61,7 +61,7 @@ class UserSeeder extends Seeder
             'email' => 'Ustadz@example.com',
             'password' => Hash::make('password'),
         ]);
-        $staff->assignRole('staff');
+        $staff->assignRole('ustadz');
 
         // Santri
         $WaliAsuh = User::create([
@@ -98,6 +98,6 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
 
-        $creator->assignRole('superadmin');
+        $creator->assignRole('petugas');
     }
 }

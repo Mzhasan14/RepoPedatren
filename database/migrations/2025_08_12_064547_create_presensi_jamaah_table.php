@@ -72,9 +72,9 @@ return new class extends Migration
         // LOG PRESENSI
         Schema::create('log_presensi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->foreignId('santri_id')->nullable()->constrained('santri')->cascadeOnDelete();
             $table->foreignId('kartu_id')->nullable()->constrained('kartu')->nullOnDelete();
-            $table->foreignId('sholat_id')->constrained('sholat')->cascadeOnDelete();
+            $table->foreignId('sholat_id')->nullable()->constrained('sholat')->cascadeOnDelete();
             $table->timestamp('waktu_scan');
             $table->enum('hasil', ['Sukses', 'Gagal', 'Duplikat', 'Diluar Jadwal'])->default('Sukses');
             $table->string('pesan')->nullable();
