@@ -19,7 +19,7 @@ class TahfidzSeeder extends Seeder
         $santriAktif = Santri::where('status', 'aktif')->get();
         $tahunAjaranId = TahunAjaran::inRandomOrder()->value('id') ?? 1;
 
-        // Daftar surat beserta jumlah ayat (biar persentase khatam realistis)
+        // Daftar surat beserta jumlah ayat
         $suratList = [
             'Al-Fatihah' => 7,
             'Al-Baqarah' => 286,
@@ -34,7 +34,6 @@ class TahfidzSeeder extends Seeder
         ];
 
         foreach ($santriAktif as $santri) {
-            // Cek kalau sudah pernah diinput
             $existing = Tahfidz::where([
                 'santri_id' => $santri->id,
                 'tahun_ajaran_id' => $tahunAjaranId
@@ -45,7 +44,10 @@ class TahfidzSeeder extends Seeder
                 $surat = array_rand($suratList);
                 $ayatMulai = rand(1, $suratList[$surat] - 5);
                 $ayatSelesai = min($suratList[$surat], $ayatMulai + rand(1, 5));
+                $status = ['proses', 'tuntas'][rand(0, 1)];
+                $nilai = ['lancar', 'cukup', 'kurang'][rand(0, 2)];
 
+                // Insert setoran tahfidz
                 Tahfidz::create([
                     'santri_id'       => $santri->id,
                     'tahun_ajaran_id' => $tahunAjaranId,
@@ -54,28 +56,60 @@ class TahfidzSeeder extends Seeder
                     'surat'           => $surat,
                     'ayat_mulai'      => $ayatMulai,
                     'ayat_selesai'    => $ayatSelesai,
-                    'nilai'           => ['lancar', 'cukup', 'kurang'][rand(0, 2)],
+                    'nilai'           => $nilai,
                     'catatan'         => rand(0, 1) ? 'Setoran lancar' : null,
-                    'status'          => ['proses', 'tuntas'][rand(0, 1)],
+                    'status'          => $status,
                     'created_by'      => 1,
                 ]);
 
                 // Hitung rekap
-                $totalSurat = 1; // karena hanya input satu surat di seeder ini
-                $persentase = (1 / 114) * 100; // 114 surat di Al-Qur'an
+                $totalSurat = ($status === 'tuntas') ? 1 : 0;
+                $persentase = ($totalSurat / 114) * 100;
+                $suratTersisa = 114 - $totalSurat;
+                $sisaPersentase = 100 - $persentase;
+
+                $totalAyat = ($status === 'tuntas') ? ($ayatSelesai - $ayatMulai + 1) : 0;
+                $persentaseAyat = ($totalAyat / 6236) * 100;
+
+                $jumlahSetoran = 1;
+                $rataRataNilai = $this->convertNilaiToNumber($nilai);
+
+                $tanggalMulai = now()->format('Y-m-d');
+                $tanggalSelesai = ($totalSurat >= 114) ? now()->format('Y-m-d') : null;
 
                 RekapTahfidz::updateOrCreate(
                     [
-                        'santri_id' => $santri->id,
+                        'santri_id'       => $santri->id,
                         'tahun_ajaran_id' => $tahunAjaranId
                     ],
                     [
-                        'total_surat' => $totalSurat,
-                        'persentase_khatam' => number_format($persentase, 2, '.', ''),
-                        'created_by' => 1
+                        'total_surat'        => $totalSurat,
+                        'persentase_khatam'  => number_format($persentase, 2, '.', ''),
+                        'surat_tersisa'      => $suratTersisa,
+                        'sisa_persentase'    => number_format($sisaPersentase, 2, '.', ''),
+                        'jumlah_setoran'     => $jumlahSetoran,
+                        'rata_rata_nilai'    => number_format($rataRataNilai, 2, '.', ''),
+                        'tanggal_mulai'      => $tanggalMulai,
+                        'tanggal_selesai'    => $tanggalSelesai,
+                        'created_by'         => 1,
+                        'updated_by'         => 1,
+                        'updated_at'         => now(),
                     ]
                 );
             }
         }
+    }
+
+    /**
+     * Konversi nilai string ke angka untuk rata-rata.
+     */
+    private function convertNilaiToNumber($nilai)
+    {
+        return match ($nilai) {
+            'lancar' => 100,
+            'cukup'  => 75,
+            'kurang' => 50,
+            default  => 0,
+        };
     }
 }

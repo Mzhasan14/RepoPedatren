@@ -575,7 +575,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->g
     Route::get('/rekap-nadhoman{id}', [NadhomanController::class, 'listRekap']);
 });
 
-Route::prefix('presensi')->group(function () {
+Route::prefix('presensi')->middleware(['auth:sanctum','throttle:200,1'])->group(function () {
     Route::post('scan', [PresensiJamaahController::class, 'scan']); // POST /api/presensi/scan
-    Route::get('/', [PresensiJamaahController::class, 'index']);   // GET /api/presensi
+    Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');   // GET /api/presensi
 });

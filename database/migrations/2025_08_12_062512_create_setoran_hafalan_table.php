@@ -54,27 +54,51 @@ return new class extends Migration
         });
 
         // 3. rekap_tahfidz
+        // Schema::create('rekap_tahfidz', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+        //     $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
+
+        //     $table->unique(['santri_id', 'tahun_ajaran_id']);
+
+        //     $table->unsignedSmallInteger('total_surat')->default(0);
+        //     $table->decimal('persentase_khatam', 5, 2)->default(0.00);
+
+        //     $table->unsignedBigInteger('created_by');
+        //     $table->unsignedBigInteger('updated_by')->nullable();
+        //     $table->unsignedBigInteger('deleted_by')->nullable();
+
+        //     $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
+        //     $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+        //     $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
+
+        //     $table->softDeletes();
+        //     $table->timestamps();
+        // });
+
         Schema::create('rekap_tahfidz', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-            $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
-
-            $table->unique(['santri_id', 'tahun_ajaran_id']);
-
-            $table->unsignedSmallInteger('total_surat')->default(0);
+            $table->foreignId('santri_id')->constrained('santri');
+            $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran');
+            $table->unsignedTinyInteger('total_surat')->default(0);
             $table->decimal('persentase_khatam', 5, 2)->default(0.00);
-
-            $table->unsignedBigInteger('created_by');
+            $table->unsignedTinyInteger('surat_tersisa')->default(114);
+            $table->decimal('sisa_persentase', 5, 2)->default(100.00);
+            $table->unsignedInteger('jumlah_setoran')->default(0);
+            $table->decimal('rata_rata_nilai', 5, 2)->default(0.00);
+            $table->date('tanggal_mulai')->nullable();
+            $table->date('tanggal_selesai')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->softDeletes();
 
             $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
             $table->timestamps();
         });
+
 
         // 4. nadhoman
         Schema::create('nadhoman', function (Blueprint $table) {
