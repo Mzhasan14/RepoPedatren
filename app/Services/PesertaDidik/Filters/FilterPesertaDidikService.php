@@ -14,16 +14,9 @@ class FilterPesertaDidikService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-        $query = $this->applySmartcardFilter($query, $request);
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
-        $query = $this->applyStatusPesertaFilter($query, $request);
-        $query = $this->applyStatusWargaPesantrenFilter($query, $request);
-        $query = $this->applyAngkatanSantri($query, $request);
-        $query = $this->applyAngkatanPelajar($query, $request);
-        $query = $this->applyPhoneNumber($query, $request);
-        $query = $this->applyPemberkasan($query, $request);
         $query = $this->applySorting($query, $request);
 
         return $query;
@@ -75,24 +68,6 @@ class FilterPesertaDidikService
             $query->where('b.jenis_kelamin', 'p');
         } else {
             // Jika nilai jenis_kelamin tidak valid, hasilkan query kosong
-            $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
-
-    public function applySmartcardFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('smartcard')) {
-            return $query;
-        }
-
-        $smartcard = strtolower($request->smartcard);
-        if ($smartcard === 'memiliki smartcard') {
-            $query->whereNotNull('b.smartcard');
-        } elseif ($smartcard === 'tanpa smartcard') {
-            $query->whereNull('b.smartcard');
-        } else {
             $query->whereRaw('0 = 1');
         }
 
@@ -162,135 +137,6 @@ class FilterPesertaDidikService
                         ->where('r.nama_rombel', $request->rombel);
                 }
             }
-        }
-
-        return $query;
-    }
-
-    public function applyStatusPesertaFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('status')) {
-            return $query;
-        }
-
-        switch (strtolower($request->status)) {
-            case 'santri':
-                $query->where('s.status', 'aktif');
-                break;
-            case 'santri non pelajar':
-                $query->where('s.status', 'aktif')
-                    ->where(fn ($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
-                break;
-            case 'pelajar':
-                $query->where('pd.status', 'aktif');
-                break;
-            case 'pelajar non santri':
-                $query->where('pd.status', 'aktif')
-                    ->where(fn ($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
-                break;
-            case 'santri-pelajar':
-            case 'pelajar-santri':
-                $query->where('s.status', 'aktif')
-                    ->where('pd.status', 'aktif');
-                break;
-            default:
-                $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
-
-    public function applyStatusWargaPesantrenFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('warga_pesantren')) {
-            return $query;
-        }
-
-        $flag = strtolower($request->warga_pesantren);
-        if ($flag === 'memiliki niup') {
-            $query->whereNotNull('wp.niup');
-        } elseif ($flag === 'tanpa niup') {
-            $query->whereNull('wp.niup');
-        } else {
-            $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
-
-    public function applyAngkatanSantri(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('angkatan_santri')) {
-            return $query;
-        }
-
-        $query->where('s.angkatan_id', $request->angkatan_santri);
-
-        return $query;
-    }
-
-    public function applyAngkatanPelajar(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('angkatan_pelajar')) {
-            return $query;
-        }
-
-        $query->where('pd.angkatan_id', $request->angkatan_pelajar);
-
-        return $query;
-    }
-
-    public function applyPhoneNumber(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('phone_number')) {
-            return $query;
-        }
-
-        $pn = strtolower($request->phone_number);
-        if ($pn === 'memiliki phone number') {
-            $query->whereNotNull('b.no_telepon')
-                ->where('b.no_telepon', '!=', '');
-        } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
-        } else {
-            $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
-
-    public function applyPemberkasan(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('pemberkasan')) {
-            return $query;
-        }
-
-        switch (strtolower($request->pemberkasan)) {
-            case 'tidak ada berkas':
-                $query->whereNull('br.biodata_id');
-                break;
-            case 'tidak ada foto diri':
-                $query->where('br.jenis_berkas_id', 4)
-                    ->whereNull('br.file_path');
-                break;
-            case 'memiliki foto diri':
-                $query->where('br.jenis_berkas_id', 4)
-                    ->whereNotNull('br.file_path');
-                break;
-            case 'tidak ada kk':
-                $query->where('br.jenis_berkas_id', 1)
-                    ->whereNull('br.file_path');
-                break;
-            case 'tidak ada akta kelahiran':
-                $query->where('br.jenis_berkas_id', 3)
-                    ->whereNull('br.file_path');
-                break;
-            case 'tidak ada ijazah':
-                $query->where('br.jenis_berkas_id', 5)
-                    ->whereNull('br.file_path');
-                break;
-            default:
-                $query->whereRaw('0 = 1');
         }
 
         return $query;

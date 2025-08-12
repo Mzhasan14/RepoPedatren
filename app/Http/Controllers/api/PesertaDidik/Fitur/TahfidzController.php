@@ -6,14 +6,16 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PesertaDidik\TahfidzRequest;
 use App\Services\PesertaDidik\Fitur\TahfidzService;
+use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
 
 class TahfidzController extends Controller
 {
     private TahfidzService $service;
-
-    public function __construct(TahfidzService $service)
+    private FilterPesertaDidikService $filter;
+    public function __construct(TahfidzService $service, FilterPesertaDidikService $filter)
     {
         $this->service = $service;
+        $this->filter = $filter;
     }
 
     public function store(TahfidzRequest $request)
@@ -75,12 +77,14 @@ class TahfidzController extends Controller
     public function getAllRekap(Request $request)
     {
         try {
-            $result = $this->service->getAllRekap($request);
+            $query = $this->service->getAllRekap($request);
+            $query = $this->filter->pesertaDidikFilters($query, $request);
 
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-            ], 200);
+            $perPage = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -88,5 +92,23 @@ class TahfidzController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ], 200);
+        }
+
+        $formatted = $this->service->formatData($results);
+
+        return response()->json([
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
+        ]);
     }
 }

@@ -121,23 +121,36 @@ class TahfidzService
     public function getAllRekap(Request $request)
     {
         $query = DB::table('rekap_tahfidz as rt')
-            ->join('santri', 'rt.santri_id', '=', 'santri.id')
-            ->leftJoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
-            ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-            ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
+            ->join('santri as s', 'rt.santri_id', '=', 's.id')
+            ->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('pendidikan as pd', 's.id', '=', 'pd.biodata_id')
             ->join('tahun_ajaran', 'rt.tahun_ajaran_id', '=', 'tahun_ajaran.id')
-            ->select('santri.id','santri.nis', 'biodata.nama as santri_nama', 'rt.total_surat', 'rt.persentase_khatam')
-            ->groupBy('santri.id', 'santri.nis', 'biodata.nama', 'rt.total_surat', 'rt.persentase_khatam', 'rt.id')
+            ->select('s.id', 's.nis', 'b.nama as s_nama', 'rt.total_surat', 'rt.persentase_khatam')
+            ->groupBy('s.id', 's.nis', 'b.nama', 'rt.total_surat', 'rt.persentase_khatam', 'rt.id')
             ->orderBy('rt.id', 'desc');
 
         if (! $request->filled('tahun_ajaran')) {
-            return $query->get();
+            return $query;
         }
 
         if ($request->filled('tahun_ajaran')) {
             $query->where('rt.tahun_ajaran', $request->tahun_ajaran);
         }
 
-        return $query->get();
+        return $query;
+    }
+
+    public function formatData($results)
+    {
+        return collect($results->items())->map(function ($item) {
+            return [
+                'santri_id'         => $item->id,
+                'nis'               => $item->nis,
+                'nama_santri'       => $item->s_nama,
+                'total_surat'       => $item->total_surat,
+                'persentase_khatam' => $item->persentase_khatam,
+            ];
+        });
     }
 }
