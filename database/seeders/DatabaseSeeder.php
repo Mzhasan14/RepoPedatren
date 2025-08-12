@@ -61,8 +61,6 @@ class DatabaseSeeder extends Seeder
             MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
             PengunjungMahromSeeder::class,
-            // BiometricSeeder::class,
-            PresensiSantriSeeder::class,
             DropPegawaiNoEntitas::class,
             MataPelajaranSeeder::class,
             JamPelajaranSeeder::class,

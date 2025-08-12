@@ -19,8 +19,8 @@ class UserSeeder extends Seeder
             'superadmin',
             'supervisor',
             'admin',
-            'staff',
-            'santri',
+            'ustadz',
+            'petugas',
             'kamtib',
             'biktren',
             'pengasuh',
@@ -57,8 +57,8 @@ class UserSeeder extends Seeder
 
         // Staff
         $staff = User::create([
-            'name' => 'Staff User',
-            'email' => 'staff@example.com',
+            'name' => 'Ustadz',
+            'email' => 'Ustadz@example.com',
             'password' => Hash::make('password'),
         ]);
         $staff->assignRole('staff');
@@ -92,19 +92,10 @@ class UserSeeder extends Seeder
         ]);
         $pengasuh->assignRole('pengasuh');
 
-        // Creator tambahan
         $creator = User::create([
-            'name' => 'Orang Dalam',
-            'email' => 'pedatrennurja@gmail.com',
+            'name' => 'Petugas',
+            'email' => 'petugas@example.com',
             'password' => Hash::make('password'),
-        ]);
-
-        $creator->assignRole('superadmin');
-
-        $creator = User::create([
-            'name' => 'Admin Sipatren',
-            'email' => 'sipatren@gmail.com',
-            'password' => Hash::make('sipatren'),
         ]);
 
         $creator->assignRole('superadmin');

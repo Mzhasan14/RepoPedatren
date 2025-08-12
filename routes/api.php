@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\PDF\PDFController;
 use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\api\Auth\UserController;
@@ -44,6 +45,8 @@ use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
 use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
 use App\Http\Controllers\api\Biometric\BiometricProfileController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\TahfidzController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\NadhomanController;
 use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
 use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BerkasController;
@@ -58,13 +61,12 @@ use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\PDF\PDFController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
     ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 
-Route::apiResource('users', UserController::class); 
+Route::apiResource('users', UserController::class);
 // Route::post('users/change-status/{user}', [UserController::class, 'changeStatus'])
 //     ->middleware(['auth:sanctum', 'role:admin|superadmin'])
 //     ->name('users.changeStatus');
@@ -558,4 +560,17 @@ Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group
     Route::post('register-profile', [BiometricProfileController::class, 'store']);
     Route::post('update-profile', [BiometricProfileController::class, 'update']);
     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'role:superadmin|admi`n', 'throttle:60,1'])->group(function () {
+    Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
+    Route::post('/tahfidz', [TahfidzController::class, 'store']);
+    Route::get('/setoran-tahfidz/{id}', [TahfidzController::class, 'listSetoran']);
+    Route::get('/rekap-tahfidz/{id}', [TahfidzController::class, 'listRekap']);
+});
+
+Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
+    Route::post('/nadhoman', [NadhomanController::class, 'store']);
+    Route::get('/setoran-nadhoman/{id}', [NadhomanController::class, 'listSetoran']);
+    Route::get('/rekap-nadhoman{id}', [NadhomanController::class, 'listRekap']);
 });
