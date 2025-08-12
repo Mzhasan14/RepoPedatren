@@ -65,7 +65,9 @@ class DatabaseSeeder extends Seeder
             MataPelajaranSeeder::class,
             JamPelajaranSeeder::class,
             JadwalPelajaranSeeder::class,
-
+            KitabSeeder::class,
+            NadhomanSeeder::class,
+            TahfidzSeeder::class,
         ]);
 
         // Aktifkan kembali logging activity setelah seeding selesai

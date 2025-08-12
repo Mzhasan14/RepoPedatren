@@ -24,6 +24,7 @@ class NadhomanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'santri_id'       => 'required|exists:santri,id',
             'kitab_id'        => 'required|exists:kitab,id',
             'tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
             'tanggal'         => 'required|date',
