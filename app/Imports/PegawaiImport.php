@@ -33,8 +33,19 @@ class PegawaiImport implements ToCollection, WithHeadingRow
         try {
             $processedNiks = [];
             foreach ($rows as $index => $rawRow) {
-                $excelRow = $index + 2; // +2 karena heading row di baris 1
+                $excelRow = $index + $this->headingRow() + 1;
+                // Cek kalau semua kolom kosong (anggap 0 di kolom tanggal juga kosong)
+                $isEmptyRow = collect($rawRow)->filter(function ($val) {
+                    // Anggap kosong kalau null, '', whitespace, atau 0 yang berasal dari cell tanggal
+                    if (is_numeric($val) && (int)$val === 0) {
+                        return false;
+                    }
+                    return trim((string)$val) !== '';
+                })->isEmpty();
 
+                if ($isEmptyRow) {
+                    continue; // lewati baris kosong
+                }
                 // Normalisasi keys header → jadi array biasa dengan key terstandard
                 $row = $this->normalizeRow($rawRow->toArray());
 
@@ -304,18 +315,36 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                 // ===== Role: WALI KELAS =====
                 if ($willInsertWali) {
+                    // Lembaga
+                    $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
+
+                    // Jurusan sesuai lembaga
+                    $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, [
+                        'lembaga_id' => $lembagaId
+                    ]);
+
+                    // Kelas sesuai jurusan
+                    $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, [
+                        'jurusan_id' => $jurusanId
+                    ]);
+
+                    // Rombel sesuai kelas
+                    $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, [
+                        'kelas_id' => $kelasId
+                    ]);
+
                     DB::table('wali_kelas')->insert([
-                        'pegawai_id' => $pegawaiId,
-                        'lembaga_id' => $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false),
-                        'jurusan_id' => $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false),
-                        'kelas_id' => $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false),
-                        'rombel_id' => $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false),
-                        'jumlah_murid' => $row['wali_jumlah_murid'] ?? null,
-                        'periode_awal' => $this->transformDate($row['wali_periode_awal'] ?? null),
-                        'status_aktif' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
+                        'pegawai_id'     => $pegawaiId,
+                        'lembaga_id'     => $lembagaId,
+                        'jurusan_id'     => $jurusanId,
+                        'kelas_id'       => $kelasId,
+                        'rombel_id'      => $rombelId,
+                        'jumlah_murid'   => $row['wali_jumlah_murid'] ?? null,
+                        'periode_awal'   => $this->transformDate($row['wali_periode_awal'] ?? null),
+                        'status_aktif'   => 'aktif',
+                        'created_at'     => now(),
+                        'updated_at'     => now(),
+                        'created_by'     => $this->userId ?? 1
                     ]);
                 }
             }
@@ -395,7 +424,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
     /**
      * findId unchanged — tetap case-insensitive & safe
      */
-    protected function findId(string $table, $value, int $excelRow, bool $required = true)
+    protected function findId(string $table, $value, int $excelRow, bool $required = true, array $filters = [])
     {
         if (! isset($value) || trim((string)$value) === '') {
             if ($required) {
@@ -404,7 +433,6 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             return null;
         }
 
-        // Mapping kolom khusus per tabel
         $columnMap = [
             'negara'            => 'nama_negara',
             'provinsi'          => 'nama_provinsi',
@@ -422,28 +450,38 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             'golongan'          => 'nama_golongan',
         ];
 
-        $column = $columnMap[$table] ?? 'nama'; // fallback ke 'nama'
-
+        $column = $columnMap[$table] ?? 'nama';
         $search = trim((string)$value);
         $searchLower = mb_strtolower($search);
 
-        // Jika diisi angka dan kemungkinan itu ID langsung
+        // ID langsung
         if (is_numeric($search)) {
-            $record = DB::table($table)->where('id', $search)->select('id')->first();
-            if ($record) {
-                return $record->id;
+            $record = DB::table($table)
+                ->where('id', $search);
+
+            foreach ($filters as $key => $val) {
+                $record->where($key, $val);
+            }
+
+            $found = $record->select('id')->first();
+            if ($found) {
+                return $found->id;
             }
         }
 
-        // Query case-insensitive
-        $record = DB::table($table)
-            ->whereRaw("LOWER(`{$column}`) = ?", [$searchLower])
-            ->select('id')
-            ->first();
+        // Query case-insensitive + filter relasi
+        $query = DB::table($table)
+            ->whereRaw("LOWER(`{$column}`) = ?", [$searchLower]);
+
+        foreach ($filters as $key => $val) {
+            $query->where($key, $val);
+        }
+
+        $record = $query->select('id')->first();
 
         if (! $record) {
             if ($required) {
-                throw new \Exception("Referensi untuk '{$table}' dengan nilai '{$search}' tidak ditemukan (kolom '{$column}') di baris {$excelRow}.");
+                throw new \Exception("Referensi untuk '{$table}' dengan nilai '{$search}' tidak ditemukan di baris {$excelRow}.");
             }
             return null;
         }
