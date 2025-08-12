@@ -112,4 +112,21 @@ class NadhomanController extends Controller
             'data'         => $formatted,
         ]);
     }
+    public function getSetoranDanRekap($id)
+    {
+        try {
+            $result = $this->service->getSetoranDanRekapNadhoman($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data rekap Nadhoman.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

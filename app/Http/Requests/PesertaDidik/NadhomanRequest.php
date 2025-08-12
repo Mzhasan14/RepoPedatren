@@ -48,4 +48,41 @@ class NadhomanRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    public function messages(): array
+    {
+        return [
+            'santri_id.required'       => 'Santri wajib dipilih.',
+            'santri_id.exists'         => 'Santri yang dipilih tidak ditemukan.',
+            
+            'kitab_id.required'        => 'Kitab wajib dipilih.',
+            'kitab_id.exists'          => 'Kitab yang dipilih tidak ditemukan.',
+
+            'tahun_ajaran_id.required' => 'Tahun ajaran wajib dipilih.',
+            'tahun_ajaran_id.exists'   => 'Tahun ajaran yang dipilih tidak ditemukan.',
+
+            'tanggal.required'         => 'Tanggal setoran wajib diisi.',
+            'tanggal.date'             => 'Tanggal setoran harus berupa format tanggal yang valid.',
+
+            'jenis_setoran.required'   => 'Jenis setoran wajib dipilih.',
+            'jenis_setoran.in'         => 'Jenis setoran hanya boleh berupa "baru" atau "murojaah".',
+
+            'bait_mulai.required'      => 'Bait mulai wajib diisi.',
+            'bait_mulai.integer'       => 'Bait mulai harus berupa angka.',
+            'bait_mulai.min'           => 'Bait mulai minimal bernilai 1.',
+
+            'bait_selesai.required'    => 'Bait selesai wajib diisi.',
+            'bait_selesai.integer'     => 'Bait selesai harus berupa angka.',
+            'bait_selesai.min'         => 'Bait selesai minimal bernilai 1.',
+            'bait_selesai.gte'         => 'Bait selesai tidak boleh lebih kecil dari bait mulai.',
+
+            'nilai.required'           => 'Nilai wajib dipilih.',
+            'nilai.in'                 => 'Nilai hanya boleh "lancar", "cukup", atau "kurang".',
+
+            'catatan.string'           => 'Catatan harus berupa teks.',
+            'catatan.max'              => 'Catatan maksimal 1000 karakter.',
+
+            'status.required'          => 'Status wajib dipilih.',
+            'status.in'                => 'Status hanya boleh "proses" atau "tuntas".',
+        ];
+    }
 }

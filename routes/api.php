@@ -571,8 +571,8 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->g
 
 Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     Route::post('/nadhoman', [NadhomanController::class, 'store']);
-    Route::get('/setoran-nadhoman/{id}', [NadhomanController::class, 'listSetoran']);
-    Route::get('/rekap-nadhoman{id}', [NadhomanController::class, 'listRekap']);
+    Route::get('/nadhoman/{id}', [NadhomanController::class, 'getSetoranDanRekap']);
+    Route::get('/nadhoman', [NadhomanController::class, 'getAllRekap']);
 });
 
 Route::prefix('presensi')->middleware(['auth:sanctum','throttle:200,1'])->group(function () {
