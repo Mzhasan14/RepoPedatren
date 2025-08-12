@@ -68,55 +68,113 @@ class TahfidzService
         }
     }
 
-    public function listSetoran(Request $id)
+    // public function listSetoran($id)
+    // {
+    //     $query = DB::table('tahfidz as t')
+    //         ->leftJoin('santri', 't.santri_id', '=', 'santri.id')
+    //         ->leftJoin('biodata', 'santri.biodata_id', '=', 'biodata.id')
+    //         ->leftJoin('tahun_ajaran', 't.tahun_ajaran_id', '=', 'tahun_ajaran.id')
+    //         ->select(
+    //             'biodata.nama as santri_nama',
+    //             't.tanggal',
+    //             't.jenis_setoran',
+    //             DB::raw("
+    //                 CONCAT(
+    //                     t.surat,
+    //                     ' ',
+    //                     t.ayat_mulai,
+    //                     CASE
+    //                         WHEN t.ayat_selesai IS NOT NULL AND t.ayat_selesai != t.ayat_mulai THEN CONCAT('-', t.ayat_selesai)
+    //                         ELSE ''
+    //                     END
+    //                 ) AS surat
+    //             "),
+    //             't.nilai',
+    //             't.catatan',
+    //             't.status'
+    //         )
+    //         ->where('t.santri_id', $id)
+    //         ->where(fn($q) => $q->whereNull('biodata.deleted_at')
+    //             ->whereNull('santri.deleted_at'))
+    //         // ->where('santri.status', 'aktif')
+    //         ->orderBy('t.id', 'desc');
+
+    //     return $query->get();
+    // }
+
+    // public function listRekap(Request $id)
+    // {
+    //     $query = DB::table('rekap_tahfidz as rt')
+    //         ->join('santri', 'rt.santri_id', '=', 'santri.id')
+    //         ->leftjoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
+    //         ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+    //         ->leftjoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
+    //         ->join('tahun_ajaran', 'rt.tahun_ajaran_id', '=', 'tahun_ajaran.id')
+    //         ->select('santri.nis', 'biodata.nama as santri_nama', 'rt.total_surat', 'rt.persentase_khatam')
+    //         ->where('rt.santri_id', $id)
+    //         ->where('santri.status', 'aktif')
+    //         ->orderBy('rt.id', 'desc');
+
+    //     return $query->get();
+    // }
+
+    public function getSetoranDanRekap($id)
     {
-        $query = DB::table('tahfidz as t')
+        // Query setoran tahfidz
+        $tahfidz = DB::table('tahfidz as t')
             ->leftJoin('santri', 't.santri_id', '=', 'santri.id')
             ->leftJoin('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('tahun_ajaran', 't.tahun_ajaran_id', '=', 'tahun_ajaran.id')
+            ->leftjoin('users as u', 't.created_by', '=', 'u.id')
             ->select(
                 'biodata.nama as santri_nama',
                 't.tanggal',
                 't.jenis_setoran',
                 DB::raw("
-                    CONCAT(
-                        t.surat,
-                        ' ',
-                        t.ayat_mulai,
-                        CASE
-                            WHEN t.ayat_selesai IS NOT NULL AND t.ayat_selesai != t.ayat_mulai THEN CONCAT('-', t.ayat_selesai)
-                            ELSE ''
-                        END
-                    ) AS surat
-                "),
+                CONCAT(
+                    t.surat,
+                    ' ',
+                    t.ayat_mulai,
+                    CASE
+                        WHEN t.ayat_selesai IS NOT NULL AND t.ayat_selesai != t.ayat_mulai THEN CONCAT('-', t.ayat_selesai)
+                        ELSE ''
+                    END
+                ) AS surat
+            "),
                 't.nilai',
                 't.catatan',
-                't.status'
+                't.status',
+                'u.name as pencatat'
             )
             ->where('t.santri_id', $id)
-            ->where(fn($q) => $q->whereNull('biodata.deleted_at')
-                ->whereNull('santri.deleted_at'))
-            // ->where('santri.status', 'aktif')
-            ->orderBy('t.id', 'desc');
+            ->whereNull('biodata.deleted_at')
+            ->whereNull('santri.deleted_at')
+            ->orderBy('t.id', 'desc')
+            ->get();
 
-        return $query->get();
-    }
-
-    public function listRekap(Request $id)
-    {
-        $query = DB::table('rekap_tahfidz as rt')
+        // Query rekap tahfidz
+        $rekap = DB::table('rekap_tahfidz as rt')
             ->join('santri', 'rt.santri_id', '=', 'santri.id')
-            ->leftjoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
+            ->leftJoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-            ->leftjoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
+            ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
             ->join('tahun_ajaran', 'rt.tahun_ajaran_id', '=', 'tahun_ajaran.id')
-            ->select('santri.nis', 'biodata.nama as santri_nama', 'rt.total_surat', 'rt.persentase_khatam')
+            ->select(
+                'santri.nis',
+                'biodata.nama as santri_nama',
+                'rt.total_surat',
+                'rt.persentase_khatam'
+            )
             ->where('rt.santri_id', $id)
-            ->where('santri.status', 'aktif')
-            ->orderBy('rt.id', 'desc');
+            ->orderBy('rt.id', 'desc')
+            ->first();
 
-        return $query->get();
+        return [
+            'tahfidz' => $tahfidz,
+            'rekap_tahfidz' => $rekap
+        ];
     }
+
 
     public function getAllRekap(Request $request)
     {

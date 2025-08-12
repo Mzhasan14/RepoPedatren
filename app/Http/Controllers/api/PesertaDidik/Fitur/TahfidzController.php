@@ -38,28 +38,46 @@ class TahfidzController extends Controller
         }
     }
 
-    public function listSetoran(Request $request)
+    // public function listSetoran($id)
+    // {
+    //     try {
+    //         $result = $this->service->listSetoran($id);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $result,
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Terjadi kesalahan saat mengambil data setoran tahfidz.',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+    // public function listRekap(Request $request)
+    // {
+    //     try {
+    //         $result = $this->service->listRekap($request);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $result,
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Terjadi kesalahan saat mengambil data rekap tahfidz.',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+    public function getSetoranDanRekap($id)
     {
         try {
-            $result = $this->service->listSetoran($request);
-
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data setoran tahfidz.',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function listRekap(Request $request)
-    {
-        try {
-            $result = $this->service->listRekap($request);
+            $result = $this->service->getSetoranDanRekap($id);
 
             return response()->json([
                 'success' => true,
@@ -84,7 +102,6 @@ class TahfidzController extends Controller
             $currentPage = (int) $request->input('page', 1);
 
             $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

@@ -564,9 +564,8 @@ Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group
 
 Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
+    Route::get('/tahfidz/{id}', [TahfidzController::class, 'getSetoranDanRekap']);
     Route::post('/tahfidz', [TahfidzController::class, 'store']);
-    Route::get('/setoran-tahfidz/{id}', [TahfidzController::class, 'listSetoran']);
-    Route::get('/rekap-tahfidz/{id}', [TahfidzController::class, 'listRekap']);
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
