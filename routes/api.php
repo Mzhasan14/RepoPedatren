@@ -65,6 +65,7 @@ use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\api\KitabController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -595,4 +596,13 @@ Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::post('scan', [PresensiJamaahController::class, 'scan']);
     Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
     Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/kitab', [KitabController::class, 'indexAll']); 
+    Route::post('/kitab', [KitabController::class, 'store']);      
+    Route::get('/kitab/{id}', [KitabController::class, 'show']); 
+    Route::put('/kitab/{id}', [KitabController::class, 'update']); 
+    Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
+    Route::post('/aktiv/{id}', [KitabController::class, 'activate']);
 });

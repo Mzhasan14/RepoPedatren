@@ -29,6 +29,7 @@ class KitabSeeder extends Seeder
                 [
                     'total_bait' => $item['total_bait'],
                     'created_by' => 1,
+                    'status' => 1
                 ]
             );
         }

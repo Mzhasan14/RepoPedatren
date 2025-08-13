@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_kitab', 100);
             $table->unsignedSmallInteger('total_bait')->default(0);
-
+            $table->boolean('status');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

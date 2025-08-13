@@ -306,14 +306,18 @@ class FilterPegawaiService
     {
         if ($request->filled('status')) {
             $status = $request->get('status');
-            
+
             if ($status === 'aktif') {
-                $query->where('pegawai.status_aktif','=','aktif');
+                $query->where('pegawai.status_aktif', '=', 'aktif');
             } elseif ($status === 'tidak_aktif') {
-                $query->where('pegawai.status_aktif','=','tidak aktif');
+                $query->where('pegawai.status_aktif', '=', 'tidak aktif');
             }
+        } else {
+            // Jika tidak ada filter status, default filter ke 'aktif'
+            $query->where('pegawai.status_aktif', '=', 'aktif');
         }
-        
+
         return $query;
     }
+
 }
