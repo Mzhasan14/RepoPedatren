@@ -148,36 +148,34 @@ class PegawaiService
         try {
             $isExisting = false;
             $resultData = [];
+
             // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
             if (! empty($input['passport'])) {
-                // Pastikan negara_id ada dulu
                 if (empty($input['negara_id'])) {
                     throw ValidationException::withMessages([
                         'negara_id' => ['Negara wajib dipilih jika mengisi paspor.'],
                     ]);
                 }
 
-                // Ambil data negara berdasarkan ID
                 $negara = DB::table('negara')->where('id', $input['negara_id'])->first();
 
-                // Cek jika negara tidak ditemukan (mungkin karena data di DB kosong)
                 if (! $negara) {
                     throw ValidationException::withMessages([
                         'negara_id' => ['Negara tidak ditemukan di database.'],
                     ]);
                 }
 
-                // Jika negara asal adalah Indonesia, tolak pengisian paspor
                 if (strtolower(trim($negara->nama_negara)) === 'indonesia') {
                     throw ValidationException::withMessages([
                         'passport' => ['Jika mengisi nomor paspor, negara asal tidak boleh Indonesia.'],
                     ]);
                 }
             }
+
+            // --- Generate KK otomatis untuk WNA ---
             if (! isset($input['no_kk']) || empty($input['no_kk'])) {
                 if (! empty($input['passport'])) {
                     do {
-                        // Generate angka antara 1000000000000 (13 digit) s.d. 9999999999999
                         $angka13Digit = (string) random_int(1000000000000, 9999999999999);
                         $generatedNoKK = 'WNA' . $angka13Digit;
                     } while (DB::table('keluarga')->where('no_kk', $generatedNoKK)->exists());
@@ -189,46 +187,57 @@ class PegawaiService
                     ]);
                 }
             }
-            // Cari data biodata berdasarkan NIK atau no_passport
-            $existingBiodata = null;
 
+            // --- Cek biodata existing ---
+            $existingBiodata = null;
             if (!empty($input['nik'])) {
                 $existingBiodata = Biodata::where('nik', $input['nik'])->first();
             } elseif (!empty($input['passport'])) {
                 $existingBiodata = Biodata::where('no_passport', $input['passport'])->first();
             }
+
             if ($existingBiodata) {
                 $isExisting = true;
 
-                // Cek apakah sudah ada pegawai aktif
-                $existingPegawai = Pegawai::where('biodata_id', $existingBiodata->id)
+                // Cek pegawai aktif
+                $existingPegawaiAktif = Pegawai::where('biodata_id', $existingBiodata->id)
                     ->where('status_aktif', 'aktif')
                     ->first();
 
-                if ($existingPegawai) {
+                if ($existingPegawaiAktif) {
+                    DB::rollBack();
                     return [
                         'status' => false,
                         'message' => "Pegawai atas nama {$existingBiodata->nama} sudah terdaftar sebagai pegawai aktif. Silakan periksa kembali di menu Pegawai.",
-                        'data' => ['pegawai' => $existingPegawai],
+                        'data' => ['pegawai' => $existingPegawaiAktif],
                     ];
                 }
-                    // === PENAMBAHAN CEK SANTRI AKTIF ===
+
+                // Cek santri aktif
                 $santriAktif = Santri::where('biodata_id', $existingBiodata->id)
                     ->where('status', 'aktif')
                     ->first();
 
                 if ($santriAktif) {
+                    DB::rollBack();
                     return [
                         'status' => false,
-                        'message' =>"{$existingBiodata->nama} masih terdaftar sebagai santri aktif. Tidak dapat didaftarkan sebagai pegawai.",
+                        'message' => "{$existingBiodata->nama} masih terdaftar sebagai santri aktif. Tidak dapat didaftarkan sebagai pegawai.",
                         'data' => ['santri' => $santriAktif],
                     ];
                 }
 
-                // Nonaktifkan role-role sebelumnya
-                $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)->latest()->first();
+                // Cek pegawai nonaktif
+                $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)
+                    ->where('status_aktif', 'tidak aktif')
+                    ->latest()
+                    ->first();
 
                 if ($pegawaiNonaktif) {
+                    // Aktifkan kembali pegawai
+                    $pegawaiNonaktif->update(['status_aktif' => 'aktif']);
+
+                    // Nonaktifkan semua role aktif
                     $roleTables = [
                         'karyawan' => Karyawan::class,
                         'pengajar' => Pengajar::class,
@@ -237,7 +246,6 @@ class PegawaiService
                     ];
 
                     foreach ($roleTables as $key => $model) {
-                        // Tidak lagi tergantung input, semua peran dicek
                         $role = $model::where('pegawai_id', $pegawaiNonaktif->id)
                             ->where('status_aktif', 'aktif')
                             ->first();
@@ -258,10 +266,7 @@ class PegawaiService
                                         ->get();
 
                                     foreach ($mapelList as $mapel) {
-                                        // Hapus semua jadwal pelajaran terkait
                                         $mapel->jadwalPelajaran()->delete();
-
-                                        // Nonaktifkan mata pelajaran
                                         $mapel->status = false;
                                         $mapel->save();
                                     }
@@ -277,6 +282,15 @@ class PegawaiService
                             $role->update($dataUpdate);
                         }
                     }
+
+                    // Commit perubahan sebelum return
+                    DB::commit();
+
+                    return [
+                        'status' => false,
+                        'message' => "Pegawai atas nama {$existingBiodata->nama} sudah terdaftar sebagai pegawai. Silakan periksa kembali di menu Pegawai.",
+                        'data' => ['pegawai' => $pegawaiNonaktif],
+                    ];
                 }
 
                 $biodata = $existingBiodata;
