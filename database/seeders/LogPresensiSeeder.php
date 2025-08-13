@@ -83,38 +83,49 @@ class LogPresensiSeeder extends Seeder
         }
 
         /**
-         * 4. PRESENSI SHOLAT
+         * 4. PRESENSI SHOLAT & LOG PRESENSI
+         * Asumsi semua hadir di tanggal 2025-08-13
          */
-        $tanggalPresensi = now()->format('Y-m-d');
+        $tanggalPresensi = '2025-08-13';
+        $jamPresensi = [
+            1 => '04:35:00', // Subuh
+            2 => '12:05:00', // Dzuhur
+            3 => '15:20:00', // Ashar
+            4 => '18:05:00', // Maghrib
+            5 => '19:20:00', // Isya
+        ];
+
         foreach (range(1, 5) as $santriId) {
+            $kartuId = $santriId; // karena urutan kartu sesuai ID santri
             foreach (range(1, 5) as $sholatId) {
-                PresensiSholat::create([
+                // Insert ke presensi_sholat
+                DB::table('presensi_sholat')->insert([
                     'santri_id' => $santriId,
                     'sholat_id' => $sholatId,
                     'tanggal' => $tanggalPresensi,
-                    'waktu_presensi' => now()->format('H:i:s'),
+                    'waktu_presensi' => $jamPresensi[$sholatId],
                     'status' => 'Hadir',
                     'metode' => 'Kartu',
-                    'created_by' => $adminId
+                    'created_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Insert ke log_presensi
+                DB::table('log_presensi')->insert([
+                    'santri_id' => $santriId,
+                    'kartu_id' => $kartuId,
+                    'sholat_id' => $sholatId,
+                    'waktu_scan' => $tanggalPresensi . ' ' . $jamPresensi[$sholatId],
+                    'hasil' => 'Sukses',
+                    'pesan' => null,
+                    'metode' => 'Kartu',
+                    'user_id' => null,
+                    'created_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
-        }
-
-        /**
-         * 5. LOG PRESENSI
-         */
-        foreach (range(1, 10) as $i) {
-            LogPresensi::create([
-                'santri_id' => rand(1, 5),
-                'kartu_id' => rand(1, 5),
-                'sholat_id' => rand(1, 5),
-                'waktu_scan' => now()->subMinutes(rand(1, 300)),
-                'hasil' => 'Sukses',
-                'pesan' => 'Presensi berhasil',
-                'metode' => 'Kartu',
-                'user_id' => $adminId,
-                'created_by' => $adminId
-            ]);
         }
     }
 }
