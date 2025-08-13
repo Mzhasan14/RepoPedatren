@@ -593,7 +593,7 @@ Route::middleware('auth:sanctum', 'role:admin|superadmin')->group(function () {
 });
 
 Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
-    Route::get('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
+    Route::post('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
     Route::post('scan', [PresensiJamaahController::class, 'scan']);
     Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
     Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');
