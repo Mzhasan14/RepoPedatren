@@ -43,11 +43,11 @@ class LogPresensiSeeder extends Seeder
         $tanggalSampai = now()->endOfMonth()->format('Y-m-d');
 
         $jadwalData = [
-            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '05:30'],
+            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '11:59'],
             ['sholat_id' => 2, 'jam_mulai' => '12:00', 'jam_selesai' => '13:00'],
             ['sholat_id' => 3, 'jam_mulai' => '15:15', 'jam_selesai' => '16:15'],
             ['sholat_id' => 4, 'jam_mulai' => '18:00', 'jam_selesai' => '18:45'],
-            ['sholat_id' => 5, 'jam_mulai' => '19:15', 'jam_selesai' => '20:00'],
+            ['sholat_id' => 5, 'jam_mulai' => '19:15', 'jam_selesai' => '23:59'],
         ];
 
         foreach ($jadwalData as $item) {
