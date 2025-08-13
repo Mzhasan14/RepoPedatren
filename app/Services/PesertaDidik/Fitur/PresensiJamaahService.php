@@ -50,13 +50,10 @@ class PresensiJamaahService
         }
 
         return [
-            'status' => 'Sukses',
-            'data'   => [
-                'nama_santri' => $santri->nama_santri,
-                'nis'         => $santri->nis,
-                'uid_kartu'   => $santri->uid_kartu,
-                'foto_profil' => url($santri->foto_profil),
-            ]
+            'nama_santri' => $santri->nama_santri,
+            'nis'         => $santri->nis,
+            'uid_kartu'   => $santri->uid_kartu,
+            'foto_profil' => url($santri->foto_profil)
         ];
     }
 
