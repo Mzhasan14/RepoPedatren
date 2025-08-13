@@ -184,4 +184,28 @@ class PresensiJamaahController extends Controller
             ], 400);
         }
     }
+
+    public function cariSantriByUid(Request $request)
+    {
+        $uid = $request->input('uid_kartu');
+        if (! $uid) {
+            return response()->json([
+                'success' => false,
+                'message' => 'UID kartu tidak boleh kosong.',
+            ], 422);
+        }
+
+        try {
+            $santri = $this->service->cariSantriByUid($uid);
+            return response()->json([
+                'success' => true,
+                'data' => $santri,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
 }

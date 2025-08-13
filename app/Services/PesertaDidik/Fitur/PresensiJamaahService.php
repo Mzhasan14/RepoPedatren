@@ -16,6 +16,50 @@ class PresensiJamaahService
 {
     protected $tz = 'Asia/Jakarta';
 
+    public function cariSantriByUid(string $uidKartu): array
+    {
+        $pasFotoId = DB::table('jenis_berkas')
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
+
+        $fotoLast = DB::table('berkas')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('jenis_berkas_id', $pasFotoId)
+            ->groupBy('biodata_id');
+
+        $santri = DB::table('kartu as k')
+            ->join('santri as s', 's.id', '=', 'k.santri_id')
+            ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+            ->where('k.uid_kartu', $uidKartu)
+            ->where('k.aktif', true)
+            ->select(
+                'b.nama as nama_santri',
+                's.nis',
+                'k.uid_kartu',
+                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
+            )
+            ->first();
+
+        if (! $santri) {
+            return [
+                'status' => 'Gagal',
+                'message' => 'Kartu tidak ditemukan atau tidak terdaftar.',
+            ];
+        }
+
+        return [
+            'status' => 'Sukses',
+            'data'   => [
+                'nama_santri' => $santri->nama_santri,
+                'nis'         => $santri->nis,
+                'uid_kartu'   => $santri->uid_kartu,
+                'foto_profil' => url($santri->foto_profil),
+            ]
+        ];
+    }
+
     public function scanByUid(string $uid, ?int $operatorUserId = null): array
     {
         $now = Carbon::now($this->tz);
