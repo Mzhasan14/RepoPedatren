@@ -44,7 +44,7 @@ class PresensiJamaahService
 
         if (! $santri) {
             return [
-                'status' => 'Gagal',
+                'status' => false,
                 'message' => 'Kartu tidak ditemukan atau tidak terdaftar.',
             ];
         }
