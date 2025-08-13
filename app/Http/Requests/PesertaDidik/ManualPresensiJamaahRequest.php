@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PresensiJamaahRequest extends FormRequest
+class ManualPresensiJamaahRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -16,18 +16,15 @@ class PresensiJamaahRequest extends FormRequest
         return true;
     }
 
-    public function rules()
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
     {
         return [
-            'uid_kartu' => 'required|string|max:50',
-            'user_id'   => 'sometimes|nullable|integer|exists:users,id',
-        ];
-    }
-
-    public function messages()
-    {
-        return [
-            'uid_kartu.required' => 'UID kartu wajib diisi.',
+            'santri_id' => 'required|exists:santri,id',
         ];
     }
 

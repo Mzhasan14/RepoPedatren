@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use App\Models\PresensiSholat;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\PesertaDidik\PresensiJamaahRequest;
 use App\Services\PesertaDidik\Fitur\PresensiJamaahService;
+use App\Http\Requests\PesertaDidik\ManualPresensiJamaahRequest;
 
 class PresensiJamaahController extends Controller
 {
@@ -164,5 +166,22 @@ class PresensiJamaahController extends Controller
             'success' => true,
             'data' => $data,
         ]);
+    }
+
+    public function manualPresensi(ManualPresensiJamaahRequest $request)
+    {
+        try {
+           $result = $this->service->manualPresensi(
+            santriId: $request->santri_id,
+            operatorUserId: Auth::id() ?: null
+        );
+
+            return response()->json($result);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'Error',
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 }

@@ -39,10 +39,12 @@ use App\Http\Controllers\api\PesertaDidik\BersaudaraController;
 use App\Http\Controllers\api\Administrasi\PelanggaranController;
 use App\Http\Controllers\api\Pegawai\KategoriGolonganController;
 use App\Http\Controllers\api\PesertaDidik\AnakPegawaiController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\KartuController;
 use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
 use App\Http\Controllers\api\PesertaDidik\TahunAjaranController;
 use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
 use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\SholatController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
 use App\Http\Controllers\api\Biometric\BiometricProfileController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\TahfidzController;
@@ -56,6 +58,7 @@ use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BiodataController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\JadwalSholatController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
@@ -575,7 +578,21 @@ Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->g
     Route::get('/nadhoman', [NadhomanController::class, 'getAllRekap']);
 });
 
-Route::prefix('presensi')->middleware(['auth:sanctum','throttle:200,1'])->group(function () {
-    Route::post('scan', [PresensiJamaahController::class, 'scan']); // POST /api/presensi/scan
-    Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');   // GET /api/presensi
+Route::middleware(['auth:sanctum', 'role:admin|superadmin'])->group(function () {
+    Route::apiResource('sholat', SholatController::class);
+    Route::apiResource('jadwal-sholat', JadwalSholatController::class);
+});
+
+Route::middleware('auth:sanctum', 'role:admin|superadmin')->group(function () {
+    Route::get('/kartu', [KartuController::class, 'index']);
+    Route::get('/kartu/{id}', [KartuController::class, 'show']);
+    Route::post('/kartu', [KartuController::class, 'store']);
+    Route::put('/kartu/{id}', [KartuController::class, 'update']);
+    Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
+});
+
+Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
+    Route::post('scan', [PresensiJamaahController::class, 'scan']);
+    Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
+    Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');
 });

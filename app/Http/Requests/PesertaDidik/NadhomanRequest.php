@@ -48,6 +48,7 @@ class NadhomanRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    
     public function messages(): array
     {
         return [
