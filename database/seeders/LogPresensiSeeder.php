@@ -42,19 +42,23 @@ class LogPresensiSeeder extends Seeder
         $tanggalMulai = now()->startOfMonth()->format('Y-m-d');
         $tanggalSampai = now()->endOfMonth()->format('Y-m-d');
 
+        $tanggalMulai  = now()->startOfMonth()->format('Y-m-d');
+        $tanggalSampai = now()->endOfMonth()->format('Y-m-d');
+
         $jadwalData = [
-            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '11:59'],
-            ['sholat_id' => 2, 'jam_mulai' => '12:00', 'jam_selesai' => '13:00'],
-            ['sholat_id' => 3, 'jam_mulai' => '15:15', 'jam_selesai' => '16:15'],
-            ['sholat_id' => 4, 'jam_mulai' => '18:00', 'jam_selesai' => '18:45'],
-            ['sholat_id' => 5, 'jam_mulai' => '19:15', 'jam_selesai' => '23:59'],
+            // sholat_id => [mulai presensi, selesai presensi]
+            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '05:00'],  // Subuh
+            ['sholat_id' => 2, 'jam_mulai' => '11:45', 'jam_selesai' => '12:30'],  // Dzuhur
+            ['sholat_id' => 3, 'jam_mulai' => '15:15', 'jam_selesai' => '15:45'],  // Ashar
+            ['sholat_id' => 4, 'jam_mulai' => '17:35', 'jam_selesai' => '18:05'],  // Maghrib
+            ['sholat_id' => 5, 'jam_mulai' => '19:00', 'jam_selesai' => '19:30'],  // Isya
         ];
 
         foreach ($jadwalData as $item) {
             JadwalSholat::create(array_merge($item, [
                 'berlaku_mulai' => $tanggalMulai,
                 'berlaku_sampai' => $tanggalSampai,
-                'created_by' => $adminId
+                'created_by'    => $adminId
             ]));
         }
 
@@ -67,7 +71,7 @@ class LogPresensiSeeder extends Seeder
             '0731609999',
             '0724142895',
             '0722142575',
-            '0733728351',
+            '0726173807',
         ];
 
         foreach ($uidList as $index => $uid) {

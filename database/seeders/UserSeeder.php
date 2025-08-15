@@ -18,7 +18,6 @@ class UserSeeder extends Seeder
         $roles = [
             'superadmin',
             'supervisor',
-            'admin',
             'ustadz',
             'petugas',
             'kamtib',
@@ -46,14 +45,6 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
         $supervisor->assignRole('supervisor');
-
-        // Admin
-        $admin = User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password'),
-        ]);
-        $admin->assignRole('admin');
 
         // Staff
         $staff = User::create([

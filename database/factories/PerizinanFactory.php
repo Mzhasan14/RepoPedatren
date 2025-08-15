@@ -132,7 +132,7 @@ class PerizinanFactory extends Factory
             'approved_by_kamtib' => $approved_by_kamtib,
             'approved_by_pengasuh' => $approved_by_pengasuh,
             'keterangan' => $this->faker->randomElement($keteranganIzinList),
-            'created_by' => optional(User::role('admin')->inRandomOrder()->first())->id,
+            'created_by' => optional(User::role('petugas')->inRandomOrder()->first())->id,
             'updated_by' => null,
         ];
     }
