@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\KitabController;
 use App\Http\Controllers\api\PDF\PDFController;
 use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
@@ -56,16 +57,18 @@ use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
 use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
 use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BiodataController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\OutletController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\JadwalSholatController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\KategoriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\KitabController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -600,10 +603,18 @@ Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/kitab', [KitabController::class, 'indexAll']); 
-    Route::post('/kitab', [KitabController::class, 'store']);      
-    Route::get('/kitab/{id}', [KitabController::class, 'show']); 
-    Route::put('/kitab/{id}', [KitabController::class, 'update']); 
+    Route::get('/kitab', [KitabController::class, 'indexAll']);
+    Route::post('/kitab', [KitabController::class, 'store']);
+    Route::get('/kitab/{id}', [KitabController::class, 'show']);
+    Route::put('/kitab/{id}', [KitabController::class, 'update']);
     Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
     Route::post('/aktiv/{id}', [KitabController::class, 'activate']);
 });
+
+Route::apiResource('outlet', OutletController::class);
+
+// Kategori
+Route::apiResource('kategori', KategoriController::class);
+
+// Detail User Outlet
+Route::apiResource('detail-user-outlet', DetailUserOutletController::class);
