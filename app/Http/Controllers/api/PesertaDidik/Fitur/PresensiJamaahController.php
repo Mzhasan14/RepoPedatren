@@ -139,6 +139,7 @@ class PresensiJamaahController extends Controller
         $totalBase = DB::table('presensi_sholat')
             ->join('santri', 'presensi_sholat.santri_id', '=', 'santri.id')
             ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
+            ->where('santri.status', 'aktif')
             ->whereDate('presensi_sholat.tanggal', $tanggal);
 
         if ($sholatId) $totalBase->where('presensi_sholat.sholat_id', $sholatId);
@@ -152,7 +153,7 @@ class PresensiJamaahController extends Controller
         $total_presensi = (clone $totalBase)->count();
 
         $totalSantriQuery = DB::table('santri')
-            ->join('biodata as b', 'santri.biodata_id', '=', 'b.id');
+            ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')->where('santri.status', 'aktif');
         if ($jenisKelamin) $totalSantriQuery->where('b.jenis_kelamin', $jenisKelamin);
         $total_santri = $totalSantriQuery->count();
 
@@ -170,6 +171,7 @@ class PresensiJamaahController extends Controller
                     if ($metode)   $join->where('presensi_sholat.metode', $metode);
                 })
                 ->leftJoin('sholat', 'sholat.id', '=', 'presensi_sholat.sholat_id')
+                ->where('santri.status', 'aktif')
                 ->select(
                     'santri.id as santri_id',
                     'b.nama as nama_santri',
@@ -203,6 +205,7 @@ class PresensiJamaahController extends Controller
                 ->join('santri', 'presensi_sholat.santri_id', '=', 'santri.id')
                 ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
                 ->join('sholat', 'sholat.id', '=', 'presensi_sholat.sholat_id')
+                ->where('santri.status', 'aktif')
                 ->select(
                     'presensi_sholat.id as presensi_id',
                     'santri.id as santri_id',

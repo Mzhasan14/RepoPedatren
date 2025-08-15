@@ -69,6 +69,7 @@ class DatabaseSeeder extends Seeder
             KitabSeeder::class,
             NadhomanSeeder::class,
             TahfidzSeeder::class,
+            OutletSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai
         Activity::enableLogging();
