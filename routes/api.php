@@ -75,7 +75,7 @@ use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 Route::post('register', [AuthController::class, 'register'])
     ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 
-Route::apiResource('users', UserController::class);
+Route::apiResource('users', UserController::class)->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 // Route::post('users/change-status/{user}', [UserController::class, 'changeStatus'])
 //     ->middleware(['auth:sanctum', 'role:admin|superadmin'])
 //     ->name('users.changeStatus');
