@@ -86,15 +86,16 @@ class KartuService
     private function transform($kartu)
     {
         return [
-            'id' => $kartu->id,
-            'nis' => $kartu->santri->nis ?? null,
-            'nama' => $kartu->santri->biodata->nama ?? null,
-            'uid_kartu' => $kartu->uid_kartu,
-            'aktif' => (bool) $kartu->aktif,
-            'tanggal_terbit' => $kartu->tanggal_terbit,
+            'id'              => $kartu->id,
+            'santri_id'       => $kartu->santri->id ?? null,
+            'nis'             => $kartu->santri->nis ?? null,
+            'nama'            => $kartu->santri->biodata->nama ?? null,
+            'uid_kartu'       => $kartu->uid_kartu,
+            'aktif'           => (bool) $kartu->aktif,
+            'tanggal_terbit'  => $kartu->tanggal_terbit,
             'tanggal_expired' => $kartu->tanggal_expired,
-            'created_at' => $kartu->created_at,
-            'updated_at' => $kartu->updated_at,
+            'created_at'      => $kartu->created_at,
+            'updated_at'      => $kartu->updated_at,
         ];
     }
 }
