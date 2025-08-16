@@ -57,17 +57,19 @@ class PresensiJamaahController extends Controller
 
     public function index(Request $request)
     {
-        $now = Carbon::now('Asia/Jakarta');
-        $tanggal       = $request->query('tanggal', $now->toDateString());
-        $sholatId      = $request->query('sholat_id');
-        $jadwalId      = $request->query('jadwal_id');
-        $metode        = $request->query('metode');
-        $status        = $request->query('status', 'all');
-        $showAll       = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
-        $jenisKelamin  = $request->query('jenis_kelamin'); // L / P
+        $now          = Carbon::now('Asia/Jakarta');
+        $tanggal      = $request->query('tanggal', $now->toDateString());
+        $sholatId     = $request->query('sholat_id');
+        $jadwalId     = $request->query('jadwal_id');
+        $metode       = $request->query('metode');
+        $status       = $request->query('status', 'all');
+        $showAll      = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
+        $jenisKelamin = $request->query('jenis_kelamin'); // L / P
 
-        // 🔍 Auto detect jadwal sekarang / terakhir
-        if (!$sholatId && !$jadwalId && !$metode && strtolower($status) === 'all' && !$showAll) {
+        /**
+         * 🔍 Auto detect jadwal sekarang / terakhir
+         */
+        if (!$sholatId && !$jadwalId) {
             $jadwalSekarang = JadwalSholat::with('sholat')
                 ->where('berlaku_mulai', '<=', $tanggal)
                 ->where(function ($q) use ($tanggal) {
@@ -92,40 +94,42 @@ class PresensiJamaahController extends Controller
                     ->orderByDesc('jam_mulai')
                     ->first();
 
-                if (!$jadwalTerakhir) {
-                    $jadwalTerakhir = JadwalSholat::with('sholat')
+                if ($jadwalTerakhir) {
+                    $sholatId = $jadwalTerakhir->sholat_id;
+                    $jadwalId = $jadwalTerakhir->id;
+                } else {
+                    $jadwalPertama = JadwalSholat::with('sholat')
                         ->where('berlaku_mulai', '<=', $tanggal)
                         ->where(function ($q) use ($tanggal) {
                             $q->whereNull('berlaku_sampai')
                                 ->orWhere('berlaku_sampai', '>=', $tanggal);
                         })
-                        ->orderByDesc('jam_mulai')
+                        ->orderBy('jam_mulai')
                         ->first();
-                }
 
-                if ($jadwalTerakhir) {
-                    $sholatId = $jadwalTerakhir->sholat_id;
-                    $jadwalId = $jadwalTerakhir->id;
+                    if ($jadwalPertama) {
+                        $sholatId = $jadwalPertama->sholat_id;
+                        $jadwalId = $jadwalPertama->id;
+                    }
                 }
             }
         }
 
-        // 📌 Ambil jadwal info
-        $jadwal = null;
-        if ($jadwalId) {
-            $jadwal = JadwalSholat::with('sholat')->find($jadwalId);
-        } elseif ($sholatId) {
-            $jadwal = JadwalSholat::with('sholat')
-                ->where('sholat_id', $sholatId)
-                ->where('berlaku_mulai', '<=', $tanggal)
-                ->where(function ($q) use ($tanggal) {
-                    $q->whereNull('berlaku_sampai')
-                        ->orWhere('berlaku_sampai', '>=', $tanggal);
-                })
-                ->orderByDesc('berlaku_mulai')
-                ->first();
-        }
+        // 📌 Ambil jadwal sekarang/terakhir
+        $jadwal = $jadwalId ? JadwalSholat::with('sholat')->find($jadwalId) : null;
 
+        // 📌 Ambil jadwal mendatang (setelah sekarang)
+        $jadwalMendatang = JadwalSholat::with('sholat')
+            ->where('berlaku_mulai', '<=', $tanggal)
+            ->where(function ($q) use ($tanggal) {
+                $q->whereNull('berlaku_sampai')
+                    ->orWhere('berlaku_sampai', '>=', $tanggal);
+            })
+            ->whereTime('jam_mulai', '>', $now->format('H:i:s'))
+            ->orderBy('jam_mulai')
+            ->first();
+
+        // 📌 Format response jadwal sekarang/terakhir
         $jadwalResponse = $jadwal ? [
             'jadwal_id'   => $jadwal->id,
             'sholat_id'   => $jadwal->sholat_id,
@@ -135,12 +139,35 @@ class PresensiJamaahController extends Controller
             'jam_selesai' => $jadwal->jam_selesai,
         ] : null;
 
+        // 📌 Format response jadwal mendatang
+        $jadwalMendatangResponse = $jadwalMendatang ? [
+            'jadwal_id'   => $jadwalMendatang->id,
+            'sholat_id'   => $jadwalMendatang->sholat_id,
+            'nama_sholat' => $jadwalMendatang->sholat->nama_sholat ?? null,
+            'tanggal'     => $tanggal,
+            'jam_mulai'   => $jadwalMendatang->jam_mulai,
+            'jam_selesai' => $jadwalMendatang->jam_selesai,
+        ] : null;
+
+        // 📌 Status presensi (hanya 2 kondisi)
+        $statusPresensi = null;
+        if ($jadwal) {
+            if ($now->between(Carbon::parse($jadwal->jam_mulai), Carbon::parse($jadwal->jam_selesai))) {
+                $statusPresensi = 'waktunya_presensi';
+            } else {
+                $statusPresensi = 'belum_waktunya';
+            }
+        }
+
         // 📊 Query totals
         $totalBase = DB::table('presensi_sholat')
             ->join('santri', 'presensi_sholat.santri_id', '=', 'santri.id')
             ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
-            ->where('santri.status', 'aktif')
-            ->whereDate('presensi_sholat.tanggal', $tanggal);
+            ->where('santri.status', 'aktif');
+
+        if (!$showAll) {
+            $totalBase->whereDate('presensi_sholat.tanggal', $tanggal);
+        }
 
         if ($sholatId) $totalBase->where('presensi_sholat.sholat_id', $sholatId);
         if ($metode)   $totalBase->where('presensi_sholat.metode', $metode);
@@ -153,7 +180,8 @@ class PresensiJamaahController extends Controller
         $total_presensi = (clone $totalBase)->count();
 
         $totalSantriQuery = DB::table('santri')
-            ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')->where('santri.status', 'aktif');
+            ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
+            ->where('santri.status', 'aktif');
         if ($jenisKelamin) $totalSantriQuery->where('b.jenis_kelamin', $jenisKelamin);
         $total_santri = $totalSantriQuery->count();
 
@@ -161,7 +189,8 @@ class PresensiJamaahController extends Controller
 
         // 📋 List data sesuai filter
         $isTidakHadirFilter = in_array(strtolower($status), ['tidak_hadir', 'tidak-hadir']);
-        if ($isTidakHadirFilter || $showAll) {
+
+        if ($isTidakHadirFilter) {
             $listQuery = DB::table('santri')
                 ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
                 ->leftJoin('presensi_sholat', function ($join) use ($tanggal, $sholatId, $metode) {
@@ -189,12 +218,10 @@ class PresensiJamaahController extends Controller
 
             if ($jenisKelamin) $listQuery->where('b.jenis_kelamin', $jenisKelamin);
 
-            if ($isTidakHadirFilter && !$showAll) {
-                $listQuery->where(function ($q) {
-                    $q->whereNull('presensi_sholat.id')
-                        ->orWhere('presensi_sholat.status', '!=', 'Hadir');
-                });
-            }
+            $listQuery->where(function ($q) {
+                $q->whereNull('presensi_sholat.id')
+                    ->orWhere('presensi_sholat.status', '!=', 'Hadir');
+            });
 
             $list = $listQuery
                 ->orderByDesc('presensi_sholat.created_at')
@@ -219,8 +246,11 @@ class PresensiJamaahController extends Controller
                     'presensi_sholat.status',
                     'presensi_sholat.metode',
                     'presensi_sholat.created_at as presensi_created_at'
-                )
-                ->whereDate('presensi_sholat.tanggal', $tanggal);
+                );
+
+            if (!$showAll) {
+                $listQuery->whereDate('presensi_sholat.tanggal', $tanggal);
+            }
 
             if ($sholatId)      $listQuery->where('presensi_sholat.sholat_id', $sholatId);
             if ($metode)        $listQuery->where('presensi_sholat.metode', $metode);
@@ -235,7 +265,7 @@ class PresensiJamaahController extends Controller
         }
 
         return response()->json([
-            'success' => true,
+            'success'          => true,
             'filter' => [
                 'tanggal'       => $tanggal,
                 'sholat_id'     => $sholatId,
@@ -245,18 +275,18 @@ class PresensiJamaahController extends Controller
                 'jenis_kelamin' => $jenisKelamin,
                 'all'           => $showAll,
             ],
-            'jadwal_sholat' => $jadwalResponse,
+            'jadwal_sholat'    => $jadwalResponse,
+            'jadwal_mendatang' => $jadwalMendatangResponse,
+            'status_presensi'  => $statusPresensi,
             'totals' => [
-                'total_hadir'              => $total_hadir,
-                'total_tidak_hadir'        => $total_tidak_hadir,
-                'total_presensi_tercatat'  => $total_presensi,
-                'total_santri'             => $total_santri,
+                'total_hadir'             => $total_hadir,
+                'total_tidak_hadir'       => $total_tidak_hadir,
+                'total_presensi_tercatat' => $total_presensi,
+                'total_santri'            => $total_santri,
             ],
             'data' => $list,
         ]);
     }
-
-
 
     public function manualPresensi(ManualPresensiJamaahRequest $request)
     {
