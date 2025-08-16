@@ -58,6 +58,7 @@ class AlumniService
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where(fn($q) => $q->where('s.status', 'alumni')
                 ->orWhere('rp.status', 'lulus'))
+            ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at')
                 ->whereNull('rp.deleted_at'));

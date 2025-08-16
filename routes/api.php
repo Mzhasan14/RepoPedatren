@@ -102,7 +102,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 });
 
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor', 'throttle:200,1'])->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
@@ -184,13 +184,13 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'throttle:200,1'])->gro
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
-Route::prefix('import')->middleware(['throttle:200,1'])->group(function () {
+Route::prefix('import')->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1'])->group(function () {
     Route::post('/santri', [PesertaDidikController::class, 'importSantri']);
     Route::post('/pegawai', [PegawaiController::class, 'importPegawai']);
 });
 
 // Export
-Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:200,1'])->group(function () {
+Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor', 'throttle:200,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'exportExcel'])->name('nondomisili.export');
@@ -214,288 +214,651 @@ Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|admin', 't
 });
 
 // Formulir Peserta Didik
-Route::prefix('formulir')->middleware([
-    'auth:sanctum',
-    'role:superadmin|admin',
-    'throttle:200,1'
-])->group(function () {
+// Route::prefix('formulir')->middleware([
+//     'auth:sanctum',
+//     'role:superadmin',
+//     'throttle:200,1'
+// ])->group(function () {
 
-    // Biodata
-    Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
-    Route::put('/{id}/biodata', [BiodataController::class, 'update']);
-    // Santri
-    Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
-    Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
-    Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
-    Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
+//     // Biodata
+//     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
+//     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
+//     // Santri
+//     Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
+//     Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
+//     Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
+//     Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
 
-    // Domisili
-    Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
-    Route::get('{id}/domisili/show', [DomisiliController::class, 'show']);
-    Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
-    Route::put('/{id}/domisili', [DomisiliController::class, 'update'])->middleware('role:superadmin|admin');
+//     // Domisili
+//     Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
+//     Route::get('{id}/domisili/show', [DomisiliController::class, 'show']);
+//     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
+//     Route::put('/{id}/domisili', [DomisiliController::class, 'update'])->middleware('role:superadmin|admin');
 
-    Route::put('/{id}/domisili/pindah', [DomisiliController::class, 'pindahDomisili']);
-    Route::put('/{id}/domisili/keluar', [DomisiliController::class, 'keluarDomisili']);
+//     Route::put('/{id}/domisili/pindah', [DomisiliController::class, 'pindahDomisili']);
+//     Route::put('/{id}/domisili/keluar', [DomisiliController::class, 'keluarDomisili']);
 
-    // Pendidikan
-    Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
-    Route::get('{id}/pendidikan/show', [PendidikanController::class, 'show']);
-    Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
-    Route::put('/{id}/pendidikan', [PendidikanController::class, 'update'])->middleware('role:superadmin|admin');
+//     // Pendidikan
+//     Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
+//     Route::get('{id}/pendidikan/show', [PendidikanController::class, 'show']);
+//     Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
+//     Route::put('/{id}/pendidikan', [PendidikanController::class, 'update'])->middleware('role:superadmin|admin');
 
-    Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
-    Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
+//     Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
+//     Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
 
-    // Kewaliasuhan
-    Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
-    Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
-    Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
-    Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
+//     // Kewaliasuhan
+//     Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
+//     Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
+//     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
+//     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
 
-    Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
+//     Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
 
-    Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
-    Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
-    Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
-    Route::put('{id}/anakasuh', [AnakAsuhController::class, 'update'])->middleware('role:superadmin|admin');;
+//     Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
+//     Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
+//     Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
+//     Route::put('{id}/anakasuh', [AnakAsuhController::class, 'update'])->middleware('role:superadmin|admin');;
 
-    Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
-    Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
+//     Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
+//     Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
 
-    // Khadam
-    Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
-    Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
-    Route::post('/{id}/khadam', [KhadamFormController::class, 'store']);
-    Route::put('/{id}/khadam', [KhadamFormController::class, 'update'])->middleware('role:superadmin|admin');
+//     // Khadam
+//     Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
+//     Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
+//     Route::post('/{id}/khadam', [KhadamFormController::class, 'store']);
+//     Route::put('/{id}/khadam', [KhadamFormController::class, 'update'])->middleware('role:superadmin|admin');
 
-    Route::put('/{id}/khadam/pindah', [KhadamFormController::class, 'pindahKhadam']);
-    Route::put('/{id}/khadam/keluar', [KhadamFormController::class, 'keluarKhadam']);
+//     Route::put('/{id}/khadam/pindah', [KhadamFormController::class, 'pindahKhadam']);
+//     Route::put('/{id}/khadam/keluar', [KhadamFormController::class, 'keluarKhadam']);
 
-    // Warga Pesantren
-    Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
-    Route::get('/{id}/wargapesantren/show', [WargaPesantrenController::class, 'show']);
-    Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
-    Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
+//     // Warga Pesantren
+//     Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
+//     Route::get('/{id}/wargapesantren/show', [WargaPesantrenController::class, 'show']);
+//     Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
+//     Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
-    // Berkas
-    Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
-    Route::get('/{id}/berkas/show', [BerkasController::class, 'show']);
-    Route::post('/{id}/berkas', [BerkasController::class, 'store']);
-    Route::put('/{id}/berkas', [BerkasController::class, 'update']);
+//     // Berkas
+//     Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
+//     Route::get('/{id}/berkas/show', [BerkasController::class, 'show']);
+//     Route::post('/{id}/berkas', [BerkasController::class, 'store']);
+//     Route::put('/{id}/berkas', [BerkasController::class, 'update']);
 
-    // Kepegawaian
-    Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
-    Route::get('/{id}/karyawan/show', [KaryawanController::class, 'edit']);
-    Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
-    Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
+//     // Kepegawaian
+//     Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
+//     Route::get('/{id}/karyawan/show', [KaryawanController::class, 'edit']);
+//     Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
+//     Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
 
-    Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
-    Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
-    Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
-    Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
-    Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
-    Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
-    Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
-    Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
+//     Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
+//     Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
+//     Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
+//     Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+//     Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
+//     Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
+//     Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
+//     Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
 
-    Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
-    Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
-    Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
-    Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
-    Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
-    Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);
-    Route::put('/{jadwalId}/jadwal-pelajaran/update', [PengajarController::class, 'updateJadwal']);
+//     Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
+//     Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
+//     Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
+//     Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
+//     Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
+//     Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);
+//     Route::put('/{jadwalId}/jadwal-pelajaran/update', [PengajarController::class, 'updateJadwal']);
 
-    Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
-    Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
-    Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
-    Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
+//     Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
+//     Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
+//     Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
+//     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
 
-    Route::get('/{id}/walikelas', [WalikelasController::class, 'index']);
-    Route::get('/{id}/walikelas/show', [WalikelasController::class, 'edit']);
-    Route::put('/{id}/walikelas', [WalikelasController::class, 'update']);
-    Route::post('/{id}/walikelas', [WalikelasController::class, 'store']);
+//     Route::get('/{id}/walikelas', [WalikelasController::class, 'index']);
+//     Route::get('/{id}/walikelas/show', [WalikelasController::class, 'edit']);
+//     Route::put('/{id}/walikelas', [WalikelasController::class, 'update']);
+//     Route::post('/{id}/walikelas', [WalikelasController::class, 'store']);
 
-    Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
-    Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
+//     Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
+//     Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
 
-    Route::put('/{id}/pengajar/pindah', [PengajarController::class, 'pindahPengajar']);
-    Route::put('/{id}/pengajar/keluar', [PengajarController::class, 'keluarPengajar']);
+//     Route::put('/{id}/pengajar/pindah', [PengajarController::class, 'pindahPengajar']);
+//     Route::put('/{id}/pengajar/keluar', [PengajarController::class, 'keluarPengajar']);
 
-    Route::put('/{id}/pengurus/pindah', [PengurusController::class, 'pindahPengurus']);
-    Route::put('/{id}/pengurus/keluar', [PengurusController::class, 'keluarPengurus']);
+//     Route::put('/{id}/pengurus/pindah', [PengurusController::class, 'pindahPengurus']);
+//     Route::put('/{id}/pengurus/keluar', [PengurusController::class, 'keluarPengurus']);
 
-    Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
-    Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
+//     Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
+//     Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
 
-    Route::put('/{id}/walikelas/pindah', [WalikelasController::class, 'pindahWalikelas']);
-    Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
+//     Route::put('/{id}/walikelas/pindah', [WalikelasController::class, 'pindahWalikelas']);
+//     Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
 
-    // Keluarga
-    Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
-    Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
-    Route::put('{id}/keluarga', [KeluargaController::class, 'update']); // update hanya 1 data keluarga saja
-    Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']); // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
+//     // Keluarga
+//     Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
+//     Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
+//     Route::put('{id}/keluarga', [KeluargaController::class, 'update']); // update hanya 1 data keluarga saja
+//     Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']); // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
 
-    Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
-    Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
-    Route::get('/{id}/orangtua/show', [OrangTuaWaliController::class, 'show']);
-    Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
-    Route::put('{id}/orangtua', [OrangTuaWaliController::class, 'update'])->middleware('role:superadmin|admin');
-    Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy'])->middleware('role:superadmin|admin');
+//     Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
+//     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
+//     Route::get('/{id}/orangtua/show', [OrangTuaWaliController::class, 'show']);
+//     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
+//     Route::put('{id}/orangtua', [OrangTuaWaliController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy'])->middleware('role:superadmin|admin');
 
-    // Catatan Santri
-    Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);
-    Route::get('/{id}/catatan-afektif/show', [AdministrasiCatatanAfektifController::class, 'edit']);
-    Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
-    Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
+//     // Catatan Santri
+//     Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);
+//     Route::get('/{id}/catatan-afektif/show', [AdministrasiCatatanAfektifController::class, 'edit']);
+//     Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
+//     Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
 
-    Route::get('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'index']);
-    Route::get('/{id}/catatan-kognitif/show', [CatatanKognitifController::class, 'edit']);
-    Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
-    Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
-});
+//     Route::get('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'index']);
+//     Route::get('/{id}/catatan-kognitif/show', [CatatanKognitifController::class, 'edit']);
+//     Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
+//     Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
+// });
 
-Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
-    Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
-    Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+Route::prefix('formulir')
+    ->middleware(['auth:sanctum', 'throttle:200,1'])
+    ->group(function () {
 
-    // Create Anak Pegawai
-    Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
+        /**
+         * ===============================
+         * READ ONLY (superadmin & supervisor)
+         * ===============================
+         */
+        Route::middleware('role:superadmin|supervisor')->group(function () {
+            // Biodata
+            Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
 
-    // Create Khadam
-    Route::post('/khadam', [KhadamController::class, 'store']);
+            // Santri
+            Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
+            Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
 
-    Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
-    Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
+            // Domisili
+            Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
+            Route::get('{id}/domisili/show', [DomisiliController::class, 'show']);
 
-    // tahun ajaran
-    Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
-    Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
-    Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+            // Pendidikan
+            Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
+            Route::get('{id}/pendidikan/show', [PendidikanController::class, 'show']);
 
-    // angkatan
-    Route::post('/angkatan', [AngkatanController::class, 'store']);
-    Route::put('/angkatan/{id}', [AngkatanController::class, 'update']);
-    Route::delete('/angkatan/{id}', [AngkatanController::class, 'destroy']);
+            // Waliasuh & Anakasuh
+            Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
+            Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
+            Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
+            Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
 
-    // semester
-    Route::post('/semester', [SemesterController::class, 'store']);
-    Route::put('/semester/{id}', [SemesterController::class, 'update']);
-    Route::delete('/semester/{id}', [SemesterController::class, 'destroy']);
+            // Khadam
+            Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
+            Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
 
-    // perizinan
-    Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
-    Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
-    Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
-    Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+            // Warga Pesantren
+            Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
+            Route::get('/{id}/wargapesantren/show', [WargaPesantrenController::class, 'show']);
 
-    Route::put('/{id}/perizinan/set-keluar', [PerizinanController::class, 'setKeluar']);
-    Route::put('/{id}/perizinan/set-kembali', [PerizinanController::class, 'setKembali']);
+            // Kepegawaian (Karyawan, Pengajar, Pengurus, Walikelas)
+            Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
+            Route::get('/{id}/karyawan/show', [KaryawanController::class, 'edit']);
+            Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
+            Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
+            Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
+            Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
+            Route::get('/{id}/walikelas', [WalikelasController::class, 'index']);
+            Route::get('/{id}/walikelas/show', [WalikelasController::class, 'edit']);
 
-    Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
+            // Keluarga & Orang Tua
+            Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
+            Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
+            Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
+            Route::get('/{id}/orangtua/show', [OrangTuaWaliController::class, 'show']);
+            Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
 
-    // pelanggaran
-    Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
-    Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
-    Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
-    Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+            // Catatan
+            Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);
+            Route::get('/{id}/catatan-afektif/show', [AdministrasiCatatanAfektifController::class, 'edit']);
+            Route::get('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'index']);
+            Route::get('/{id}/catatan-kognitif/show', [CatatanKognitifController::class, 'edit']);
 
-    Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
+            // Berkas
+            Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
+            Route::get('/{id}/berkas/show', [BerkasController::class, 'show']);
 
-    // //pengunjung mahrom
-    // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
-    Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
-    Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
-    Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
+            // Mata Pelajaran & Jadwal (read only)
+            Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
+            Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
+            Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
+        });
 
-    // Keluarga
-    Route::get('/hubungan', [HubunganKeluargaController::class, 'index']);
-    Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
-    Route::get('{id}/hubungan/show', [HubunganKeluargaController::class, 'show']);
-    Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
-    Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
+        /**
+         * ===============================
+         * FULL ACCESS (hanya superadmin)
+         * ===============================
+         */
+        Route::middleware('role:superadmin')->group(function () {
+            // Biodata
+            Route::put('/{id}/biodata', [BiodataController::class, 'update']);
 
-    // Kewaliasuhan
-    Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
-    Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
-    Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
-    Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
-    Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-    Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
+            // Santri
+            Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
+            Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
 
-    // lembaga
-    Route::get('lembaga', [LembagaController::class, 'index']);
-    Route::post('lembaga', [LembagaController::class, 'store']);
-    Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
-    Route::put('{id}/lembaga', [LembagaController::class, 'update']);
-    Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
+            // Domisili
+            Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
+            Route::put('/{id}/domisili', [DomisiliController::class, 'update']);
+            Route::put('/{id}/domisili/pindah', [DomisiliController::class, 'pindahDomisili']);
+            Route::put('/{id}/domisili/keluar', [DomisiliController::class, 'keluarDomisili']);
 
-    // 🏠 Wilayah (Blok, Kamar, Domisili)
-    Route::apiResource('/wilayah', WilayahController::class);
-    Route::put('/wilayah/{id}/activate', [WilayahController::class, 'activate']);
-    Route::apiResource('/blok', BlokController::class);
-    Route::put('/blok/{id}/activate', [BlokController::class, 'activate']);
-    Route::apiResource('/kamar', KamarController::class);
-    Route::put('/kamar/{id}/activate', [KamarController::class, 'activate']);
+            // Pendidikan
+            Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
+            Route::put('/{id}/pendidikan', [PendidikanController::class, 'update']);
+            Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
+            Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
 
-    // 🎓 Pendidikan
-    Route::apiResource('/lembaga', LembagaController::class);
-    Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
-    Route::apiResource('/jurusan', JurusanController::class);
-    Route::put('/jurusan/{id}/activate', [JurusanController::class, 'activate']);
-    Route::apiResource('/kelas', KelasController::class);
-    Route::put('/kelas/{id}/activate', [KelasController::class, 'activate']);
-    Route::apiResource('/rombel', RombelController::class);
-    Route::put('/rombel/{id}/activate', [RombelController::class, 'activate']);
+            // Waliasuh
+            Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
+            Route::put('{id}/waliasuh', [WaliasuhController::class, 'update']);
+            Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
 
-    // golongan
-    Route::get('golongan', [GolonganController::class, 'index']);
-    Route::post('golongan', [GolonganController::class, 'store']);
-    Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
-    Route::put('{id}/golongan', [GolonganController::class, 'update']);
-    Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
+            // Anakasuh
+            Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
+            Route::put('{id}/anakasuh', [AnakAsuhController::class, 'update']);
+            Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
+            Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
 
-    // kategori golongan
-    Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
-    Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
-    Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
-    Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
-    Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
+            // Khadam
+            Route::post('/{id}/khadam', [KhadamFormController::class, 'store']);
+            Route::put('/{id}/khadam', [KhadamFormController::class, 'update']);
+            Route::put('/{id}/khadam/pindah', [KhadamFormController::class, 'pindahKhadam']);
+            Route::put('/{id}/khadam/keluar', [KhadamFormController::class, 'keluarKhadam']);
 
-    // golongan Jabatan
-    Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
-    Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
-    Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
-    Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
-    Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
+            // Warga Pesantren
+            Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
+            Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
 
-    // Kepegawaian
-    Route::post('/pegawai', [PegawaiController::class, 'store']);
-    Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
-    Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
+            // Berkas
+            Route::post('/{id}/berkas', [BerkasController::class, 'store']);
+            Route::put('/{id}/berkas', [BerkasController::class, 'update']);
 
-    // Jam Pelajaran
-    Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
-    Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
-    Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
-    Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
-    Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
+            // Kepegawaian
+            Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
+            Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
+            Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
+            Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
 
-    // Jadwal Pelajaran
-    Route::get('/jadwal-pelajaran', [MataPelajaranController::class, 'getAllJadwal']);
-    Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
-    Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'showJadwal']);
-    Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
-    Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
-});
+            Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
+            Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
+            Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
+            Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
+            Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
+            Route::put('/{id}/pengajar/pindah', [PengajarController::class, 'pindahPengajar']);
+            Route::put('/{id}/pengajar/keluar', [PengajarController::class, 'keluarPengajar']);
 
-Route::prefix('approve')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
-    Route::post('/perizinan/biktren/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren'])->middleware('role:biktren');
-    Route::post('/perizinan/kamtib/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib'])->middleware('role:kamtib');
-    Route::post('/perizinan/pengasuh/{id}', [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh'])->middleware('role:pengasuh');
-});
+            Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
+            Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
+            Route::put('/{id}/pengurus/pindah', [PengurusController::class, 'pindahPengurus']);
+            Route::put('/{id}/pengurus/keluar', [PengurusController::class, 'keluarPengurus']);
+
+            Route::put('/{id}/walikelas', [WalikelasController::class, 'update']);
+            Route::post('/{id}/walikelas', [WalikelasController::class, 'store']);
+            Route::put('/{id}/walikelas/pindah', [WalikelasController::class, 'pindahWalikelas']);
+            Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
+
+            // Catatan
+            Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
+            Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
+            Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
+
+            Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
+            Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
+            Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
+
+            // Keluarga
+            Route::put('{id}/keluarga', [KeluargaController::class, 'update']);
+            Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']);
+
+            // Orang Tua Wali
+            Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
+            Route::put('{id}/orangtua', [OrangTuaWaliController::class, 'update']);
+            Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy']);
+
+            // Mata Pelajaran & Jadwal
+            Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
+            Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
+            Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
+            Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);
+            Route::put('/{jadwalId}/jadwal-pelajaran/update', [PengajarController::class, 'updateJadwal']);
+        });
+    });
+
+
+// Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
+//     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
+//     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+
+//     // Create Anak Pegawai
+//     Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
+
+//     // Create Khadam
+//     Route::post('/khadam', [KhadamController::class, 'store']);
+
+//     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
+//     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
+
+//     // tahun ajaran
+//     Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+//     Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
+//     Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+
+//     // angkatan
+//     Route::post('/angkatan', [AngkatanController::class, 'store']);
+//     Route::put('/angkatan/{id}', [AngkatanController::class, 'update']);
+//     Route::delete('/angkatan/{id}', [AngkatanController::class, 'destroy']);
+
+//     // semester
+//     Route::post('/semester', [SemesterController::class, 'store']);
+//     Route::put('/semester/{id}', [SemesterController::class, 'update']);
+//     Route::delete('/semester/{id}', [SemesterController::class, 'destroy']);
+
+//     // perizinan
+//     Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
+//     Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
+//     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
+//     Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+
+//     Route::put('/{id}/perizinan/set-keluar', [PerizinanController::class, 'setKeluar']);
+//     Route::put('/{id}/perizinan/set-kembali', [PerizinanController::class, 'setKembali']);
+
+//     Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
+
+//     // pelanggaran
+//     Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
+//     Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
+//     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
+//     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+
+//     Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
+
+//     // //pengunjung mahrom
+//     // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
+//     Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+//     Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
+//     Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
+
+//     // Keluarga
+//     Route::get('/hubungan', [HubunganKeluargaController::class, 'index']);
+//     Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
+//     Route::get('{id}/hubungan/show', [HubunganKeluargaController::class, 'show']);
+//     Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
+//     Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
+
+//     // Kewaliasuhan
+//     Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
+//     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
+//     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
+//     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
+//     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
+//     Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
+
+//     // lembaga
+//     Route::get('lembaga', [LembagaController::class, 'index']);
+//     Route::post('lembaga', [LembagaController::class, 'store']);
+//     Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
+//     Route::put('{id}/lembaga', [LembagaController::class, 'update']);
+//     Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
+
+//     // 🏠 Wilayah (Blok, Kamar, Domisili)
+//     Route::apiResource('/wilayah', WilayahController::class);
+//     Route::put('/wilayah/{id}/activate', [WilayahController::class, 'activate']);
+//     Route::apiResource('/blok', BlokController::class);
+//     Route::put('/blok/{id}/activate', [BlokController::class, 'activate']);
+//     Route::apiResource('/kamar', KamarController::class);
+//     Route::put('/kamar/{id}/activate', [KamarController::class, 'activate']);
+
+//     // 🎓 Pendidikan
+//     Route::apiResource('/lembaga', LembagaController::class);
+//     Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
+//     Route::apiResource('/jurusan', JurusanController::class);
+//     Route::put('/jurusan/{id}/activate', [JurusanController::class, 'activate']);
+//     Route::apiResource('/kelas', KelasController::class);
+//     Route::put('/kelas/{id}/activate', [KelasController::class, 'activate']);
+//     Route::apiResource('/rombel', RombelController::class);
+//     Route::put('/rombel/{id}/activate', [RombelController::class, 'activate']);
+
+//     // golongan
+//     Route::get('golongan', [GolonganController::class, 'index']);
+//     Route::post('golongan', [GolonganController::class, 'store']);
+//     Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
+//     Route::put('{id}/golongan', [GolonganController::class, 'update']);
+//     Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
+
+//     // kategori golongan
+//     Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
+//     Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
+//     Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
+//     Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
+//     Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
+
+//     // golongan Jabatan
+//     Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
+//     Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
+//     Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
+//     Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
+//     Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
+
+//     // Kepegawaian
+//     Route::post('/pegawai', [PegawaiController::class, 'store']);
+//     Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
+//     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
+
+//     // Jam Pelajaran
+//     Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
+//     Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
+//     Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
+//     Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
+//     Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
+
+//     // Jadwal Pelajaran
+//     Route::get('/jadwal-pelajaran', [MataPelajaranController::class, 'getAllJadwal']);
+//     Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
+//     Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'showJadwal']);
+//     Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
+//     Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
+// });
+
+Route::prefix('crud')
+    ->middleware(['auth:sanctum', 'throttle:120,1'])
+    ->group(function () {
+
+        /**
+         * GET routes → superadmin & supervisor
+         */
+        Route::middleware('role:superadmin|supervisor')->group(function () {
+            // perizinan
+            Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
+            Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
+
+            // pelanggaran
+            Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
+            Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
+
+            // pengunjung mahrom
+            // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
+            Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
+
+            // Keluarga
+            Route::get('/hubungan', [HubunganKeluargaController::class, 'index']);
+            Route::get('{id}/hubungan/show', [HubunganKeluargaController::class, 'show']);
+
+            // Kewaliasuhan
+            Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
+            Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
+
+            // Lembaga
+            Route::get('lembaga', [LembagaController::class, 'index']);
+            Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
+
+            // Wilayah (Blok, Kamar, Domisili)
+            Route::apiResource('/wilayah', WilayahController::class)->only(['index', 'show']);
+            Route::apiResource('/blok', BlokController::class)->only(['index', 'show']);
+            Route::apiResource('/kamar', KamarController::class)->only(['index', 'show']);
+
+            // Pendidikan
+            Route::apiResource('/lembaga', LembagaController::class)->only(['index', 'show']);
+            Route::apiResource('/jurusan', JurusanController::class)->only(['index', 'show']);
+            Route::apiResource('/kelas', KelasController::class)->only(['index', 'show']);
+            Route::apiResource('/rombel', RombelController::class)->only(['index', 'show']);
+
+            // Golongan
+            Route::get('golongan', [GolonganController::class, 'index']);
+            Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
+
+            // Kategori Golongan
+            Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
+            Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
+
+            // Golongan Jabatan
+            Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
+            Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
+
+            // Jam Pelajaran
+            Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
+            Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
+
+            // Jadwal Pelajaran
+            Route::get('/jadwal-pelajaran', [MataPelajaranController::class, 'getAllJadwal']);
+            Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'showJadwal']);
+        });
+
+        /**
+         * POST/PUT/DELETE routes → hanya superadmin
+         */
+        Route::middleware('role:superadmin')->group(function () {
+            // Peserta Didik
+            Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
+            Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
+
+            // Anak Pegawai
+            Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
+
+            // Khadam
+            Route::post('/khadam', [KhadamController::class, 'store']);
+
+            // Alumni
+            Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
+            Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
+
+            // Tahun Ajaran
+            Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+            Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
+            Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+
+            // Angkatan
+            Route::post('/angkatan', [AngkatanController::class, 'store']);
+            Route::put('/angkatan/{id}', [AngkatanController::class, 'update']);
+            Route::delete('/angkatan/{id}', [AngkatanController::class, 'destroy']);
+
+            // Semester
+            Route::post('/semester', [SemesterController::class, 'store']);
+            Route::put('/semester/{id}', [SemesterController::class, 'update']);
+            Route::delete('/semester/{id}', [SemesterController::class, 'destroy']);
+
+            // Perizinan
+            Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
+            Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
+            Route::put('/{id}/perizinan/set-keluar', [PerizinanController::class, 'setKeluar']);
+            Route::put('/{id}/perizinan/set-kembali', [PerizinanController::class, 'setKembali']);
+            Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
+
+            // Pelanggaran
+            Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
+            Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
+            Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
+
+            // Pengunjung Mahrom
+            Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
+            Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
+
+            // Keluarga
+            Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
+            Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
+            Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
+
+            // Kewaliasuhan
+            Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
+            Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
+            Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
+            Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
+
+            // Lembaga
+            Route::post('lembaga', [LembagaController::class, 'store']);
+            Route::put('{id}/lembaga', [LembagaController::class, 'update']);
+            Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
+            Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
+
+            // Wilayah (Blok, Kamar, Domisili)
+            Route::apiResource('/wilayah', WilayahController::class)->except(['index', 'show']);
+            Route::put('/wilayah/{id}/activate', [WilayahController::class, 'activate']);
+            Route::apiResource('/blok', BlokController::class)->except(['index', 'show']);
+            Route::put('/blok/{id}/activate', [BlokController::class, 'activate']);
+            Route::apiResource('/kamar', KamarController::class)->except(['index', 'show']);
+            Route::put('/kamar/{id}/activate', [KamarController::class, 'activate']);
+
+            // Pendidikan
+            Route::apiResource('/jurusan', JurusanController::class)->except(['index', 'show']);
+            Route::put('/jurusan/{id}/activate', [JurusanController::class, 'activate']);
+            Route::apiResource('/kelas', KelasController::class)->except(['index', 'show']);
+            Route::put('/kelas/{id}/activate', [KelasController::class, 'activate']);
+            Route::apiResource('/rombel', RombelController::class)->except(['index', 'show']);
+            Route::put('/rombel/{id}/activate', [RombelController::class, 'activate']);
+
+            // Golongan
+            Route::post('golongan', [GolonganController::class, 'store']);
+            Route::put('{id}/golongan', [GolonganController::class, 'update']);
+            Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
+
+            // Kategori Golongan
+            Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
+            Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
+            Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
+
+            // Golongan Jabatan
+            Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
+            Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
+            Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
+
+            // Kepegawaian
+            Route::post('/pegawai', [PegawaiController::class, 'store']);
+            Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
+            Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
+
+            // Jam Pelajaran
+            Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
+            Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
+            Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
+
+            // Jadwal Pelajaran
+            Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
+            Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
+            Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
+        });
+    });
+
+Route::prefix('approve')
+    ->middleware(['auth:sanctum', 'throttle:30,1'])
+    ->group(function () {
+        Route::post(
+            '/perizinan/biktren/{id}',
+            [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren']
+        )->middleware('role:superadmin|biktren');
+        Route::post(
+            '/perizinan/kamtib/{id}',
+            [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib']
+        )->middleware('role:superadmin|kamtib');
+        Route::post(
+            '/perizinan/pengasuh/{id}',
+            [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh']
+        )->middleware('role:superadmin|wali_asuh');
+    });
 
 Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     // Pendidikan
@@ -519,10 +882,10 @@ Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'th
     Route::post('/anakasuh', [AnakasuhController::class, 'store']);
 
     // presensi
-    Route::get('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);
-    Route::post('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'store']);
-    Route::put('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'update']);
-    Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
+    // Route::get('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'getAllPresensiSantri']);
+    // Route::post('/presensi-santri', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'store']);
+    // Route::put('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'update']);
+    // Route::delete('/presensi-santri/{presensi}', [\App\Http\Controllers\api\PesertaDidik\Fitur\PresensiSantriController::class, 'destroy']);
 });
 
 Route::get('/user', [UserController::class, 'index'])->middleware(['auth:sanctum', 'role:superadmin', 'throttle:20,1']);
@@ -553,7 +916,11 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 });
 
 // Endpoint menampilkan log  
-Route::get('/activity-logs', [ActivityController::class, 'index']);
+Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware([
+    'auth:sanctum',
+    'role:superadmin',
+    'throttle:100,1'
+]);
 
 // Route::middleware([
 //     'auth:sanctum',
@@ -568,66 +935,122 @@ Route::get('/activity-logs', [ActivityController::class, 'index']);
 // });
 
 // Biometric
-Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
-    Route::post('register-profile', [BiometricProfileController::class, 'store']);
-    Route::post('update-profile', [BiometricProfileController::class, 'update']);
-    Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
+// Route::prefix('biometric')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
+//     Route::post('register-profile', [BiometricProfileController::class, 'store']);
+//     Route::post('update-profile', [BiometricProfileController::class, 'update']);
+//     Route::post('delete-profile', [BiometricProfileController::class, 'destroy']);
+// });
+
+// === Tahfidz ===
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::middleware('role:superadmin|ustadz|supervisor')->group(function () {
+        Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
+        Route::get('/tahfidz/{id}', [TahfidzController::class, 'getSetoranDanRekap']);
+    });
+    Route::middleware('role:superadmin|ustadz')->group(function () {
+        Route::post('/tahfidz', [TahfidzController::class, 'store']);
+    });
 });
 
-Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
-    Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
-    Route::get('/tahfidz/{id}', [TahfidzController::class, 'getSetoranDanRekap']);
-    Route::post('/tahfidz', [TahfidzController::class, 'store']);
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::middleware('role:superadmin|ustadz|supervisor')->group(function () {
+        Route::get('/nadhoman', [NadhomanController::class, 'getAllRekap']);
+        Route::get('/nadhoman/{id}', [NadhomanController::class, 'getSetoranDanRekap']);
+    });
+    Route::middleware('role:superadmin|ustadz')->group(function () {
+        Route::post('/nadhoman', [NadhomanController::class, 'store']);
+    });
 });
 
-Route::middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
-    Route::post('/nadhoman', [NadhomanController::class, 'store']);
-    Route::get('/nadhoman/{id}', [NadhomanController::class, 'getSetoranDanRekap']);
-    Route::get('/nadhoman', [NadhomanController::class, 'getAllRekap']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware('role:superadmin|ustadz|petugas|supervisor')->group(function () {
+        Route::get('sholat', [SholatController::class, 'index']);
+        Route::get('sholat/{sholat}', [SholatController::class, 'show']);
+        Route::get('jadwal-sholat', [JadwalSholatController::class, 'index']);
+        Route::get('jadwal-sholat/{jadwal_sholat}', [JadwalSholatController::class, 'show']);
+    });
+    Route::middleware('role:superadmin|ustadz|petugas')->group(function () {
+        Route::apiResource('sholat', SholatController::class)->except(['index', 'show']);
+        Route::apiResource('jadwal-sholat', JadwalSholatController::class)->except(['index', 'show']);
+    });
 });
 
-Route::middleware(['auth:sanctum', 'role:admin|superadmin'])->group(function () {
-    Route::apiResource('sholat', SholatController::class);
-    Route::apiResource('jadwal-sholat', JadwalSholatController::class);
-});
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Hanya GET -> boleh admin, superadmin, supervisor
+    Route::middleware('role:petugas|ustadz|superadmin|supervisor')->group(function () {
+        Route::get('/kartu', [KartuController::class, 'index']);
+        Route::get('/kartu/{id}', [KartuController::class, 'show']);
+    });
 
-Route::middleware('auth:sanctum', 'role:admin|superadmin')->group(function () {
-    Route::get('/kartu', [KartuController::class, 'index']);
-    Route::get('/kartu/{id}', [KartuController::class, 'show']);
-    Route::post('/kartu', [KartuController::class, 'store']);
-    Route::put('/kartu/{id}', [KartuController::class, 'update']);
-    Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
+    // CRUD penuh -> hanya admin, superadmin
+    Route::middleware('role:ustadz|petugas|superadmin')->group(function () {
+        Route::post('/kartu', [KartuController::class, 'store']);
+        Route::put('/kartu/{id}', [KartuController::class, 'update']);
+        Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
+    });
 });
 
 Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
-    Route::post('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
-    Route::post('scan', [PresensiJamaahController::class, 'scan']);
-    Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
-    Route::get('/', [PresensiJamaahController::class, 'index'])->middleware('throttle:200,1');
+    Route::get('/', [PresensiJamaahController::class, 'index'])
+        ->middleware('role:superadmin|ustadz|petugas|supervisor');
+    Route::middleware('role:superadmin|ustadz|petugas')->group(function () {
+        Route::post('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
+        Route::post('scan', [PresensiJamaahController::class, 'scan']);
+        Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
+    });
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/kitab', [KitabController::class, 'indexAll']);
-    Route::post('/kitab', [KitabController::class, 'store']);
-    Route::get('/kitab/{id}', [KitabController::class, 'show']);
-    Route::put('/kitab/{id}', [KitabController::class, 'update']);
-    Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
-    Route::post('/aktiv/{id}', [KitabController::class, 'activate']);
+    Route::get('/kitab', [KitabController::class, 'indexAll'])
+        ->middleware('role:superadmin|supervisor');
+    Route::get('/kitab/{id}', [KitabController::class, 'show'])
+        ->middleware('role:superadmin|supervisor');
+
+    Route::middleware('role:superadmin')->group(function () {
+        Route::post('/kitab', [KitabController::class, 'store']);
+        Route::put('/kitab/{id}', [KitabController::class, 'update']);
+        Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
+        Route::post('/aktiv/{id}', [KitabController::class, 'activate']);
+    });
 });
 
-Route::apiResource('outlet', OutletController::class);
 
-Route::apiResource('kategori', KategoriController::class);
+// Outlet
+Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('role:superadmin|supervisor')->group(function () {
+        Route::get('outlet', [OutletController::class, 'index']);
+        Route::get('outlet/{outlet}', [OutletController::class, 'show']);
 
-Route::apiResource('detail-user-outlet', DetailUserOutletController::class);
+        Route::get('kategori', [KategoriController::class, 'index']);
+        Route::get('kategori/{kategori}', [KategoriController::class, 'show']);
 
-Route::middleware(['auth:sanctum', 'role:superadmin|petugas|ustadz|supervisor'])->group(function () {
-    // Scan kartu (GET) -> menampilkan data santri & saldo
-    Route::get('scan-kartu', [TransaksiController::class, 'scan']);
+        Route::get('detail-user-outlet', [DetailUserOutletController::class, 'index']);
+        Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
+    });
 
-    // Buat transaksi (POST) -> seller klik OK setelah input harga
-    Route::post('transaksi', [TransaksiController::class, 'store']);
+    Route::middleware('role:superadmin')->group(function () {
+        Route::post('outlet', [OutletController::class, 'store']);
+        Route::put('outlet/{outlet}', [OutletController::class, 'update']);
+        Route::delete('outlet/{outlet}', [OutletController::class, 'destroy']);
 
-    // List transaksi (paginated 25)
-    Route::get('transaksi', [TransaksiController::class, 'index']);
+        Route::post('kategori', [KategoriController::class, 'store']);
+        Route::put('kategori/{kategori}', [KategoriController::class, 'update']);
+        Route::delete('kategori/{kategori}', [KategoriController::class, 'destroy']);
+
+        Route::post('detail-user-outlet', [DetailUserOutletController::class, 'store']);
+        Route::put('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'update']);
+        Route::delete('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'destroy']);
+    });
+});
+
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware('role:superadmin|supervisor')->group(function () {
+        Route::get('scan-kartu', [TransaksiController::class, 'scan']);
+        Route::get('transaksi', [TransaksiController::class, 'index']);
+    });
+
+    Route::middleware('role:superadmin')->group(function () {
+        Route::post('transaksi', [TransaksiController::class, 'store']);
+    });
 });

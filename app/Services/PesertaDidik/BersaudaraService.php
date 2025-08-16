@@ -66,7 +66,8 @@ class BersaudaraService
             ->where(fn ($q) => $q->where('s.status', 'aktif')
                 ->orWhere('pd.status', 'aktif'))
             ->whereNull('b.deleted_at')
-            ->whereNull('s.deleted_at');
+            ->whereNull('s.deleted_at')
+            ->where('b.status', true);
 
         return $query;
     }

@@ -44,6 +44,7 @@ class PelajarService
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
+            ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('pd.deleted_at'));
 
         return $query;

@@ -46,6 +46,7 @@ class NonDomisiliService
             ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('s.status', 'aktif')
+            ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'))
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'));
