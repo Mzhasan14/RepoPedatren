@@ -74,6 +74,11 @@ class Santri extends Model
         parent::boot();
     }
 
+    public function kartu()
+    {
+        return $this->hasOne(Kartu::class, 'santri_id', 'id');
+    }
+
     public function biodata()
     {
         return $this->belongsTo(Biodata::class, 'biodata_id', 'id');

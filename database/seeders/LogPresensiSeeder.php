@@ -72,6 +72,9 @@ class LogPresensiSeeder extends Seeder
             '0724142895',
             '0722142575',
             '0726173807',
+            '0733728351',
+            '0735066159',
+            '0726104367'
         ];
 
         foreach ($uidList as $index => $uid) {

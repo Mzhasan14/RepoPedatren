@@ -202,55 +202,104 @@ class TransaksiService
     }
 
     /**
-     * List semua transaksi (global) -> batasi 25 per halaman default
-     * Support filter: santri_id, outlet_id, kategori_id, date_from (Y-m-d), date_to (Y-m-d), q (nama/nis)
+     * List transaksi sesuai role:
+     * - Super Admin => semua transaksi
+     * - Non-superadmin => hanya outlet yg dimiliki user
      */
     public function listTransactions(array $filters = [], int $perPage = 25)
     {
         try {
-            $query = Transaksi::with(['santri', 'outlet', 'kategori'])
-                ->orderByDesc('tanggal');
+            $user = Auth::user();
 
-            // filter by santri
-            if (!empty($filters['santri_id'])) {
-                $query->where('santri_id', (int)$filters['santri_id']);
+            // Cek apakah user terdaftar di detail_user_outlet
+            $outletIds = DB::table('detail_user_outlet')
+                ->where('user_id', $user->id)
+                ->where('status', true)
+                ->pluck('outlet_id')
+                ->toArray();
+
+            if (empty($outletIds)) {
+                return [
+                    'success' => false,
+                    'message' => 'User tidak terdaftar di outlet manapun.',
+                    'status'  => 403,
+                ];
             }
 
-            // filter by outlet
-            if (!empty($filters['outlet_id'])) {
-                $query->where('outlet_id', (int)$filters['outlet_id']);
-            }
+            // Query utama
+            $query = Transaksi::with([
+                'santri' => function ($q) {
+                    $q->select('id', 'nis', 'biodata_id')
+                        ->with([
+                            'biodata:id,nama',
+                            'kartu:id,santri_id,uid_kartu'
+                        ]);
+                },
+                'outlet:id,nama_outlet',
+                'kategori:id,nama_kategori'
+            ])->whereIn('outlet_id', $outletIds)
+                ->orderByDesc('transaksi.tanggal');
 
-            // filter by kategori
-            if (!empty($filters['kategori_id'])) {
-                $query->where('kategori_id', (int)$filters['kategori_id']);
-            }
-
-            // date range
-            if (!empty($filters['date_from'])) {
-                $query->whereDate('tanggal', '>=', $filters['date_from']);
-            }
-            if (!empty($filters['date_to'])) {
-                $query->whereDate('tanggal', '<=', $filters['date_to']);
-            }
-
-            // free text search on santri.nama or santri.nis
+            // Filter tambahan
+            if (!empty($filters['santri_id'])) $query->where('santri_id', (int)$filters['santri_id']);
+            if (!empty($filters['outlet_id'])) $query->where('outlet_id', (int)$filters['outlet_id']);
+            if (!empty($filters['kategori_id'])) $query->where('kategori_id', (int)$filters['kategori_id']);
+            if (!empty($filters['date_from'])) $query->whereDate('tanggal', '>=', $filters['date_from']);
+            if (!empty($filters['date_to'])) $query->whereDate('tanggal', '<=', $filters['date_to']);
             if (!empty($filters['q'])) {
                 $q = $filters['q'];
-                $query->whereHas('santri', function ($qBuild) use ($q) {
+                $query->whereHas(
+                    'santri.biodata',
+                    fn($qBuild) =>
                     $qBuild->where('nama', 'like', "%{$q}%")
-                        ->orWhere('nis', 'like', "%{$q}%");
-                });
+                        ->orWhere('nis', 'like', "%{$q}%")
+                );
             }
 
-            return $query->paginate($perPage);
+            // Pagination
+            $results = $query->paginate($perPage);
+
+            // Map collection dari paginator
+            $data = $results->getCollection()->map(function ($item) {
+                return [
+                    'id'       => $item->id,
+                    'outlet'   => $item->outlet,
+                    'kategori' => $item->kategori,
+                    'total_bayar' => (float)$item->total_bayar,
+                    'tanggal'  => $item->tanggal,
+                    'santri'   => $item->santri ? [
+                        'id'      => $item->santri->id,
+                        'nis'     => $item->santri->nis,
+                        'biodata' => $item->santri->biodata,
+                        'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
+                    ] : null,
+                ];
+            });
+
+            // Kembalikan paginator dengan collection yang sudah dimodifikasi
+            $results->setCollection($data);
+
+            return [
+                'success'      => true,
+                'status'       => 200,
+                'total_data'   => $results->total(),
+                'current_page' => $results->currentPage(),
+                'per_page'     => $results->perPage(),
+                'total_pages'  => $results->lastPage(),
+                'data'         => $results->items(),
+            ];
         } catch (\Throwable $e) {
-            // log dan lempar exception agar controller bisa tangani
             Log::error('TransactionService@listTransactions error: ' . $e->getMessage(), [
                 'exception' => $e,
-                'filters' => $filters
+                'filters'   => $filters,
+                'user_id'   => Auth::id()
             ]);
-            throw $e;
+
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil transaksi.',
+                'status'  => 500
+            ];
         }
     }
 }

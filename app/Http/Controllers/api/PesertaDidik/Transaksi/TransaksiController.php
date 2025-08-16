@@ -68,25 +68,30 @@ class TransaksiController extends Controller
         ], $result['status'] ?? 400);
     }
 
-    // GET /api/transactions?page=1
     public function index(Request $request): JsonResponse
     {
         try {
-            // ambil filter opsional dari query string
-            $filters = $request->only(['santri_id', 'outlet_id', 'kategori_id', 'date_from', 'date_to', 'q']);
+            $filters = $request->only([
+                'santri_id',
+                'outlet_id',
+                'kategori_id',
+                'date_from',
+                'date_to',
+                'q'
+            ]);
             $perPage = 25;
 
-            $paginated = $this->service->listTransactions($filters, $perPage);
+            $result = $this->service->listTransactions($filters, $perPage);
 
-            return response()->json([
-                'success' => true,
-                'data' => $paginated
-            ], 200);
+            return response()->json($result, $result['status']);
         } catch (\Throwable $e) {
             Log::error('TransactionController@index error: ' . $e->getMessage(), ['exception' => $e]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.'
+                'status'  => 500,
+                'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
+                'data'    => []
             ], 500);
         }
     }

@@ -11,7 +11,7 @@ class OutletSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminId = 1; // diasumsikan admin pertama punya ID = 1
+        $adminId = 1; // Diasumsikan admin pertama punya ID = 1
         $faker = Faker::create('id_ID');
 
         /**
@@ -81,18 +81,18 @@ class OutletSeeder extends Seeder
         DB::table('outlet_kategori')->insert($outletKategori);
 
         /**
-         * DETAIL USER OUTLET
+         * DETAIL USER OUTLET (exclude admin ID 1)
          */
-        $users = DB::table('users')->pluck('id')->toArray();
+        $users = DB::table('users')
+            ->where('id', '!=', $adminId)
+            ->pluck('id')
+            ->toArray();
         $outletIds = array_values($outletMap);
-
-        if (count($users) < count($outletIds)) {
-            throw new \Exception("Jumlah users harus >= jumlah outlet untuk unique user_id");
-        }
 
         $detailUserOutlet = [];
         foreach ($outletIds as $index => $outletId) {
-            $userId = $users[$index]; // assign satu user per outlet tanpa duplikat
+            if (!isset($users[$index])) continue;
+            $userId = $users[$index];
             $detailUserOutlet[] = [
                 'user_id' => $userId,
                 'outlet_id' => $outletId,
@@ -122,16 +122,18 @@ class OutletSeeder extends Seeder
         DB::table('saldo')->insert($saldoData);
 
         /**
-         * TRANSAKSI (10 per outlet)
+         * TRANSAKSI (10 per outlet) -> hanya untuk santri yang punya kartu
          */
         $santriPutra = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+            ->join('kartu', 'santri.id', '=', 'kartu.santri_id')
             ->where('biodata.jenis_kelamin', 'l')
             ->pluck('santri.id')
             ->toArray();
 
         $santriPutri = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+            ->join('kartu', 'santri.id', '=', 'kartu.santri_id')
             ->where('biodata.jenis_kelamin', 'p')
             ->pluck('santri.id')
             ->toArray();
@@ -141,36 +143,45 @@ class OutletSeeder extends Seeder
         foreach ($outletMap as $outletNama => $outletId) {
             for ($i = 0; $i < 10; $i++) {
                 if ($outletNama === 'Kantin Santri Putra') {
+                    if (empty($santriPutra)) continue;
                     $santriId = $faker->randomElement($santriPutra);
                     $kategoriId = $kategoriMap['Makanan & Minuman'];
                     $total = $faker->numberBetween(5000, 20000);
                 } elseif ($outletNama === 'Kantin Santri Putri') {
+                    if (empty($santriPutri)) continue;
                     $santriId = $faker->randomElement($santriPutri);
                     $kategoriId = $kategoriMap['Makanan & Minuman'];
                     $total = $faker->numberBetween(5000, 20000);
-                } elseif ($outletNama === 'Koperasi Pesantren') {
-                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
-                    $kategoriId = $faker->randomElement([
-                        $kategoriMap['Kitab & Buku'],
-                        $kategoriMap['Alat Tulis'],
-                        $kategoriMap['Seragam Santri'],
-                    ]);
-                    $total = $faker->numberBetween(15000, 75000);
-                } elseif ($outletNama === 'Toko ATK & Kitab') {
-                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
-                    $kategoriId = $faker->randomElement([
-                        $kategoriMap['Kitab & Buku'],
-                        $kategoriMap['Alat Tulis'],
-                    ]);
-                    $total = $faker->numberBetween(5000, 50000);
-                } elseif ($outletNama === 'Laundry & Cuci Pakaian') {
-                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
-                    $kategoriId = $kategoriMap['Laundry'];
-                    $total = $faker->numberBetween(7000, 20000);
-                } else { // Apotek
-                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
-                    $kategoriId = $kategoriMap['Obat-obatan'];
-                    $total = $faker->numberBetween(5000, 30000);
+                } else {
+                    $combined = array_merge($santriPutra, $santriPutri);
+                    if (empty($combined)) continue;
+                    $santriId = $faker->randomElement($combined);
+
+                    switch ($outletNama) {
+                        case 'Koperasi Pesantren':
+                            $kategoriId = $faker->randomElement([
+                                $kategoriMap['Kitab & Buku'],
+                                $kategoriMap['Alat Tulis'],
+                                $kategoriMap['Seragam Santri'],
+                            ]);
+                            $total = $faker->numberBetween(15000, 75000);
+                            break;
+                        case 'Toko ATK & Kitab':
+                            $kategoriId = $faker->randomElement([
+                                $kategoriMap['Kitab & Buku'],
+                                $kategoriMap['Alat Tulis'],
+                            ]);
+                            $total = $faker->numberBetween(5000, 50000);
+                            break;
+                        case 'Laundry & Cuci Pakaian':
+                            $kategoriId = $kategoriMap['Laundry'];
+                            $total = $faker->numberBetween(7000, 20000);
+                            break;
+                        case 'Apotek Pesantren':
+                            $kategoriId = $kategoriMap['Obat-obatan'];
+                            $total = $faker->numberBetween(5000, 30000);
+                            break;
+                    }
                 }
 
                 $transaksi[] = [

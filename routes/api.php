@@ -618,7 +618,7 @@ Route::apiResource('kategori', KategoriController::class);
 
 Route::apiResource('detail-user-outlet', DetailUserOutletController::class);
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:superadmin|petugas|ustadz|supervisor'])->group(function () {
     // Scan kartu (GET) -> menampilkan data santri & saldo
     Route::get('scan-kartu', [TransaksiController::class, 'scan']);
 
