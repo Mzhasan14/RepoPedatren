@@ -39,19 +39,15 @@ class LogPresensiSeeder extends Seeder
         /**
          * 2. JADWAL SHOLAT
          */
-        $tanggalMulai = now()->startOfMonth()->format('Y-m-d');
-        $tanggalSampai = now()->endOfMonth()->format('Y-m-d');
-
         $tanggalMulai  = now()->startOfMonth()->format('Y-m-d');
         $tanggalSampai = now()->endOfMonth()->format('Y-m-d');
 
         $jadwalData = [
-            // sholat_id => [mulai presensi, selesai presensi]
-            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '05:00'],  // Subuh
-            ['sholat_id' => 2, 'jam_mulai' => '11:45', 'jam_selesai' => '12:30'],  // Dzuhur
-            ['sholat_id' => 3, 'jam_mulai' => '15:15', 'jam_selesai' => '15:45'],  // Ashar
-            ['sholat_id' => 4, 'jam_mulai' => '17:35', 'jam_selesai' => '18:05'],  // Maghrib
-            ['sholat_id' => 5, 'jam_mulai' => '19:00', 'jam_selesai' => '19:30'],  // Isya
+            ['sholat_id' => 1, 'jam_mulai' => '04:30', 'jam_selesai' => '05:00'],
+            ['sholat_id' => 2, 'jam_mulai' => '11:45', 'jam_selesai' => '12:30'],
+            ['sholat_id' => 3, 'jam_mulai' => '15:15', 'jam_selesai' => '15:45'],
+            ['sholat_id' => 4, 'jam_mulai' => '17:35', 'jam_selesai' => '18:05'],
+            ['sholat_id' => 5, 'jam_mulai' => '19:00', 'jam_selesai' => '19:30'],
         ];
 
         foreach ($jadwalData as $item) {
@@ -63,8 +59,40 @@ class LogPresensiSeeder extends Seeder
         }
 
         /**
-         * 3. KARTU
-         * UID decimal manual (asumsi 5 santri)
+         * 3. PILIH 8 SANTRI (4 L, 4 P) DENGAN 1 PASANGAN SAUDARA
+         */
+        $santriAll = DB::table('santri')
+            ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+            ->leftJoin('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
+            ->select(
+                'santri.id as santri_id',
+                'biodata.nama',
+                'biodata.jenis_kelamin',
+                'keluarga.no_kk'
+            )
+            ->get();
+
+        // Cari pasangan saudara (1 L & 1 P)
+        $kkGroups = $santriAll->groupBy('no_kk')->filter(function ($group) {
+            return $group->count() >= 2 && $group->pluck('jenis_kelamin')->unique()->count() >= 2;
+        });
+
+        if ($kkGroups->isEmpty()) {
+            throw new \Exception('Tidak ada pasangan saudara laki-laki & perempuan di database!');
+        }
+
+        $pair = $kkGroups->first();
+        $saudaraL = $pair->firstWhere('jenis_kelamin', 'l');
+        $saudaraP = $pair->firstWhere('jenis_kelamin', 'p');
+
+        // Ambil tambahan 3 L dan 3 P lainnya (tidak termasuk pasangan)
+        $otherL = $santriAll->where('jenis_kelamin', 'l')->where('santri_id', '!=', $saudaraL->santri_id)->take(3);
+        $otherP = $santriAll->where('jenis_kelamin', 'p')->where('santri_id', '!=', $saudaraP->santri_id)->take(3);
+
+        $selectedSantri = collect([$saudaraL, $saudaraP])->merge($otherL)->merge($otherP)->values();
+
+        /**
+         * 4. KARTU
          */
         $uidList = [
             '0723409199',
@@ -77,10 +105,10 @@ class LogPresensiSeeder extends Seeder
             '0726104367'
         ];
 
-        foreach ($uidList as $index => $uid) {
+        foreach ($selectedSantri as $index => $santri) {
             Kartu::create([
-                'santri_id' => $index + 1,
-                'uid_kartu' => $uid,
+                'santri_id' => $santri->santri_id,
+                'uid_kartu' => $uidList[$index] ?? '0723000000' . $index,
                 'pin' => Hash::make('1234'),
                 'aktif' => true,
                 'tanggal_terbit' => now()->subMonths(1)->format('Y-m-d'),
@@ -90,24 +118,23 @@ class LogPresensiSeeder extends Seeder
         }
 
         /**
-         * 4. PRESENSI SHOLAT & LOG PRESENSI
-         * Asumsi semua hadir di tanggal 2025-08-13
+         * 5. PRESENSI SHOLAT & LOG PRESENSI
          */
         $tanggalPresensi = '2025-08-13';
         $jamPresensi = [
-            1 => '04:35:00', // Subuh
-            2 => '12:05:00', // Dzuhur
-            3 => '15:20:00', // Ashar
-            4 => '18:05:00', // Maghrib
-            5 => '19:20:00', // Isya
+            1 => '04:35:00',
+            2 => '12:05:00',
+            3 => '15:20:00',
+            4 => '18:05:00',
+            5 => '19:20:00',
         ];
 
-        foreach (range(1, 5) as $santriId) {
-            $kartuId = $santriId; // karena urutan kartu sesuai ID santri
+        foreach ($selectedSantri as $index => $santri) {
+            $kartuId = $index + 1; // asumsi kartu ID sesuai urutan
+
             foreach (range(1, 5) as $sholatId) {
-                // Insert ke presensi_sholat
                 DB::table('presensi_sholat')->insert([
-                    'santri_id' => $santriId,
+                    'santri_id' => $santri->santri_id,
                     'sholat_id' => $sholatId,
                     'tanggal' => $tanggalPresensi,
                     'waktu_presensi' => $jamPresensi[$sholatId],
@@ -118,9 +145,8 @@ class LogPresensiSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Insert ke log_presensi
                 DB::table('log_presensi')->insert([
-                    'santri_id' => $santriId,
+                    'santri_id' => $santri->santri_id,
                     'kartu_id' => $kartuId,
                     'sholat_id' => $sholatId,
                     'waktu_scan' => $tanggalPresensi . ' ' . $jamPresensi[$sholatId],
@@ -134,5 +160,7 @@ class LogPresensiSeeder extends Seeder
                 ]);
             }
         }
+
+        $this->command->info("Seeder berhasil: 8 santri (4L/4P) termasuk pasangan saudara sudah dibuat kartu & presensi.");
     }
 }

@@ -52,7 +52,7 @@ return new class extends Migration
         Schema::create('keluarga', function (Blueprint $table) {
             $table->id();
             $table->char('no_kk', 16)->nullable();
-            $table->uuid('id_biodata');
+            $table->uuid('id_biodata'); // bisa id biodata anak atau id biodata orang tua
             $table->boolean('status');
             $table->softDeletes();
             $table->unsignedBigInteger('created_by');

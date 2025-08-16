@@ -73,9 +73,32 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        /**
-         * KATEGORI (jenis transaksi: makanan, kitab, laundry, dll)
-         */
+        Schema::create('saldo_transaksi', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('santri_id');
+            $table->unsignedBigInteger('orang_tua_wali_id');
+            $table->decimal('nominal', 15, 2);
+            $table->enum('metode_pembayaran', ['transfer_bank', 'qris', 'tunai'])->default('transfer_bank');
+            $table->string('bukti_transfer')->nullable();
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->unsignedBigInteger('approved_by')->nullable(); 
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+
+            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
+
+            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
+            $table->foreign('orang_tua_wali_id')->references('id')->on('orang_tua_wali')->onDelete('cascade');
+            $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
+        });
+
+     
         Schema::create('kategori', function (Blueprint $table) {
             $table->id();
             $table->string('nama_kategori')->unique();
@@ -118,7 +141,6 @@ return new class extends Migration
             $table->unsignedBigInteger('kategori_id');
             $table->decimal('total_bayar', 15, 2);
             $table->datetime('tanggal');
-            $table->boolean('status')->default(true);
 
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

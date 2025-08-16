@@ -17,7 +17,6 @@ class Transaksi extends Model
         'kategori_id',
         'total_bayar',
         'tanggal',
-        'status',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -26,7 +25,6 @@ class Transaksi extends Model
     protected $casts = [
         'total_bayar' => 'decimal:2',
         'tanggal'     => 'datetime',
-        'status'      => 'boolean',
     ];
 
     /**

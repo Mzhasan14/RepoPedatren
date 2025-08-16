@@ -190,7 +190,6 @@ class OutletSeeder extends Seeder
                     'kategori_id' => $kategoriId,
                     'total_bayar' => $total,
                     'tanggal' => $faker->dateTimeBetween('-1 month', 'now'),
-                    'status' => true,
                     'created_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),

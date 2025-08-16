@@ -123,4 +123,14 @@ class Santri extends Model
     {
         return $this->belongsTo(Angkatan::class, 'angkatan_id', 'id');
     }
+
+    public function saldo()
+    {
+        return $this->hasOne(Saldo::class, 'santri_id', 'biodata_id');
+    }
+
+    public function transaksi()
+    {
+        return $this->hasMany(SaldoTransaksi::class, 'santri_id', 'biodata_id');
+    }
 }
