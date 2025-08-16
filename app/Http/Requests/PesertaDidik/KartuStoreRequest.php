@@ -3,6 +3,8 @@
 namespace App\Http\Requests\PesertaDidik;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class KartuStoreRequest extends FormRequest
 {
@@ -29,5 +31,17 @@ class KartuStoreRequest extends FormRequest
             'tanggal_terbit' => 'required|date',
             'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors();
+
+        $response = response()->json([
+            'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
+            'error' => $errors,
+        ], 422);
+
+        throw new HttpResponseException($response);
     }
 }

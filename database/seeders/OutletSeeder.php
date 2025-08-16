@@ -5,16 +5,14 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Faker\Factory as Faker;
 
 class OutletSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $adminId = 1; // diasumsikan admin pertama punya ID = 1
+        $faker = Faker::create('id_ID');
 
         /**
          * OUTLET
@@ -35,6 +33,8 @@ class OutletSeeder extends Seeder
             $outlet['updated_at'] = now();
         }
         DB::table('outlet')->insert($outlets);
+
+        $outletMap = DB::table('outlet')->pluck('id', 'nama_outlet')->toArray();
 
         /**
          * KATEGORI
@@ -57,29 +57,19 @@ class OutletSeeder extends Seeder
         DB::table('kategori')->insert($kategori);
 
         $kategoriMap = DB::table('kategori')->pluck('id', 'nama_kategori')->toArray();
-        $outletMap   = DB::table('outlet')->pluck('id', 'nama_outlet')->toArray();
 
         /**
          * OUTLET - KATEGORI
          */
         $outletKategori = [
-            // Kantin Putra & Putri → makanan
             ['outlet_id' => $outletMap['Kantin Santri Putra'], 'kategori_id' => $kategoriMap['Makanan & Minuman']],
             ['outlet_id' => $outletMap['Kantin Santri Putri'], 'kategori_id' => $kategoriMap['Makanan & Minuman']],
-
-            // Koperasi → kitab, alat tulis, seragam
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Alat Tulis']],
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Seragam Santri']],
-
-            // ATK & Kitab → kitab & alat tulis
             ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
             ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Alat Tulis']],
-
-            // Laundry
             ['outlet_id' => $outletMap['Laundry & Cuci Pakaian'], 'kategori_id' => $kategoriMap['Laundry']],
-
-            // Apotek
             ['outlet_id' => $outletMap['Apotek Pesantren'], 'kategori_id' => $kategoriMap['Obat-obatan']],
         ];
 
@@ -91,7 +81,48 @@ class OutletSeeder extends Seeder
         DB::table('outlet_kategori')->insert($outletKategori);
 
         /**
-         * TRANSAKSI (10 transaksi per outlet)
+         * DETAIL USER OUTLET
+         */
+        $users = DB::table('users')->pluck('id')->toArray();
+        $outletIds = array_values($outletMap);
+
+        if (count($users) < count($outletIds)) {
+            throw new \Exception("Jumlah users harus >= jumlah outlet untuk unique user_id");
+        }
+
+        $detailUserOutlet = [];
+        foreach ($outletIds as $index => $outletId) {
+            $userId = $users[$index]; // assign satu user per outlet tanpa duplikat
+            $detailUserOutlet[] = [
+                'user_id' => $userId,
+                'outlet_id' => $outletId,
+                'status' => true,
+                'created_by' => $adminId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        DB::table('detail_user_outlet')->insert($detailUserOutlet);
+
+        /**
+         * SALDO SANTRI
+         */
+        $allSantri = DB::table('santri')->pluck('id')->toArray();
+        $saldoData = [];
+        foreach ($allSantri as $santriId) {
+            $saldoData[] = [
+                'santri_id' => $santriId,
+                'saldo' => $faker->randomFloat(2, 50000, 200000),
+                'status' => true,
+                'created_by' => $adminId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        DB::table('saldo')->insert($saldoData);
+
+        /**
+         * TRANSAKSI (10 per outlet)
          */
         $santriPutra = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
@@ -105,7 +136,6 @@ class OutletSeeder extends Seeder
             ->pluck('santri.id')
             ->toArray();
 
-        $faker = \Faker\Factory::create('id_ID');
         $transaksi = [];
 
         foreach ($outletMap as $outletNama => $outletId) {

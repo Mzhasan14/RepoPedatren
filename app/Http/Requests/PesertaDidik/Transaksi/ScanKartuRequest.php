@@ -3,6 +3,8 @@
 namespace App\Http\Requests\PesertaDidik\Transaksi;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ScanKartuRequest extends FormRequest
 {
@@ -25,5 +27,17 @@ class ScanKartuRequest extends FormRequest
             'uid_kartu' => 'required|string|max:50',
             'pin' => 'nullable|string' // bila butuh verifikasi pin
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors();
+
+        $response = response()->json([
+            'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
+            'error' => $errors,
+        ], 422);
+
+        throw new HttpResponseException($response);
     }
 }

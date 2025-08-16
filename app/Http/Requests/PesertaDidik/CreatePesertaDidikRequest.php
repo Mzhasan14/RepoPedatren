@@ -347,7 +347,7 @@ class CreatePesertaDidikRequest extends FormRequest
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'errors' => $errors,               // akan berisi detail per‐field
+            'errors' => $errors,               
         ], 422);
 
         throw new HttpResponseException($response);

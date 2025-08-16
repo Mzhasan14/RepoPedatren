@@ -25,7 +25,7 @@ class TransaksiController extends Controller
     {
         $data = $request->validated();
 
-        $result = $this->service->scanCard($data['uid_kartu'], $data['pin'] ?? null, Auth::id());
+        $result = $this->service->scanCard($data['uid_kartu'], $data['pin'] ?? null);
 
         if ($result['success']) {
             return response()->json([
@@ -51,8 +51,7 @@ class TransaksiController extends Controller
             $data['outlet_id'],
             $data['kategori_id'],
             $data['total_bayar'],
-            $data['pin'] ?? null,
-            Auth::id()
+            $data['pin'] ?? null
         );
 
         if ($result['success']) {

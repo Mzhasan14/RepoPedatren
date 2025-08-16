@@ -620,7 +620,7 @@ Route::apiResource('detail-user-outlet', DetailUserOutletController::class);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     // Scan kartu (GET) -> menampilkan data santri & saldo
-    Route::get('transaksi/scan', [TransaksiController::class, 'scan']);
+    Route::get('scan-kartu', [TransaksiController::class, 'scan']);
 
     // Buat transaksi (POST) -> seller klik OK setelah input harga
     Route::post('transaksi', [TransaksiController::class, 'store']);

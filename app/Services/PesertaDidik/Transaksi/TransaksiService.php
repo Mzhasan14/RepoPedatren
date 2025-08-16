@@ -2,26 +2,28 @@
 
 namespace App\Services\PesertaDidik\Transaksi;
 
+use Exception;
+use Carbon\Carbon;
 use App\Models\Kartu;
-use App\Models\Santri;
 use App\Models\Saldo;
 use App\Models\Outlet;
+use App\Models\Santri;
 use App\Models\Kategori;
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
-use Exception;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class TransaksiService
 {
     /**
      * Scan kartu -> mengembalikan data santri & saldo
      */
-    public function scanCard(string $uid, ?string $pin, $user): array
+    public function scanCard(string $uid, ?string $pin): array
     {
         try {
-            $kartu = Kartu::with('santri')->where('uid_kartu', $uid)->first();
+            $kartu = Kartu::with('santri.biodata')->where('uid_kartu', $uid)->first();
 
             if (!$kartu) {
                 return ['success' => false, 'message' => 'Kartu tidak ditemukan.', 'status' => 404];
@@ -35,7 +37,7 @@ class TransaksiService
                 return ['success' => false, 'message' => 'Kartu kadaluarsa.', 'status' => 403];
             }
 
-            if ($kartu->pin && $pin !== $kartu->pin) {
+            if ($kartu->pin && !Hash::check($pin, $kartu->pin)) {
                 return ['success' => false, 'message' => 'PIN salah.', 'status' => 401];
             }
 
@@ -58,7 +60,7 @@ class TransaksiService
                     ],
                     'santri' => [
                         'id' => $santri->id,
-                        'nama' => $santri->nama ?? null,
+                        'nama' => $santri->biodata->nama ?? null,
                         'nis' => $santri->nis ?? null,
                     ],
                     'saldo' => $saldo ? (float)$saldo->saldo : 0.00
@@ -73,7 +75,7 @@ class TransaksiService
     /**
      * Buat transaksi: deduct saldo & simpan transaksi. Gunakan DB transaction & lockForUpdate pada saldo.
      */
-    public function createTransaction(string $uid, int $outletId, int $kategoriId, float $totalBayar, ?string $pin, $user): array
+    public function createTransaction(string $uid, int $outletId, int $kategoriId, float $totalBayar, ?string $pin): array
     {
         DB::beginTransaction();
         try {
@@ -94,7 +96,7 @@ class TransaksiService
                 return ['success' => false, 'message' => 'Kartu kadaluarsa.', 'status' => 403];
             }
 
-            if ($kartu->pin && $pin !== $kartu->pin) {
+            if ($kartu->pin && !Hash::check($pin, $kartu->pin)) {
                 DB::rollBack();
                 return ['success' => false, 'message' => 'PIN salah.', 'status' => 401];
             }
@@ -114,7 +116,7 @@ class TransaksiService
 
             // cek apakah user (penjual) mengelola outlet ini (detail_user_outlet)
             $allowed = DB::table('detail_user_outlet')
-                ->where('user_id', $user->id)
+                ->where('user_id', Auth::id())
                 ->where('outlet_id', $outletId)
                 ->where('status', true)
                 ->exists();
@@ -158,7 +160,7 @@ class TransaksiService
 
             // kurangi saldo
             $saldo->saldo = bcsub($saldo->saldo, $totalBayar, 2);
-            $saldo->updated_by = $user->id;
+            $saldo->updated_by = Auth::id();
             $saldo->save();
 
             // simpan transaksi
@@ -168,7 +170,7 @@ class TransaksiService
                 'kategori_id' => $kategoriId,
                 'total_bayar' => $totalBayar,
                 'tanggal' => Carbon::now(),
-                'created_by' => $user->id,
+                'created_by' => Auth::id(),
                 'status' => true,
             ]);
 
@@ -180,7 +182,7 @@ class TransaksiService
                 'data' => [
                     'transaksi_id' => $transaksi->id,
                     'santri_id' => $santri->id,
-                    'nama_santri' => $santri->nama ?? null,
+                    'nama_santri' => $santri->biodata->nama ?? null,
                     'total_bayar' => (float)$totalBayar,
                     'sisa_saldo' => (float)$saldo->saldo,
                     'tanggal' => $transaksi->tanggal,
@@ -193,12 +195,12 @@ class TransaksiService
                 'uid' => $uid,
                 'outlet_id' => $outletId,
                 'kategori_id' => $kategoriId,
-                'user_id' => $user->id ?? null
+                'user_id' => Auth::id() ?? null
             ]);
             return ['success' => false, 'message' => 'Terjadi kesalahan saat memproses transaksi. Silakan coba lagi.', 'status' => 500];
         }
     }
-    
+
     /**
      * List semua transaksi (global) -> batasi 25 per halaman default
      * Support filter: santri_id, outlet_id, kategori_id, date_from (Y-m-d), date_to (Y-m-d), q (nama/nis)

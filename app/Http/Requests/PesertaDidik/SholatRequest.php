@@ -3,6 +3,8 @@
 namespace App\Http\Requests\PesertaDidik;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class SholatRequest extends FormRequest
 {
@@ -26,5 +28,17 @@ class SholatRequest extends FormRequest
             'urutan'      => 'required|integer|min:1',
             'aktif'       => 'boolean',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors();
+
+        $response = response()->json([
+            'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
+            'error' => $errors,
+        ], 422);
+
+        throw new HttpResponseException($response);
     }
 }
