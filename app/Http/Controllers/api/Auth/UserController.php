@@ -35,7 +35,7 @@ class UserController extends Controller
     public function store(UserRequest $request): JsonResponse
     {
         $payload = $request->validated();
-        $actor = Auth::user();
+        $actor = $request->user();
 
         // Validasi autentikasi dan hak akses
         // if (!$actor) {
@@ -126,14 +126,14 @@ class UserController extends Controller
     public function update(UserRequest $request, User $user): JsonResponse
     {
         $payload = $request->validated();
-        $actor = Auth::user();
+        $actor = $request->user();
 
         if (!$actor) {
             return response()->json(['message' => 'Belum login.'], 401);
         }
 
         // Hak akses update role
-        if (!empty($payload['role']) && $actor->hasRole('superadmin')) {
+        if (!empty($payload['role']) && ! $actor->hasRole('superadmin')) {
             return response()->json(['message' => 'Tidak berhak mengubah role'], 403);
         }
 

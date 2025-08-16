@@ -72,7 +72,7 @@ use App\Http\Controllers\api\Administrasi\CatatanAfektifController as Administra
 use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 
 // Auth
-Route::post('register', [AuthController::class, 'register'])
+Route::post('register', [UserController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
 
 Route::apiResource('users', UserController::class)->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
@@ -93,8 +93,10 @@ Route::post('reset', [AuthController::class, 'resetPassword'])
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
-    Route::patch('profile', [AuthController::class, 'updateProfile']);
+    Route::patch('profile/{user}', [UserController::class, 'update']);
     Route::post('password', [AuthController::class, 'changePassword']);
+    Route::get('profile/{user}', [UserController::class, 'show']);
+    Route::delete('delete/{user}', [UserController::class, 'destroy']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
