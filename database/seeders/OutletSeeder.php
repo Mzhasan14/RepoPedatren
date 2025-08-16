@@ -14,97 +14,149 @@ class OutletSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = Carbon::now();
+        $adminId = 1; // diasumsikan admin pertama punya ID = 1
 
         /**
          * OUTLET
          */
         $outlets = [
-            ['id' => 1, 'nama_outlet' => 'Kantin Santri', 'jenis_outlet' => 'kantin', 'status' => true],
-            ['id' => 2, 'nama_outlet' => 'Koperasi Pesantren', 'jenis_outlet' => 'koperasi', 'status' => true],
-            ['id' => 3, 'nama_outlet' => 'Laundry Pesantren', 'jenis_outlet' => 'laundry', 'status' => true],
+            ['nama_outlet' => 'Kantin Santri Putra'],
+            ['nama_outlet' => 'Kantin Santri Putri'],
+            ['nama_outlet' => 'Koperasi Pesantren'],
+            ['nama_outlet' => 'Toko ATK & Kitab'],
+            ['nama_outlet' => 'Laundry & Cuci Pakaian'],
+            ['nama_outlet' => 'Apotek Pesantren'],
         ];
 
-        foreach ($outlets as $outlet) {
-            DB::table('outlet')->insert(array_merge($outlet, [
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]));
+        foreach ($outlets as &$outlet) {
+            $outlet['status'] = true;
+            $outlet['created_by'] = $adminId;
+            $outlet['created_at'] = now();
+            $outlet['updated_at'] = now();
         }
+        DB::table('outlet')->insert($outlets);
 
         /**
-         * DETAIL USER OUTLET
-         * user_id disesuaikan dengan user yang sudah ada di tabel users
-         */
-        $detailUserOutlets = [
-            ['user_id' => 2, 'outlet_id' => 1, 'status' => true],
-            ['user_id' => 3, 'outlet_id' => 2, 'status' => true],
-            ['user_id' => 4, 'outlet_id' => 3, 'status' => true],
-        ];
-
-        foreach ($detailUserOutlets as $detail) {
-            DB::table('detail_user_outlet')->insert(array_merge($detail, [
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]));
-        }
-
-        /**
-         * KATEGORI TRANSAKSI
+         * KATEGORI
          */
         $kategori = [
-            ['id' => 1, 'nama_kategori' => 'Makanan & Minuman', 'status' => true],
-            ['id' => 2, 'nama_kategori' => 'Alat Tulis & Kitab', 'status' => true],
-            ['id' => 3, 'nama_kategori' => 'Laundry', 'status' => true],
+            ['nama_kategori' => 'Makanan & Minuman'],
+            ['nama_kategori' => 'Kitab & Buku'],
+            ['nama_kategori' => 'Alat Tulis'],
+            ['nama_kategori' => 'Seragam Santri'],
+            ['nama_kategori' => 'Laundry'],
+            ['nama_kategori' => 'Obat-obatan'],
         ];
 
-        foreach ($kategori as $kat) {
-            DB::table('kategori')->insert(array_merge($kat, [
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]));
+        foreach ($kategori as &$kat) {
+            $kat['status'] = true;
+            $kat['created_by'] = $adminId;
+            $kat['created_at'] = now();
+            $kat['updated_at'] = now();
         }
+        DB::table('kategori')->insert($kategori);
+
+        $kategoriMap = DB::table('kategori')->pluck('id', 'nama_kategori')->toArray();
+        $outletMap   = DB::table('outlet')->pluck('id', 'nama_outlet')->toArray();
 
         /**
-         * TRANSAKSI (Contoh Data Awal)
-         * santri_id harus sesuai dengan data santri yang ada
+         * OUTLET - KATEGORI
          */
-        $transaksi = [
-            [
-                'santri_id'   => 1,
-                'outlet_id'   => 1,
-                'kategori_id' => 1,
-                'total_bayar' => 15000.00,
-                'tanggal'     => $now,
-                'status'      => true,
-            ],
-            [
-                'santri_id'   => 2,
-                'outlet_id'   => 2,
-                'kategori_id' => 2,
-                'total_bayar' => 30000.00,
-                'tanggal'     => $now,
-                'status'      => true,
-            ],
-            [
-                'santri_id'   => 3,
-                'outlet_id'   => 3,
-                'kategori_id' => 3,
-                'total_bayar' => 10000.00,
-                'tanggal'     => $now,
-                'status'      => true,
-            ],
+        $outletKategori = [
+            // Kantin Putra & Putri → makanan
+            ['outlet_id' => $outletMap['Kantin Santri Putra'], 'kategori_id' => $kategoriMap['Makanan & Minuman']],
+            ['outlet_id' => $outletMap['Kantin Santri Putri'], 'kategori_id' => $kategoriMap['Makanan & Minuman']],
+
+            // Koperasi → kitab, alat tulis, seragam
+            ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
+            ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Alat Tulis']],
+            ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Seragam Santri']],
+
+            // ATK & Kitab → kitab & alat tulis
+            ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
+            ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Alat Tulis']],
+
+            // Laundry
+            ['outlet_id' => $outletMap['Laundry & Cuci Pakaian'], 'kategori_id' => $kategoriMap['Laundry']],
+
+            // Apotek
+            ['outlet_id' => $outletMap['Apotek Pesantren'], 'kategori_id' => $kategoriMap['Obat-obatan']],
         ];
 
-        foreach ($transaksi as $trx) {
-            DB::table('transaksi')->insert(array_merge($trx, [
-                'created_by' => 1,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]));
+        foreach ($outletKategori as &$ok) {
+            $ok['status'] = true;
+            $ok['created_at'] = now();
+            $ok['updated_at'] = now();
         }
+        DB::table('outlet_kategori')->insert($outletKategori);
+
+        /**
+         * TRANSAKSI (10 transaksi per outlet)
+         */
+        $santriPutra = DB::table('santri')
+            ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+            ->where('biodata.jenis_kelamin', 'l')
+            ->pluck('santri.id')
+            ->toArray();
+
+        $santriPutri = DB::table('santri')
+            ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+            ->where('biodata.jenis_kelamin', 'p')
+            ->pluck('santri.id')
+            ->toArray();
+
+        $faker = \Faker\Factory::create('id_ID');
+        $transaksi = [];
+
+        foreach ($outletMap as $outletNama => $outletId) {
+            for ($i = 0; $i < 10; $i++) {
+                if ($outletNama === 'Kantin Santri Putra') {
+                    $santriId = $faker->randomElement($santriPutra);
+                    $kategoriId = $kategoriMap['Makanan & Minuman'];
+                    $total = $faker->numberBetween(5000, 20000);
+                } elseif ($outletNama === 'Kantin Santri Putri') {
+                    $santriId = $faker->randomElement($santriPutri);
+                    $kategoriId = $kategoriMap['Makanan & Minuman'];
+                    $total = $faker->numberBetween(5000, 20000);
+                } elseif ($outletNama === 'Koperasi Pesantren') {
+                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
+                    $kategoriId = $faker->randomElement([
+                        $kategoriMap['Kitab & Buku'],
+                        $kategoriMap['Alat Tulis'],
+                        $kategoriMap['Seragam Santri'],
+                    ]);
+                    $total = $faker->numberBetween(15000, 75000);
+                } elseif ($outletNama === 'Toko ATK & Kitab') {
+                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
+                    $kategoriId = $faker->randomElement([
+                        $kategoriMap['Kitab & Buku'],
+                        $kategoriMap['Alat Tulis'],
+                    ]);
+                    $total = $faker->numberBetween(5000, 50000);
+                } elseif ($outletNama === 'Laundry & Cuci Pakaian') {
+                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
+                    $kategoriId = $kategoriMap['Laundry'];
+                    $total = $faker->numberBetween(7000, 20000);
+                } else { // Apotek
+                    $santriId = $faker->randomElement(array_merge($santriPutra, $santriPutri));
+                    $kategoriId = $kategoriMap['Obat-obatan'];
+                    $total = $faker->numberBetween(5000, 30000);
+                }
+
+                $transaksi[] = [
+                    'santri_id' => $santriId,
+                    'outlet_id' => $outletId,
+                    'kategori_id' => $kategoriId,
+                    'total_bayar' => $total,
+                    'tanggal' => $faker->dateTimeBetween('-1 month', 'now'),
+                    'status' => true,
+                    'created_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        DB::table('transaksi')->insert($transaksi);
     }
 }

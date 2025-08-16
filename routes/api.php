@@ -69,6 +69,7 @@ use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register'])
@@ -613,8 +614,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::apiResource('outlet', OutletController::class);
 
-// Kategori
 Route::apiResource('kategori', KategoriController::class);
 
-// Detail User Outlet
 Route::apiResource('detail-user-outlet', DetailUserOutletController::class);
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Scan kartu (GET) -> menampilkan data santri & saldo
+    Route::get('transaksi/scan', [TransaksiController::class, 'scan']);
+
+    // Buat transaksi (POST) -> seller klik OK setelah input harga
+    Route::post('transaksi', [TransaksiController::class, 'store']);
+
+    // List transaksi (paginated 25)
+    Route::get('transaksi', [TransaksiController::class, 'index']);
+});

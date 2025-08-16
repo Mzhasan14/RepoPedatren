@@ -9,7 +9,7 @@ class StoreOutletRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-  public function authorize(): bool
+    public function authorize(): bool
     {
         return true; // bisa diatur pakai Gate/Policy
     }
@@ -17,9 +17,10 @@ class StoreOutletRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_outlet' => 'required|string|max:255|unique:outlet,nama_outlet',
-            'jenis_outlet' => 'required|string|max:50',
-            'status' => 'boolean',
+            'nama_outlet'   => 'required|string|max:255|unique:outlet,nama_outlet',
+            'status'        => 'boolean',
+            'kategori_ids'  => 'required|array|min:1',
+            'kategori_ids.*' => 'exists:kategori,id',
         ];
     }
 }
