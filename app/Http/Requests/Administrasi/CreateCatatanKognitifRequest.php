@@ -24,8 +24,7 @@ class CreateCatatanKognitifRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_santri' => ['required', 'exists:santri,id'],
-            'id_wali_asuh' => ['required', 'exists:wali_asuh,id'],
+            'id_anak_asuh' => ['required', 'exists:santri,id'],
 
             'kebahasaan_nilai' => ['required', 'in:A,B,C,D,E'],
             'kebahasaan_tindak_lanjut' => ['required', 'string'],
@@ -44,8 +43,6 @@ class CreateCatatanKognitifRequest extends FormRequest
 
             'baca_alquran_nilai' => ['required', 'in:A,B,C,D,E'],
             'baca_alquran_tindak_lanjut' => ['required', 'string'],
-
-            'tanggal_buat' => ['nullable', 'date'],
         ];
     }
 

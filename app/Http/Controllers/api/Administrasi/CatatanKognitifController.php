@@ -59,7 +59,7 @@ class CatatanKognitifController extends Controller
     public function store(CatatanKognitifRequest $request, $bioId)
     {
         try {
-            $result = $this->formulirCatatan->store($request->validated(), $bioId);
+            $result = $this->formulirCatatan->storeSuperadminKognitif($request->validated(), $bioId, $request);
             if (! $result['status']) {
                 return response()->json([
                     'message' => $result['message'],
@@ -80,31 +80,31 @@ class CatatanKognitifController extends Controller
         }
     }
 
-    public function keluarKognitif(KeluarKognitifRequest $request, $id)
-    {
-        try {
-            $validated = $request->validated();
-            $result = $this->formulirCatatan->keluarKognitif($validated, $id);
+    // public function keluarKognitif(KeluarKognitifRequest $request, $id)
+    // {
+    //     try {
+    //         $validated = $request->validated();
+    //         $result = $this->formulirCatatan->keluarKognitif($validated, $id);
 
-            if (! $result['status']) {
-                return response()->json([
-                    'message' => $result['message'],
-                ], 200);
-            }
+    //         if (! $result['status']) {
+    //             return response()->json([
+    //                 'message' => $result['message'],
+    //             ], 200);
+    //         }
 
-            return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data' => $result['data'],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Gagal me nonaktifkan catatan afektif: '.$e->getMessage());
+    //         return response()->json([
+    //             'message' => 'Data berhasil diperbarui',
+    //             'data' => $result['data'],
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Gagal me nonaktifkan catatan afektif: '.$e->getMessage());
 
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'message' => 'Terjadi kesalahan saat memproses data',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     public function edit($id)
     {
@@ -155,7 +155,7 @@ class CatatanKognitifController extends Controller
     public function update(UpdateKognitifRequest $request, $id)
     {
         try {
-            $result = $this->formulirCatatan->update($request->validated(), $id);
+            $result = $this->formulirCatatan->updateSuperadmin($request->validated(), $id, $request);
 
             if (! $result['status']) {
                 return response()->json([
@@ -217,7 +217,7 @@ class CatatanKognitifController extends Controller
     public function storeCatatanKognitif(CreateCatatanKognitifRequest $request)
     {
         try {
-            $result = $this->catatanService->storeCatatanKognitif($request->validated());
+            $result = $this->catatanService->storeCatatanKognitif($request->validated(),$request);
             if (! $result['status']) {
                 return response()->json([
                     'message' => $result['message'],

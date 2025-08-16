@@ -24,7 +24,6 @@ class UpdateKognitifRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wali_asuh' => 'required|exists:users,id',
             'kebahasaan_nilai' => 'required|string|max:255',
             'kebahasaan_tindak_lanjut' => 'required|string|max:1000',
             'baca_kitab_kuning_nilai' => 'required|string|max:255',
@@ -37,7 +36,6 @@ class UpdateKognitifRequest extends FormRequest
             'tulis_alquran_tindak_lanjut' => 'required|string|max:1000',
             'baca_alquran_nilai' => 'required|string|max:255',
             'baca_alquran_tindak_lanjut' => 'required|string|max:1000',
-            'tanggal_buat' => 'nullable|date',
         ];
     }
 

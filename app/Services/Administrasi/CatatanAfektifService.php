@@ -31,7 +31,8 @@ class CatatanAfektifService
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->join('users as u', 'b.id', '=', 'u.biodata_id')
+                ->join('user_biodata as ub', 'b.id', 'ub.biodata_id')
+                ->join('users as u', 'u.id', '=', 'ub.user_id')
                 ->where('u.id', $user->id)
                 ->value('wa.id');
         }
@@ -63,9 +64,8 @@ class CatatanAfektifService
                 $join->on('bp.id', '=', 'fotoLastPencatat.biodata_id');
             })
             ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
-
-            ->where('catatan_afektif.status', true)
-            ->whereNull('catatan_afektif.tanggal_selesai');
+            ->orderBy('catatan_afektif.id', 'asc')
+            ->orderBy('catatan_afektif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh
         if ($user->hasRole('waliasuh') && $waliAsuhId) {
@@ -82,26 +82,26 @@ class CatatanAfektifService
             $query = $this->baseCatatanAfektifQuery($request);
 
             return $query->select(
-                    'catatan_afektif.id as id_catatan',
-                    'bs.id as Biodata_uuid',
-                    'bp.id as Pencatat_uuid',
-                    'bs.nama',
-                    DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
-                    DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
-                    DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
-                    DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
-                    'catatan_afektif.kepedulian_nilai',
-                    'catatan_afektif.kepedulian_tindak_lanjut',
-                    'catatan_afektif.kebersihan_nilai',
-                    'catatan_afektif.kebersihan_tindak_lanjut',
-                    'catatan_afektif.akhlak_nilai',
-                    'catatan_afektif.akhlak_tindak_lanjut',
-                    'bp.nama as pencatat',
-                    DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
-                    'catatan_afektif.created_at',
-                    DB::raw("COALESCE(FotoCatatan.file_path, 'default.jpg') as foto_catatan"),
-                    DB::raw("COALESCE(FotoPencatat.file_path, 'default.jpg') as foto_pencatat")
-                )
+                'catatan_afektif.id as id_catatan',
+                'bs.id as Biodata_uuid',
+                'bp.id as Pencatat_uuid',
+                'bs.nama',
+                DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
+                DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
+                DB::raw("GROUP_CONCAT(DISTINCT jurusan.nama_jurusan SEPARATOR ', ') as jurusan"),
+                DB::raw("GROUP_CONCAT(DISTINCT lembaga.nama_lembaga SEPARATOR ', ') as lembaga"),
+                'catatan_afektif.kepedulian_nilai',
+                'catatan_afektif.kepedulian_tindak_lanjut',
+                'catatan_afektif.kebersihan_nilai',
+                'catatan_afektif.kebersihan_tindak_lanjut',
+                'catatan_afektif.akhlak_nilai',
+                'catatan_afektif.akhlak_tindak_lanjut',
+                'bp.nama as pencatat',
+                DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
+                'catatan_afektif.tanggal_buat',
+                DB::raw("COALESCE(FotoCatatan.file_path, 'default.jpg') as foto_catatan"),
+                DB::raw("COALESCE(FotoPencatat.file_path, 'default.jpg') as foto_pencatat")
+            )
                 ->groupBy(
                     'catatan_afektif.id',
                     'bs.id',
@@ -115,7 +115,7 @@ class CatatanAfektifService
                     'catatan_afektif.akhlak_tindak_lanjut',
                     'bp.nama',
                     'wali_asuh.id',
-                    'catatan_afektif.created_at',
+                    'catatan_afektif.tanggal_buat',
                     'FotoCatatan.file_path',
                     'FotoPencatat.file_path'
                 );
@@ -153,7 +153,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->akhlak_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -174,7 +174,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -195,7 +195,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -217,7 +217,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->akhlak_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -237,7 +237,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kepedulian_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -257,7 +257,7 @@ class CatatanAfektifService
                         'tindak_lanjut' => $item->kebersihan_tindak_lanjut,
                         'pencatat' => $item->pencatat,
                         'jabatanPencatat' => $item->wali_asuh,
-                        'waktu_pencatatan' => Carbon::parse($item->created_at)->format('d M Y H:i:s'),
+                        'waktu_pencatatan' => Carbon::parse($item->tanggal_buat)->format('d M Y H:i:s'),
                         'foto_catatan' => url($item->foto_catatan),
                         'foto_pencatat' => url($item->foto_pencatat),
                     ];
@@ -268,12 +268,84 @@ class CatatanAfektifService
         });
     }
 
-    public function store(array $input)
+    public function store(array $input, Request $request)
     {
-        $santri = Santri::find($input['id_santri']);
+        $user = $request->user();
 
-        // Cek apakah santri ada dan status aktif = 'aktif'
-        if (! $santri || $santri->status !== 'aktif') {
+        // Pastikan hanya wali_asuh atau superadmin yang dapat membuat catatan
+        if (! $user->hasRole('waliasuh') && ! $user->hasRole('superadmin')) {
+            return [
+                'status' => false,
+                'message' => 'Hanya wali asuh atau superadmin yang dapat membuat catatan afektif.',
+                'data' => null,
+            ];
+        }
+
+        // Ambil data anak_asuh dari dropdown
+        $anakAsuh = DB::table('anak_asuh')
+            ->where('id', $input['id_anak_asuh'])
+            ->first();
+
+        if (! $anakAsuh) {
+            return [
+                'status' => false,
+                'message' => 'Data anak asuh tidak ditemukan.',
+                'data' => null,
+            ];
+        }
+
+        $idSantri = $anakAsuh->id_santri;
+
+        // Tentukan id_wali_asuh
+        if ($user->hasRole('waliasuh')) {
+            // Ambil ID wali_asuh dari user login
+            $waliAsuhId = DB::table('wali_asuh as wa')
+                ->join('santri as s', 's.id', '=', 'wa.id_santri')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->join('user_biodata as ub', 'ub.biodata_id', 'b.id')
+                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->where('u.id', $user->id)
+                ->value('wa.id');
+
+            if (! $waliAsuhId) {
+                return [
+                    'status' => false,
+                    'message' => 'Anda tidak memiliki anak asuh.',
+                    'data' => null,
+                ];
+            }
+
+            // Cek apakah anak_asuh milik wali_asuh ini
+            $cek = DB::table('kewaliasuhan')
+                ->where('id_wali_asuh', $waliAsuhId)
+                ->where('id_anak_asuh', $anakAsuh->id)
+                ->first();
+
+            if (! $cek) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri bukan anak asuh Anda.',
+                    'data' => null,
+                ];
+            }
+        } else {
+            // Superadmin → ambil wali_asuh sesuai anak_asuh
+            $waliAsuhId = DB::table('kewaliasuhan')
+                ->where('id_anak_asuh', $anakAsuh->id)
+                ->value('id_wali_asuh');
+
+            if (! $waliAsuhId) {
+                return [
+                    'status' => false,
+                    'message' => 'Belum ada wali asuh untuk anak asuh ini.',
+                    'data' => null,
+                ];
+            }
+        }
+
+        // Cek status santri
+        $santriObj = Santri::find($idSantri);
+        if (! $santriObj || $santriObj->status !== 'aktif') {
             return [
                 'status' => false,
                 'message' => 'Santri tidak aktif. Tidak bisa menambahkan catatan afektif.',
@@ -281,24 +353,10 @@ class CatatanAfektifService
             ];
         }
 
-        // Cek jika masih ada catatan aktif yang belum selesai
-        $adaCatatanAktif = Catatan_afektif::where('id_santri', $input['id_santri'])
-            ->where('status', 1)
-            ->whereNull('tanggal_selesai')
-            ->exists();
-
-        if ($adaCatatanAktif) {
-            return [
-                'status' => false,
-                'message' => 'Masih ada catatan afektif aktif yang belum diselesaikan.',
-                'data' => null,
-            ];
-        }
-
         // Simpan catatan baru
         $catatan = Catatan_afektif::create([
-            'id_santri' => $input['id_santri'],
-            'id_wali_asuh' => $input['id_wali_asuh'],
+            'id_santri' => $idSantri,
+            'id_wali_asuh' => $waliAsuhId,
             'kepedulian_nilai' => $input['kepedulian_nilai'],
             'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'],
             'kebersihan_nilai' => $input['kebersihan_nilai'],
@@ -307,7 +365,7 @@ class CatatanAfektifService
             'akhlak_tindak_lanjut' => $input['akhlak_tindak_lanjut'],
             'tanggal_buat' => $input['tanggal_buat'] ?? now(),
             'status' => true,
-            'created_by' => Auth::id(),
+            'created_by' => $user->id,
             'created_at' => now(),
         ]);
 
@@ -317,6 +375,7 @@ class CatatanAfektifService
             'data' => $catatan,
         ];
     }
+
     public function updateKategori($id, Request $request)
     {
         $kategori = $request->kategori;
@@ -327,9 +386,12 @@ class CatatanAfektifService
         $kolomTindakLanjut = "{$kategori}_tindak_lanjut";
 
         $allowedColumns = [
-            'akhlak_nilai', 'akhlak_tindak_lanjut',
-            'kepedulian_nilai', 'kepedulian_tindak_lanjut',
-            'kebersihan_nilai', 'kebersihan_tindak_lanjut',
+            'akhlak_nilai',
+            'akhlak_tindak_lanjut',
+            'kepedulian_nilai',
+            'kepedulian_tindak_lanjut',
+            'kebersihan_nilai',
+            'kebersihan_tindak_lanjut',
         ];
 
         if (!in_array($kolomNilai, $allowedColumns) || !in_array($kolomTindakLanjut, $allowedColumns)) {

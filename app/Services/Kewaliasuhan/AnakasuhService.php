@@ -18,7 +18,7 @@ class AnakasuhService
 {
     public function getAllAnakasuh(Request $request)
     {
-        $user = Auth::user();
+        $user = $request->user();
 
         // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
@@ -95,7 +95,6 @@ class AnakasuhService
         } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
             $query->whereRaw('1=0'); // user wali asuh tapi tidak punya relasi → kosong
         }
-
         return $query;
     }
 

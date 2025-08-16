@@ -537,6 +537,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/golongan-gabungan', [DropdownController::class, 'menuKategoriGolonganGabungan']);
     Route::get('/semester', [DropdownController::class, 'semester']);
+    Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan']);
 
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);

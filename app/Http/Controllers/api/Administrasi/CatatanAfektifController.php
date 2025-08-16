@@ -59,7 +59,7 @@ class CatatanAfektifController extends Controller
     public function store(CatatanAfektifRequest $request, $bioId)
     {
         try {
-            $result = $this->formulirCatatan->store($request->validated(), $bioId);
+            $result = $this->formulirCatatan->storeSuperadmin($request->validated(), $bioId, $request);
             if (! $result['status']) {
                 return response()->json([
                     'message' => $result['message'],
@@ -129,7 +129,7 @@ class CatatanAfektifController extends Controller
     public function update(UpdateAfektifRequest $request, $id)
     {
         try {
-            $result = $this->formulirCatatan->update($request->validated(), $id);
+            $result = $this->formulirCatatan->updateSuperadmin($request->validated(), $id, $request);
 
             if (! $result['status']) {
                 return response()->json([
@@ -188,36 +188,36 @@ class CatatanAfektifController extends Controller
         ]);
     }
 
-    public function keluarAfektif(KeluarAfektifRequest $request, $id)
-    {
-        try {
-            $validated = $request->validated();
-            $result = $this->formulirCatatan->keluarAfektif($validated, $id);
+    // public function keluarAfektif(KeluarAfektifRequest $request, $id)
+    // {
+    //     try {
+    //         $validated = $request->validated();
+    //         $result = $this->formulirCatatan->keluarAfektif($validated, $id);
 
-            if (! $result['status']) {
-                return response()->json([
-                    'message' => $result['message'],
-                ], 200);
-            }
+    //         if (! $result['status']) {
+    //             return response()->json([
+    //                 'message' => $result['message'],
+    //             ], 200);
+    //         }
 
-            return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data' => $result['data'],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Gagal me nonaktifkan catatan afektif: '.$e->getMessage());
+    //         return response()->json([
+    //             'message' => 'Data berhasil diperbarui',
+    //             'data' => $result['data'],
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Gagal me nonaktifkan catatan afektif: '.$e->getMessage());
 
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'message' => 'Terjadi kesalahan saat memproses data',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     public function CreateStore(CreateCatatanAfektifRequest $request)
     {
         try {
-            $result = $this->catatanService->store($request->validated());
+            $result = $this->catatanService->store($request->validated(), $request);
             if (! $result['status']) {
                 return response()->json([
                     'message' => $result['message'],

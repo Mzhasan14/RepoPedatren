@@ -10,6 +10,7 @@ use App\Models\Pegawai\GolonganJabatan;
 use App\Models\Pegawai\KategoriGolongan;
 use App\Models\Pegawai\Pengurus;
 use App\Models\Semester;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DropdownController extends Controller
@@ -611,5 +612,45 @@ class DropdownController extends Controller
             ->get();
 
         return response()->json($semesters);
+    }
+    public function anakasuhcatatan(Request $request)
+    {
+        $user = $request->user();
+
+        $query = DB::table('anak_asuh as aa')
+            ->leftJoin('kewaliasuhan as k','aa.id','=','k.id_anak_asuh')
+            ->leftJoin('santri as s','aa.id_santri','=','s.id')
+            ->leftJoin('biodata as b','b.id','=','s.biodata_id')
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('kamar AS kk', 'ds.kamar_id', '=', 'kk.id')
+            ->select([
+                'aa.id',
+                'b.nama',
+                'l.nama_lembaga',
+                'w.nama_wilayah',
+                'kk.nama_kamar',
+                's.nis'
+            ]);
+
+        // Filter role waliasuh
+        if ($user->hasRole('waliasuh')) {
+            // Ambil ID wali_asuh dari user
+            $waliAsuhId = DB::table('wali_asuh as wa')
+                ->join('santri as s', 's.id', '=', 'wa.id_santri')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->join('user_biodata as ub','ub.biodata_id','b.id')
+                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->where('u.id', $user->id)
+                ->value('wa.id');
+
+            $query->where('k.id_wali_asuh', $waliAsuhId);
+        }
+
+        $data = $query->get();
+
+        return response()->json($data);
     }
 }

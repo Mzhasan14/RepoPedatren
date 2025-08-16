@@ -7,6 +7,7 @@ use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class CatatanAfektifService
 {
@@ -49,7 +50,7 @@ class CatatanAfektifService
                     'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
                     'status' => 'Wali Asuh',
-                    'status_aktif' => (bool) $item->status, 
+                    'status_aktif' => (bool) $item->status,
                 ];
             });
 
@@ -98,8 +99,18 @@ class CatatanAfektifService
         return ['status' => true, 'data' => $afektif];
     }
 
-    public function update(array $input, string $id): array
+    public function updateSuperadmin(array $input, string $id, Request $request): array
     {
+        $user = $request->user();
+
+        // Pastikan hanya superadmin yang bisa update
+        if (! $user->hasRole('superadmin')) {
+            return [
+                'status' => false,
+                'message' => 'Hanya superadmin yang dapat mengubah catatan afektif ini.',
+            ];
+        }
+
         return DB::transaction(function () use ($input, $id) {
             // 1. Pencarian data
             $afektif = Catatan_afektif::find($id);
@@ -107,53 +118,39 @@ class CatatanAfektifService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            // 2. Larangan update jika sudah memiliki tanggal_selesai
-            if (! is_null($afektif->tanggal_selesai)) {
-                return [
-                    'status' => false,
-                    'message' => 'Catatan afektif ini telah memiliki tanggal selesai dan tidak dapat diubah lagi demi menjaga keakuratan histori.',
-                ];
-            }
-
-            // 3. Update data
             $afektif->update([
-                'id_wali_asuh' => $input['id_wali_asuh'] ?? null,
-                'kepedulian_nilai' => $input['kepedulian_nilai'],
-                'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'],
-                'kebersihan_nilai' => $input['kebersihan_nilai'],
-                'kebersihan_tindak_lanjut' => $input['kebersihan_tindak_lanjut'],
-                'akhlak_nilai' => $input['akhlak_nilai'],
-                'akhlak_tindak_lanjut' => $input['akhlak_tindak_lanjut'],
-                'tanggal_buat' => Carbon::parse($input['tanggal_buat']),
+                'kepedulian_nilai' => $input['kepedulian_nilai'] ?? $afektif->kepedulian_nilai,
+                'kepedulian_tindak_lanjut' => $input['kepedulian_tindak_lanjut'] ?? $afektif->kepedulian_tindak_lanjut,
+                'kebersihan_nilai' => $input['kebersihan_nilai'] ?? $afektif->kebersihan_nilai,
+                'kebersihan_tindak_lanjut' => $input['kebersihan_tindak_lanjut'] ?? $afektif->kebersihan_tindak_lanjut,
+                'akhlak_nilai' => $input['akhlak_nilai'] ?? $afektif->akhlak_nilai,
+                'akhlak_tindak_lanjut' => $input['akhlak_tindak_lanjut'] ?? $afektif->akhlak_tindak_lanjut,
                 'updated_by' => Auth::id(),
             ]);
 
             // 4. Return hasil
             return [
                 'status' => true,
-                'data' => $afektif,
+                'data' => $afektif->fresh(),
             ];
         });
     }
 
-    public function store(array $data, string $bioId): array
+
+    public function storeSuperadmin(array $data, string $bioId, Request $request): array
     {
+        $user = $request->user();
+
+
+        // Pastikan hanya superadmin yang bisa menjalankan ini
+        if (! $user->hasRole('superadmin')) {
+            return [
+                'status' => false,
+                'message' => 'Hanya superadmin yang dapat membuat catatan afektif untuk biodata ini.',
+            ];
+        }
         return DB::transaction(function () use ($data, $bioId) {
-            // 1. Periksa apakah santri sudah memiliki catatan afektif aktif
-            $existing = Catatan_afektif::whereHas('santri', fn ($q) => $q->where('biodata_id', $bioId)
-            )
-                ->whereNull('tanggal_selesai')
-                ->where('status', 1)
-                ->first();
-
-            if ($existing) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri masih memiliki Catatan Afektif aktif',
-                ];
-            }
-
-            // 2. Cari santri berdasarkan biodata_id (tanpa cek status dulu)
+            // 1. Ambil santri berdasarkan biodata_id
             $santri = Santri::where('biodata_id', $bioId)
                 ->latest()
                 ->first();
@@ -168,22 +165,71 @@ class CatatanAfektifService
             if ($santri->status !== 'aktif') {
                 return [
                     'status' => false,
-                    'message' => 'Santri tersebut sudah tidak aktif lagi.',
+                    'message' => 'Santri sudah tidak aktif.',
                 ];
             }
 
-            // 3. Buat Catatan Afektif Baru
+            // 2. Cek apakah santri memiliki anak_asuh
+            $anakAsuh = DB::table('anak_asuh')
+                ->where('id_santri', $santri->id)
+                ->first();
+
+            if (! $anakAsuh) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri ini tidak memiliki anak asuh. Catatan tidak bisa dibuat.',
+                ];
+            }
+
+            // 3. Cek apakah santri adalah wali_asuh → jika iya, tidak boleh
+            $isWaliAsuh = DB::table('wali_asuh')
+                ->where('id_santri', $santri->id)
+                ->exists();
+
+            if ($isWaliAsuh) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri ini merupakan wali asuh. Catatan tidak bisa dibuat.',
+                ];
+            }
+
+            // 4. Cek jika masih ada catatan afektif aktif untuk santri
+            $existing = Catatan_afektif::where('id_santri', $santri->id)
+                ->whereNull('tanggal_selesai')
+                ->where('status', 1)
+                ->first();
+
+            if ($existing) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri masih memiliki Catatan Afektif aktif.',
+                ];
+            }
+
+            // 5. Ambil id_wali_asuh dari tabel kewaliasuhan terkait anak_asuh
+            $waliAsuhId = DB::table('kewaliasuhan')
+                ->where('id_anak_asuh', $anakAsuh->id)
+                ->value('id_wali_asuh');
+
+            if (! $waliAsuhId) {
+                return [
+                    'status' => false,
+                    'message' => 'Belum ada wali asuh untuk anak asuh ini.',
+                ];
+            }
+
+            // 6. Buat Catatan Afektif baru
             $afektif = Catatan_afektif::create([
                 'id_santri' => $santri->id,
-                'id_wali_asuh' => $data['id_wali_asuh'],
+                'id_wali_asuh' => $waliAsuhId,
                 'kepedulian_nilai' => $data['kepedulian_nilai'],
                 'kepedulian_tindak_lanjut' => $data['kepedulian_tindak_lanjut'],
                 'kebersihan_nilai' => $data['kebersihan_nilai'],
                 'kebersihan_tindak_lanjut' => $data['kebersihan_tindak_lanjut'],
                 'akhlak_nilai' => $data['akhlak_nilai'],
                 'akhlak_tindak_lanjut' => $data['akhlak_tindak_lanjut'],
-                'tanggal_buat' => $data['tanggal_buat'] ?? now(),
-                'status' => 1, // aktif
+                'tanggal_buat' =>  now(),
+                'status' => 1,
                 'created_by' => Auth::id(),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -196,40 +242,40 @@ class CatatanAfektifService
         });
     }
 
-    public function keluarAfektif(array $input, int $id): array
-    {
-        return DB::transaction(function () use ($input, $id) {
-            $afektif = Catatan_afektif::find($id);
-            if (! $afektif) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan.'];
-            }
+    // public function keluarAfektif(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $afektif = Catatan_afektif::find($id);
+    //         if (! $afektif) {
+    //             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
+    //         }
 
-            if ($afektif->tanggal_selesai) {
-                return [
-                    'status' => false,
-                    'message' => 'Data afektif sudah ditandai selesai/nonaktif.',
-                ];
-            }
+    //         if ($afektif->tanggal_selesai) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data afektif sudah ditandai selesai/nonaktif.',
+    //             ];
+    //         }
 
-            $tglSelesai = Carbon::parse($input['tanggal_selesai'] ?? '');
+    //         $tglSelesai = Carbon::parse($input['tanggal_selesai'] ?? '');
 
-            if ($tglSelesai->lt(Carbon::parse($afektif->tanggal_buat))) {
-                return [
-                    'status' => false,
-                    'message' => 'Tanggal selesai tidak boleh sebelum tanggal buat.',
-                ];
-            }
+    //         if ($tglSelesai->lt(Carbon::parse($afektif->tanggal_buat))) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tanggal selesai tidak boleh sebelum tanggal buat.',
+    //             ];
+    //         }
 
-            $afektif->update([
-                'status' => 0,
-                'tanggal_selesai' => $tglSelesai,
-                'updated_by' => Auth::id(),
-            ]);
+    //         $afektif->update([
+    //             'status' => 0,
+    //             'tanggal_selesai' => $tglSelesai,
+    //             'updated_by' => Auth::id(),
+    //         ]);
 
-            return [
-                'status' => true,
-                'data' => $afektif,
-            ];
-        });
-    }
+    //         return [
+    //             'status' => true,
+    //             'data' => $afektif,
+    //         ];
+    //     });
+    // }
 }

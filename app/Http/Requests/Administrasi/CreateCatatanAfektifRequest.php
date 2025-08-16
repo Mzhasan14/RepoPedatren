@@ -24,15 +24,13 @@ class CreateCatatanAfektifRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_santri' => 'required|exists:santri,id',
-            'id_wali_asuh' => 'required|exists:wali_asuh,id',
+            'id_anak_asuh' => 'required|exists:anak_asuh,id',
             'kepedulian_nilai' => 'required|in:A,B,C,D,E',
             'kepedulian_tindak_lanjut' => 'required|string',
             'kebersihan_nilai' => 'required|in:A,B,C,D,E',
             'kebersihan_tindak_lanjut' => 'required|string',
             'akhlak_nilai' => 'required|in:A,B,C,D,E',
             'akhlak_tindak_lanjut' => 'required|string',
-            'tanggal_buat' => 'nullable|date',
         ];
     }
 

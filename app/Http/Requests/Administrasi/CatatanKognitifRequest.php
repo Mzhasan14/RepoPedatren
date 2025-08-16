@@ -25,7 +25,6 @@ class CatatanKognitifRequest extends FormRequest
     {
 
         return [
-            'id_wali_asuh' => 'required|exists:wali_asuh,id',
             'kebahasaan_nilai' => 'required|string|max:255',
             'kebahasaan_tindak_lanjut' => 'required|string|max:1000',
             'baca_kitab_kuning_nilai' => 'required|string|max:255',
@@ -38,7 +37,6 @@ class CatatanKognitifRequest extends FormRequest
             'tulis_alquran_tindak_lanjut' => 'required|string|max:1000',
             'baca_alquran_nilai' => 'required|string|max:255',
             'baca_alquran_tindak_lanjut' => 'required|string|max:1000',
-            'tanggal_buat' => 'nullable|date',
         ];
     }
 

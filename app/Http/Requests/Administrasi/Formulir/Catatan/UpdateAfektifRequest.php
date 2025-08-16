@@ -24,14 +24,12 @@ class UpdateAfektifRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wali_asuh' => 'required|exists:users,id',
             'kepedulian_nilai' => 'required|string|max:255',
             'kepedulian_tindak_lanjut' => 'required|string|max:255',
             'kebersihan_nilai' => 'required|string|max:255',
             'kebersihan_tindak_lanjut' => 'required|string|max:255',
             'akhlak_nilai' => 'required|string|max:255',
             'akhlak_tindak_lanjut' => 'required|string|max:255',
-            'tanggal_buat' => 'nullable|date',
         ];
     }
 
