@@ -7,6 +7,7 @@ use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Database\Factories\CatatanAfektifFactory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CatatanAfektifSeeder extends Seeder
 {
@@ -15,20 +16,24 @@ class CatatanAfektifSeeder extends Seeder
      */
     public function run(): void
     {
-        $santriAktif = Santri::where('status', 'aktif')->get();
+        $kewaliasuhanList = DB::table('kewaliasuhan')->get();
 
-        // Ambil semua wali asuh (opsional bisa difilter aktif juga jika ada fieldnya)
-        $waliAsuhList = Wali_asuh::all();
-
-        if ($santriAktif->isEmpty()) {
-            $this->command->warn('Tidak ada santri aktif. Seeder CatatanAfektif dilewati.');
+        if ($kewaliasuhanList->isEmpty()) {
+            $this->command->warn('Tidak ada relasi kewaliasuhan. Seeder CatatanAfektif dilewati.');
             return;
         }
 
-        foreach ($santriAktif->take(25) as $santri) {
+        // Batasi misal 25 catatan
+        foreach ($kewaliasuhanList->take(25) as $relasi) {
+            $santriId = DB::table('anak_asuh')
+                ->where('id', $relasi->id_anak_asuh)
+                ->value('id_santri');
+
+            if (! $santriId) continue;
+
             Catatan_afektif::factory()->create([
-                'id_santri' => $santri->id,
-                'id_wali_asuh' => $waliAsuhList->random()->id ?? null,
+                'id_santri' => $santriId,
+                'id_wali_asuh' => $relasi->id_wali_asuh,
             ]);
         }
     }

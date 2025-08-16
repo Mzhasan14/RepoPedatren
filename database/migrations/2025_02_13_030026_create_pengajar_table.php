@@ -30,21 +30,21 @@ return new class extends Migration
             $table->foreign('pegawai_id')->references('id')->on('pegawai')->onDelete('cascade');
             $table->foreign('golongan_id')->references('id')->on('golongan')->onDelete('cascade');
         });
-        Schema::create('materi_ajar', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('pengajar_id');
-            $table->string('nama_materi');
-            $table->integer('jumlah_menit')->nullable()->default(0); // Simpan dalam satuan menit
-            $table->date('tahun_masuk')->nullable();
-            $table->date('tahun_akhir')->nullable();
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
-            $table->timestamps();
+        // Schema::create('materi_ajar', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->unsignedBigInteger('pengajar_id');
+        //     $table->string('nama_materi');
+        //     $table->integer('jumlah_menit')->nullable()->default(0); // Simpan dalam satuan menit
+        //     $table->date('tahun_masuk')->nullable();
+        //     $table->date('tahun_akhir')->nullable();
+        //     $table->unsignedBigInteger('created_by');
+        //     $table->unsignedBigInteger('deleted_by')->nullable();
+        //     $table->unsignedBigInteger('updated_by')->nullable();
+        //     $table->enum('status_aktif', ['aktif', 'tidak aktif'])->default('aktif');
+        //     $table->timestamps();
 
-            $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');
-        });
+        //     $table->foreign('pengajar_id')->references('id')->on('pengajar')->onDelete('cascade');
+        // });
 
     }
 

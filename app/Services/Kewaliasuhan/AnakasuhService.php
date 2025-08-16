@@ -13,70 +13,90 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Kewaliasuhan\Kewaliasuhan;
-use Illuminate\Http\JsonResponse;
 
 class AnakasuhService
 {
     public function getAllAnakasuh(Request $request)
     {
-        // 1) Ambil ID untuk jenis berkas "Pas foto"
+        $user = Auth::user();
+
+        // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // 2) Subquery: foto terakhir per biodata
         $fotoLast = DB::table('berkas')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
-        // 3) Subquery: warga_pesantren terakhir per biodata (status = true)
         $wpLast = DB::table('warga_pesantren')
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
 
-        return DB::table('anak_asuh AS as')
-            ->join('santri AS s', 'as.id_santri', '=', 's.id')
+        // Jika user punya role "waliasuh", ambil id_wali_asuh
+        $waliAsuhId = null;
+        if ($user->hasRole('waliasuh')) {
+            $waliAsuhId = DB::table('wali_asuh as wa')
+                ->join('santri as s','s.id','wa.id_santri')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->join('user_biodata as ub','b.id','=','ub.biodata_id')
+                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->where('u.id', $user->id)
+                ->value('wa.id');
+        }
+
+        // Query utama
+        $query = DB::table('anak_asuh AS aa')
+            ->join('santri AS s', 'aa.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->join('keluarga as k','k.id_biodata','=','b.id')
-            ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'as.id')
-            ->join('wali_asuh as ws', 'ks.id_wali_asuh', '=', 'ws.id')
-            ->join('grup_wali_asuh as gs', 'ws.id_grup_wali_asuh', '=', 'gs.id')
+            ->join('keluarga as k', 'k.id_biodata', '=', 'b.id')
+            ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'aa.id')
+            ->join('wali_asuh as wa', 'ks.id_wali_asuh', '=', 'wa.id')
+            ->join('grup_wali_asuh as gw', 'wa.id_grup_wali_asuh', '=', 'gw.id')
             ->leftJoin('domisili_santri AS ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
-            ->leftjoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->where('as.status', true)
+            ->where('aa.status', true)
             ->where('ks.status', true)
             ->select([
                 's.biodata_id',
-                'as.id',
+                'aa.id',
                 's.nis',
                 'b.nama',
                 DB::raw("CONCAT(km.nama_kamar,' - ',w.nama_wilayah) As kamar"),
-                'gs.nama_grup',
+                'gw.nama_grup',
                 DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
                 'kb.nama_kabupaten AS kota_asal',
                 's.created_at',
-                // ambil updated_at terbaru antar s, pd, ds
                 DB::raw('
-                   GREATEST(
-                       s.updated_at,
-                       COALESCE(as.updated_at, s.updated_at),
-                       COALESCE(gs.updated_at, s.updated_at)
-                   ) AS updated_at
-               '),
+                    GREATEST(
+                        s.updated_at,
+                        COALESCE(aa.updated_at, s.updated_at),
+                        COALESCE(gw.updated_at, s.updated_at)
+                    ) AS updated_at
+                '),
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
-            ->orderBy('as.id');
+            ->orderBy('aa.id');
+
+        // Filter khusus jika wali_asuh
+        if ($user->hasRole('waliasuh') && $waliAsuhId) {
+            $query->where('wa.id', $waliAsuhId);
+        } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
+            $query->whereRaw('1=0'); // user wali asuh tapi tidak punya relasi → kosong
+        }
+
+        return $query;
     }
 
     public function formatData($results)

@@ -58,7 +58,6 @@ class DatabaseSeeder extends Seeder
             KhadamSeeder::class,
             CatatanAfektifSeeder::class,
             CatatanKognitifSeeder::class,
-            MateriAjarSeeder::class,
             WargaPesantrenSeeder::class,
             PengunjungMahromSeeder::class,
             DropPegawaiNoEntitas::class,
@@ -70,6 +69,7 @@ class DatabaseSeeder extends Seeder
             NadhomanSeeder::class,
             TahfidzSeeder::class,
             OutletSeeder::class,
+            UserBiodataSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai
         Activity::enableLogging();

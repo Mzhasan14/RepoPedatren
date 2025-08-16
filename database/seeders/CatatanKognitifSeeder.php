@@ -7,6 +7,7 @@ use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
 use Database\Factories\CatatanKognitifFactory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CatatanKognitifSeeder extends Seeder
 {
@@ -15,18 +16,22 @@ class CatatanKognitifSeeder extends Seeder
      */
     public function run(): void
     {
-        $santriAktif = Santri::where('status', 'aktif')->get();
-        $waliAsuhList = Wali_asuh::all();
+        $kewaliasuhanList = DB::table('kewaliasuhan')
+            ->join('anak_asuh', 'kewaliasuhan.id_anak_asuh', '=', 'anak_asuh.id')
+            ->join('santri', 'anak_asuh.id_santri', '=', 'santri.id')
+            ->where('santri.status', 'aktif')
+            ->select('kewaliasuhan.id_wali_asuh', 'anak_asuh.id_santri')
+            ->get();
 
-        if ($santriAktif->isEmpty()) {
-            $this->command->warn('Tidak ada santri aktif. Seeder CatatanKognitif dilewati.');
+        if ($kewaliasuhanList->isEmpty()) {
+            $this->command->warn('Tidak ada relasi kewaliasuhan. Seeder CatatanKognitif dilewati.');
             return;
         }
 
-        foreach ($santriAktif->take(25) as $santri) {
+        foreach ($kewaliasuhanList->take(25) as $relasi) {
             Catatan_kognitif::factory()->create([
-                'id_santri' => $santri->id,
-                'id_wali_asuh' => $waliAsuhList->random()->id ?? null,
+                'id_santri' => $relasi->id_santri,
+                'id_wali_asuh' => $relasi->id_wali_asuh,
             ]);
         }
     }

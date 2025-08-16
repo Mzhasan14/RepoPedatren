@@ -14,6 +14,8 @@ class CatatanAfektifService
 {
     public function baseCatatanAfektifQuery(Request $request)
     {
+        $user = $request->user();
+
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
@@ -22,6 +24,17 @@ class CatatanAfektifService
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
+
+        // Ambil ID wali_asuh jika user role wali_asuh
+        $waliAsuhId = null;
+        if ($user->hasRole('waliasuh')) {
+            $waliAsuhId = DB::table('wali_asuh as wa')
+                ->join('santri as s', 's.id', '=', 'wa.id_santri')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->join('users as u', 'b.id', '=', 'u.biodata_id')
+                ->where('u.id', $user->id)
+                ->value('wa.id');
+        }
 
         $query = DB::table('catatan_afektif')
             ->join('santri as cs', 'cs.id', '=', 'catatan_afektif.id_santri')
@@ -38,7 +51,7 @@ class CatatanAfektifService
             ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_afektif.id_wali_asuh')
             ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
             ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
-            
+
             // Foto santri (catatan)
             ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
                 $join->on('bs.id', '=', 'fotoLastCatatan.biodata_id');
@@ -53,6 +66,13 @@ class CatatanAfektifService
 
             ->where('catatan_afektif.status', true)
             ->whereNull('catatan_afektif.tanggal_selesai');
+
+        // Filter khusus wali_asuh
+        if ($user->hasRole('waliasuh') && $waliAsuhId) {
+            $query->where('catatan_afektif.id_wali_asuh', $waliAsuhId);
+        } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
+            $query->whereRaw('1=0'); // user wali_asuh tapi tidak punya relasi → kosong
+        }
 
         return $query;
     }

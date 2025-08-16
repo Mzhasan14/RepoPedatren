@@ -14,6 +14,8 @@ class CatatanKognitifService
 {
     public function baseCatatanKognitifQuery(Request $request)
     {
+        $user = $request->user();
+
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
@@ -22,6 +24,17 @@ class CatatanKognitifService
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
+
+        // Ambil ID wali_asuh jika user role wali_asuh
+        $waliAsuhId = null;
+        if ($user->hasRole('waliasuh')) {
+            $waliAsuhId = DB::table('wali_asuh as wa')
+                ->join('santri as s', 's.id', '=', 'wa.id_santri')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->join('users as u', 'b.id', '=', 'u.biodata_id')
+                ->where('u.id', $user->id)
+                ->value('wa.id');
+        }
 
         $query = DB::table('catatan_kognitif')
             ->join('santri as cs', 'cs.id', '=', 'catatan_kognitif.id_santri')
@@ -53,6 +66,12 @@ class CatatanKognitifService
 
             ->where('catatan_kognitif.status', true)
             ->whereNull('catatan_kognitif.tanggal_selesai');
+        // Filter khusus wali_asuh
+        if ($user->hasRole('waliasuh') && $waliAsuhId) {
+            $query->where('catatan_kognitif.id_wali_asuh', $waliAsuhId);
+        } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
+            $query->whereRaw('1=0'); // user wali_asuh tapi tidak punya relasi → kosong
+        }
 
         return $query;
     }
