@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Services\PesertaDidik\Transaksi\SaldoService;
+use App\Http\Requests\PesertaDidik\Transaksi\SaldoRequest;
 use App\Http\Requests\PesertaDidik\Transaksi\TopUpRequest;
 
 class SaldoController extends Controller
@@ -19,37 +20,59 @@ class SaldoController extends Controller
         $this->service = $service;
     }
 
-    public function requestTopUp(TopUpRequest $request, string $santriId): JsonResponse
+    public function topup(SaldoRequest $request): JsonResponse
     {
-        try {
-            $transaksi = $this->service->requestTopUp(
-                $santriId,
-                $request->nominal,
-                $request->file('bukti_transfer')
-            );
+        $result = $this->service->topup(
+            $request->santri_id,
+            $request->jumlah,
+            Auth::id()
+        );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Top-up berhasil diajukan, menunggu verifikasi admin.',
-                'data' => $transaksi
-            ]);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        return response()->json($result, $result['status'] ? 200 : 400);
     }
 
-    public function approveTopUp(int $transaksiId): JsonResponse
+    public function tarik(SaldoRequest $request): JsonResponse
     {
-        try {
-            $transaksi = $this->service->approveTopUp($transaksiId);
+        $result = $this->service->tarik(
+            $request->santri_id,
+            $request->jumlah,
+            Auth::id()
+        );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Top-up berhasil disetujui.',
-                'data' => $transaksi
-            ]);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        return response()->json($result, $result['status'] ? 200 : 400);
     }
+
+    // public function requestTopUp(TopUpRequest $request, string $santriId): JsonResponse
+    // {
+    //     try {
+    //         $transaksi = $this->service->requestTopUp(
+    //             $santriId,
+    //             $request->nominal,
+    //             $request->file('bukti_transfer')
+    //         );
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Top-up berhasil diajukan, menunggu verifikasi admin.',
+    //             'data' => $transaksi
+    //         ]);
+    //     } catch (Exception $e) {
+    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+    //     }
+    // }
+
+    // public function approveTopUp(int $transaksiId): JsonResponse
+    // {
+    //     try {
+    //         $transaksi = $this->service->approveTopUp($transaksiId);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Top-up berhasil disetujui.',
+    //             'data' => $transaksi
+    //         ]);
+    //     } catch (Exception $e) {
+    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+    //     }
+    // }
 }

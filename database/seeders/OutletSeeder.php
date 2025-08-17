@@ -11,8 +11,8 @@ class OutletSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminId = 1; // Diasumsikan admin pertama punya ID = 1
-        $faker = Faker::create('id_ID');
+        $adminId = 1; // Admin pertama
+        $faker   = Faker::create('id_ID');
 
         /**
          * OUTLETS
@@ -45,6 +45,9 @@ class OutletSeeder extends Seeder
             ['nama_kategori' => 'Seragam Santri'],
             ['nama_kategori' => 'Laundry'],
             ['nama_kategori' => 'Obat-obatan'],
+            // tambahan untuk saldo
+            ['nama_kategori' => 'Top Up Saldo'],
+            ['nama_kategori' => 'Tarik Saldo'],
         ];
 
         foreach ($kategori as &$kat) {
@@ -65,6 +68,8 @@ class OutletSeeder extends Seeder
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Alat Tulis']],
             ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Seragam Santri']],
+            ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Top Up Saldo']],
+            ['outlet_id' => $outletMap['Koperasi Pesantren'], 'kategori_id' => $kategoriMap['Tarik Saldo']],
             ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Kitab & Buku']],
             ['outlet_id' => $outletMap['Toko ATK & Kitab'], 'kategori_id' => $kategoriMap['Alat Tulis']],
             ['outlet_id' => $outletMap['Laundry & Cuci Pakaian'], 'kategori_id' => $kategoriMap['Laundry']],
@@ -79,12 +84,13 @@ class OutletSeeder extends Seeder
         DB::table('outlet_kategori')->insert($outletKategori);
 
         /**
-         * DETAIL USER OUTLET (exclude admin ID 1)
+         * DETAIL USER OUTLET
          */
         $users = DB::table('users')
             ->where('id', '!=', $adminId)
             ->pluck('id')
             ->toArray();
+
         $outletIds = array_values($outletMap);
 
         $detailUserOutlet = [];
@@ -100,6 +106,17 @@ class OutletSeeder extends Seeder
                 'updated_at' => now(),
             ];
         }
+
+        // pastikan user id 9 = outlet Koperasi Pesantren
+        $detailUserOutlet[] = [
+            'user_id' => 9,
+            'outlet_id' => $outletMap['Koperasi Pesantren'],
+            'status' => true,
+            'created_by' => $adminId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
         DB::table('detail_user_outlet')->insert($detailUserOutlet);
 
         $detailUserOutletMap = DB::table('detail_user_outlet')
@@ -124,7 +141,7 @@ class OutletSeeder extends Seeder
         DB::table('saldo')->insert($saldoData);
 
         /**
-         * TRANSAKSI -> hanya untuk santri yang punya kartu
+         * TRANSAKSI (dummy)
          */
         $santriPutra = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
@@ -145,46 +162,37 @@ class OutletSeeder extends Seeder
 
         foreach ($outletMap as $outletNama => $outletId) {
             for ($i = 0; $i < 10; $i++) {
+                $combined = array_merge($santriPutra, $santriPutri);
+                if (empty($combined)) continue;
+                $santriId = $faker->randomElement($combined);
+
                 if ($outletNama === 'Kantin Santri Putra') {
-                    if (empty($santriPutra)) continue;
-                    $santriId = $faker->randomElement($santriPutra);
                     $kategoriId = $kategoriMap['Makanan & Minuman'];
                     $total = $faker->numberBetween(5000, 20000);
                 } elseif ($outletNama === 'Kantin Santri Putri') {
-                    if (empty($santriPutri)) continue;
-                    $santriId = $faker->randomElement($santriPutri);
                     $kategoriId = $kategoriMap['Makanan & Minuman'];
                     $total = $faker->numberBetween(5000, 20000);
+                } elseif ($outletNama === 'Koperasi Pesantren') {
+                    $kategoriId = $faker->randomElement([
+                        $kategoriMap['Kitab & Buku'],
+                        $kategoriMap['Alat Tulis'],
+                        $kategoriMap['Seragam Santri'],
+                    ]);
+                    $total = $faker->numberBetween(15000, 75000);
+                } elseif ($outletNama === 'Toko ATK & Kitab') {
+                    $kategoriId = $faker->randomElement([
+                        $kategoriMap['Kitab & Buku'],
+                        $kategoriMap['Alat Tulis'],
+                    ]);
+                    $total = $faker->numberBetween(5000, 50000);
+                } elseif ($outletNama === 'Laundry & Cuci Pakaian') {
+                    $kategoriId = $kategoriMap['Laundry'];
+                    $total = $faker->numberBetween(7000, 20000);
+                } elseif ($outletNama === 'Apotek Pesantren') {
+                    $kategoriId = $kategoriMap['Obat-obatan'];
+                    $total = $faker->numberBetween(5000, 30000);
                 } else {
-                    $combined = array_merge($santriPutra, $santriPutri);
-                    if (empty($combined)) continue;
-                    $santriId = $faker->randomElement($combined);
-
-                    switch ($outletNama) {
-                        case 'Koperasi Pesantren':
-                            $kategoriId = $faker->randomElement([
-                                $kategoriMap['Kitab & Buku'],
-                                $kategoriMap['Alat Tulis'],
-                                $kategoriMap['Seragam Santri'],
-                            ]);
-                            $total = $faker->numberBetween(15000, 75000);
-                            break;
-                        case 'Toko ATK & Kitab':
-                            $kategoriId = $faker->randomElement([
-                                $kategoriMap['Kitab & Buku'],
-                                $kategoriMap['Alat Tulis'],
-                            ]);
-                            $total = $faker->numberBetween(5000, 50000);
-                            break;
-                        case 'Laundry & Cuci Pakaian':
-                            $kategoriId = $kategoriMap['Laundry'];
-                            $total = $faker->numberBetween(7000, 20000);
-                            break;
-                        case 'Apotek Pesantren':
-                            $kategoriId = $kategoriMap['Obat-obatan'];
-                            $total = $faker->numberBetween(5000, 30000);
-                            break;
-                    }
+                    continue;
                 }
 
                 $userOutletId = $detailUserOutletMap[$outletId] ?? null;
@@ -205,14 +213,52 @@ class OutletSeeder extends Seeder
                     'updated_at' => now(),
                 ];
 
-                // Rekap transaksi_saldo
+                // Rekap transaksi_saldo (pembayaran = debit)
                 $transaksiSaldo[] = [
                     'santri_id' => $santriId,
                     'outlet_id' => $outletId,
                     'kategori_id' => $kategoriId,
                     'user_outlet_id' => $userOutletId,
-                    'tipe' => 'debit', // karena pembayaran
+                    'tipe' => 'debit',
                     'jumlah' => $total,
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        /**
+         * Tambahan dummy transaksi saldo khusus Top Up & Tarik (koperasi pesantren)
+         */
+        if (!empty($allSantri)) {
+            foreach (array_slice($allSantri, 0, 5) as $santriId) {
+                $userOutletId = $detailUserOutletMap[$outletMap['Koperasi Pesantren']] ?? null;
+                if (!$userOutletId) continue;
+
+                // Top up
+                $transaksiSaldo[] = [
+                    'santri_id' => $santriId,
+                    'outlet_id' => $outletMap['Koperasi Pesantren'],
+                    'kategori_id' => $kategoriMap['Top Up Saldo'],
+                    'user_outlet_id' => $userOutletId,
+                    'tipe' => 'topup',
+                    'jumlah' => 100000,
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                // Tarik
+                $transaksiSaldo[] = [
+                    'santri_id' => $santriId,
+                    'outlet_id' => $outletMap['Koperasi Pesantren'],
+                    'kategori_id' => $kategoriMap['Tarik Saldo'],
+                    'user_outlet_id' => $userOutletId,
+                    'tipe' => 'debit',
+                    'jumlah' => 50000,
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                     'created_at' => now(),

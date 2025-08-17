@@ -215,10 +215,153 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        // /**
+        //  * PAYMENT PROVIDERS (mis. midtrans, xendit, bank aggregator, dll)
+        //  */
+        // Schema::create('payment_providers', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->string('kode_provider', 50)->unique(); // ex: MIDTRANS, XENDIT, BANKAPI
+        //     $table->string('nama_provider', 150);
+        //     $table->json('config')->nullable(); // penyimpanan config/credential terenkripsi (endpoint, key, mode)
+        //     $table->boolean('status')->default(true);
+
+        //     $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        // });
+
+        // /**
+        //  * PROVIDER ACCOUNTS (akun/virtual account yang dikelola di tiap provider)
+        //  * Berguna jika ada beberapa VA/merchant account di satu provider
+        //  */
+        // Schema::create('provider_accounts', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('provider_id')->constrained('payment_providers')->cascadeOnDelete();
+        //     $table->string('kode_account', 100)->nullable(); // kode internal atau merchant id
+        //     $table->string('nama_account', 150)->nullable();
+        //     $table->string('bank_code', 20)->nullable(); // jika akun ini terkait bank tertentu (BNI, MANDIRI)
+        //     $table->json('credentials')->nullable(); // credential khusus akun
+        //     $table->boolean('status')->default(true);
+
+        //     $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        //     $table->unique(['provider_id', 'kode_account']);
+        // });
+
+        // /**
+        //  * TOPUP REQUESTS
+        //  * Record permintaan topup dari frontend/pos. Provider akan memberi VA / payment_url.
+        //  */
+        // Schema::create('topup_requests', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->string('kode_topup', 50)->unique(); // kode internal, ex: TOPUP-20250817-0001
+        //     $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+        //     $table->foreignId('provider_id')->nullable()->constrained('payment_providers')->nullOnDelete();
+        //     $table->foreignId('provider_account_id')->nullable()->constrained('provider_accounts')->nullOnDelete();
+
+        //     $table->decimal('jumlah_request', 15, 2);
+        //     $table->decimal('fee', 15, 2)->default(0); // biaya admin/pembayaran
+        //     $table->decimal('gross_amount', 15, 2)->nullable(); // jumlah yang harus dibayar ke provider (jumlah + fee)
+        //     $table->decimal('net_amount', 15, 2)->nullable(); // jumlah bersih yang masuk ke saldo setelah fee
+
+        //     $table->enum('metode', ['VA', 'TRANSFER', 'QR', 'CARD', 'CASH'])->default('VA');
+        //     $table->string('bank_code', 20)->nullable(); // opsional: bank target
+        //     $table->string('va_number', 50)->nullable()->unique(); // VA number dari provider (jika ada)
+        //     $table->string('payment_url')->nullable(); // url pembayaran (jika ada)
+        //     $table->timestamp('expired_at')->nullable();
+
+        //     $table->enum('status', ['pending', 'paid', 'failed', 'expired', 'cancelled'])->default('pending');
+
+        //     $table->json('provider_response')->nullable(); // raw response saat create VA/payment
+        //     $table->json('callback_payload')->nullable(); // payload terakhir diterima dari provider
+        //     $table->timestamp('paid_at')->nullable();
+
+        //     $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        // });
+
+        // /**
+        //  * TOPUP TRANSACTIONS
+        //  * Transaksi akuntansi / rekonsiliasi untuk tiap notifikasi pembayaran dari provider.
+        //  * Bisa digabungkan langsung dengan transaksi_saldo, tapi disarankan pisah untuk audit.
+        //  */
+        // Schema::create('topup_transactions', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('topup_request_id')->constrained('topup_requests')->cascadeOnDelete();
+        //     $table->string('provider_reference')->nullable()->unique(); // id/transaksi dari provider (ex: payment_id)
+        //     $table->decimal('jumlah', 15, 2);
+        //     $table->decimal('fee', 15, 2)->default(0);
+        //     $table->decimal('net_amount', 15, 2)->nullable(); // jumlah yang akan dikreditkan ke saldo
+        //     $table->enum('status', ['pending', 'success', 'failed', 'refunded'])->default('pending');
+        //     $table->timestamp('tanggal_diterima')->nullable(); // waktu notif dari provider
+        //     $table->json('payload')->nullable(); // raw webhook payload
+
+        //     // optional link to transaksi_saldo (create entry pada reconciling)
+        //     $table->foreignId('transaksi_saldo_id')->nullable()->constrained('transaksi_saldo')->nullOnDelete();
+
+        //     $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        // });
+
+        // /**
+        //  * BANK/PROVIDER WEBHOOKS (log semua callback masuk untuk audit & retry)
+        //  */
+        // Schema::create('provider_webhooks', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('provider_id')->nullable()->constrained('payment_providers')->nullOnDelete();
+        //     $table->string('event')->nullable();
+        //     $table->string('reference')->nullable(); // provider reference
+        //     $table->json('payload')->nullable();
+        //     $table->boolean('processed')->default(false);
+        //     $table->text('error')->nullable();
+        //     $table->timestamp('received_at')->useCurrent();
+        //     $table->timestamp('processed_at')->nullable();
+
+        //     $table->timestamps();
+        // });
+
+        // /**
+        //  * SETTLEMENT / RECONCILIATION BATCH (opsional)
+        //  */
+        // Schema::create('provider_settlements', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('provider_id')->nullable()->constrained('payment_providers')->nullOnDelete();
+        //     $table->date('tanggal_settlement')->nullable();
+        //     $table->integer('jumlah_transaksi')->default(0);
+        //     $table->decimal('total_gross', 18, 2)->default(0);
+        //     $table->decimal('total_fee', 18, 2)->default(0);
+        //     $table->decimal('total_net', 18, 2)->default(0);
+        //     $table->enum('status', ['unreconciled', 'reconciled'])->default('unreconciled');
+        //     $table->json('detail')->nullable(); // file/snippet settlement
+
+        //     $table->timestamps();
+        // });
     }
 
     public function down(): void
     {
+        // Schema::dropIfExists('provider_settlements');
+        // Schema::dropIfExists('provider_webhooks');
+        // Schema::dropIfExists('topup_transactions');
+        // Schema::dropIfExists('topup_requests');
+        // Schema::dropIfExists('provider_accounts');
+        // Schema::dropIfExists('payment_providers');
         Schema::dropIfExists('transaksi');
         Schema::dropIfExists('outlet_kategori');
         Schema::dropIfExists('kategori');

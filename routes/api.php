@@ -54,6 +54,7 @@ use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
 use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BerkasController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\BankController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\SaldoController;
 use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
 use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
 use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
@@ -1082,4 +1083,10 @@ Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
     Route::get('/{id}', [BankController::class, 'show']);
     Route::put('/{id}', [BankController::class, 'update']);
     Route::delete('/{id}', [BankController::class, 'destroy']);
+});
+
+// Top up
+Route::middleware(['auth:sanctum', 'role:petugas|superadmin'])->group(function () {
+    Route::post('/saldo/topup', [SaldoController::class, 'topup']);
+    Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
 });
