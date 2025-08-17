@@ -15,7 +15,7 @@ class OutletSeeder extends Seeder
         $faker = Faker::create('id_ID');
 
         /**
-         * OUTLET
+         * OUTLETS
          */
         $outlets = [
             ['nama_outlet' => 'Kantin Santri Putra'],
@@ -32,9 +32,9 @@ class OutletSeeder extends Seeder
             $outlet['created_at'] = now();
             $outlet['updated_at'] = now();
         }
-        DB::table('outlet')->insert($outlets);
+        DB::table('outlets')->insert($outlets);
 
-        $outletMap = DB::table('outlet')->pluck('id', 'nama_outlet')->toArray();
+        $outletMap = DB::table('outlets')->pluck('id', 'nama_outlet')->toArray();
 
         /**
          * KATEGORI
@@ -103,6 +103,10 @@ class OutletSeeder extends Seeder
             ];
         }
         DB::table('detail_user_outlet')->insert($detailUserOutlet);
+
+        $detailUserOutletMap = DB::table('detail_user_outlet')
+            ->pluck('id', 'outlet_id')
+            ->toArray();
 
         /**
          * SALDO SANTRI
@@ -184,10 +188,15 @@ class OutletSeeder extends Seeder
                     }
                 }
 
+                // ambil user_outlet_id sesuai outlet_id
+                $userOutletId = $detailUserOutletMap[$outletId] ?? null;
+                if (!$userOutletId) continue;
+
                 $transaksi[] = [
                     'santri_id' => $santriId,
                     'outlet_id' => $outletId,
                     'kategori_id' => $kategoriId,
+                    'user_outlet_id' => $userOutletId,
                     'total_bayar' => $total,
                     'tanggal' => $faker->dateTimeBetween('-1 month', 'now'),
                     'created_by' => $adminId,

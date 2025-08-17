@@ -10,6 +10,7 @@ use App\Models\Outlet;
 use App\Models\Santri;
 use App\Models\Kategori;
 use App\Models\Transaksi;
+use App\Models\DetailUserOutlet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,9 @@ class TransaksiService
     public function scanCard(string $uid, ?string $pin): array
     {
         try {
-            $kartu = Kartu::with('santri.biodata')->where('uid_kartu', $uid)->first();
+            $kartu = Kartu::with('santri.biodata')
+                ->where('uid_kartu', $uid)
+                ->first();
 
             if (!$kartu) {
                 return ['success' => false, 'message' => 'Kartu tidak ditemukan.', 'status' => 404];
@@ -73,110 +76,69 @@ class TransaksiService
     }
 
     /**
-     * Buat transaksi: deduct saldo & simpan transaksi. Gunakan DB transaction & lockForUpdate pada saldo.
+     * Buat transaksi: deduct saldo & simpan transaksi
      */
     public function createTransaction(string $uid, int $outletId, int $kategoriId, float $totalBayar, ?string $pin): array
     {
+        
         DB::beginTransaction();
         try {
-            // cari kartu + santri
             $kartu = Kartu::with('santri')->where('uid_kartu', $uid)->first();
             if (!$kartu) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Kartu tidak ditemukan.', 'status' => 404];
+                return $this->fail('Kartu tidak ditemukan.', 404);
             }
 
-            if (!$kartu->aktif) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Kartu tidak aktif.', 'status' => 403];
-            }
-
-            if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast()) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Kartu kadaluarsa.', 'status' => 403];
-            }
-
-            if ($kartu->pin && !Hash::check($pin, $kartu->pin)) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'PIN salah.', 'status' => 401];
-            }
+            if (!$kartu->aktif) return $this->fail('Kartu tidak aktif.', 403);
+            if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast())
+                return $this->fail('Kartu kadaluarsa.', 403);
+            if ($kartu->pin && !Hash::check($pin, $kartu->pin))
+                return $this->fail('PIN salah.', 401);
 
             $santri = $kartu->santri;
-            if (!$santri) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Data santri tidak ditemukan.', 'status' => 404];
-            }
+            if (!$santri) return $this->fail('Data santri tidak ditemukan.', 404);
+            $outlet = Outlet::withoutTrashed()->find($outletId);
+            if (!$outlet || !$outlet->status) return $this->fail('Outlet tidak ditemukan atau tidak aktif.', 404);
 
-            // Validasi outlet: apakah user boleh transaksi di outlet ini?
-            $outlet = Outlet::find($outletId);
-            if (!$outlet || !$outlet->status) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Outlet tidak ditemukan atau tidak aktif.', 'status' => 404];
-            }
-
-            // cek apakah user (penjual) mengelola outlet ini (detail_user_outlet)
-            $allowed = DB::table('detail_user_outlet')
-                ->where('user_id', Auth::id())
+            // cari detail_user_outlet aktif
+            $userOutlet = DetailUserOutlet::where('user_id', Auth::id())
                 ->where('outlet_id', $outletId)
                 ->where('status', true)
-                ->exists();
+                ->whereNull('deleted_at')
+                ->first();
 
-            if (!$allowed) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Anda tidak memiliki akses ke outlet ini.', 'status' => 403];
-            }
+            if (!$userOutlet) return $this->fail('Anda tidak memiliki akses ke outlet ini.', 403);
 
-            // Validasi kategori aktif dan outlet-kategori relation
-            $kategori = Kategori::find($kategoriId);
-            if (!$kategori || !$kategori->status) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Kategori tidak ditemukan atau tidak aktif.', 'status' => 404];
-            }
+            $kategori = Kategori::withoutTrashed()->find($kategoriId);
+            if (!$kategori || !$kategori->status) return $this->fail('Kategori tidak ditemukan atau tidak aktif.', 404);
 
             $outletHasKategori = DB::table('outlet_kategori')
                 ->where('outlet_id', $outletId)
                 ->where('kategori_id', $kategoriId)
                 ->where('status', true)
                 ->exists();
+            if (!$outletHasKategori) return $this->fail('Kategori tidak tersedia di outlet ini.', 422);
 
-            if (!$outletHasKategori) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Kategori tidak tersedia di outlet ini.', 'status' => 422];
-            }
-
-            // Ambil saldo dengan lockForUpdate
             $saldo = Saldo::where('santri_id', $santri->id)->lockForUpdate()->first();
+            if (!$saldo) return $this->fail('Saldo santri tidak ditemukan.', 404);
 
-            if (!$saldo) {
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Saldo santri tidak ditemukan.', 'status' => 404];
-            }
+            if (bccomp($saldo->saldo, $totalBayar, 2) < 0) return $this->fail('Saldo tidak cukup.', 402);
 
-            // cek cukup
-            if (bccomp($saldo->saldo, $totalBayar, 2) < 0) { // saldo < totalBayar
-                DB::rollBack();
-                return ['success' => false, 'message' => 'Saldo tidak cukup.', 'status' => 402];
-            }
-
-            // kurangi saldo
             $saldo->saldo = bcsub($saldo->saldo, $totalBayar, 2);
             $saldo->updated_by = Auth::id();
             $saldo->save();
 
-            // simpan transaksi
             $transaksi = Transaksi::create([
                 'santri_id' => $santri->id,
                 'outlet_id' => $outletId,
                 'kategori_id' => $kategoriId,
+                'user_outlet_id' => $userOutlet->id,
                 'total_bayar' => $totalBayar,
                 'tanggal' => Carbon::now(),
                 'created_by' => Auth::id(),
-                'status' => true,
             ]);
 
             DB::commit();
 
-            // Kembalikan data transaksi sederhana
             return [
                 'success' => true,
                 'data' => [
@@ -202,104 +164,94 @@ class TransaksiService
     }
 
     /**
-     * List transaksi sesuai role:
-     * - Super Admin => semua transaksi
-     * - Non-superadmin => hanya outlet yg dimiliki user
+     * List transaksi sesuai role user
      */
     public function listTransactions(array $filters = [], int $perPage = 25)
     {
         try {
             $user = Auth::user();
 
-            // Cek apakah user terdaftar di detail_user_outlet
-            $outletIds = DB::table('detail_user_outlet')
-                ->where('user_id', $user->id)
+            $outletIds = DetailUserOutlet::where('user_id', $user->id)
                 ->where('status', true)
                 ->pluck('outlet_id')
                 ->toArray();
 
             if (empty($outletIds)) {
-                return [
-                    'success' => false,
-                    'message' => 'User tidak terdaftar di outlet manapun.',
-                    'status'  => 403,
-                ];
+                return ['success' => false, 'message' => 'User tidak terdaftar di outlet manapun.', 'status' => 403];
             }
 
-            // Query utama
             $query = Transaksi::with([
-                'santri' => function ($q) {
-                    $q->select('id', 'nis', 'biodata_id')
-                        ->with([
-                            'biodata:id,nama',
-                            'kartu:id,santri_id,uid_kartu'
-                        ]);
-                },
+                'santri:id,nis,biodata_id',
+                'santri.biodata:id,nama',
+                'santri.kartu:id,santri_id,uid_kartu',
                 'outlet:id,nama_outlet',
-                'kategori:id,nama_kategori'
-            ])->whereIn('outlet_id', $outletIds)
-                ->orderByDesc('transaksi.tanggal');
+                'kategori:id,nama_kategori',
+                'userOutlet:id,user_id,outlet_id'
+            ])
+                ->whereIn('outlet_id', $outletIds)
+                ->orderByDesc('tanggal');
 
-            // Filter tambahan
-            if (!empty($filters['santri_id'])) $query->where('santri_id', (int)$filters['santri_id']);
-            if (!empty($filters['outlet_id'])) $query->where('outlet_id', (int)$filters['outlet_id']);
-            if (!empty($filters['kategori_id'])) $query->where('kategori_id', (int)$filters['kategori_id']);
+            if (!empty($filters['santri_id'])) $query->where('santri_id', $filters['santri_id']);
+            if (!empty($filters['outlet_id'])) $query->where('outlet_id', $filters['outlet_id']);
+            if (!empty($filters['kategori_id'])) $query->where('kategori_id', $filters['kategori_id']);
             if (!empty($filters['date_from'])) $query->whereDate('tanggal', '>=', $filters['date_from']);
             if (!empty($filters['date_to'])) $query->whereDate('tanggal', '<=', $filters['date_to']);
             if (!empty($filters['q'])) {
                 $q = $filters['q'];
                 $query->whereHas(
                     'santri.biodata',
-                    fn($qBuild) =>
-                    $qBuild->where('nama', 'like', "%{$q}%")
-                        ->orWhere('nis', 'like', "%{$q}%")
+                    fn($qb) =>
+                    $qb->where('nama', 'like', "%$q%")
+                )->orWhereHas(
+                    'santri',
+                    fn($qb) =>
+                    $qb->where('nis', 'like', "%$q%")
                 );
             }
 
-            // Pagination
             $results = $query->paginate($perPage);
 
-            // Map collection dari paginator
             $data = $results->getCollection()->map(function ($item) {
                 return [
-                    'id'       => $item->id,
-                    'outlet'   => $item->outlet,
+                    'id' => $item->id,
+                    'outlet' => $item->outlet,
                     'kategori' => $item->kategori,
                     'total_bayar' => (float)$item->total_bayar,
-                    'tanggal'  => $item->tanggal,
-                    'santri'   => $item->santri ? [
-                        'id'      => $item->santri->id,
-                        'nis'     => $item->santri->nis,
+                    'tanggal' => $item->tanggal,
+                    'santri' => $item->santri ? [
+                        'id' => $item->santri->id,
+                        'nis' => $item->santri->nis,
                         'biodata' => $item->santri->biodata,
                         'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
                     ] : null,
                 ];
             });
 
-            // Kembalikan paginator dengan collection yang sudah dimodifikasi
             $results->setCollection($data);
 
             return [
-                'success'      => true,
-                'status'       => 200,
-                'total_data'   => $results->total(),
+                'success' => true,
+                'status' => 200,
+                'total_data' => $results->total(),
                 'current_page' => $results->currentPage(),
-                'per_page'     => $results->perPage(),
-                'total_pages'  => $results->lastPage(),
-                'data'         => $results->items(),
+                'per_page' => $results->perPage(),
+                'total_pages' => $results->lastPage(),
+                'data' => $results->items(),
             ];
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::error('TransactionService@listTransactions error: ' . $e->getMessage(), [
                 'exception' => $e,
-                'filters'   => $filters,
-                'user_id'   => Auth::id()
+                'filters' => $filters,
+                'user_id' => Auth::id()
             ]);
 
-            return [
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil transaksi.',
-                'status'  => 500
-            ];
+            return ['success' => false, 'message' => 'Terjadi kesalahan saat mengambil transaksi.', 'status' => 500];
         }
+    }
+
+    private function fail(string $msg, int $status): array
+    {
+        DB::rollBack();
+        return ['success' => false, 'message' => $msg, 'status' => $status];
     }
 }

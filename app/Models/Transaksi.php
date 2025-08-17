@@ -15,6 +15,7 @@ class Transaksi extends Model
         'santri_id',
         'outlet_id',
         'kategori_id',
+        'user_outlet_id',
         'total_bayar',
         'tanggal',
         'created_by',
@@ -49,5 +50,10 @@ class Transaksi extends Model
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'kategori_id');
+    }
+
+    public function userOutlet()
+    {
+        return $this->belongsTo(DetailUserOutlet::class, 'user_outlet_id');
     }
 }

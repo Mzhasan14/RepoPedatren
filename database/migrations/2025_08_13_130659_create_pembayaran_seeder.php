@@ -11,21 +11,17 @@ return new class extends Migration
         /**
          * OUTLET
          */
-        Schema::create('outlet', function (Blueprint $table) {
+        Schema::create('outlets', function (Blueprint $table) {
             $table->id();
             $table->string('nama_outlet')->unique();
             $table->boolean('status')->default(true);
 
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         /**
@@ -33,22 +29,18 @@ return new class extends Migration
          */
         Schema::create('detail_user_outlet', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique();
-            $table->unsignedBigInteger('outlet_id');
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
             $table->boolean('status')->default(true);
 
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('outlet_id')->references('id')->on('outlet')->cascadeOnDelete();
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->unique(['user_id', 'outlet_id']); // 1 user bisa di banyak outlet, tapi unik per outlet
         });
 
         /**
@@ -56,79 +48,46 @@ return new class extends Migration
          */
         Schema::create('saldo', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('santri_id')->unique();
+            $table->foreignId('santri_id')->unique()->constrained('santri')->cascadeOnDelete();
             $table->decimal('saldo', 15, 2)->default(0);
             $table->boolean('status')->default(true);
 
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->foreign('santri_id')->references('id')->on('santri')->cascadeOnDelete();
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        Schema::create('saldo_transaksi', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('santri_id');
-            $table->unsignedBigInteger('orang_tua_wali_id');
-            $table->decimal('nominal', 15, 2);
-            $table->enum('metode_pembayaran', ['transfer_bank', 'qris', 'tunai'])->default('transfer_bank');
-            $table->string('bukti_transfer')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-            $table->unsignedBigInteger('approved_by')->nullable(); 
             $table->timestamps();
             $table->softDeletes();
-
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
-
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->foreign('santri_id')->references('id')->on('santri')->onDelete('cascade');
-            $table->foreign('orang_tua_wali_id')->references('id')->on('orang_tua_wali')->onDelete('cascade');
-            $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
         });
 
-     
+        /**
+         * KATEGORI
+         */
         Schema::create('kategori', function (Blueprint $table) {
             $table->id();
             $table->string('nama_kategori')->unique();
             $table->boolean('status')->default(true);
 
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         /**
-         * OUTLET - KATEGORI (pivot: outlet bisa punya banyak kategori)
+         * OUTLET - KATEGORI (pivot)
          */
         Schema::create('outlet_kategori', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('outlet_id');
-            $table->unsignedBigInteger('kategori_id');
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
             $table->boolean('status')->default(true);
 
-            $table->foreign('outlet_id')->references('id')->on('outlet')->cascadeOnDelete();
-            $table->foreign('kategori_id')->references('id')->on('kategori')->cascadeOnDelete();
-
             $table->timestamps();
+
+            $table->unique(['outlet_id', 'kategori_id']);
         });
 
         /**
@@ -136,25 +95,98 @@ return new class extends Migration
          */
         Schema::create('transaksi', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('santri_id');
-            $table->unsignedBigInteger('outlet_id');
-            $table->unsignedBigInteger('kategori_id');
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
+            $table->foreignId('user_outlet_id')->constrained('detail_user_outlet')->cascadeOnDelete(); // siapa + outlet
             $table->decimal('total_bayar', 15, 2);
-            $table->datetime('tanggal');
+            $table->dateTime('tanggal');
 
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->foreign('santri_id')->references('id')->on('santri')->cascadeOnDelete();
-            $table->foreign('outlet_id')->references('id')->on('outlet')->cascadeOnDelete();
-            $table->foreign('kategori_id')->references('id')->on('kategori')->cascadeOnDelete();
-            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-            $table->softDeletes();
             $table->timestamps();
+            $table->softDeletes();
+        });
+
+        /**
+         * VIRTUAL ACCOUNT
+         */
+        Schema::create('virtual_accounts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->string('bank_code', 10);
+            $table->string('va_number', 30)->unique();
+            $table->boolean('status')->default(true);
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        /**
+         * TAGIHAN
+         */
+        Schema::create('tagihan', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->string('kode_tagihan', 50)->unique();
+            $table->string('nama_tagihan', 150);
+            $table->decimal('nominal', 15, 2);
+            $table->date('jatuh_tempo')->nullable();
+            $table->enum('status', ['pending', 'lunas', 'sebagian'])->default('pending');
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        /**
+         * PEMBAYARAN
+         */
+        Schema::create('pembayaran', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
+            $table->foreignId('virtual_account_id')->nullable()->constrained('virtual_accounts')->nullOnDelete();
+            $table->enum('metode', ['VA', 'CASH', 'SALDO', 'TRANSFER']);
+            $table->decimal('jumlah_bayar', 15, 2);
+            $table->timestamp('tanggal_bayar')->useCurrent();
+            $table->enum('status', ['berhasil', 'pending', 'gagal'])->default('pending');
+            $table->text('keterangan')->nullable();
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        /**
+         * TRANSAKSI SALDO
+         */
+        Schema::create('transaksi_saldo', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
+            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete(); 
+            $table->enum('tipe', ['topup', 'debit', 'kredit', 'refund']);
+            $table->decimal('jumlah', 15, 2);
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -166,5 +198,10 @@ return new class extends Migration
         Schema::dropIfExists('saldo');
         Schema::dropIfExists('detail_user_outlet');
         Schema::dropIfExists('outlet');
+        Schema::dropIfExists('transaksi_saldo');
+        Schema::dropIfExists('pembayaran');
+        Schema::dropIfExists('tagihan');
+        Schema::dropIfExists('santri_virtual_accounts');
+        Schema::dropIfExists('virtual_accounts');
     }
 };
