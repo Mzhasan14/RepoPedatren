@@ -90,5 +90,16 @@ class UserSeeder extends Seeder
         ]);
 
         $creator->assignRole('petugas');
+
+        // Pusdatren admin
+        $pusdatren = User::create([
+            'name' => 'Pusdatren Admin',
+            'email' => 'pusdatren@gmail.com',
+            'password' => Hash::make('password'),
+        ]);
+        $pusdatren->assignRole('superadmin');
+
     }
+
+    
 }
