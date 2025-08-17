@@ -53,6 +53,7 @@ use App\Http\Controllers\api\PesertaDidik\Fitur\NadhomanController;
 use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
 use App\Http\Controllers\api\Administrasi\DetailPerizinanController;
 use App\Http\Controllers\api\PesertaDidik\formulir\BerkasController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\BankController;
 use App\Http\Controllers\api\Administrasi\DetailPengunjungController;
 use App\Http\Controllers\api\Administrasi\PengunjungMahromController;
 use App\Http\Controllers\api\PesertaDidik\DropDownAngkatanController;
@@ -61,15 +62,17 @@ use App\Http\Controllers\api\PesertaDidik\Transaksi\OutletController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\JadwalSholatController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\KategoriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
+use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 
 // Auth
 Route::post('register', [UserController::class, 'store'])
@@ -1014,7 +1017,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
 // Outlet
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:superadmin|supervisor')->group(function () {
@@ -1043,7 +1045,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
+// Transaksi
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('role:superadmin|supervisor')->group(function () {
         Route::post('scan-kartu', [TransaksiController::class, 'scan']);
@@ -1053,4 +1055,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('role:superadmin')->group(function () {
         Route::post('transaksi', [TransaksiController::class, 'store']);
     });
+});
+
+// Virtual Accounts
+Route::middleware(['auth:sanctum'])->prefix('virtual-accounts')->group(function () {
+    Route::get('/', [VirtualAccountController::class, 'index']);
+    Route::post('/', [VirtualAccountController::class, 'store']);
+    Route::get('/{id}', [VirtualAccountController::class, 'show']);
+    Route::put('/{id}', [VirtualAccountController::class, 'update']);
+    Route::delete('/{id}', [VirtualAccountController::class, 'destroy']);
+});
+
+// tagihan
+Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
+    Route::get('/', [TagihanController::class, 'index']);
+    Route::post('/', [TagihanController::class, 'store']);
+    Route::get('/{id}', [TagihanController::class, 'show']);
+    Route::put('/{id}', [TagihanController::class, 'update']);
+    Route::delete('/{id}', [TagihanController::class, 'destroy']);
+});
+
+// banks
+Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
+    Route::get('/', [BankController::class, 'index']);
+    Route::post('/', [BankController::class, 'store']);
+    Route::get('/{id}', [BankController::class, 'show']);
+    Route::put('/{id}', [BankController::class, 'update']);
+    Route::delete('/{id}', [BankController::class, 'destroy']);
 });

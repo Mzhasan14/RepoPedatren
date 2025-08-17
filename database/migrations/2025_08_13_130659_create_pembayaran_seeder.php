@@ -110,6 +110,20 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        Schema::create('banks', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode_bank', 10)->unique();   // ex: BNI, BSI, MANDIRI
+            $table->string('nama_bank', 100);            // ex: Bank Negara Indonesia, Bank Syariah Indonesia
+            $table->boolean('status')->default(true);
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         /**
          * VIRTUAL ACCOUNT
          */
@@ -128,16 +142,27 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        /**
-         * TAGIHAN
-         */
         Schema::create('tagihan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->string('kode_tagihan', 50)->unique();
             $table->string('nama_tagihan', 150);
             $table->decimal('nominal', 15, 2);
             $table->date('jatuh_tempo')->nullable();
+            $table->boolean('status')->default(true);
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('tagihan_santri', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->decimal('nominal', 15, 2);
             $table->enum('status', ['pending', 'lunas', 'sebagian'])->default('pending');
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -146,6 +171,8 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['tagihan_id', 'santri_id']);
         });
 
         /**
@@ -177,7 +204,7 @@ return new class extends Migration
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
             $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
-            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete(); 
+            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete();
             $table->enum('tipe', ['topup', 'debit', 'kredit', 'refund']);
             $table->decimal('jumlah', 15, 2);
 

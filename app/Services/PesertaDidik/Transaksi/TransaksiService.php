@@ -10,6 +10,7 @@ use App\Models\Outlet;
 use App\Models\Santri;
 use App\Models\Kategori;
 use App\Models\Transaksi;
+use App\Models\TransaksiSaldo;
 use App\Models\DetailUserOutlet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -80,14 +81,10 @@ class TransaksiService
      */
     public function createTransaction(string $uid, int $outletId, int $kategoriId, float $totalBayar, ?string $pin): array
     {
-        
         DB::beginTransaction();
         try {
             $kartu = Kartu::with('santri')->where('uid_kartu', $uid)->first();
-            if (!$kartu) {
-                return $this->fail('Kartu tidak ditemukan.', 404);
-            }
-
+            if (!$kartu) return $this->fail('Kartu tidak ditemukan.', 404);
             if (!$kartu->aktif) return $this->fail('Kartu tidak aktif.', 403);
             if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast())
                 return $this->fail('Kartu kadaluarsa.', 403);
@@ -96,16 +93,15 @@ class TransaksiService
 
             $santri = $kartu->santri;
             if (!$santri) return $this->fail('Data santri tidak ditemukan.', 404);
+
             $outlet = Outlet::withoutTrashed()->find($outletId);
             if (!$outlet || !$outlet->status) return $this->fail('Outlet tidak ditemukan atau tidak aktif.', 404);
 
-            // cari detail_user_outlet aktif
             $userOutlet = DetailUserOutlet::where('user_id', Auth::id())
                 ->where('outlet_id', $outletId)
                 ->where('status', true)
                 ->whereNull('deleted_at')
                 ->first();
-
             if (!$userOutlet) return $this->fail('Anda tidak memiliki akses ke outlet ini.', 403);
 
             $kategori = Kategori::withoutTrashed()->find($kategoriId);
@@ -120,13 +116,14 @@ class TransaksiService
 
             $saldo = Saldo::where('santri_id', $santri->id)->lockForUpdate()->first();
             if (!$saldo) return $this->fail('Saldo santri tidak ditemukan.', 404);
-
             if (bccomp($saldo->saldo, $totalBayar, 2) < 0) return $this->fail('Saldo tidak cukup.', 402);
 
+            // Kurangi saldo
             $saldo->saldo = bcsub($saldo->saldo, $totalBayar, 2);
             $saldo->updated_by = Auth::id();
             $saldo->save();
 
+            // Buat transaksi utama
             $transaksi = Transaksi::create([
                 'santri_id' => $santri->id,
                 'outlet_id' => $outletId,
@@ -135,6 +132,18 @@ class TransaksiService
                 'total_bayar' => $totalBayar,
                 'tanggal' => Carbon::now(),
                 'created_by' => Auth::id(),
+            ]);
+
+            // Rekap ke transaksi_saldo
+            TransaksiSaldo::create([
+                'santri_id' => $santri->id,
+                'outlet_id' => $outletId,
+                'kategori_id' => $kategoriId,
+                'user_outlet_id' => $userOutlet->id,
+                'tipe' => 'debit',
+                'jumlah' => $totalBayar,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             DB::commit();
@@ -159,7 +168,11 @@ class TransaksiService
                 'kategori_id' => $kategoriId,
                 'user_id' => Auth::id() ?? null
             ]);
-            return ['success' => false, 'message' => 'Terjadi kesalahan saat memproses transaksi. Silakan coba lagi.', 'status' => 500];
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses transaksi. Silakan coba lagi.',
+                'status' => 500
+            ];
         }
     }
 

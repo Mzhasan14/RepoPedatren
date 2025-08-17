@@ -33,7 +33,6 @@ class OutletSeeder extends Seeder
             $outlet['updated_at'] = now();
         }
         DB::table('outlets')->insert($outlets);
-
         $outletMap = DB::table('outlets')->pluck('id', 'nama_outlet')->toArray();
 
         /**
@@ -55,7 +54,6 @@ class OutletSeeder extends Seeder
             $kat['updated_at'] = now();
         }
         DB::table('kategori')->insert($kategori);
-
         $kategoriMap = DB::table('kategori')->pluck('id', 'nama_kategori')->toArray();
 
         /**
@@ -126,7 +124,7 @@ class OutletSeeder extends Seeder
         DB::table('saldo')->insert($saldoData);
 
         /**
-         * TRANSAKSI (10 per outlet) -> hanya untuk santri yang punya kartu
+         * TRANSAKSI -> hanya untuk santri yang punya kartu
          */
         $santriPutra = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
@@ -143,6 +141,7 @@ class OutletSeeder extends Seeder
             ->toArray();
 
         $transaksi = [];
+        $transaksiSaldo = [];
 
         foreach ($outletMap as $outletNama => $outletId) {
             for ($i = 0; $i < 10; $i++) {
@@ -188,18 +187,34 @@ class OutletSeeder extends Seeder
                     }
                 }
 
-                // ambil user_outlet_id sesuai outlet_id
                 $userOutletId = $detailUserOutletMap[$outletId] ?? null;
                 if (!$userOutletId) continue;
 
+                $tanggal = $faker->dateTimeBetween('-1 month', 'now');
+
+                // Transaksi utama
                 $transaksi[] = [
                     'santri_id' => $santriId,
                     'outlet_id' => $outletId,
                     'kategori_id' => $kategoriId,
                     'user_outlet_id' => $userOutletId,
                     'total_bayar' => $total,
-                    'tanggal' => $faker->dateTimeBetween('-1 month', 'now'),
+                    'tanggal' => $tanggal,
                     'created_by' => $adminId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                // Rekap transaksi_saldo
+                $transaksiSaldo[] = [
+                    'santri_id' => $santriId,
+                    'outlet_id' => $outletId,
+                    'kategori_id' => $kategoriId,
+                    'user_outlet_id' => $userOutletId,
+                    'tipe' => 'debit', // karena pembayaran
+                    'jumlah' => $total,
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -207,5 +222,6 @@ class OutletSeeder extends Seeder
         }
 
         DB::table('transaksi')->insert($transaksi);
+        DB::table('transaksi_saldo')->insert($transaksiSaldo);
     }
 }
