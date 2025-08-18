@@ -204,7 +204,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, false),
                     'jalan' => $row['jalan'] ?? null,
                     'kode_pos' => $row['kode_pos'] ?? null,
-                    'smartcard' => $row['smartcard'] ?? null,
+                    // 'smartcard' => $row['smartcard'] ?? null,
                     'anak_keberapa' => $row['anak_keberapa'] ?? null,
                     'dari_saudara' => $row['dari_saudara'] ?? null,
                     'tinggal_bersama' => $row['tinggal_bersama'] ?? null,

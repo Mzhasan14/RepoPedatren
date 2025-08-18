@@ -167,7 +167,7 @@ class KhadamService
                 'anak_keberapa' => $data['anak_keberapa'] ?? null,
                 'dari_saudara' => $data['dari_saudara'] ?? null,
                 'tinggal_bersama' => $data['tinggal_bersama'] ?? null,
-                'smartcard' => $data['smartcard'] ?? null,
+                // 'kartu_rfid' => $data['smartcard'] ?? null,
                 'updated_by' => $userId,
                 'updated_at' => $now,
             ];
@@ -176,9 +176,9 @@ class KhadamService
                 DB::table('biodata')->where('id', $existingBiodata->id)->update($biodataData);
                 $biodataId = $existingBiodata->id;
             } else {
-                do {
-                    $smartcard = 'SC-' . strtoupper(Str::random(10));
-                } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
+                // do {
+                //     $smartcard = 'SC-' . strtoupper(Str::random(10));
+                // } while (DB::table('biodata')->where('smartcard', $smartcard)->exists());
 
                 do {
                     $biodataId = Str::uuid()->toString();
@@ -186,7 +186,7 @@ class KhadamService
 
                 DB::table('biodata')->insert(array_merge($biodataData, [
                     'id' => $biodataId,
-                    'smartcard' => $smartcard,
+                    // 'smartcard' => $smartcard,
                     'status' => true,
                     'created_by' => $userId,
                     'created_at' => $now,

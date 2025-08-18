@@ -198,7 +198,7 @@ class PesertaDidikService
                 'anak_keberapa' => $data['anak_keberapa'] ?? null,
                 'dari_saudara' => $data['dari_saudara'] ?? null,
                 'tinggal_bersama' => $data['tinggal_bersama'] ?? null,
-                'smartcard' => $data['smarcard'] ?? null,
+                // 'smartcard' => $data['smarcard'] ?? null,
                 'updated_by' => $userId,
                 'updated_at' => $now,
             ];
@@ -244,7 +244,6 @@ class PesertaDidikService
                     ]);
                 }
             }
-
 
             $existingParents = DB::table('keluarga')->where('no_kk', $data['no_kk'])->pluck('id_biodata');
             if ($existingParents->isNotEmpty()) {

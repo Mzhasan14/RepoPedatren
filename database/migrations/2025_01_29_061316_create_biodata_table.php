@@ -36,7 +36,7 @@ return new class extends Migration
             $table->tinyInteger('anak_keberapa')->nullable();
             $table->tinyInteger('dari_saudara')->nullable();
             $table->string('tinggal_bersama', 40)->nullable();
-            $table->string('smartcard')->nullable();
+            // $table->string('smartcard')->nullable();
             $table->boolean('status')->default(true);
             $table->boolean('wafat')->default(false);
             $table->unsignedBigInteger('created_by');

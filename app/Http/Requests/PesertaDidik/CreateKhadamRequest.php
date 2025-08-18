@@ -54,6 +54,8 @@ class CreateKhadamRequest extends FormRequest
             // khadam
             'keterangan' => 'required|string',
             'tanggal_mulai' => 'required|date',
+
+            'kartu_rfid' => 'nullable|string',
         ];
     }
 

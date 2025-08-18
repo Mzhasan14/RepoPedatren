@@ -318,7 +318,7 @@ class PegawaiService
                     'anak_keberapa' => $input['anak_keberapa'],
                     'dari_saudara' => $input['dari_saudara'],
                     'tinggal_bersama' => $input['tinggal_bersama'],
-                    'smartcard' => $input['smartcard'],
+                    // 'smartcard' => $input['smartcard'],
                     'status' => 1,
                     'wafat' => $input['wafat'],
                     'created_by' => Auth::id(),

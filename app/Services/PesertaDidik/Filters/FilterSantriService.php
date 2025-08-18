@@ -14,7 +14,7 @@ class FilterSantriService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-        $query = $this->applySmartcardFilter($query, $request);
+         
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyKewaliasuhanFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
@@ -82,23 +82,7 @@ class FilterSantriService
         return $query;
     }
 
-    public function applySmartcardFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('smartcard')) {
-            return $query;
-        }
-
-        $smartcard = strtolower($request->smartcard);
-        if ($smartcard === 'memiliki smartcard') {
-            $query->whereNotNull('b.smartcard');
-        } elseif ($smartcard === 'tanpa smartcard') {
-            $query->whereNull('b.smartcard');
-        } else {
-            $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
+     
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {

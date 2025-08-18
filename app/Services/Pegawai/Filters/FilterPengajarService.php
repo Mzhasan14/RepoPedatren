@@ -19,7 +19,7 @@ class FilterPengajarService
         $query = $this->applyUmurFilter($query, $request);
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-        $query = $this->applySmartcardFilter($query, $request);
+         
         $query = $this->applyMapelFilter($query, $request);
         $query = $this->applyMasaKerjaFilter($query, $request);
         $query = $this->applyJabatanPengajarFilter($query, $request);

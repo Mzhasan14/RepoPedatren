@@ -19,7 +19,7 @@ class FilterKaryawanService
         $query = $this->applyUmurFilter($query, $request);
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-        $query = $this->applySmartcardFilter($query, $request);
+         
         $query = $this->applyGolonganJabatanFilter($query, $request);
 
         return $query;

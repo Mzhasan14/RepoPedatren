@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
+use App\Models\Kartu;
 use App\Models\Santri;
 use App\Models\Biodata;
 use App\Models\Keluarga;
@@ -110,7 +111,7 @@ class BiodataService
                 'kecamatan_id' => $biodata->kecamatan_id,
                 'jalan' => $biodata->jalan,
                 'kode_pos' => $biodata->kode_pos,
-                'smartcard' => $biodata->smartcard,
+                // 'smartcard' => $biodata->smartcard,
                 'wafat' => (bool) $biodata->wafat,
                 'status' => (bool) $biodata->status,
                 'pas_foto_url' => $pasFoto ? url($pasFoto->file_path) : null,
@@ -265,7 +266,7 @@ class BiodataService
         $biodata->kecamatan_id = $input['kecamatan_id'] ?? $biodata->kecamatan_id;
         $biodata->jalan = $input['jalan'] ?? $biodata->jalan;
         $biodata->kode_pos = $input['kode_pos'] ?? $biodata->kode_pos;
-        $biodata->kode_pos = $input['smartcard'] ?? $biodata->smartcard;
+        // $biodata->kode_pos = $input['smartcard'] ?? $biodata->smartcard;
         $biodata->wafat = (bool) $input['wafat'] ?? $biodata->wafat;
 
         $biodata->status = (bool) $input['status'] ?? $biodata->status;

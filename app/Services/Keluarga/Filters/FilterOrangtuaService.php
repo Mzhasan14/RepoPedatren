@@ -12,7 +12,7 @@ class FilterOrangtuaService
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
-        $query = $this->applySmartcardFilter($query, $request);
+         
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyWafatFilter($query, $request);
@@ -98,23 +98,7 @@ class FilterOrangtuaService
         return $query;
     }
 
-    public function applySmartcardFilter(Builder $query, Request $request): Builder
-    {
-        if (! $request->filled('smartcard')) {
-            return $query;
-        }
-
-        $smartcard = strtolower($request->smartcard);
-        if ($smartcard === 'memiliki smartcard') {
-            $query->whereNotNull('b.smartcard');
-        } elseif ($smartcard === 'tanpa smartcard') {
-            $query->whereNull('b.smartcard');
-        } else {
-            $query->whereRaw('0 = 1');
-        }
-
-        return $query;
-    }
+     
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {

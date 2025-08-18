@@ -53,7 +53,7 @@ class CreatePegawaiRequest extends FormRequest
             'anak_keberapa' => 'nullable|integer|min:1',
             'dari_saudara' => 'nullable|integer|min:1',
             'tinggal_bersama' => 'nullable|string|max:100',
-            'smartcard' => 'nullable|string|max:50',
+            // 'smartcard' => 'nullable|string|max:50',
             'wafat' => 'required|in:1,0',
 
             // ===== Keluarga =====
@@ -146,7 +146,7 @@ class CreatePegawaiRequest extends FormRequest
             'dari_saudara.integer' => 'Jumlah saudara harus berupa angka.',
             'dari_saudara.min' => 'Jumlah saudara minimal 1.',
             'tinggal_bersama.max' => 'Tinggal bersama maksimal 100 karakter.',
-            'smartcard.max' => 'Smartcard maksimal 50 karakter.',
+            // 'smartcard.max' => 'Smartcard maksimal 50 karakter.',
             'wafat.required' => 'Status wafat wajib dipilih.',
             'wafat.in' => 'Nilai wafat harus 1 (ya) atau 0 (tidak).',
 

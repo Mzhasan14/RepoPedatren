@@ -110,7 +110,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, true),
                     'jalan' => $row['jalan'] ?? null,
                     'kode_pos' => $row['kode_pos'] ?? null,
-                    'smartcard' => $row['smartcard'] ?? null,
+                    // 'smartcard' => $row['smartcard'] ?? null,
                     'status' => true,
                     'created_at' => now(),
                     'updated_at' => now(),

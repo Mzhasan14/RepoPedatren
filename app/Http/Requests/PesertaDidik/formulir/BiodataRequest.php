@@ -73,7 +73,7 @@ class BiodataRequest extends FormRequest
             'status' => 'required|integer|in:0,1',
             'pekerjaan' => 'nullable|string',
             'penghasilan' => 'nullable|string',
-            'smartcard' => 'nullable|string',
+            // 'smartcard' => 'nullable|string',
         ];
     }
 
