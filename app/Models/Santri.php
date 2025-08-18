@@ -133,4 +133,13 @@ class Santri extends Model
     {
         return $this->hasMany(SaldoTransaksi::class, 'santri_id', 'biodata_id');
     }
+    public function domisili()
+    {
+        return $this->hasOne(DomisiliSantri::class, 'santri_id');
+    }
+
+    public function pendidikan()
+    {
+        return $this->hasMany(Pendidikan::class, 'biodata_id', 'biodata_id');
+    }
 }

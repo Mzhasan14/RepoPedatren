@@ -13,29 +13,51 @@ class CatatanAfektifService
 {
     public function index(string $bioId): array
     {
-        // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // Ambil data afektif dengan relasi lengkap
-        $afektif = Catatan_afektif::whereHas('santri.biodata', function ($query) use ($bioId) {
-            $query->where('id', $bioId);
-        })
-            ->with([
-                'santri.biodata',
-                'waliAsuh.santri.biodata.berkas' => function ($query) use ($pasFotoId) {
-                    $query->where('jenis_berkas_id', $pasFotoId)
-                        ->latest('id')
-                        ->limit(1);
-                },
-            ])
+        $afektif = Catatan_afektif::with([
+            'santri.biodata',
+            'santri.domisili.blok',
+            'santri.domisili.wilayah',
+            'santri.pendidikan.jurusan',
+            'santri.pendidikan.lembaga',
+            // Relasi untuk wali asuh
+            'waliAsuh.santri.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
+            // Relasi untuk superadmin
+            'creator.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
+            'creator.roles'
+        ])
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
             ->orderByDesc('tanggal_buat')
             ->get()
             ->map(function ($item) {
-                $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);
-                $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
-                $namaPencatat = $pencatatBiodata?->nama ?? '-';
+                // Tentukan pencatat
+                $isSuperAdmin = optional($item->creator?->roles)->contains('name', 'superadmin');
+
+                if ($isSuperAdmin) {
+                    // Data superadmin
+                    $pencatatBiodata = optional($item->creator?->biodata?->first());
+                    $pencatatUuid = $pencatatBiodata?->id;
+                    $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
+                    $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+                    $status = 'Superadmin';
+                } elseif ($item->waliAsuh) {
+                    // Data wali asuh
+                    $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);
+                    $pencatatUuid = $pencatatBiodata?->id;
+                    $namaPencatat = $pencatatBiodata?->nama ?? '-';
+                    $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+                    $status = 'Wali Asuh';
+                } else {
+                    $pencatatUuid = null;
+                    $namaPencatat = '-';
+                    $fotoPath = 'default.jpg';
+                    $status = 'Tidak diketahui';
+                }
+
+                $pendidikan = $item->santri?->pendidikan?->first();
 
                 return [
                     'id' => $item->id,
@@ -49,34 +71,91 @@ class CatatanAfektifService
                     'tanggal_selesai' => $item->tanggal_selesai,
                     'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
-                    'status' => 'Wali Asuh',
+                    'status' => $status,
                     'status_aktif' => (bool) $item->status,
                 ];
             });
 
-        return ['status' => true, 'data' => $afektif];
+        return [
+            'status' => true,
+            'data' => $afektif
+        ];
     }
+
 
     public function show($id): array
     {
-        $afektif = Catatan_afektif::select(
-            'id',
-            'id_wali_asuh',
-            'kepedulian_nilai',
-            'kepedulian_tindak_lanjut',
-            'kebersihan_nilai',
-            'kebersihan_tindak_lanjut',
-            'akhlak_nilai',
-            'akhlak_tindak_lanjut',
-            'tanggal_buat',
-            'tanggal_selesai',
-        )->find($id);
+        $pasFotoId = DB::table('jenis_berkas')
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
+
+        $afektif = Catatan_afektif::with([
+            'waliAsuh.santri.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
+            'creator.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
+            'creator.roles'
+        ])
+            ->select(
+                'id',
+                'id_wali_asuh',
+                'kepedulian_nilai',
+                'kepedulian_tindak_lanjut',
+                'kebersihan_nilai',
+                'kebersihan_tindak_lanjut',
+                'akhlak_nilai',
+                'akhlak_tindak_lanjut',
+                'tanggal_buat',
+                'tanggal_selesai',
+                'status',
+                'created_by'
+            )
+            ->find($id);
+
         if (! $afektif) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
-        return ['status' => true, 'data' => $afektif];
+        // Cek apakah creator superadmin
+        $isSuperAdmin = optional($afektif->creator?->roles)->contains('name', 'superadmin');
+
+        if ($isSuperAdmin) {
+            // Pencatat: Superadmin
+            $pencatatBiodata = optional($afektif->creator->biodata);
+            $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+            $namaPencatat = $pencatatBiodata?->nama ?? $afektif->creator?->name ?? 'Super Admin';
+            $status = 'Superadmin';
+        } elseif (!empty($afektif->id_wali_asuh) && $afektif->waliAsuh) {
+            // Pencatat: Wali Asuh
+            $pencatatBiodata = optional($afektif->waliAsuh->santri->biodata);
+            $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+            $namaPencatat = $pencatatBiodata?->nama ?? '-';
+            $status = 'Wali Asuh';
+        } else {
+            $pencatatBiodata = null;
+            $fotoPath = 'default.jpg';
+            $namaPencatat = '-';
+            $status = 'Tidak diketahui';
+        }
+
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $afektif->id,
+                'kepedulian_nilai' => $afektif->kepedulian_nilai,
+                'kepedulian_tindak_lanjut' => $afektif->kepedulian_tindak_lanjut,
+                'kebersihan_nilai' => $afektif->kebersihan_nilai,
+                'kebersihan_tindak_lanjut' => $afektif->kebersihan_tindak_lanjut,
+                'akhlak_nilai' => $afektif->akhlak_nilai,
+                'akhlak_tindak_lanjut' => $afektif->akhlak_tindak_lanjut,
+                'tanggal_buat' => $afektif->tanggal_buat,
+                'tanggal_selesai' => $afektif->tanggal_selesai,
+                'foto_pencatat' => url($fotoPath),
+                'nama_pencatat' => $namaPencatat,
+                'status' => $status,
+                'status_aktif' => (bool) $afektif->status,
+            ]
+        ];
     }
+
     public function Listshow($id): array
     {
         $afektif = Catatan_afektif::select(

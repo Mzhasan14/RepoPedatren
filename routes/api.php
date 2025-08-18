@@ -143,8 +143,6 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-    Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif']);
-    Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif']);
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
     Route::put('/catatan-afektif/{id}/kategori', [AdministrasiCatatanAfektifController::class, 'updateKategori']);
@@ -662,6 +660,12 @@ Route::prefix('formulir')
 //     Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
 //     Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 // });
+Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif'])
+    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin|supervisor', 'throttle:200,1']);
+Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif'])
+    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin|supervisor', 'throttle:200,1']);
+Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif'])
+    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);;
 
 Route::prefix('crud')
     ->middleware(['auth:sanctum', 'throttle:120,1'])
@@ -827,7 +831,6 @@ Route::prefix('crud')
             // Kepegawaian
             Route::post('/pegawai', [PegawaiController::class, 'store']);
             Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
-            Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
 
             // Jam Pelajaran
             Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);

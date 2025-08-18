@@ -50,7 +50,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
+    public function biodata()
+    {
+        return $this->belongsToMany(Biodata::class, 'user_biodata', 'user_id', 'biodata_id');
+    }
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));

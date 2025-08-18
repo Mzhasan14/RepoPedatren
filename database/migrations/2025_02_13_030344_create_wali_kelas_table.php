@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('jurusan_id')->nullable();
             $table->unsignedBigInteger('kelas_id')->nullable();
             $table->unsignedBigInteger('rombel_id')->nullable();
-            $table->string('jumlah_murid');
+            $table->string('jumlah_murid')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

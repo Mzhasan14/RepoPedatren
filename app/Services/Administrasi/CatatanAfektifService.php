@@ -49,9 +49,21 @@ class CatatanAfektifService
             ->leftJoin('jurusan', 'jurusan.id', '=', 'pendidikan.jurusan_id')
             ->leftJoin('kelas', 'kelas.id', '=', 'pendidikan.kelas_id')
             ->leftJoin('rombel', 'rombel.id', '=', 'pendidikan.rombel_id')
+
+            // Relasi wali_asuh → pencatat biasa
             ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_afektif.id_wali_asuh')
             ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
             ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
+
+            // Relasi created_by → user → role superadmin
+            ->leftJoin('users as cu', 'cu.id', '=', 'catatan_afektif.created_by')
+            ->leftJoin('model_has_roles as mhr', function ($join) {
+                $join->on('cu.id', '=', 'mhr.model_id')
+                    ->where('mhr.model_type', '=', DB::raw("'App\\\\Models\\\\User'"));
+            })
+            ->leftJoin('roles as r', 'r.id', '=', 'mhr.role_id')
+            ->leftJoin('user_biodata as ubc', 'ubc.user_id', '=', 'cu.id')
+            ->leftJoin('biodata as bsc', 'bsc.id', '=', 'ubc.biodata_id')
 
             // Foto santri (catatan)
             ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
@@ -59,11 +71,18 @@ class CatatanAfektifService
             })
             ->leftJoin('berkas as FotoCatatan', 'FotoCatatan.id', '=', 'fotoLastCatatan.last_id')
 
-            // Foto pencatat
+            // Foto pencatat (wali_asuh)
             ->leftJoinSub($fotoLast, 'fotoLastPencatat', function ($join) {
                 $join->on('bp.id', '=', 'fotoLastPencatat.biodata_id');
             })
             ->leftJoin('berkas as FotoPencatat', 'FotoPencatat.id', '=', 'fotoLastPencatat.last_id')
+
+            // Foto superadmin
+            ->leftJoinSub($fotoLast, 'fotoLastSuperAdmin', function ($join) {
+                $join->on('bsc.id', '=', 'fotoLastSuperAdmin.biodata_id');
+            })
+            ->leftJoin('berkas as FotoSuperAdmin', 'FotoSuperAdmin.id', '=', 'fotoLastSuperAdmin.last_id')
+
             ->orderBy('catatan_afektif.id', 'asc')
             ->orderBy('catatan_afektif.tanggal_buat', 'desc');
 
@@ -76,6 +95,7 @@ class CatatanAfektifService
 
         return $query;
     }
+
     public function getAllCatatanAfektif(Request $request)
     {
         try {
@@ -84,7 +104,16 @@ class CatatanAfektifService
             return $query->select(
                 'catatan_afektif.id as id_catatan',
                 'bs.id as Biodata_uuid',
-                'bp.id as Pencatat_uuid',
+
+                // Pencatat UUID: superadmin → biodata UUID, wali_asuh → bp.id
+                DB::raw("
+                CASE
+                    WHEN r.name = 'superadmin' THEN bsc.id
+                    WHEN catatan_afektif.id_wali_asuh IS NOT NULL THEN bp.id
+                    ELSE NULL
+                END as Pencatat_uuid
+            "),
+
                 'bs.nama',
                 DB::raw("GROUP_CONCAT(DISTINCT blok.nama_blok SEPARATOR ', ') as blok"),
                 DB::raw("GROUP_CONCAT(DISTINCT wilayah.nama_wilayah SEPARATOR ', ') as wilayah"),
@@ -96,28 +125,60 @@ class CatatanAfektifService
                 'catatan_afektif.kebersihan_tindak_lanjut',
                 'catatan_afektif.akhlak_nilai',
                 'catatan_afektif.akhlak_tindak_lanjut',
-                'bp.nama as pencatat',
-                DB::raw("CASE WHEN wali_asuh.id IS NOT NULL THEN 'wali asuh' ELSE NULL END as wali_asuh"),
+
+                // Nama pencatat
+                DB::raw("
+                CASE
+                    WHEN r.name = 'superadmin' THEN COALESCE(bsc.nama, cu.name, 'Super Admin')
+                    WHEN catatan_afektif.id_wali_asuh IS NOT NULL THEN bp.nama
+                    ELSE 'Tidak diketahui'
+                END as pencatat
+            "),
+
+                // Jabatan pencatat
+                DB::raw("
+                CASE
+                    WHEN r.name = 'superadmin' THEN 'superadmin'
+                    WHEN catatan_afektif.id_wali_asuh IS NOT NULL THEN 'wali asuh'
+                    ELSE NULL
+                END as wali_asuh
+            "),
+
                 'catatan_afektif.tanggal_buat',
                 DB::raw("COALESCE(FotoCatatan.file_path, 'default.jpg') as foto_catatan"),
-                DB::raw("COALESCE(FotoPencatat.file_path, 'default.jpg') as foto_pencatat")
+
+                // Foto pencatat
+                DB::raw("
+                CASE
+                    WHEN r.name = 'superadmin' THEN COALESCE(FotoSuperAdmin.file_path, 'default.jpg')
+                    WHEN catatan_afektif.id_wali_asuh IS NOT NULL THEN COALESCE(FotoPencatat.file_path, 'default.jpg')
+                    ELSE 'default.jpg'
+                END as foto_pencatat
+            ")
             )
                 ->groupBy(
                     'catatan_afektif.id',
+                    'catatan_afektif.id_wali_asuh',
                     'bs.id',
-                    'bp.id',
                     'bs.nama',
+                    'bp.id',
+                    'bp.nama',
+                    'cu.id',
+                    'cu.name',
+                    'bsc.id',
+                    'bsc.nama',
+                    'wali_asuh.id',
+                    'r.name',
                     'catatan_afektif.kepedulian_nilai',
                     'catatan_afektif.kepedulian_tindak_lanjut',
                     'catatan_afektif.kebersihan_nilai',
                     'catatan_afektif.kebersihan_tindak_lanjut',
                     'catatan_afektif.akhlak_nilai',
                     'catatan_afektif.akhlak_tindak_lanjut',
-                    'bp.nama',
-                    'wali_asuh.id',
                     'catatan_afektif.tanggal_buat',
                     'FotoCatatan.file_path',
-                    'FotoPencatat.file_path'
+                    'FotoPencatat.file_path',
+                    'FotoSuperAdmin.file_path'
                 );
         } catch (\Exception $e) {
             Log::error('Error fetching data Catatan Afektif: ' . $e->getMessage());
@@ -129,6 +190,7 @@ class CatatanAfektifService
             ], 500);
         }
     }
+
 
     public function formatData($results, $kategori = null)
     {

@@ -3,7 +3,9 @@
 namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Catatan_kognitif;
+use App\Models\Kewaliasuhan\Wali_asuh;
 use App\Models\Santri;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -13,29 +15,46 @@ class CatatanKognitifService
 {
     public function index(string $bioId): array
     {
-        // Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')
             ->value('id');
 
-        // Ambil data kognitif dengan relasi lengkap
-        $kognitif = Catatan_kognitif::whereHas('santri.biodata', function ($query) use ($bioId) {
-            $query->where('id', $bioId);
-        })
-            ->with([
-                'santri.biodata',
-                'waliAsuh.santri.biodata.berkas' => function ($query) use ($pasFotoId) {
-                    $query->where('jenis_berkas_id', $pasFotoId)
-                        ->latest('id')
-                        ->limit(1);
-                },
-            ])
+        $kognitif = Catatan_kognitif::with([
+            'santri.biodata',
+            'waliAsuh.santri.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
+            'creator.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
+            'creator.roles'
+        ])
+            ->whereHas('santri.biodata', fn($q) => $q->where('id', $bioId))
             ->orderByDesc('tanggal_buat')
             ->get()
             ->map(function ($item) {
-                $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);
-                $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
-                $namaPencatat = $pencatatBiodata?->nama ?? '-';
+                $isSuperAdmin = $item->creator?->hasRole('superadmin');
+
+                if ($isSuperAdmin) {
+                    // Pencatat adalah superadmin
+                    $pencatatBiodata = $item->creator?->biodata?->first();
+                    $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+                    $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
+                    $status = 'Superadmin';
+                } elseif ($item->waliAsuh) {
+                    // Pencatat adalah wali asuh → santri → biodata
+                    $pencatatBiodata = $item->waliAsuh?->santri?->biodata;
+                    $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+                    $namaPencatat = $pencatatBiodata?->nama ?? '-';
+                    $status = 'Wali Asuh';
+                } else {
+                    // Tidak diketahui
+                    $fotoPath = 'default.jpg';
+                    $namaPencatat = '-';
+                    $status = 'Tidak diketahui';
+                }
 
                 return [
                     'id' => $item->id,
@@ -55,7 +74,7 @@ class CatatanKognitifService
                     'tanggal_selesai' => $item->tanggal_selesai,
                     'foto_pencatat' => url($fotoPath),
                     'nama_pencatat' => $namaPencatat,
-                    'status' => 'Wali Asuh',
+                    'status' => $status,
                     'status_aktif' => (bool) $item->status,
                 ];
             });
@@ -65,31 +84,71 @@ class CatatanKognitifService
 
     public function edit($id): array
     {
-        $kognitif = Catatan_kognitif::select(
-            'id',
-            'id_wali_asuh',
-            'kebahasaan_nilai',
-            'kebahasaan_tindak_lanjut',
-            'baca_kitab_kuning_nilai',
-            'baca_kitab_kuning_tindak_lanjut',
-            'hafalan_tahfidz_nilai',
-            'hafalan_tahfidz_tindak_lanjut',
-            'furudul_ainiyah_nilai',
-            'furudul_ainiyah_tindak_lanjut',
-            'tulis_alquran_nilai',
-            'tulis_alquran_tindak_lanjut',
-            'baca_alquran_nilai',
-            'baca_alquran_tindak_lanjut',
-            'tanggal_buat',
-            'tanggal_selesai',
-            DB::raw("CASE WHEN status = 1 THEN 'aktif' ELSE 'tidak aktif' END AS status_aktif")
-        )->find($id);
+        $pasFotoId = DB::table('jenis_berkas')
+            ->where('nama_jenis_berkas', 'Pas foto')
+            ->value('id');
 
-        if (! $kognitif) {
+        $item = Catatan_kognitif::with([
+            'santri.biodata',
+            'waliAsuh.santri.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
+            'creator.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
+            'creator.roles'
+        ])->find($id);
+
+        if (! $item) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
-        return ['status' => true, 'data' => $kognitif];
+        $isSuperAdmin = $item->creator?->hasRole('superadmin');
+
+        if ($isSuperAdmin) {
+            // Pencatat = superadmin → ambil dari biodata user
+            $pencatatBiodata = $item->creator?->biodata?->first();
+            $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+            $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
+            $status = 'Superadmin';
+        } elseif ($item->waliAsuh) {
+            // Pencatat = wali asuh → santri → biodata
+            $pencatatBiodata = $item->waliAsuh?->santri?->biodata;
+            $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
+            $namaPencatat = $pencatatBiodata?->nama ?? '-';
+            $status = 'Wali Asuh';
+        } else {
+            // fallback
+            $fotoPath = 'default.jpg';
+            $namaPencatat = '-';
+            $status = 'Tidak diketahui';
+        }
+
+        $data = [
+            'id' => $item->id,
+            'kebahasaan_nilai' => $item->kebahasaan_nilai,
+            'kebahasaan_tindak_lanjut' => $item->kebahasaan_tindak_lanjut,
+            'baca_kitab_kuning_nilai' => $item->baca_kitab_kuning_nilai,
+            'baca_kitab_kuning_tindak_lanjut' => $item->baca_kitab_kuning_tindak_lanjut,
+            'hafalan_tahfidz_nilai' => $item->hafalan_tahfidz_nilai,
+            'hafalan_tahfidz_tindak_lanjut' => $item->hafalan_tahfidz_tindak_lanjut,
+            'furudul_ainiyah_nilai' => $item->furudul_ainiyah_nilai,
+            'furudul_ainiyah_tindak_lanjut' => $item->furudul_ainiyah_tindak_lanjut,
+            'tulis_alquran_nilai' => $item->tulis_alquran_nilai,
+            'tulis_alquran_tindak_lanjut' => $item->tulis_alquran_tindak_lanjut,
+            'baca_alquran_nilai' => $item->baca_alquran_nilai,
+            'baca_alquran_tindak_lanjut' => $item->baca_alquran_tindak_lanjut,
+            'tanggal_buat' => $item->tanggal_buat,
+            'tanggal_selesai' => $item->tanggal_selesai,
+            'foto_pencatat' => url($fotoPath),
+            'nama_pencatat' => $namaPencatat,
+            'status' => $status,
+            'status_aktif' => (bool) $item->status,
+        ];
+
+        return ['status' => true, 'data' => $data];
     }
     public function Listedit($id): array
     {

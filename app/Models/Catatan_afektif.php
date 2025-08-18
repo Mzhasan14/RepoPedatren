@@ -85,4 +85,8 @@ class Catatan_afektif extends Model
     {
         return $this->belongsTo(Santri::class, 'id_santri');
     }
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by'); // kolom created_by di tabel catatan_afektif
+    }
 }

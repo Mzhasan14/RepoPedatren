@@ -127,7 +127,7 @@ class Biodata extends Model
 
     public function berkas()
     {
-        return $this->hasMany(Berkas::class);
+        return $this->hasMany(Berkas::class, 'biodata_id');
     }
 
     public function pegawai()

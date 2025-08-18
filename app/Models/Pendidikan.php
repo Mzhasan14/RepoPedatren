@@ -62,7 +62,7 @@ class Pendidikan extends Model
             $model->created_by ??= Auth::id();
         });
         // static::creating(fn($model) => $model->created_by = Auth::id());
-        static::updating(fn ($model) => $model->updated_by = Auth::id());
+        static::updating(fn($model) => $model->updated_by = Auth::id());
         static::deleting(function ($model) {
             $model->deleted_by = Auth::id();
             $model->save();
@@ -74,15 +74,16 @@ class Pendidikan extends Model
         return $this->belongsTo(Biodata::class, 'biodata_id', 'id');
     }
 
-    public function lembaga(): BelongsTo
+    public function jurusan()
+    {
+        return $this->belongsTo(Jurusan::class, 'jurusan_id');
+    }
+
+    public function lembaga()
     {
         return $this->belongsTo(Lembaga::class, 'lembaga_id');
     }
 
-    public function jurusan(): BelongsTo
-    {
-        return $this->belongsTo(Jurusan::class, 'jurusan_id');
-    }
 
     public function kelas(): BelongsTo
     {
