@@ -15,7 +15,6 @@ class BankController extends Controller
     public function index(Request $request)
     {
         try {
-            // Optional: quick search & filter (tidak wajib dipakai)
             $query = Bank::query();
 
             if ($request->filled('q')) {

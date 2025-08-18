@@ -18,32 +18,21 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SaldoService
 {
-    /**
-     * Top Up Saldo
-     */
     public function topup(int $santriId, float $jumlah, int $userId): array
     {
         return $this->process($santriId, $jumlah, $userId, 'topup', 1);
     }
 
-    /**
-     * Tarik Saldo (withdraw)
-     */
     public function tarik(int $santriId, float $jumlah, int $userId): array
     {
         return $this->process($santriId, $jumlah, $userId, 'debit', 2);
     }
 
-    /**
-     * Core Process
-     */
     private function process(int $santriId, float $jumlah, int $userId, string $tipe, int $kategoriId): array
     {
         DB::beginTransaction();
         try {
-            /**
-             * 1. Ambil outlet koperasi pesantren
-             */
+            // 1. Validasi outlet koperasi pesantren
             $outlet = Outlet::where('nama_outlet', 'koperasi pesantren')
                 ->where('status', true)
                 ->first();
@@ -51,14 +40,11 @@ class SaldoService
             if (!$outlet) {
                 return [
                     'status'  => false,
-                    'code'    => 'OUTLET_NOT_FOUND',
                     'message' => 'Outlet koperasi pesantren tidak tersedia saat ini.'
                 ];
             }
 
-            /**
-             * 2. Validasi user di detail_user_outlet
-             */
+            // 2. Validasi user memiliki akses ke outlet
             $userOutlet = DetailUserOutlet::where('user_id', $userId)
                 ->where('outlet_id', $outlet->id)
                 ->where('status', true)
@@ -67,33 +53,25 @@ class SaldoService
             if (!$userOutlet) {
                 return [
                     'status'  => false,
-                    'code'    => 'USER_NOT_AUTHORIZED',
                     'message' => 'Anda tidak memiliki akses untuk melakukan transaksi di outlet koperasi pesantren.'
                 ];
             }
 
-            /**
-             * 3. Ambil atau buat saldo santri
-             */
+            // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(
                 ['santri_id' => $santriId],
                 ['saldo' => 0, 'created_by' => $userId]
             );
 
-            /**
-             * 4. Validasi saldo cukup untuk tarik
-             */
+            // 4. Validasi saldo untuk penarikan
             if ($tipe === 'debit' && $saldo->saldo < $jumlah) {
                 return [
                     'status'  => false,
-                    'code'    => 'INSUFFICIENT_BALANCE',
                     'message' => 'Saldo santri tidak mencukupi untuk melakukan penarikan.'
                 ];
             }
 
-            /**
-             * 5. Update saldo
-             */
+            // 5. Update saldo santri
             if ($tipe === 'topup') {
                 $saldo->saldo += $jumlah;
             } elseif ($tipe === 'debit') {
@@ -102,9 +80,6 @@ class SaldoService
             $saldo->updated_by = $userId;
             $saldo->save();
 
-            /**
-             * 6. Catat transaksi
-             */
             $transaksi = TransaksiSaldo::create([
                 'santri_id'      => $santriId,
                 'outlet_id'      => $outlet->id,
@@ -132,7 +107,6 @@ class SaldoService
 
             return [
                 'status'  => false,
-                'code'    => 'NOT_FOUND',
                 'message' => 'Data yang diminta tidak ditemukan.'
             ];
         } catch (Exception $e) {
@@ -145,7 +119,6 @@ class SaldoService
 
             return [
                 'status'  => false,
-                'code'    => 'INTERNAL_ERROR',
                 'message' => 'Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi petugas.'
             ];
         }
