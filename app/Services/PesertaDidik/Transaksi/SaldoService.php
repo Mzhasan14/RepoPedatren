@@ -94,7 +94,6 @@ class SaldoService
 
             return [
                 'status'    => true,
-                'code'      => 'SUCCESS',
                 'message'   => $tipe === 'topup'
                     ? 'Saldo berhasil ditambahkan.'
                     : 'Saldo berhasil ditarik.',
@@ -123,6 +122,7 @@ class SaldoService
             ];
         }
     }
+    
     // public function requestTopUp(string $santriId, float $nominal, UploadedFile $buktiTransfer)
     // {
     //     try {

@@ -217,7 +217,6 @@ class TransaksiService
                 });
             }
 
-
             // 🔹 Hitung total pembayaran sebelum paginate
             $totalPembayaran = (clone $query)->sum('total_bayar');
 
@@ -248,7 +247,7 @@ class TransaksiService
                 'current_page' => $results->currentPage(),
                 'per_page' => $results->perPage(),
                 'total_pages' => $results->lastPage(),
-                'total_pembayaran' => (float)$totalPembayaran, // ✅ ditambahkan di response
+                'total_pembayaran' => (float)$totalPembayaran, 
                 'data' => $results->items(),
             ];
         } catch (Exception $e) {
