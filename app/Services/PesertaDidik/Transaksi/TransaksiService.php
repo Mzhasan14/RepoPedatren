@@ -182,17 +182,6 @@ class TransaksiService
     public function listTransactions(array $filters = [], int $perPage = 25)
     {
         try {
-            $user = Auth::user();
-
-            $outletIds = DetailUserOutlet::where('user_id', $user->id)
-                ->where('status', true)
-                ->pluck('outlet_id')
-                ->toArray();
-
-            if (empty($outletIds)) {
-                return ['success' => false, 'message' => 'User tidak terdaftar di outlet manapun.', 'status' => 403];
-            }
-
             $query = Transaksi::with([
                 'santri:id,nis,biodata_id',
                 'santri.biodata:id,nama',
@@ -200,27 +189,37 @@ class TransaksiService
                 'outlet:id,nama_outlet',
                 'kategori:id,nama_kategori',
                 'userOutlet:id,user_id,outlet_id'
-            ])
-                ->whereIn('outlet_id', $outletIds)
-                ->orderByDesc('tanggal');
+            ])->orderByDesc('tanggal');
 
-            if (!empty($filters['santri_id'])) $query->where('santri_id', $filters['santri_id']);
-            if (!empty($filters['outlet_id'])) $query->where('outlet_id', $filters['outlet_id']);
-            if (!empty($filters['kategori_id'])) $query->where('kategori_id', $filters['kategori_id']);
-            if (!empty($filters['date_from'])) $query->whereDate('tanggal', '>=', $filters['date_from']);
-            if (!empty($filters['date_to'])) $query->whereDate('tanggal', '<=', $filters['date_to']);
+            if (!empty($filters['santri_id'])) {
+                $query->where('santri_id', $filters['santri_id']);
+            }
+            if (!empty($filters['outlet_id'])) {
+                $query->where('outlet_id', $filters['outlet_id']);
+            }
+            if (!empty($filters['kategori_id'])) {
+                $query->where('kategori_id', $filters['kategori_id']);
+            }
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('tanggal', '>=', $filters['date_from']);
+            }
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('tanggal', '<=', $filters['date_to']);
+            }
             if (!empty($filters['q'])) {
                 $q = $filters['q'];
-                $query->whereHas(
-                    'santri.biodata',
-                    fn($qb) =>
-                    $qb->where('nama', 'like', "%$q%")
-                )->orWhereHas(
-                    'santri',
-                    fn($qb) =>
-                    $qb->where('nis', 'like', "%$q%")
-                );
+
+                $query->where(function ($sub) use ($q) {
+                    $sub->whereHas('santri.biodata', function ($qb) use ($q) {
+                        $qb->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$q]);
+                    });
+                    $sub->orWhereHas('santri', fn($qb) => $qb->where('nis', $q));
+                });
             }
+
+
+            // 🔹 Hitung total pembayaran sebelum paginate
+            $totalPembayaran = (clone $query)->sum('total_bayar');
 
             $results = $query->paginate($perPage);
 
@@ -249,6 +248,7 @@ class TransaksiService
                 'current_page' => $results->currentPage(),
                 'per_page' => $results->perPage(),
                 'total_pages' => $results->lastPage(),
+                'total_pembayaran' => (float)$totalPembayaran, // ✅ ditambahkan di response
                 'data' => $results->items(),
             ];
         } catch (Exception $e) {

@@ -77,12 +77,9 @@ use App\Http\Controllers\api\Administrasi\CatatanAfektifController as Administra
 
 // Auth
 Route::post('register', [UserController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:admin|superadmin', 'throttle:5,1']);
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:5,1']);
 
 Route::apiResource('users', UserController::class)->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
-// Route::post('users/change-status/{user}', [UserController::class, 'changeStatus'])
-//     ->middleware(['auth:sanctum', 'role:admin|superadmin'])
-//     ->name('users.changeStatus');
 
 Route::post('login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1')
@@ -101,12 +98,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('password', [AuthController::class, 'changePassword']);
     Route::get('profile/{user}', [UserController::class, 'show']);
     Route::delete('delete/{user}', [UserController::class, 'destroy']);
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
 });
 
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor', 'throttle:200,1'])->group(function () {
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle:200,1'])->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
     Route::get('/pesertadidik-bersaudara', [BersaudaraController::class, 'getAllBersaudara']);
@@ -188,13 +182,13 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
-Route::prefix('import')->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1'])->group(function () {
+Route::prefix('import')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:200,1'])->group(function () {
     Route::post('/santri', [PesertaDidikController::class, 'importSantri']);
     Route::post('/pegawai', [PegawaiController::class, 'importPegawai']);
 });
 
 // Export
-Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor', 'throttle:200,1'])->group(function () {
+Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle:200,1'])->group(function () {
     Route::get('/pesertadidik', [PesertaDidikController::class, 'exportExcel'])->name('pesertadidik.export');
     Route::get('/santri', [SantriController::class, 'exportExcel'])->name('santri.export');
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'exportExcel'])->name('nondomisili.export');
@@ -370,7 +364,7 @@ Route::prefix('formulir')
          * READ ONLY (superadmin & supervisor)
          * ===============================
          */
-        Route::middleware('role:superadmin|supervisor')->group(function () {
+        Route::middleware('role:superadmin|supervisor|admin')->group(function () {
             // Biodata
             Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
 
@@ -438,7 +432,7 @@ Route::prefix('formulir')
          * FULL ACCESS (hanya superadmin)
          * ===============================
          */
-        Route::middleware('role:superadmin')->group(function () {
+        Route::middleware('role:superadmin|admin')->group(function () {
             // Biodata
             Route::put('/{id}/biodata', [BiodataController::class, 'update']);
 
@@ -676,7 +670,7 @@ Route::prefix('crud')
         /**
          * GET routes → superadmin & supervisor
          */
-        Route::middleware('role:superadmin|supervisor')->group(function () {
+        Route::middleware('role:superadmin|supervisor|admin')->group(function () {
             // perizinan
             Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
             Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
@@ -736,7 +730,7 @@ Route::prefix('crud')
         /**
          * POST/PUT/DELETE routes → hanya superadmin
          */
-        Route::middleware('role:superadmin')->group(function () {
+        Route::middleware('role:superadmin|admin')->group(function () {
             // Peserta Didik
             Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
             Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
@@ -853,15 +847,15 @@ Route::prefix('approve')
         Route::post(
             '/perizinan/biktren/{id}',
             [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByBiktren']
-        )->middleware('role:superadmin|biktren');
+        )->middleware('role:superadmin|biktren|admin');
         Route::post(
             '/perizinan/kamtib/{id}',
             [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByKamtib']
-        )->middleware('role:superadmin|kamtib');
+        )->middleware('role:superadmin|kamtib|admin');
         Route::post(
             '/perizinan/pengasuh/{id}',
             [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh']
-        )->middleware('role:superadmin|wali_asuh');
+        )->middleware('role:superadmin|wali_asuh|pengasuh|admin');
     });
 
 Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
@@ -922,7 +916,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 // Endpoint menampilkan log  
 Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware([
     'auth:sanctum',
-    'role:superadmin',
+    'role:superadmin|admin',
     'throttle:100,1'
 ]);
 
@@ -947,47 +941,45 @@ Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware([
 
 // === Tahfidz ===
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-    Route::middleware('role:superadmin|ustadz|supervisor')->group(function () {
+    Route::middleware('role:superadmin|ustadz|supervisor|admin')->group(function () {
         Route::get('/tahfidz', [TahfidzController::class, 'getAllRekap']);
         Route::get('/tahfidz/{id}', [TahfidzController::class, 'getSetoranDanRekap']);
     });
-    Route::middleware('role:superadmin|ustadz')->group(function () {
+    Route::middleware('role:superadmin|ustadz|admin')->group(function () {
         Route::post('/tahfidz', [TahfidzController::class, 'store']);
     });
 });
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-    Route::middleware('role:superadmin|ustadz|supervisor')->group(function () {
+    Route::middleware('role:superadmin|ustadz|supervisor|admin')->group(function () {
         Route::get('/nadhoman', [NadhomanController::class, 'getAllRekap']);
         Route::get('/nadhoman/{id}', [NadhomanController::class, 'getSetoranDanRekap']);
     });
-    Route::middleware('role:superadmin|ustadz')->group(function () {
+    Route::middleware('role:superadmin|ustadz|admin')->group(function () {
         Route::post('/nadhoman', [NadhomanController::class, 'store']);
     });
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::middleware('role:superadmin|ustadz|petugas|supervisor')->group(function () {
+    Route::middleware('role:superadmin|ustadz|petugas|supervisor|admin')->group(function () {
         Route::get('sholat', [SholatController::class, 'index']);
         Route::get('sholat/{sholat}', [SholatController::class, 'show']);
         Route::get('jadwal-sholat', [JadwalSholatController::class, 'index']);
         Route::get('jadwal-sholat/{jadwal_sholat}', [JadwalSholatController::class, 'show']);
     });
-    Route::middleware('role:superadmin|ustadz|petugas')->group(function () {
+    Route::middleware('role:superadmin|ustadz|petugas|admin')->group(function () {
         Route::apiResource('sholat', SholatController::class)->except(['index', 'show']);
         Route::apiResource('jadwal-sholat', JadwalSholatController::class)->except(['index', 'show']);
     });
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    // Hanya GET -> boleh admin, superadmin, supervisor
-    Route::middleware('role:petugas|ustadz|superadmin|supervisor')->group(function () {
+    Route::middleware('role:petugas|ustadz|superadmin|supervisor|admin')->group(function () {
         Route::get('/kartu', [KartuController::class, 'index']);
         Route::get('/kartu/{id}', [KartuController::class, 'show']);
     });
 
-    // CRUD penuh -> hanya admin, superadmin
-    Route::middleware('role:ustadz|petugas|superadmin')->group(function () {
+    Route::middleware('role:ustadz|petugas|superadmin|admin')->group(function () {
         Route::post('/kartu', [KartuController::class, 'store']);
         Route::put('/kartu/{id}', [KartuController::class, 'update']);
         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
@@ -996,8 +988,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
     Route::get('/', [PresensiJamaahController::class, 'index'])
-        ->middleware('role:superadmin|ustadz|petugas|supervisor');
-    Route::middleware('role:superadmin|ustadz|petugas')->group(function () {
+        ->middleware('role:superadmin|ustadz|petugas|supervisor|admin');
+    Route::middleware('role:superadmin|ustadz|petugas|admin')->group(function () {
         Route::post('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
         Route::post('scan', [PresensiJamaahController::class, 'scan']);
         Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
@@ -1006,11 +998,11 @@ Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kitab', [KitabController::class, 'indexAll'])
-        ->middleware('role:superadmin|supervisor');
+        ->middleware('role:superadmin|supervisor|admin');
     Route::get('/kitab/{id}', [KitabController::class, 'show'])
-        ->middleware('role:superadmin|supervisor');
+        ->middleware('role:superadmin|supervisor|admin');
 
-    Route::middleware('role:superadmin')->group(function () {
+    Route::middleware('role:superadmin|admin')->group(function () {
         Route::post('/kitab', [KitabController::class, 'store']);
         Route::put('/kitab/{id}', [KitabController::class, 'update']);
         Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
@@ -1020,7 +1012,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Outlet
 Route::middleware('auth:sanctum')->group(function () {
-    Route::middleware('role:superadmin|supervisor')->group(function () {
+    Route::middleware('role:superadmin|supervisor|admin')->group(function () {
         Route::get('outlet', [OutletController::class, 'index']);
         Route::get('outlet/{outlet}', [OutletController::class, 'show']);
 
@@ -1031,7 +1023,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
     });
 
-    Route::middleware('role:superadmin')->group(function () {
+    Route::middleware('role:superadmin|admin')->group(function () {
         Route::post('outlet', [OutletController::class, 'store']);
         Route::put('outlet/{outlet}', [OutletController::class, 'update']);
         Route::delete('outlet/{outlet}', [OutletController::class, 'destroy']);
@@ -1048,45 +1040,48 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Transaksi
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::middleware('role:superadmin|supervisor')->group(function () {
+    Route::middleware('role:superadmin|supervisor|admin')->group(function () {
         Route::post('scan-kartu', [TransaksiController::class, 'scan']);
         Route::get('transaksi', [TransaksiController::class, 'index']);
     });
 
-    Route::middleware('role:superadmin')->group(function () {
+    Route::middleware('role:superadmin|petugas')->group(function () {
         Route::post('transaksi', [TransaksiController::class, 'store']);
     });
 });
 
 // Virtual Accounts
 Route::middleware(['auth:sanctum'])->prefix('virtual-accounts')->group(function () {
-    Route::get('/', [VirtualAccountController::class, 'index']);
-    Route::post('/', [VirtualAccountController::class, 'store']);
-    Route::get('/{id}', [VirtualAccountController::class, 'show']);
-    Route::put('/{id}', [VirtualAccountController::class, 'update']);
-    Route::delete('/{id}', [VirtualAccountController::class, 'destroy']);
+    Route::get('/', [VirtualAccountController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+    Route::get('/{id}', [VirtualAccountController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+    Route::post('/', [VirtualAccountController::class, 'store'])->middleware('role:superadmin|admin');
+    Route::put('/{id}', [VirtualAccountController::class, 'update'])->middleware('role:superadmin|admin');
+    Route::delete('/{id}', [VirtualAccountController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-// tagihan
+// Tagihan
 Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
-    Route::get('/', [TagihanController::class, 'index']);
-    Route::post('/', [TagihanController::class, 'store']);
-    Route::get('/{id}', [TagihanController::class, 'show']);
-    Route::put('/{id}', [TagihanController::class, 'update']);
-    Route::delete('/{id}', [TagihanController::class, 'destroy']);
+    Route::get('/', [TagihanController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+    Route::get('/{id}', [TagihanController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+    Route::post('/', [TagihanController::class, 'store'])->middleware('role:superadmin|admin');
+    Route::put('/{id}', [TagihanController::class, 'update'])->middleware('role:superadmin|admin');
+    Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-// banks
+// Banks
 Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
-    Route::get('/', [BankController::class, 'index']);
-    Route::post('/', [BankController::class, 'store']);
-    Route::get('/{id}', [BankController::class, 'show']);
-    Route::put('/{id}', [BankController::class, 'update']);
-    Route::delete('/{id}', [BankController::class, 'destroy']);
+    Route::get('/', [BankController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+    Route::get('/{id}', [BankController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+    Route::post('/', [BankController::class, 'store'])->middleware('role:superadmin|admin');
+    Route::put('/{id}', [BankController::class, 'update'])->middleware('role:superadmin|admin');
+    Route::delete('/{id}', [BankController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
 // Top up
-Route::middleware(['auth:sanctum', 'role:petugas|superadmin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/saldo/topup', [SaldoController::class, 'topup']);
     Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
 });
