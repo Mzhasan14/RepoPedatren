@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\Fitur;
 
 use Exception;
+use App\Models\Tahfidz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -88,6 +89,32 @@ class TahfidzService
             );
 
             DB::commit();
+
+            $setoran = DB::table('tahfidz')->where('id', $setoranId)->first();
+            $santri  = DB::table('santri')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->where('santri.id', $setoran->santri_id)
+                ->select('santri.id as santri_id', 'santri.nis', 'biodata.nama')
+                ->first();
+
+            activity('tahfidz')
+                ->causedBy(Auth::user())
+                ->performedOn(new Tahfidz(['id' => $setoranId]))
+                ->withProperties([
+                    'santri_id'  => $santri->santri_id ?? null,
+                    'nis'        => $santri->nis ?? null,
+                    'biodata'    => $santri->nama ?? null,
+                    'jenis_setoran' => $setoran->jenis_setoran,
+                    'surat'      => $setoran->surat,
+                    'ayat_mulai' => $setoran->ayat_mulai,
+                    'ayat_selesai' => $setoran->ayat_selesai,
+                    'nilai'      => $setoran->nilai,
+                    'ip'         => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create')
+                ->log("Setoran tahfidz berhasil ditambahkan");
+                
             return $setoranId;
         } catch (Exception $e) {
             DB::rollBack();

@@ -50,6 +50,19 @@ class KartuService
             'santri.biodata:id,nama'
         ]);
 
+        activity('kartu')
+            ->causedBy(Auth::user())
+            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->withProperties([
+                'santri_id'  => $kartu->santri_id,
+                'nis'        => $kartu->santri->nis ?? null,
+                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'ip'         => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->event('create')
+            ->log("Kartu baru berhasil dibuat");
+
         return ['data' => $this->transform($kartu)];
     }
 
@@ -69,6 +82,19 @@ class KartuService
             'santri.biodata:id,nama'
         ]);
 
+        activity('kartu')
+            ->causedBy(Auth::user())
+            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->withProperties([
+                'santri_id'  => $kartu->santri_id,
+                'nis'        => $kartu->santri->nis ?? null,
+                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'ip'         => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->event('update')
+            ->log("Kartu berhasil diupdate");
+
         return ['data' => $this->transform($kartu)];
     }
 
@@ -79,6 +105,19 @@ class KartuService
         $kartu->save();
 
         $kartu->delete();
+
+        activity('kartu')
+            ->causedBy(Auth::user())
+            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->withProperties([
+                'santri_id'  => $kartu->santri_id,
+                'nis'        => $kartu->santri->nis ?? null,
+                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'ip'         => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->event('delete')
+            ->log("Kartu berhasil dihapus");
 
         return ['message' => 'Kartu berhasil dihapus'];
     }

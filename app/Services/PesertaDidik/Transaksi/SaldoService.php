@@ -71,12 +71,15 @@ class SaldoService
                 ];
             }
 
+            $saldoLama = $saldo->saldo;
+
             // 5. Update saldo santri
             if ($tipe === 'topup') {
                 $saldo->saldo += $jumlah;
             } elseif ($tipe === 'debit') {
                 $saldo->saldo -= $jumlah;
             }
+            $saldoBaru = $saldo->saldo;
             $saldo->updated_by = $userId;
             $saldo->save();
 
@@ -89,6 +92,25 @@ class SaldoService
                 'jumlah'         => $jumlah,
                 'created_by'     => $userId,
             ]);
+
+            activity('transaksi_saldo')
+                ->causedBy(Auth::user())
+                ->performedOn($saldo) // langsung pakai model saldo yang sudah ada
+                ->withProperties([
+                    'santri_id'     => $santriId,
+                    'tipe'          => $tipe, // topup / debit
+                    'jumlah'        => $jumlah,
+                    'saldo_sebelum' => $saldoLama,
+                    'saldo_sesudah' => $saldoBaru,
+                    'transaksi_id'  => $transaksi->id,
+                    'kategori_id'   => $kategoriId,
+                    'outlet_id'     => $outlet->id,
+                    'ip'            => request()->ip(),
+                    'user_agent'    => request()->userAgent(),
+                ])
+                ->event('success')
+                ->log("Transaksi saldo {$tipe} sebesar Rp{$jumlah} berhasil");
+
 
             DB::commit();
 
@@ -122,7 +144,7 @@ class SaldoService
             ];
         }
     }
-    
+
     // public function requestTopUp(string $santriId, float $nominal, UploadedFile $buktiTransfer)
     // {
     //     try {

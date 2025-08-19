@@ -11,6 +11,7 @@ use App\Models\LogPresensi;
 use App\Models\JadwalSholat;
 use App\Models\PresensiSholat;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PresensiJamaahService
 {
@@ -138,6 +139,19 @@ class PresensiJamaahService
             // 6) log sukses
             $this->createLog($santri->id, $kartu->id, $sholat->id, $now, 'Sukses', 'Presensi sukses', 'Kartu', $operatorUserId);
 
+            activity('presensi-sholat')
+                ->causedBy(Auth::user())
+                ->performedOn(new PresensiSholat(['id' => $presensi->id]))
+                ->withProperties([
+                    'santri_id' => $santri->id,
+                    'sholat_id' => $sholat->id,
+                    'status'    => 'Sukses',
+                    'ip'        => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('scan')
+                ->log('Presensi sholat sukses');
+
             // 7) build response konfirmasi
             return [
                 'status' => 'Sukses',
@@ -215,6 +229,19 @@ class PresensiJamaahService
             // Log sukses
             $this->createLog($santri->id, null, $sholat->id, $now, 'Sukses', 'Presensi manual sukses', 'Manual', $operatorUserId);
 
+            activity('presensi-sholat')
+                ->causedBy(Auth::user())
+                ->performedOn(new PresensiSholat(['id' => $presensi->id]))
+                ->withProperties([
+                    'santri_id' => $santri->id,
+                    'sholat_id' => $sholat->id,
+                    'status'    => 'Sukses',
+                    'ip'        => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('manual')
+                ->log('Presensi manual sholat sukses');
+
             return [
                 'status' => 'Sukses',
                 'data'   => [
@@ -228,8 +255,6 @@ class PresensiJamaahService
             ];
         });
     }
-
-
 
     protected function createLog($santriId, $kartuId, $sholatId, $waktuScan, $hasil, $pesan = null, $metode = 'Kartu', $userId = null)
     {

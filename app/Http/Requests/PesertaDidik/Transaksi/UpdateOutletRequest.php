@@ -20,7 +20,7 @@ class UpdateOutletRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_outlet'   => 'required|string|max:255|unique:outlet,nama_outlet,' . $this->route('outlet')->id,
+            'nama_outlet'   => 'required|string|max:255|unique:outlets,nama_outlet,' . $this->route('outlet')->id,
             'status'        => 'boolean',
             'kategori_ids'  => 'required|array|min:1',
             'kategori_ids.*' => 'exists:kategori,id',

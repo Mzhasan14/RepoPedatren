@@ -71,8 +71,28 @@ class NadhomanService
             }
 
             DB::commit();
-            return $setoranId;
 
+            $santri = DB::table('santri')
+                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                ->select('santri.nis', 'biodata.nama')
+                ->where('santri.id', $data['santri_id'])
+                ->first();
+
+            activity('nadhoman')
+                ->causedBy(Auth::user())
+                ->performedOn(new \App\Models\Nadhoman(['id' => $setoranId]))
+                ->withProperties([
+                    'santri_id'  => $data['santri_id'],
+                    'nis'        => $santri->nis ?? null,
+                    'nama'    => $santri->nama ?? null,
+                    'kitab_id'   => $data['kitab_id'],
+                    'ip'         => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create')
+                ->log("Setoran nadhoman berhasil ditambahkan");
+                
+            return $setoranId;
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Gagal simpan setoran nadhoman: ' . $e->getMessage(), [
@@ -228,17 +248,17 @@ class NadhomanService
         return $query;
     }
 
-        public function formatData($results)
-        {
-            return collect($results->items())->map(function ($item) {
-                return [
-                    'santri_id'          => $item->id,
-                    'nis'                => $item->nis,
-                    'nama_santri'        => $item->s_nama,
-                    'nama_kitab'         => $item->nama_kitab,
-                    'total_bait'         => $item->total_bait,
-                    'persentase_selesai' => $item->persentase_selesai,
-                ];
-            });
-        }
+    public function formatData($results)
+    {
+        return collect($results->items())->map(function ($item) {
+            return [
+                'santri_id'          => $item->id,
+                'nis'                => $item->nis,
+                'nama_santri'        => $item->s_nama,
+                'nama_kitab'         => $item->nama_kitab,
+                'total_bait'         => $item->total_bait,
+                'persentase_selesai' => $item->persentase_selesai,
+            ];
+        });
+    }
 }

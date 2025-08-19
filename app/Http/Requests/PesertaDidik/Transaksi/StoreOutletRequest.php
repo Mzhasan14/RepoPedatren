@@ -19,7 +19,7 @@ class StoreOutletRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_outlet'   => 'required|string|max:255|unique:outlet,nama_outlet',
+            'nama_outlet'   => 'required|string|max:255|unique:outlets,nama_outlet',
             'status'        => 'boolean',
             'kategori_ids'  => 'required|array|min:1',
             'kategori_ids.*' => 'exists:kategori,id',

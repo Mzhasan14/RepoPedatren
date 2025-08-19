@@ -146,6 +146,22 @@ class TransaksiService
                 'updated_by' => Auth::id(),
             ]);
 
+            activity('transaksi')
+                ->causedBy(Auth::user())
+                ->performedOn(new Transaksi(['id' => $transaksi->id]))
+                ->withProperties([
+                    'uid_kartu' => $uid,
+                    'santri_id' => $santri->id,
+                    'outlet_id' => $outletId,
+                    'kategori_id' => $kategoriId,
+                    'total_bayar' => $totalBayar,
+                    'sisa_saldo' => (float)$saldo->saldo,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('success')
+                ->log('Transaksi berhasil dibuat');
+
             DB::commit();
 
             return [
@@ -247,7 +263,7 @@ class TransaksiService
                 'current_page' => $results->currentPage(),
                 'per_page' => $results->perPage(),
                 'total_pages' => $results->lastPage(),
-                'total_pembayaran' => (float)$totalPembayaran, 
+                'total_pembayaran' => (float)$totalPembayaran,
                 'data' => $results->items(),
             ];
         } catch (Exception $e) {
