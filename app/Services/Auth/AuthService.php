@@ -41,7 +41,9 @@ class AuthService
     public function login(string $email, string $password): array
     {
 
-        $user = User::where('email', $email)->first();
+        $user = User::with('detail_user_outlet')->where('email', $email)->first();
+
+        $outlet = $user?->detail_user_outlet?->outlet ? true : false;
 
         if (! $user) {
             return [
@@ -87,6 +89,7 @@ class AuthService
             'message' => 'Login successful.',
             'data' => $user,
             'status' => 200,
+            'outlet' => $outlet,
         ];
     }
 

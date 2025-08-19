@@ -58,4 +58,9 @@ class User extends Authenticatable
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
     }
+
+    public function detail_user_outlet()
+    {
+        return $this->hasOne(DetailUserOutlet::class);
+    }
 }
