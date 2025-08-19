@@ -94,9 +94,15 @@ class OutletSeeder extends Seeder
         $outletIds = array_values($outletMap);
 
         $detailUserOutlet = [];
+        $assignedUsers = [];
+
         foreach ($outletIds as $index => $outletId) {
             if (!isset($users[$index])) continue;
             $userId = $users[$index];
+
+            // skip jika sudah punya outlet
+            if (in_array($userId, $assignedUsers)) continue;
+
             $detailUserOutlet[] = [
                 'user_id' => $userId,
                 'outlet_id' => $outletId,
@@ -105,17 +111,21 @@ class OutletSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+
+            $assignedUsers[] = $userId;
         }
 
         // pastikan user id 9 = outlet Koperasi Pesantren
-        $detailUserOutlet[] = [
-            'user_id' => 9,
-            'outlet_id' => $outletMap['Koperasi Pesantren'],
-            'status' => true,
-            'created_by' => $adminId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
+        if (!in_array(9, $assignedUsers)) {
+            $detailUserOutlet[] = [
+                'user_id' => 9,
+                'outlet_id' => $outletMap['Koperasi Pesantren'],
+                'status' => true,
+                'created_by' => $adminId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
 
         DB::table('detail_user_outlet')->insert($detailUserOutlet);
 
