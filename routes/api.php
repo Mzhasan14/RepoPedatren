@@ -7,6 +7,7 @@ use App\Http\Controllers\api\PDF\PDFController;
 use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\api\Auth\UserController;
+use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\keluarga\WaliController;
 use App\Http\Controllers\api\wilayah\KamarController;
@@ -1093,3 +1094,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/saldo/topup', [SaldoController::class, 'topup']);
     Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
 });
+
+Route::get('dashboard', [DashboardController::class, 'total']);

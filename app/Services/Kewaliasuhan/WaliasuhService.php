@@ -50,6 +50,7 @@ class WaliasuhService
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('ws.status', true)
+            ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('ws.deleted_at'))
             ->select([
                 's.biodata_id',
                 'ws.id',

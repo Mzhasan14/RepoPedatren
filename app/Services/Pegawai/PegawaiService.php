@@ -76,7 +76,8 @@ class PegawaiService
             })
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->where('pegawai.status_aktif','aktif');
+            ->where('pegawai.status_aktif','aktif')
+            ->whereNull('pegawai.deleted_at');
 
         return $query;
     }
