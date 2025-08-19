@@ -16,7 +16,7 @@ class OutletController extends Controller
 {
     public function index()
     {
-        $data = Outlet::with('kategori')->paginate(25);
+        $data = Outlet::with('kategori')->get();
 
         return response()->json([
             'status'  => true,
