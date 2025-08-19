@@ -500,12 +500,8 @@ Route::prefix('formulir')
             Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
 
             // Catatan
-            Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
-            Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
             Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
 
-            Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
-            Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
             Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
 
             // Keluarga
@@ -668,6 +664,14 @@ Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatata
     ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
 Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore'])
     ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
+Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store'])
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update'])
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update'])
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store'])
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 
 Route::prefix('crud')
     ->middleware(['auth:sanctum', 'throttle:120,1'])
