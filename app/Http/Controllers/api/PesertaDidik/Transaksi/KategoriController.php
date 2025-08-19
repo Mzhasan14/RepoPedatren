@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\PesertaDidik\Transaksi\StoreKategoriRequest;
 use App\Http\Requests\PesertaDidik\Transaksi\UpdateKategoriRequest;
+use App\Models\DetailUserOutlet;
 
 class KategoriController extends Controller
 {
@@ -92,5 +94,24 @@ class KategoriController extends Controller
                 'message' => 'Gagal menghapus kategori'
             ], 500);
         }
+    }
+
+    public function kategoriById()
+    {
+        $userId = Auth::id();
+
+        $kategori = DB::table('detail_user_outlet')
+            ->join('outlets', 'detail_user_outlet.outlet_id', '=', 'outlets.id')
+            ->join('outlet_kategori', 'outlet_kategori.outlet_id', '=', 'outlets.id')
+            ->join('kategori', 'outlet_kategori.kategori_id', '=', 'kategori.id')
+            ->where('detail_user_outlet.user_id', $userId)
+            ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar kategori berhasil diambil',
+            'data' => $kategori
+        ]);
     }
 }

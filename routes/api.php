@@ -1025,6 +1025,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('kategori', [KategoriController::class, 'index']);
         Route::get('kategori/{kategori}', [KategoriController::class, 'show']);
+        Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById']);
 
         Route::get('detail-user-outlet', [DetailUserOutletController::class, 'index']);
         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);

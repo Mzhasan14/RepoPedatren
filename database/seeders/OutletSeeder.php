@@ -109,7 +109,7 @@ class OutletSeeder extends Seeder
 
         // pastikan user id 9 = outlet Koperasi Pesantren
         $detailUserOutlet[] = [
-            'user_id' => 9,
+            'user_id' => 10,
             'outlet_id' => $outletMap['Koperasi Pesantren'],
             'status' => true,
             'created_by' => $adminId,
