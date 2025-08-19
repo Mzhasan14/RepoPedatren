@@ -34,7 +34,8 @@ class PengunjungMahromService
                 'bl.nama_blok',
                 'km.nama_kamar',
                 'pm.jumlah_rombongan',
-                'pm.tanggal_kunjungan'
+                'pm.tanggal_kunjungan',
+                'pm.status as status_selesai'
             );
     }
 
@@ -52,6 +53,7 @@ class PengunjungMahromService
             'jurusan' => $item->nama_jurusan ?? '-',
             'jumlah_rombongan' => $item->jumlah_rombongan ?? '-',
             'tanggal_kunjungan' => $item->tanggal_kunjungan ?? '-',
+            'status_selesai' => $item->status_selesai ?? '-',
         ]);
     }
 
