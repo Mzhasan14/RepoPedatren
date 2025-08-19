@@ -130,7 +130,7 @@ return new class extends Migration
         Schema::create('virtual_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-            $table->string('bank_code', 10);
+            $table->foreignId('bank_id')->constrained('banks')->restrictOnDelete();
             $table->string('va_number', 30)->unique();
             $table->boolean('status')->default(true);
 

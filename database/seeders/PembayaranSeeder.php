@@ -39,7 +39,7 @@ class PembayaranSeeder extends Seeder
         DB::table('virtual_accounts')->insert([
             [
                 'santri_id' => 1,
-                'bank_code' => 'BJTM',
+                'bank_id' => 1,
                 'va_number' => '9001234567891',
                 'status' => true,
                 'created_by' => 1,
@@ -48,7 +48,7 @@ class PembayaranSeeder extends Seeder
             ],
             [
                 'santri_id' => 2,
-                'bank_code' => 'BNI',
+                'bank_id' => 2,
                 'va_number' => '9881234567892',
                 'status' => true,
                 'created_by' => 1,

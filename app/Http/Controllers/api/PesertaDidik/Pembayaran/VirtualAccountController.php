@@ -29,7 +29,7 @@ class VirtualAccountController extends Controller
         try {
             $data = VirtualAccount::create([
                 'santri_id'  => $request->santri_id,
-                'bank_code'  => $request->bank_code,
+                'bank_id'  => $request->bank_id,
                 'va_number'  => $request->va_number,
                 'status'     => $request->status ?? true,
                 'created_by' => Auth::id(),
@@ -62,7 +62,7 @@ class VirtualAccountController extends Controller
             $data = VirtualAccount::findOrFail($id);
             $data->update([
                 'santri_id'  => $request->santri_id,
-                'bank_code'  => $request->bank_code,
+                'bank_id'  => $request->bank_id,
                 'va_number'  => $request->va_number,
                 'status'     => $request->status ?? $data->status,
                 'updated_by' => Auth::id(),

@@ -20,7 +20,7 @@ class VirtualAccountRequest extends FormRequest
     {
         return [
             'santri_id' => 'required|exists:santri,id',
-            'bank_code' => 'required|string|max:10',
+            'bank_id' => 'required|exists:banks,id',
             'va_number' => 'required|string|max:30|unique:virtual_accounts,va_number,' . $this->id,
             'status'    => 'boolean',
         ];
