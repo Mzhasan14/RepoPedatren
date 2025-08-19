@@ -25,7 +25,6 @@ class TransaksiRequest extends FormRequest
     {
         return [
             'uid_kartu' => 'required|string|max:50',
-            'outlet_id' => 'required|integer|exists:outlets,id',
             'kategori_id' => 'required|integer|exists:kategori,id',
             'total_bayar' => 'required|numeric|min:0.01',
             'pin' => 'nullable|string'
