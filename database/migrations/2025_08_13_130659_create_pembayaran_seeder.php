@@ -162,8 +162,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+
             $table->decimal('nominal', 15, 2);
+            $table->decimal('sisa', 15, 2)->default(0);
             $table->enum('status', ['pending', 'lunas', 'sebagian'])->default('pending');
+
+            $table->date('tanggal_jatuh_tempo')->nullable();
+            $table->dateTime('tanggal_bayar')->nullable();
+            $table->string('keterangan')->nullable();
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
@@ -173,6 +179,8 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->unique(['tagihan_id', 'santri_id']);
+            $table->index('status');
+            $table->index('santri_id');
         });
 
         /**
@@ -180,7 +188,7 @@ return new class extends Migration
          */
         Schema::create('pembayaran', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
+            $table->foreignId('tagihan_santri_id')->constrained('tagihan_santri')->cascadeOnDelete();
             $table->foreignId('virtual_account_id')->nullable()->constrained('virtual_accounts')->nullOnDelete();
             $table->enum('metode', ['VA', 'CASH', 'SALDO', 'TRANSFER']);
             $table->decimal('jumlah_bayar', 15, 2);
