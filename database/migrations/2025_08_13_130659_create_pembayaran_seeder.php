@@ -40,7 +40,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['user_id', 'outlet_id']); // 1 user bisa di banyak outlet, tapi unik per outlet
+            $table->unique(['user_id']); // 1 user bisa di banyak outlet, tapi unik per outlet
         });
 
         /**

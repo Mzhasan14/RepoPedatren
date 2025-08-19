@@ -79,11 +79,26 @@ class TransaksiService
     /**
      * Buat transaksi: deduct saldo & simpan transaksi
      */
-    public function createTransaction(string $uid, int $outletId, int $kategoriId, float $totalBayar, ?string $pin): array
+    public function createTransaction(string $uid, int $kategoriId, float $totalBayar, ?string $pin): array
     {
         DB::beginTransaction();
         try {
-            $kartu = Kartu::with('santri')->where('uid_kartu', $uid)->first();
+            $userId = Auth::id();
+
+            // Ambil outlet aktif dari user yang login
+            $userOutlet = DetailUserOutlet::where('user_id', $userId)
+                ->where('status', true)
+                ->whereNull('deleted_at')
+                ->first();
+
+            if (!$userOutlet) {
+                return $this->fail('Anda tidak terhubung ke outlet manapun atau outlet tidak aktif.', 403);
+            }
+
+            $outletId = $userOutlet->outlet_id;
+
+            // Validasi kartu
+            $kartu = Kartu::with('santri.biodata')->where('uid_kartu', $uid)->first();
             if (!$kartu) return $this->fail('Kartu tidak ditemukan.', 404);
             if (!$kartu->aktif) return $this->fail('Kartu tidak aktif.', 403);
             if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast())
@@ -94,16 +109,11 @@ class TransaksiService
             $santri = $kartu->santri;
             if (!$santri) return $this->fail('Data santri tidak ditemukan.', 404);
 
+            // Validasi outlet
             $outlet = Outlet::withoutTrashed()->find($outletId);
             if (!$outlet || !$outlet->status) return $this->fail('Outlet tidak ditemukan atau tidak aktif.', 404);
 
-            $userOutlet = DetailUserOutlet::where('user_id', Auth::id())
-                ->where('outlet_id', $outletId)
-                ->where('status', true)
-                ->whereNull('deleted_at')
-                ->first();
-            if (!$userOutlet) return $this->fail('Anda tidak memiliki akses ke outlet ini.', 403);
-
+            // Validasi kategori
             $kategori = Kategori::withoutTrashed()->find($kategoriId);
             if (!$kategori || !$kategori->status) return $this->fail('Kategori tidak ditemukan atau tidak aktif.', 404);
 
@@ -112,15 +122,17 @@ class TransaksiService
                 ->where('kategori_id', $kategoriId)
                 ->where('status', true)
                 ->exists();
+
             if (!$outletHasKategori) return $this->fail('Kategori tidak tersedia di outlet ini.', 422);
 
+            // Lock saldo
             $saldo = Saldo::where('santri_id', $santri->id)->lockForUpdate()->first();
             if (!$saldo) return $this->fail('Saldo santri tidak ditemukan.', 404);
             if (bccomp($saldo->saldo, $totalBayar, 2) < 0) return $this->fail('Saldo tidak cukup.', 402);
 
-            // Kurangi saldo
+            // Update saldo
             $saldo->saldo = bcsub($saldo->saldo, $totalBayar, 2);
-            $saldo->updated_by = Auth::id();
+            $saldo->updated_by = $userId;
             $saldo->save();
 
             // Buat transaksi utama
@@ -131,7 +143,7 @@ class TransaksiService
                 'user_outlet_id' => $userOutlet->id,
                 'total_bayar' => $totalBayar,
                 'tanggal' => Carbon::now(),
-                'created_by' => Auth::id(),
+                'created_by' => $userId,
             ]);
 
             // Rekap ke transaksi_saldo
@@ -142,13 +154,13 @@ class TransaksiService
                 'user_outlet_id' => $userOutlet->id,
                 'tipe' => 'debit',
                 'jumlah' => $totalBayar,
-                'created_by' => Auth::id(),
-                'updated_by' => Auth::id(),
+                'created_by' => $userId,
+                'updated_by' => $userId,
             ]);
 
             activity('transaksi')
                 ->causedBy(Auth::user())
-                ->performedOn(new Transaksi(['id' => $transaksi->id]))
+                ->performedOn($transaksi)
                 ->withProperties([
                     'uid_kartu' => $uid,
                     'santri_id' => $santri->id,
@@ -180,7 +192,6 @@ class TransaksiService
             Log::error('CreateTransaction error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'uid' => $uid,
-                'outlet_id' => $outletId,
                 'kategori_id' => $kategoriId,
                 'user_id' => Auth::id() ?? null
             ]);
@@ -191,6 +202,7 @@ class TransaksiService
             ];
         }
     }
+
 
     /**
      * List transaksi sesuai role user

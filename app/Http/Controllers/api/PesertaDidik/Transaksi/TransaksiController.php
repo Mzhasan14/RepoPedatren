@@ -48,7 +48,6 @@ class TransaksiController extends Controller
 
         $result = $this->service->createTransaction(
             $data['uid_kartu'],
-            $data['outlet_id'],
             $data['kategori_id'],
             $data['total_bayar'],
             $data['pin'] ?? null

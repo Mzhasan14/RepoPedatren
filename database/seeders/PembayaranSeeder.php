@@ -131,7 +131,7 @@ class PembayaranSeeder extends Seeder
          */
         DB::table('pembayaran')->insert([
             [
-                'tagihan_id' => 1,
+                'tagihan_santri_id' => 1,
                 'virtual_account_id' => 1,
                 'metode' => 'VA',
                 'jumlah_bayar' => 350000,
@@ -143,8 +143,8 @@ class PembayaranSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'tagihan_id' => 2,
-                'virtual_account_id' => null,
+                'tagihan_santri_id' => 2,
+                'virtual_account_id' => 2,
                 'metode' => 'CASH',
                 'jumlah_bayar' => 500000,
                 'tanggal_bayar' => now(),
