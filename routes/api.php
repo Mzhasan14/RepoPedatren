@@ -665,7 +665,7 @@ Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatata
 Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore'])
     ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
 Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']); 
 Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update'])
     ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update'])
