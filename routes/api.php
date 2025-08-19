@@ -665,7 +665,9 @@ Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'ge
 Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif'])
     ->middleware(['auth:sanctum', 'role:waliasuh|superadmin|supervisor', 'throttle:200,1']);
 Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif'])
-    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);;
+    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
+Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore'])
+    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
 
 Route::prefix('crud')
     ->middleware(['auth:sanctum', 'throttle:120,1'])
@@ -830,8 +832,6 @@ Route::prefix('crud')
 
             // Kepegawaian
             Route::post('/pegawai', [PegawaiController::class, 'store']);
-            Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
-
             // Jam Pelajaran
             Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
             Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
