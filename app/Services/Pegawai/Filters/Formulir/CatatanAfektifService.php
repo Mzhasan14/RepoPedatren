@@ -90,71 +90,61 @@ class CatatanAfektifService
             ->value('id');
 
         $afektif = Catatan_afektif::with([
-            'waliAsuh.santri.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
-            'creator.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
+            'waliAsuh.santri.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
+            'creator.biodata.berkas' => fn($q) => $q
+                ->where('jenis_berkas_id', $pasFotoId)
+                ->latest('id')
+                ->limit(1),
             'creator.roles'
-        ])
-            ->select(
-                'id',
-                'id_wali_asuh',
-                'kepedulian_nilai',
-                'kepedulian_tindak_lanjut',
-                'kebersihan_nilai',
-                'kebersihan_tindak_lanjut',
-                'akhlak_nilai',
-                'akhlak_tindak_lanjut',
-                'tanggal_buat',
-                'tanggal_selesai',
-                'status',
-                'created_by'
-            )
-            ->find($id);
+        ])->find($id);
 
-        if (! $afektif) {
+        if (!$afektif) {
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
-        // Cek apakah creator superadmin
-        $isSuperAdmin = optional($afektif->creator?->roles)->contains('name', 'superadmin');
+        $isSuperAdmin = $afektif->creator?->hasRole('superadmin');
 
         if ($isSuperAdmin) {
-            // Pencatat: Superadmin
-            $pencatatBiodata = optional($afektif->creator->biodata);
+            // Pencatat = superadmin → ambil dari biodata user
+            $pencatatBiodata = $afektif->creator?->biodata?->first();
             $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
             $namaPencatat = $pencatatBiodata?->nama ?? $afektif->creator?->name ?? 'Super Admin';
             $status = 'Superadmin';
         } elseif (!empty($afektif->id_wali_asuh) && $afektif->waliAsuh) {
-            // Pencatat: Wali Asuh
-            $pencatatBiodata = optional($afektif->waliAsuh->santri->biodata);
+            // Pencatat = wali asuh → santri → biodata
+            $pencatatBiodata = $afektif->waliAsuh?->santri?->biodata;
             $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
             $namaPencatat = $pencatatBiodata?->nama ?? '-';
             $status = 'Wali Asuh';
         } else {
-            $pencatatBiodata = null;
+            // fallback
             $fotoPath = 'default.jpg';
             $namaPencatat = '-';
             $status = 'Tidak diketahui';
         }
 
-        return [
-            'status' => true,
-            'data' => [
-                'id' => $afektif->id,
-                'kepedulian_nilai' => $afektif->kepedulian_nilai,
-                'kepedulian_tindak_lanjut' => $afektif->kepedulian_tindak_lanjut,
-                'kebersihan_nilai' => $afektif->kebersihan_nilai,
-                'kebersihan_tindak_lanjut' => $afektif->kebersihan_tindak_lanjut,
-                'akhlak_nilai' => $afektif->akhlak_nilai,
-                'akhlak_tindak_lanjut' => $afektif->akhlak_tindak_lanjut,
-                'tanggal_buat' => $afektif->tanggal_buat,
-                'tanggal_selesai' => $afektif->tanggal_selesai,
-                'foto_pencatat' => url($fotoPath),
-                'nama_pencatat' => $namaPencatat,
-                'status' => $status,
-                'status_aktif' => (bool) $afektif->status,
-            ]
+        $data = [
+            'id' => $afektif->id,
+            'kepedulian_nilai' => $afektif->kepedulian_nilai,
+            'kepedulian_tindak_lanjut' => $afektif->kepedulian_tindak_lanjut,
+            'kebersihan_nilai' => $afektif->kebersihan_nilai,
+            'kebersihan_tindak_lanjut' => $afektif->kebersihan_tindak_lanjut,
+            'akhlak_nilai' => $afektif->akhlak_nilai,
+            'akhlak_tindak_lanjut' => $afektif->akhlak_tindak_lanjut,
+            'tanggal_buat' => $afektif->tanggal_buat,
+            'tanggal_selesai' => $afektif->tanggal_selesai,
+            'foto_pencatat' => url($fotoPath),
+            'nama_pencatat' => $namaPencatat,
+            'status' => $status,
+            'status_aktif' => (bool) $afektif->status,
         ];
+
+        return ['status' => true, 'data' => $data];
     }
+
 
     public function Listshow($id): array
     {
