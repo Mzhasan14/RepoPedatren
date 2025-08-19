@@ -64,6 +64,7 @@ class LogPresensiSeeder extends Seeder
         $santriAll = DB::table('santri')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
+            ->where('santri.status', 'aktif')
             ->select(
                 'santri.id as santri_id',
                 'biodata.nama',
