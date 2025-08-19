@@ -20,7 +20,7 @@ class FilterPegawaiService
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
          
-        $query = $this->applyStatusFilter($query, $request);
+        // $query = $this->applyStatusFilter($query, $request);
 
         return $query;
     }
@@ -91,58 +91,58 @@ class FilterPegawaiService
 
         return $query;
     }
-    private function applyEntitasPegawaiFilter(Builder $query, Request $request): Builder
-    {
-        if ($request->filled('entitas')) {
-            $entitas = strtolower($request->entitas);
-
-            switch ($entitas) {
-                case 'pengajar':
-                    $query->whereNotNull('pengajar.id');
-                    break;
-                case 'pengurus':
-                    $query->whereNotNull('pengurus.id');
-                    break;
-                case 'karyawan':
-                    $query->whereNotNull('karyawan.id');
-                    break;
-                case 'wali kelas':
-                    $query->whereNotNull('wali_kelas.id');
-                    break;
-            }
-        }
-
-        return $query;
-    }
     // private function applyEntitasPegawaiFilter(Builder $query, Request $request): Builder
     // {
     //     if ($request->filled('entitas')) {
     //         $entitas = strtolower($request->entitas);
 
-    //         if ($entitas == 'pengajar') {
-    //             $query->whereNotNull('pengajar.id');
-    //         } elseif ($entitas == 'pengurus') {
-    //             $query->whereNotNull('pengurus.id');
-    //         } elseif ($entitas == 'karyawan') {
-    //             $query->whereNotNull('karyawan.id');
-    //         } elseif ($entitas == 'pengajar pengurus') {
-    //             $query->whereNotNull('pengajar.id')
-    //                 ->WhereNotNull('pengurus.id');
-    //         } elseif ($entitas == 'pengajar karyawan') {
-    //             $query->whereNotNull('pengajar.id')
-    //                 ->WhereNotNull('karyawan.id');
-    //         } elseif ($entitas == 'pengurus karyawan') {
-    //             $query->whereNotNull('pengurus.id')
-    //                 ->WhereNotNull('karyawan.id');
-    //         } elseif ($entitas == 'pengajar pengurus karyawan') {
-    //             $query->whereNotNull('pengajar.id')
-    //                 ->WhereNotNull('pengurus.id')
-    //                 ->WhereNotNull('karyawan.id');
+    //         switch ($entitas) {
+    //             case 'pengajar':
+    //                 $query->whereNotNull('pengajar.id');
+    //                 break;
+    //             case 'pengurus':
+    //                 $query->whereNotNull('pengurus.id');
+    //                 break;
+    //             case 'karyawan':
+    //                 $query->whereNotNull('karyawan.id');
+    //                 break;
+    //             case 'wali kelas':
+    //                 $query->whereNotNull('wali_kelas.id');
+    //                 break;
     //         }
     //     }
 
     //     return $query;
     // }
+    private function applyEntitasPegawaiFilter(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('entitas')) {
+            $entitas = strtolower($request->entitas);
+
+            if ($entitas == 'pengajar') {
+                $query->whereNotNull('pengajar.id');
+            } elseif ($entitas == 'pengurus') {
+                $query->whereNotNull('pengurus.id');
+            } elseif ($entitas == 'karyawan') {
+                $query->whereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengajar pengurus') {
+                $query->whereNotNull('pengajar.id')
+                    ->WhereNotNull('pengurus.id');
+            } elseif ($entitas == 'pengajar karyawan') {
+                $query->whereNotNull('pengajar.id')
+                    ->WhereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengurus karyawan') {
+                $query->whereNotNull('pengurus.id')
+                    ->WhereNotNull('karyawan.id');
+            } elseif ($entitas == 'pengajar pengurus karyawan') {
+                $query->whereNotNull('pengajar.id')
+                    ->WhereNotNull('pengurus.id')
+                    ->WhereNotNull('karyawan.id');
+            }
+        }
+
+        return $query;
+    }
 
     private function applyWargaPesantrenFilter(Builder $query, Request $request): Builder
     {
@@ -302,22 +302,22 @@ class FilterPegawaiService
 
         return $query;
     }
-    private function applyStatusFilter(Builder $query, Request $request): Builder
-    {
-        if ($request->filled('status')) {
-            $status = $request->get('status');
+    // private function applyStatusFilter(Builder $query, Request $request): Builder
+    // {
+    //     if ($request->filled('status')) {
+    //         $status = $request->get('status');
 
-            if ($status === 'aktif') {
-                $query->where('pegawai.status_aktif', '=', 'aktif');
-            } elseif ($status === 'tidak_aktif') {
-                $query->where('pegawai.status_aktif', '=', 'tidak aktif');
-            }
-        } else {
-            // Jika tidak ada filter status, default filter ke 'aktif'
-            $query->where('pegawai.status_aktif', '=', 'aktif');
-        }
+    //         if ($status === 'aktif') {
+    //             $query->where('pegawai.status_aktif', '=', 'aktif');
+    //         } elseif ($status === 'tidak_aktif') {
+    //             $query->where('pegawai.status_aktif', '=', 'tidak aktif');
+    //         }
+    //     } else {
+    //         // Jika tidak ada filter status, default filter ke 'aktif'
+    //         $query->where('pegawai.status_aktif', '=', 'aktif');
+    //     }
 
-        return $query;
-    }
+    //     return $query;
+    // }
 
 }

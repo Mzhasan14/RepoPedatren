@@ -61,21 +61,22 @@ class PegawaiService
 
         $query = DB::table('pegawai')
             ->join('biodata as b', 'b.id', 'pegawai.biodata_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($pengajarAktif, 'pa', fn ($j) => $j->on('pegawai.id', '=', 'pa.pegawai_id'))
+            ->leftJoinSub($pengajarAktif, 'pa', fn($j) => $j->on('pegawai.id', '=', 'pa.pegawai_id'))
             ->leftJoin('pengajar', 'pengajar.id', '=', 'pa.id')
-            ->leftJoinSub($karyawanAktif, 'ka', fn ($j) => $j->on('pegawai.id', '=', 'ka.pegawai_id'))
+            ->leftJoinSub($karyawanAktif, 'ka', fn($j) => $j->on('pegawai.id', '=', 'ka.pegawai_id'))
             ->leftJoin('karyawan', 'karyawan.id', '=', 'ka.id')
-            ->leftJoinSub($pengurusAktif, 'pg', fn ($j) => $j->on('pegawai.id', '=', 'pg.pegawai_id'))
+            ->leftJoinSub($pengurusAktif, 'pg', fn($j) => $j->on('pegawai.id', '=', 'pg.pegawai_id'))
             ->leftJoin('pengurus', 'pengurus.id', '=', 'pg.id')
             ->leftJoin('wali_kelas', function ($join) {
                 $join->on('pegawai.id', '=', 'wali_kelas.pegawai_id')
                     ->where('wali_kelas.status_aktif', 'aktif')
                     ->whereNull('wali_kelas.periode_akhir');
             })
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id');
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
+            ->where('pegawai.status_aktif','aktif');
 
         return $query;
     }
@@ -116,7 +117,7 @@ class PegawaiService
                 )
                 ->distinct();
         } catch (\Exception $e) {
-            Log::error('Error fetching data pegawai: '.$e->getMessage());
+            Log::error('Error fetching data pegawai: ' . $e->getMessage());
 
             return response()->json([
                 'status' => 'error',
@@ -128,15 +129,15 @@ class PegawaiService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_uuid,
             'nama' => $item->nama,
             'nik_or_passport' => $item->identitas ?? '-',
             'jenis_kelamin' => $item->jenis_kelamin,
             'status' => $item->status,
             'foto_profil' => $item->foto_profil
-            ? asset($item->foto_profil)
-            : null,
+                ? asset($item->foto_profil)
+                : null,
             'status_aktif' => $item->status_aktif,
         ]);
     }
@@ -148,8 +149,9 @@ class PegawaiService
         try {
             $isExisting = false;
             $resultData = [];
+            $pegawai = null;
 
-            // --- Validasi jika paspor diisi, maka negara bukan Indonesia ---
+            // --- Validasi Paspor & Negara ---
             if (! empty($input['passport'])) {
                 if (empty($input['negara_id'])) {
                     throw ValidationException::withMessages([
@@ -188,7 +190,7 @@ class PegawaiService
                 }
             }
 
-            // --- Cek biodata existing ---
+            // --- Cek Biodata Existing ---
             $existingBiodata = null;
             if (!empty($input['nik'])) {
                 $existingBiodata = Biodata::where('nik', $input['nik'])->first();
@@ -227,21 +229,20 @@ class PegawaiService
                     ];
                 }
 
-                // Cek pegawai nonaktif
                 $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)
                     ->where('status_aktif', 'tidak aktif')
-                    ->latest()
+                    ->orderBy('id', 'desc') 
                     ->first();
 
                 if ($pegawaiNonaktif) {
-                    // Aktifkan kembali pegawai
+                    // Aktifkan kembali pegawai lama
                     $pegawaiNonaktif->update(['status_aktif' => 'aktif']);
 
                     // Nonaktifkan semua role aktif
                     $roleTables = [
-                        'karyawan' => Karyawan::class,
-                        'pengajar' => Pengajar::class,
-                        'pengurus' => Pengurus::class,
+                        'karyawan'   => Karyawan::class,
+                        'pengajar'   => Pengajar::class,
+                        'pengurus'   => Pengurus::class,
                         'wali_kelas' => WaliKelas::class,
                     ];
 
@@ -283,19 +284,20 @@ class PegawaiService
                         }
                     }
 
-                    // Commit perubahan sebelum return
-                    DB::commit();
-
-                    return [
-                        'status' => false,
-                        'message' => "Pegawai atas nama {$existingBiodata->nama} sudah terdaftar sebagai pegawai. Silakan periksa kembali di menu Pegawai.",
-                        'data' => ['pegawai' => $pegawaiNonaktif],
-                    ];
+                    // gunakan pegawai lama
+                    $pegawai = $pegawaiNonaktif;
+                    $biodata = $existingBiodata;
+                } else {
+                    // belum pernah jadi pegawai → buat pegawai baru
+                    $pegawai = Pegawai::create([
+                        'biodata_id'   => $existingBiodata->id,
+                        'status_aktif' => 'aktif',
+                        'created_by'   => Auth::id(),
+                    ]);
+                    $biodata = $existingBiodata;
                 }
-
-                $biodata = $existingBiodata;
             } else {
-                // Buat data biodata baru
+                // --- Biodata Baru ---
                 $biodata = Biodata::create([
                     'id' => Str::uuid(),
                     'negara_id' => $input['negara_id'],
@@ -323,6 +325,13 @@ class PegawaiService
                     'wafat' => $input['wafat'],
                     'created_by' => Auth::id(),
                     'created_at' => now(),
+                ]);
+
+                // Buat pegawai baru SEKALIGUS di sini
+                $pegawai = Pegawai::create([
+                    'biodata_id'   => $biodata->id,
+                    'status_aktif' => 'aktif',
+                    'created_by'   => Auth::id(),
                 ]);
             }
 
@@ -378,13 +387,6 @@ class PegawaiService
                     ]);
                 }
             }
-
-            // Buat pegawai baru
-            $pegawai = Pegawai::create([
-                'biodata_id' => $biodata->id,
-                'status_aktif' => 'aktif',
-                'created_by' => Auth::id(),
-            ]);
 
             $hasRole =
                 !empty($input['karyawan']) ||
@@ -485,7 +487,6 @@ class PegawaiService
                     : 'Pegawai baru berhasil ditambahkan.',
                 'data' => array_merge(['pegawai' => $pegawai], $resultData),
             ];
-
         } catch (ValidationException $e) {
             DB::rollBack();
             throw $e;
