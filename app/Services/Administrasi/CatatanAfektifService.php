@@ -83,7 +83,7 @@ class CatatanAfektifService
             })
             ->leftJoin('berkas as FotoSuperAdmin', 'FotoSuperAdmin.id', '=', 'fotoLastSuperAdmin.last_id')
 
-            ->orderBy('catatan_afektif.id', 'asc')
+            // ->orderBy('catatan_afektif.id', 'asc')
             ->orderBy('catatan_afektif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh

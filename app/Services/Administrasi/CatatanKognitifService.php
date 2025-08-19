@@ -82,7 +82,7 @@ class CatatanKognitifService
                 $join->on('bsc.id', '=', 'fotoLastSuperAdmin.biodata_id');
             })
             ->leftJoin('berkas as FotoSuperAdmin', 'FotoSuperAdmin.id', '=', 'fotoLastSuperAdmin.last_id')
-            ->orderBy('catatan_kognitif.id', 'asc')
+            // ->orderBy('catatan_kognitif.id', 'asc')
             ->orderBy('catatan_kognitif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh
