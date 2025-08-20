@@ -44,13 +44,14 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'user' => new UserResource($user),
-            'token' => $token,
-            'outlet' => $result['outlet'] ?? false,
+            'success'   => true,
+            'message'   => $result['message'],
+            'user'      => new UserResource($user),
+            'token'     => $token,
+            'outlet_id' => $result['outlet_id'],
         ], $result['status']);
     }
+
 
     public function logout(): JsonResponse
     {

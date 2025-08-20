@@ -122,4 +122,6 @@ class SantriController extends Controller
 
         return Excel::download(new BaseExport($formatted, $headings), $filename);
     }
+
+ 
 }
