@@ -18,7 +18,7 @@ class TagihanRequest extends FormRequest
         return [
             'kode_tagihan' => 'required|string|max:50|unique:tagihan,kode_tagihan,' . $this->id,
             'nama_tagihan' => 'required|string|max:150',
-            
+            'tipe'         => 'required|string|in:bulanan,semester,tahunan,sekali_bayar',
             'nominal'      => 'required|numeric|min:0',
             'jatuh_tempo'  => 'nullable|date',
             'status'       => 'boolean',
