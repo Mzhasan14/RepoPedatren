@@ -25,6 +25,7 @@ class VirtualAccountController extends Controller
                     'va.va_number',
                     'b.nama',
                     's.nis',
+                    's.id as santri_id',
                     'va.status',
                     'va.created_at'
                 )
@@ -71,6 +72,7 @@ class VirtualAccountController extends Controller
                     'va.va_number',
                     'b.nama',
                     's.nis',
+                    's.id as santri_id',
                     'va.status',
                     'va.created_at'
                 )->findOrFail($id);
