@@ -22,35 +22,37 @@ class TransaksiService
     /**
      * Scan kartu -> mengembalikan data santri & saldo
      */
-    public function scanCard(string $uid, ?string $pin): array
+    public function scanCard(string $metode, string $santriId, ?string $pin): array
     {
         try {
-            $kartu = Kartu::with('santri.biodata')
-                ->where('uid_kartu', $uid)
-                ->first();
 
-            if (!$kartu) {
-                return ['success' => false, 'message' => 'Kartu tidak ditemukan.', 'status' => 404];
+            if ($metode == 'scan') {
+                $kartu = Kartu::with('santri.biodata')
+                    ->where('kartu.santri_id', $santriId)
+                    ->first();
+
+                if (!$kartu) {
+                    return ['success' => false, 'message' => 'Kartu tidak ditemukan.', 'status' => 404];
+                }
+                if (!$kartu->aktif) {
+                    return ['success' => false, 'message' => 'Kartu tidak aktif.', 'status' => 403];
+                }
+
+                if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast()) {
+                    return ['success' => false, 'message' => 'Kartu kadaluarsa.', 'status' => 403];
+                }
+
+                if ($kartu->pin && !Hash::check($pin, $kartu->pin)) {
+                    return ['success' => false, 'message' => 'PIN salah.', 'status' => 401];
+                }
             }
-
-            if (!$kartu->aktif) {
-                return ['success' => false, 'message' => 'Kartu tidak aktif.', 'status' => 403];
-            }
-
-            if ($kartu->tanggal_expired && Carbon::parse($kartu->tanggal_expired)->isPast()) {
-                return ['success' => false, 'message' => 'Kartu kadaluarsa.', 'status' => 403];
-            }
-
-            if ($kartu->pin && !Hash::check($pin, $kartu->pin)) {
-                return ['success' => false, 'message' => 'PIN salah.', 'status' => 401];
-            }
-
-            $santri = $kartu->santri;
+            $santri = Santri::join('biodata as b', 'b.id', 'santri.biodata_id')->where('santri.id', $santriId)->select('santri.id', 'santri.nis', 'b.nama as nama')->first();
+            
             if (!$santri) {
                 return ['success' => false, 'message' => 'Data santri tidak ditemukan.', 'status' => 404];
             }
 
-            $saldo = Saldo::where('santri_id', $santri->id)->first();
+            $saldo = Saldo::where('santri_id', $santriId)->first();
 
             return [
                 'success' => true,
@@ -64,7 +66,7 @@ class TransaksiService
                     ],
                     'santri' => [
                         'id' => $santri->id,
-                        'nama' => $santri->biodata->nama ?? null,
+                        'nama' => $santri->nama ?? null,
                         'nis' => $santri->nis ?? null,
                     ],
                     'saldo' => $saldo ? (float)$saldo->saldo : 0.00

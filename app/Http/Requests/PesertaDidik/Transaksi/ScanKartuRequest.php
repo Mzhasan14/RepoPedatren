@@ -24,8 +24,9 @@ class ScanKartuRequest extends FormRequest
     public function rules()
     {
         return [
-            'uid_kartu' => 'required|string|max:50',
-            'pin' => 'nullable|string' // bila butuh verifikasi pin
+            'metode' => 'required|in:scan,manual',
+            'santri_id' => 'required|exists:santri,id',
+            'pin' => 'nullable|string|min:4|max:6' 
         ];
     }
 

@@ -22,7 +22,7 @@ class SaldoRequest extends FormRequest
             'metode' => 'required|in:scan,manual',
             'santri_id' => 'required|exists:santri,id',
             'jumlah'    => 'required|numeric|min:1000',
-            'pin'       => 'required|string|min:4|max:6',
+            'pin'       => 'nullable|string|min:4|max:6',
         ];
     }
 
