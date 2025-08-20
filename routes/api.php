@@ -101,6 +101,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('delete/{user}', [UserController::class, 'destroy']);
 });
 
+
+
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle:200,1'])->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
@@ -108,6 +110,9 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/pesertadidik-bersaudara/{id}', [DetailController::class, 'getDetail']);
     Route::get('/pesertadidik/{id}', [DetailController::class, 'getDetail']);
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
+
+    Route::get('/santri-non-anakasuh', [SantriController::class, 'santriNonAnakAsuh']);
+    
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
     Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
     Route::get('/santri/{id}', [DetailController::class, 'getDetail']);

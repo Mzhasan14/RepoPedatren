@@ -372,60 +372,34 @@ class SantriService
 
     public function santriNonAnakAsuh(Request $request)
     {
-        // Subquery
-        $pasFotoId = DB::table('jenis_berkas')
-            ->where('nama_jenis_berkas', 'Pas foto')
-            ->value('id');
-
-        $fotoLast = DB::table('berkas')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('jenis_berkas_id', $pasFotoId)
-            ->groupBy('biodata_id');
-
-        $wpLast = DB::table('warga_pesantren')
-            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
-            ->where('status', true)
-            ->groupBy('biodata_id');
-
-        $keluargaLast = DB::table('keluarga')
-            ->select('id_biodata', DB::raw('MAX(id) AS last_id'))
-            ->groupBy('id_biodata');
-
         $query = DB::table('santri AS s')
-            ->leftjoin('anak_asuh AS aa', 's.id', '=', 'aa.santri_id')
             ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
-            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
-            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
-            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
-            ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
-            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
-            ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
-            ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
+            ->leftjoin('anak_asuh AS aa', 's.id', '=', 'aa.id_santri')
             ->select([
                 'b.id as biodata_id',
                 's.id',
                 's.nis',
                 'b.nama',
-                'wp.niup',
-                'km.nama_kamar',
-                'bl.nama_blok',
-                'l.nama_lembaga',
                 'w.nama_wilayah',
-                DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
-                'kb.nama_kabupaten AS kota_asal',
-                DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
             ])
             ->where('s.status', 'aktif')
             ->where('b.status', true)
-            ->whereNull('aa.santri_id')
+            ->whereNull('aa.id_santri')
             ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('s.deleted_at'));
 
         return $query;
+    }
+
+    public function formatData2($results)
+    {
+        return collect($results->items())->map(fn($item) => [
+            'biodata_id' => $item->biodata_id,
+            'id' => $item->id,
+            'nis' => $item->nis,
+            'nama' => $item->nama,
+            'wilayah' => $item->nama_wilayah ?? '-',
+        ]);
     }
 }

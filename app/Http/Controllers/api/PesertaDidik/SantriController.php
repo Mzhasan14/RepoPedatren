@@ -61,6 +61,45 @@ class SantriController extends Controller
             'data' => $formatted,
         ]);
     }
+    // Santri Domisili
+    public function santriNonAnakAsuh(Request $request)
+    {
+        try {
+            $query = $this->santriService->santriNonAnakAsuh($request);
+            $query = $this->filterController->santriNonAnakAsuhFilters($query, $request);
+
+            $query = $query->latest('b.created_at');
+
+            $perPage = (int) $request->input('limit', 25);
+            $currentPage = (int) $request->input('page', 1);
+            $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        } catch (\Throwable $e) {
+            Log::error("[SantriController] Error: {$e->getMessage()}");
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan pada server',
+            ], 500);
+        }
+
+        if ($results->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data kosong',
+                'data' => [],
+            ], 200);
+        }
+
+        $formatted = $this->santriService->formatData2($results);
+
+        return response()->json([
+            'total_data' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total_pages' => $results->lastPage(),
+            'data' => $formatted,
+        ]);
+    }
 
     public function exportExcel(Request $request)
     {

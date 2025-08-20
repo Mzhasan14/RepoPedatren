@@ -28,6 +28,14 @@ class FilterSantriService
 
         return $query;
     }
+    public function santriNonAnakAsuhFilters(Builder $query, Request $request): Builder
+    {
+        $query = $this->applyNamaFilter($query, $request);
+        $query = $this->applyWilayahFilter($query, $request);
+        $query = $this->applySorting($query, $request);
+
+        return $query;
+    }
 
     public function applyAlamatFilter(Builder $query, Request $request): Builder
     {
