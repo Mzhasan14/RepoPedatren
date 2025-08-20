@@ -37,6 +37,7 @@ class PresensiJamaahService
             ->where('k.aktif', true)
             ->select(
                 'b.nama as nama_santri',
+                's.id',
                 's.nis',
                 'k.uid_kartu',
                 DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
@@ -52,6 +53,7 @@ class PresensiJamaahService
 
         return [
             'nama_santri' => $santri->nama_santri,
+            'santri_id'   => $santri->id,
             'nis'         => $santri->nis,
             'uid_kartu'   => $santri->uid_kartu,
             'foto_profil' => url($santri->foto_profil)
