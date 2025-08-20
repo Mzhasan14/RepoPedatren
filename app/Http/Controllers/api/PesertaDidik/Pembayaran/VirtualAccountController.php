@@ -15,7 +15,20 @@ class VirtualAccountController extends Controller
     public function index()
     {
         try {
-            $data = VirtualAccount::with('santri')->paginate(25);
+            $data = DB::table('virtual_accounts as va')
+                ->join('banks as ba', 'ba.id', 'va.bank_id')
+                ->join('santri as s', 's.id', '=', 'va.santri_id')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->select(
+                    'va.id',
+                    'ba.nama_bank',
+                    'va.va_number',
+                    'b.nama',
+                    's.nis',
+                    'va.status',
+                    'va.created_at'
+                )
+                ->paginate(25);
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('VA Index Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -47,7 +60,20 @@ class VirtualAccountController extends Controller
     public function show($id)
     {
         try {
-            $data = VirtualAccount::with('santri')->findOrFail($id);
+            $data = DB::table('virtual_accounts as va')
+                ->join('banks as ba', 'ba.id', 'va.bank_id')
+                ->join('santri as s', 's.id', '=', 'va.santri_id')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->select(
+                    'va.id',
+                    'ba.nama_bank',
+                    'ba.kode_bank',
+                    'va.va_number',
+                    'b.nama',
+                    's.nis',
+                    'va.status',
+                    'va.created_at'
+                )->findOrFail($id);
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             Log::error('VA Show Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);

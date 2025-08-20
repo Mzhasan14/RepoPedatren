@@ -6,24 +6,23 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class TagihanRequest extends FormRequest
+class PembayaranRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Atur ke policy jika perlu
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'kode_tagihan' => 'required|string|max:50|unique:tagihan,kode_tagihan,' . $this->id,
-            'nama_tagihan' => 'required|string|max:150',
-            
-            'nominal'      => 'required|numeric|min:0',
-            'jatuh_tempo'  => 'nullable|date',
-            'status'       => 'boolean',
+            'tagihan_santri_id' => 'required|exists:tagihan_santri,id',
+            'metode' => 'required|in:VA,CASH,SALDO,TRANSFER',
+            'jumlah_bayar' => 'required|numeric|min:1',
+            'keterangan' => 'nullable|string',
         ];
     }
+
     public function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
@@ -35,4 +34,5 @@ class TagihanRequest extends FormRequest
 
         throw new HttpResponseException($response);
     }
+    
 }

@@ -64,6 +64,7 @@ class PembayaranSeeder extends Seeder
             [
                 'kode_tagihan' => 'SPP2025JAN',
                 'nama_tagihan' => 'SPP Januari 2025',
+                'tipe' => 'bulanan',
                 'nominal' => 350000,
                 'jatuh_tempo' => '2025-01-10',
                 'status' => true,
@@ -74,6 +75,7 @@ class PembayaranSeeder extends Seeder
             [
                 'kode_tagihan' => 'DAFTARULANG2025',
                 'nama_tagihan' => 'Daftar Ulang Santri 2025/2026',
+                'tipe' => 'tahunan',
                 'nominal' => 1500000,
                 'jatuh_tempo' => '2025-07-15',
                 'status' => true,
@@ -84,10 +86,57 @@ class PembayaranSeeder extends Seeder
             [
                 'kode_tagihan' => 'KITAB2025',
                 'nama_tagihan' => 'Pembelian Kitab Tahun 2025',
+                'tipe' => 'sekali_bayar',
                 'nominal' => 500000,
                 'jatuh_tempo' => '2025-08-30',
                 'status' => true,
                 'created_by' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        /**
+         * TAGIHAN KHUSUS
+         * contoh override untuk santri dengan kondisi khusus
+         */
+        DB::table('tagihan_khusus')->insert([
+            [
+                'tagihan_id' => 1, // SPP Jan
+                'angkatan_id' => null,
+                'lembaga_id' => null,
+                'jurusan_id' => null,
+                'jenis_kelamin' => null,
+                'kategori_santri' => null,
+                'domisili' => null,
+                'kondisi_khusus' => 'anak_pegawai',
+                'nominal' => 250000, // potongan khusus anak pegawai
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'tagihan_id' => 2, // daftar ulang
+                'angkatan_id' => null,
+                'lembaga_id' => null,
+                'jurusan_id' => null,
+                'jenis_kelamin' => null,
+                'kategori_santri' => 'mukim',
+                'domisili' => 'luar_kota',
+                'kondisi_khusus' => null,
+                'nominal' => 1200000, // lebih murah untuk santri mukim luar kota
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'tagihan_id' => 3, // kitab
+                'angkatan_id' => null,
+                'lembaga_id' => null,
+                'jurusan_id' => null,
+                'jenis_kelamin' => 'p',
+                'kategori_santri' => null,
+                'domisili' => null,
+                'kondisi_khusus' => 'beasiswa',
+                'nominal' => 0, // gratis untuk santri beasiswa
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -143,7 +192,7 @@ class PembayaranSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'tagihan_santri_id' => 2,
+                'tagihan_santri_id' => 3,
                 'virtual_account_id' => 2,
                 'metode' => 'CASH',
                 'jumlah_bayar' => 500000,

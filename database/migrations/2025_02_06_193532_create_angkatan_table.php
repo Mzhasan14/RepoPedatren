@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('angkatan', function (Blueprint $table) {
             $table->id();
-            $table->string('angkatan')->unique();
+            $table->string('angkatan'); 
             $table->enum('kategori', ['santri', 'pelajar']);
             $table->unsignedBigInteger('tahun_ajaran_id')->nullable();
             $table->boolean('status')->default(true);
@@ -25,8 +25,9 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-
             $table->foreign('tahun_ajaran_id')->references('id')->on('tahun_ajaran')->onDelete('cascade');
+
+            $table->unique(['angkatan', 'kategori']);
         });
     }
 

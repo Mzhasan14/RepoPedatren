@@ -110,6 +110,26 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        /**
+         * TRANSAKSI SALDO
+         */
+        Schema::create('transaksi_saldo', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
+            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete();
+            $table->enum('tipe', ['topup', 'debit', 'kredit', 'refund']);
+            $table->decimal('jumlah', 15, 2);
+
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         Schema::create('banks', function (Blueprint $table) {
             $table->id();
             $table->string('kode_bank', 10)->unique();   // ex: BNI, BSI, MANDIRI
@@ -127,6 +147,7 @@ return new class extends Migration
         /**
          * VIRTUAL ACCOUNT
          */
+
         Schema::create('virtual_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
@@ -146,7 +167,10 @@ return new class extends Migration
             $table->id();
             $table->string('kode_tagihan', 50)->unique();
             $table->string('nama_tagihan', 150);
-            $table->decimal('nominal', 15, 2);
+ 
+            $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
+
+            $table->decimal('nominal', 15, 2)->default(0);
             $table->date('jatuh_tempo')->nullable();
             $table->boolean('status')->default(true);
 
@@ -156,6 +180,37 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::create('tagihan_khusus', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
+
+            $table->foreignId('angkatan_id')->nullable()->constrained('angkatan')->nullOnDelete();
+            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->nullOnDelete();
+            $table->foreignId('jurusan_id')->nullable()->constrained('jurusan')->nullOnDelete();
+            $table->enum('jenis_kelamin', ['l', 'p'])->nullable();
+            $table->enum('kategori_santri', ['mukim', 'non_mukim'])->nullable();
+            $table->enum('domisili', ['lokal', 'luar_kota'])->nullable();
+            $table->enum('kondisi_khusus', ['anak_pegawai', 'beasiswa', 'wna'])->nullable();
+
+            // Override nominal
+            $table->decimal('nominal', 15, 2)->nullable();
+
+            $table->timestamps();
+            $table->softDeletes();
+
+            // Kombinasi aturan tidak boleh dobel
+            $table->unique([
+                'tagihan_id',
+                'angkatan_id',
+                'lembaga_id',
+                'jurusan_id',
+                'jenis_kelamin',
+                'kategori_santri',
+                'domisili',
+                'kondisi_khusus',
+            ], 'tagihan_khusus_unique');
         });
 
         Schema::create('tagihan_santri', function (Blueprint $table) {
@@ -204,25 +259,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        /**
-         * TRANSAKSI SALDO
-         */
-        Schema::create('transaksi_saldo', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
-            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
-            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete();
-            $table->enum('tipe', ['topup', 'debit', 'kredit', 'refund']);
-            $table->decimal('jumlah', 15, 2);
-
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
-
-            $table->timestamps();
-            $table->softDeletes();
-        });
 
         // /**
         //  * PAYMENT PROVIDERS (mis. midtrans, xendit, bank aggregator, dll)

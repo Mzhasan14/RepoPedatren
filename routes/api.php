@@ -71,7 +71,9 @@ use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\PembayaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
@@ -112,7 +114,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/santri', [SantriController::class, 'getAllSantri']);
 
     Route::get('/santri-non-anakasuh', [SantriController::class, 'santriNonAnakAsuh']);
-    
+
     Route::get('/santri-nondomisili', [NonDomisiliController::class, 'getNonDomisili']);
     Route::get('/santri-nondomisili/{id}', [DetailController::class, 'getDetail']);
     Route::get('/santri/{id}', [DetailController::class, 'getDetail']);
@@ -671,7 +673,7 @@ Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatata
 Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore'])
     ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
 Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']); 
+    ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update'])
     ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update'])
@@ -1101,3 +1103,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::get('dashboard', [DashboardController::class, 'total']);
+
+Route::prefix('tagihan-santri')->group(function () {
+    Route::post('/', [TagihanSantriController::class, 'assign']);
+})->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+
+Route::prefix('pembayaran')->group(function () {
+    Route::post('/', [PembayaranController::class, 'bayar']);
+})->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);

@@ -84,11 +84,17 @@ class OutletSeeder extends Seeder
         DB::table('outlet_kategori')->insert($outletKategori);
 
         /**
-         * DETAIL USER OUTLET
+         * DETAIL USER OUTLET (khusus user role = petugas)
          */
         $users = DB::table('users')
-            ->where('id', '!=', $adminId)
-            ->pluck('id')
+            ->join('model_has_roles', function ($join) {
+                $join->on('users.id', '=', 'model_has_roles.model_id')
+                    ->where('model_has_roles.model_type', '=', 'App\\Models\\User');
+            })
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('roles.name', 'petugas') // hanya role petugas
+            ->where('users.id', '!=', $adminId)
+            ->pluck('users.id')
             ->toArray();
 
         $outletIds = array_values($outletMap);
@@ -115,10 +121,21 @@ class OutletSeeder extends Seeder
             $assignedUsers[] = $userId;
         }
 
-        // pastikan user id 9 = outlet Koperasi Pesantren
-        if (!in_array(9, $assignedUsers)) {
+        // khusus user tertentu, hanya kalau dia role petugas
+        if (!in_array(9, $assignedUsers) && in_array(9, $users)) {
             $detailUserOutlet[] = [
                 'user_id' => 9,
+                'outlet_id' => $outletMap['Koperasi Pesantren'],
+                'status' => true,
+                'created_by' => $adminId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!in_array(1, $assignedUsers) && in_array(1, $users)) {
+            $detailUserOutlet[] = [
+                'user_id' => 1,
                 'outlet_id' => $outletMap['Koperasi Pesantren'],
                 'status' => true,
                 'created_by' => $adminId,

@@ -55,13 +55,15 @@ class UserSeeder extends Seeder
         ]);
         $supervisor->assignRole('supervisor');
 
-        // Staff
-        $staff = User::create([
-            'name' => 'Ustadz',
-            'email' => 'Ustadz@example.com',
-            'password' => Hash::make('password'),
-        ]);
-        $staff->assignRole('ustadz');
+        // ustadz
+        for ($i = 0; $i < 3; $i++) {
+            $ustadz = User::create([
+                'name' => "Ustadz {$i}",
+                'email' => "ustadz{$i}@example.com",
+                'password' => Hash::make('password'),
+            ]);
+            $ustadz->assignRole('ustadz');
+        }
 
         // Santri
         $WaliAsuh = User::create([
@@ -91,7 +93,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
         $pengasuh->assignRole('pengasuh');
-        
+
         // Pusdatren admin
         $pusdatren = User::create([
             'name' => 'Pusdatren Admin',
@@ -100,16 +102,14 @@ class UserSeeder extends Seeder
         ]);
         $pusdatren->assignRole('superadmin');
 
-        $creator = User::create([
-            'name' => 'Petugas',
-            'email' => 'petugas@example.com',
-            'password' => Hash::make('password'),
-        ]);
+        for ($i = 1; $i <= 5; $i++) {
+            $user = User::create([
+                'name'     => "Petugas {$i}",
+                'email'    => "petugas{$i}@example.com",
+                'password' => Hash::make('password'),
+            ]);
 
-        $creator->assignRole('petugas');
-
-
+            $user->assignRole('petugas');
+        }
     }
-
-    
 }
