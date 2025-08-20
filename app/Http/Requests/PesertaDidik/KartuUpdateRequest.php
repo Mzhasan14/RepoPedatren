@@ -28,7 +28,7 @@ class KartuUpdateRequest extends FormRequest
         return [
             'santri_id' => 'sometimes|exists:santri,id',
             'uid_kartu' => "sometimes|string|max:50|unique:kartu,uid_kartu,{$id}",
-            'pin' => 'nullable|string|min:4|max:6',
+            'pin' => 'required|string|min:4|max:6',
             'aktif' => 'boolean',
             'tanggal_terbit' => 'sometimes|date',
             'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',

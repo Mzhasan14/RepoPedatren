@@ -41,7 +41,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->string('uid_kartu', 50)->unique();
-            $table->string('pin')->nullable();
+            $table->string('pin');
             $table->boolean('aktif')->default(true);
             $table->date('tanggal_terbit');
             $table->date('tanggal_expired')->nullable();

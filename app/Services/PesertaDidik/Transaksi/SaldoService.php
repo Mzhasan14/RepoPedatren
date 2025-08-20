@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\Transaksi;
 
 use Exception;
+use App\Models\Kartu;
 use App\Models\Saldo;
 use App\Models\Outlet;
 use App\Models\Keluarga;
@@ -14,21 +15,22 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SaldoService
 {
-    public function topup(int $santriId, float $jumlah, int $userId): array
+    public function topup(int $uid_kartu, float $jumlah, string $pin, int $userId): array
     {
-        return $this->process($santriId, $jumlah, $userId, 'topup', 1);
+        return $this->process($uid_kartu, $jumlah, $pin, $userId, 'topup', 1);
     }
 
-    public function tarik(int $santriId, float $jumlah, int $userId): array
+    public function tarik(int $uid_kartu, float $jumlah, string $pin, int $userId): array
     {
-        return $this->process($santriId, $jumlah, $userId, 'debit', 2);
+        return $this->process($uid_kartu, $jumlah, $pin, $userId, 'debit', 2);
     }
 
-    private function process(int $santriId, float $jumlah, int $userId, string $tipe, int $kategoriId): array
+    private function process(int $uid_kartu, float $jumlah, string $pin, int $userId, string $tipe, int $kategoriId): array
     {
         DB::beginTransaction();
         try {
@@ -57,9 +59,28 @@ class SaldoService
                 ];
             }
 
+            $santriId = Kartu::where('uid_kartu', $uid_kartu)
+                ->select('santri_id', 'pin')
+                ->where('aktif', true)
+                ->first();
+
+            if (!$santriId) {
+                return [
+                    'status'  => false,
+                    'message' => 'Kartu tidak ditemukan atau tidak aktif.'
+                ];
+            }
+
+            if (!Hash::check($pin, $santriId->pin)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Pin yang Anda masukkan salah.'
+                ];
+            }
+
             // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(
-                ['santri_id' => $santriId],
+                ['santri_id' => $santriId->santri_id],
                 ['saldo' => 0, 'created_by' => $userId]
             );
 
@@ -84,7 +105,7 @@ class SaldoService
             $saldo->save();
 
             $transaksi = TransaksiSaldo::create([
-                'santri_id'      => $santriId,
+                'santri_id'      => $santriId->santri_id,
                 'outlet_id'      => $outlet->id,
                 'kategori_id'    => $kategoriId,
                 'user_outlet_id' => $userOutlet->id,
@@ -97,7 +118,7 @@ class SaldoService
                 ->causedBy(Auth::user())
                 ->performedOn($saldo) // langsung pakai model saldo yang sudah ada
                 ->withProperties([
-                    'santri_id'     => $santriId,
+                    'santri_id'     => $santriId->santri_id,
                     'tipe'          => $tipe, // topup / debit
                     'jumlah'        => $jumlah,
                     'saldo_sebelum' => $saldoLama,
@@ -133,7 +154,7 @@ class SaldoService
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Transaksi saldo gagal: ' . $e->getMessage(), [
-                'santri_id' => $santriId,
+                'santri_id' => $santriId->santri_id,
                 'user_id'   => $userId,
                 'trace'     => $e->getTraceAsString()
             ]);
