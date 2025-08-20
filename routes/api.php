@@ -73,6 +73,7 @@ use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\PembayaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanKhususController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
@@ -1084,6 +1085,15 @@ Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
     Route::post('/', [TagihanController::class, 'store'])->middleware('role:superadmin|admin');
     Route::put('/{id}', [TagihanController::class, 'update'])->middleware('role:superadmin|admin');
     Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
+});
+
+// Tagihan Khusus
+Route::prefix('tagihan-khusus')->group(function () {
+    Route::get('/', [TagihanKhususController::class, 'index']);
+    Route::post('/', [TagihanKhususController::class, 'store']);
+    Route::get('/{id}', [TagihanKhususController::class, 'show']);
+    Route::put('/{id}', [TagihanKhususController::class, 'update']);
+    Route::delete('/{id}', [TagihanKhususController::class, 'destroy']);
 });
 
 // Banks
