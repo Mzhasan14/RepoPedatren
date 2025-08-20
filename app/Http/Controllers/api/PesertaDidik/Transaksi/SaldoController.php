@@ -23,7 +23,8 @@ class SaldoController extends Controller
     public function topup(SaldoRequest $request): JsonResponse
     {
         $result = $this->service->topup(
-            $request->uid_kartu,
+            $request->metode,
+            $request->santri_id,
             $request->jumlah,
             $request->pin,
             Auth::id()
@@ -35,7 +36,8 @@ class SaldoController extends Controller
     public function tarik(SaldoRequest $request): JsonResponse
     {
         $result = $this->service->tarik(
-            $request->uid_kartu,
+            $request->metode,
+            $request->santri_id,
             $request->jumlah,
             $request->pin,
             Auth::id()
