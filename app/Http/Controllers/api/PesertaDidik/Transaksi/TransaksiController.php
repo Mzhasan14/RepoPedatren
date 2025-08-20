@@ -25,7 +25,7 @@ class TransaksiController extends Controller
     {
         $data = $request->validated();
 
-        $result = $this->service->scanCard($data['metode'], $data['santri_id'], $data['pin'] ?? null);
+        $result = $this->service->scanCard($data['santri_id'], $data['pin'] ?? null);
 
         if ($result['success']) {
             return response()->json([
