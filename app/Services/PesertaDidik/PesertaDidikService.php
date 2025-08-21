@@ -55,7 +55,7 @@ class PesertaDidikService
             ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'));
-
+        
         return $query;
     }
 
