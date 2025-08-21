@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('provinsi_id');
             $table->string('nama_kabupaten');
             $table->softDeletes();
-            $table->boolean('status')->nullable()->default(true);
+            $table->boolean('status')->default(true);
             $table->timestamps();
 
             $table->foreign('provinsi_id')->references('id')->on('provinsi')->onDelete('cascade');

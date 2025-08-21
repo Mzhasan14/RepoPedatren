@@ -19,7 +19,6 @@ class TagihanKhususController extends Controller
             $query = TagihanKhusus::with(['tagihan', 'angkatan', 'lembaga', 'jurusan'])
                 ->latest();
 
-            // Optional filter
             if ($request->filled('tagihan_id')) {
                 $query->where('tagihan_id', $request->tagihan_id);
             }

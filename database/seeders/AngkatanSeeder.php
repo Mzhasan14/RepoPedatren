@@ -33,7 +33,7 @@ class AngkatanSeeder extends Seeder
         // 5 angkatan santri
         for ($i = 0; $i < 5; $i++) {
             $angkatanData[] = [
-                'angkatan' => 'Angkatan '.substr($tahunList[$i]->tahun_ajaran, 0, 4),
+                'angkatan' => substr($tahunList[$i]->tahun_ajaran, 0, 4),
                 'kategori' => 'santri',
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,
@@ -46,7 +46,7 @@ class AngkatanSeeder extends Seeder
         // 5 angkatan pelajar
         for ($i = 5; $i < 10; $i++) {
             $angkatanData[] = [
-                'angkatan' => 'Angkatan '.substr($tahunList[$i]->tahun_ajaran, 0, 4),
+                'angkatan' => substr($tahunList[$i]->tahun_ajaran, 0, 4),
                 'kategori' => 'pelajar',
                 'tahun_ajaran_id' => $tahunList[$i]->id,
                 'status' => true,

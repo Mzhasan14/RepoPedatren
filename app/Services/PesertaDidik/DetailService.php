@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
@@ -9,7 +10,6 @@ class DetailService
 {
     public function getDetail(string $biodataId): array
     {
-
         $data = [];
 
         // --- Ambil No KK (jika ada) ---
@@ -39,24 +39,30 @@ class DetailService
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
             ->leftJoin('negara as ng', 'b.negara_id', '=', 'ng.id')
             ->where('b.id', $biodataId)
-            ->selectRaw(implode(', ', [
+            ->select([
                 'b.id',
-                'COALESCE(b.nik, b.no_passport) as identitas',
+                DB::raw('COALESCE(b.nik, b.no_passport) as identitas'),
                 'wp.niup',
                 'b.nama',
                 'b.jenis_kelamin',
-                "CONCAT(b.tempat_lahir, ', ', DATE_FORMAT(b.tanggal_lahir, '%e %M %Y')) as ttl",
-                "CONCAT(b.anak_keberapa, ' dari ', b.dari_saudara, ' bersaudara') as anak_ke",
-                "CONCAT(TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()), ' tahun') as umur",
+                'b.tempat_lahir',
+                'b.tanggal_lahir',
+                DB::raw("CONCAT(b.anak_keberapa, ' dari ', b.dari_saudara, ' bersaudara') as anak_ke"),
+                DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) as umur"),
                 'kc.nama_kecamatan',
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                "COALESCE(br.file_path,'default.jpg') as foto",
-            ]))
+                DB::raw("COALESCE(br.file_path,'default.jpg') as foto"),
+            ])
             ->first();
 
         if ($biodata) {
+            // --- Format tanggal lahir ke bahasa Indonesia ---
+            Carbon::setLocale('id'); // Pastikan locale di-set
+            $tanggal_lahir = Carbon::parse($biodata->tanggal_lahir)->translatedFormat('d F Y');
+            $ttl = "{$biodata->tempat_lahir}, $tanggal_lahir";
+
             $data['Biodata'] = [
                 'id' => $biodata->id,
                 'nokk' => $noKk ?? '-',
@@ -64,9 +70,9 @@ class DetailService
                 'niup' => $biodata->niup ?? '-',
                 'nama' => $biodata->nama,
                 'jenis_kelamin' => $biodata->jenis_kelamin,
-                'tempat_tanggal_lahir' => $biodata->ttl,
+                'tempat_tanggal_lahir' => $ttl,
                 'anak_ke' => $biodata->anak_ke,
-                'umur' => $biodata->umur,
+                'umur' => $biodata->umur . ' tahun',
                 'kecamatan' => $biodata->nama_kecamatan ?? '-',
                 'kabupaten' => $biodata->nama_kabupaten ?? '-',
                 'provinsi' => $biodata->nama_provinsi ?? '-',
@@ -74,6 +80,7 @@ class DetailService
                 'foto_profil' => URL::to($biodata->foto),
             ];
         }
+
 
         // --- Keluarga (Ortu & Saudara) ---
         $ortu = collect();
@@ -446,15 +453,15 @@ class DetailService
             ->join('biodata', 'pegawai.biodata_id', '=', 'biodata.id')
             ->leftJoin('golongan', 'golongan.id', '=', 'pengajar.golongan_id')
             ->leftJoin('kategori_golongan', 'kategori_golongan.id', '=', 'golongan.kategori_golongan_id')
-            
+
             // Mata pelajaran dan jadwal
             ->leftJoin('mata_pelajaran', function ($join) {
                 $join->on('mata_pelajaran.pengajar_id', '=', 'pengajar.id')
-                ->where('mata_pelajaran.status', true);
+                    ->where('mata_pelajaran.status', true);
             })
             ->leftJoin('jadwal_pelajaran', 'jadwal_pelajaran.mata_pelajaran_id', '=', 'mata_pelajaran.id')
             ->leftJoin('jam_pelajaran', 'jam_pelajaran.id', '=', 'jadwal_pelajaran.jam_pelajaran_id')
-            
+
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 // Pangkalan

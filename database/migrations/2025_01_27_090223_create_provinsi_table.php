@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_provinsi');
             $table->unsignedBigInteger('negara_id');
-            $table->boolean('status');
+            $table->boolean('status')->default(true);
             $table->timestamps();
 
             $table->foreign('negara_id')->references('id')->on('negara')->onDelete('cascade');
