@@ -162,6 +162,7 @@ class StatusSantriService
 
             // Lakukan update nilai-nilai
             $santri->tanggal_masuk = $tanggalMasuk;
+            $santri->nis = $input['nis'] ?? $santri->nis;
             $santri->tanggal_keluar = $tanggalKeluar;
             $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
             $santri->status = $status;

@@ -26,6 +26,7 @@ class UpdateSantriRequest extends FormRequest
     {
         return [
             'angkatan_id' => 'required|exists:angkatan,id',
+            'nis'       => 'required|string|max:20|unique:santri,nis,' . $this->route('santri'),
             'tanggal_masuk' => 'required|date',
             'tanggal_keluar' => 'nullable|date',
             'status' => [

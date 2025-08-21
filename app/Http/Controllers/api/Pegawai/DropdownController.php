@@ -17,46 +17,56 @@ class DropdownController extends Controller
 {
     public function menuWilayahBlokKamar()
     {
-        $query = DB::table('wilayah as w')
-            ->leftJoin('blok as b', function ($join) {
-                $join->on('w.id', '=', 'b.wilayah_id')
-                    ->where('b.status', true);
-            })
+        $wilayahList = DB::table('wilayah')
+            ->where('status', 1)
+            ->orderBy('nama_wilayah')
+            ->get();
+
+        $wilayahs = [];
+        foreach ($wilayahList as $w) {
+            $wilayahs[$w->id] = [
+                'id' => $w->id,
+                'nama_wilayah' => $w->nama_wilayah,
+                'kategori' => $w->kategori ? strtolower($w->kategori) : null,
+                'blok' => [],
+            ];
+        }
+
+        // Ambil blok + kamar
+        $data = DB::table('blok as b')
+            ->rightJoin('wilayah as w', 'b.wilayah_id', '=', 'w.id')
             ->leftJoin('kamar as k', function ($join) {
-                $join->on('b.id', '=', 'k.blok_id')
-                    ->where('k.status', true);
+                $join->on('k.blok_id', '=', 'b.id')
+                    ->where('k.status', 1);
             })
             ->select(
                 'w.id as wilayah_id',
                 'w.nama_wilayah',
                 'w.kategori as kategori_wilayah',
                 'b.id as blok_id',
-                'b.wilayah_id',
                 'b.nama_blok',
                 'k.id as kamar_id',
-                'k.blok_id',
                 'k.nama_kamar',
                 'k.kapasitas as kapasitas_kamar'
             )
-            ->where('w.status', true)
-            ->orderBy('w.id')
+            ->where('w.status', 1)
+            ->where(function ($q) {
+                $q->whereNull('b.id')
+                    ->orWhere('b.status', 1);
+            })
+            ->orderBy('w.nama_wilayah')
+            ->orderBy('b.nama_blok')
+            ->orderBy('k.nama_kamar')
             ->get();
 
-        $wilayahs = [];
-
-        foreach ($query as $row) {
-            // Inisialisasi wilayah
-            if (! isset($wilayahs[$row->wilayah_id])) {
-                $wilayahs[$row->wilayah_id] = [
-                    'id' => $row->wilayah_id,
-                    'nama_wilayah' => $row->nama_wilayah,
-                    'kategori' => $row->kategori_wilayah ? strtolower($row->kategori_wilayah) : null,
-                    'blok' => [],
-                ];
+        foreach ($data as $row) {
+            // Skip jika wilayah tidak ada di inisialisasi
+            if (!isset($wilayahs[$row->wilayah_id])) {
+                continue;
             }
 
-            // Inisialisasi blok jika ada & status true
-            if (! is_null($row->blok_id) && ! isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
+            // Tambahkan blok
+            if (!is_null($row->blok_id) && !isset($wilayahs[$row->wilayah_id]['blok'][$row->blok_id])) {
                 $wilayahs[$row->wilayah_id]['blok'][$row->blok_id] = [
                     'id' => $row->blok_id,
                     'wilayah_id' => $row->wilayah_id,
@@ -65,8 +75,8 @@ class DropdownController extends Controller
                 ];
             }
 
-            // Tambahkan kamar jika ada & status true
-            if (! is_null($row->kamar_id)) {
+            // Tambahkan kamar
+            if (!is_null($row->kamar_id)) {
                 $jumlahPenghuni = \App\Models\DomisiliSantri::where('kamar_id', $row->kamar_id)
                     ->where('status', 'aktif')
                     ->count();
@@ -79,36 +89,26 @@ class DropdownController extends Controller
                     'id' => $row->kamar_id,
                     'id_blok' => $row->blok_id,
                     'nama_kamar' => $row->nama_kamar,
-                    'slot' => $sisaSlot, // slot tersisa
+                    'slot' => $sisaSlot,
                     'kapasitas' => $row->kapasitas_kamar,
                     'penghuni' => $jumlahPenghuni,
                 ];
             }
         }
 
-        // Konversi dan urutkan berdasarkan abjad
-        $result = [
-            'wilayah' => array_values(array_map(function ($wilayah) {
-                // Urutkan kamar berdasarkan nama_kamar
-                foreach ($wilayah['blok'] as &$blok) {
-                    usort($blok['kamar'], function ($a, $b) {
-                        return strcmp($a['nama_kamar'], $b['nama_kamar']);
-                    });
-                }
-                // Urutkan blok berdasarkan nama_blok
-                usort($wilayah['blok'], function ($a, $b) {
-                    return strcmp($a['nama_blok'], $b['nama_blok']);
-                });
-                return $wilayah;
-            }, $wilayahs)),
-        ];
+        // Rapikan array index
+        $result = array_map(function ($item) {
+            $item['blok'] = array_values($item['blok']);
+            foreach ($item['blok'] as &$blok) {
+                $blok['kamar'] = array_values($blok['kamar']);
+            }
+            return $item;
+        }, array_values($wilayahs));
 
-        // Urutkan wilayah berdasarkan nama_wilayah
-        usort($result['wilayah'], function ($a, $b) {
-            return strcmp($a['nama_wilayah'], $b['nama_wilayah']);
-        });
-
-        return response()->json($result);
+        return response()->json([
+            'message' => 'Sukses ambil data',
+            'wilayah' => $result,
+        ]);
     }
 
 
@@ -618,9 +618,9 @@ class DropdownController extends Controller
         $user = $request->user();
 
         $query = DB::table('anak_asuh as aa')
-            ->leftJoin('kewaliasuhan as k','aa.id','=','k.id_anak_asuh')
-            ->leftJoin('santri as s','aa.id_santri','=','s.id')
-            ->leftJoin('biodata as b','b.id','=','s.biodata_id')
+            ->leftJoin('kewaliasuhan as k', 'aa.id', '=', 'k.id_anak_asuh')
+            ->leftJoin('santri as s', 'aa.id_santri', '=', 's.id')
+            ->leftJoin('biodata as b', 'b.id', '=', 's.biodata_id')
             ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
             ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
@@ -641,7 +641,7 @@ class DropdownController extends Controller
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->join('user_biodata as ub','ub.biodata_id','b.id')
+                ->join('user_biodata as ub', 'ub.biodata_id', 'b.id')
                 ->join('users as u', 'u.id', '=', 'ub.user_id')
                 ->where('u.id', $user->id)
                 ->value('wa.id');
