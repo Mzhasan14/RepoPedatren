@@ -23,6 +23,7 @@ class AngkatanRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
 
+
     public function rules()
     {
         $routeParam = $this->route('id');
@@ -33,7 +34,11 @@ class AngkatanRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('angkatan', 'angkatan')->ignore($id),
+                Rule::unique('angkatan', 'angkatan')
+                    ->ignore($id)
+                    ->where(function ($query) {
+                        $query->where('kategori', $this->input('kategori'));
+                    }),
             ],
             'kategori' => [
                 'required',
@@ -50,7 +55,7 @@ class AngkatanRequest extends FormRequest
     public function messages()
     {
         return [
-            'angkatan.unique' => 'Angkatan sudah terdaftar.',
+            'angkatan.unique' => 'Angkatan sudah terdaftar untuk kategori tersebut.',
             'kategori.in' => 'Kategori hanya boleh santri atau pelajar.',
             'tahun_ajaran_id.exists' => 'Tahun ajaran tidak ditemukan.',
         ];

@@ -21,9 +21,21 @@ class FilterPesertaDidikService
         $query = $this->applyStatusPesertaFilter($query, $request);
         $query = $this->applyStatusWargaPesantrenFilter($query, $request);
         $query = $this->applyAngkatanPelajar($query, $request);
+        $query = $this->applyAngkatanSantri($query, $request);
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyPemberkasan($query, $request);
         $query = $this->applySorting($query, $request);
+
+        return $query;
+    }
+
+     public function applyAngkatanSantri(Builder $query, Request $request): Builder
+    {
+        if (! $request->filled('angkatan_santri')) {
+            return $query;
+        }
+
+        $query->where('s.angkatan_id', $request->angkatan_santri);
 
         return $query;
     }

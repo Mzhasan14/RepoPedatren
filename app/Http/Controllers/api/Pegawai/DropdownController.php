@@ -430,6 +430,7 @@ class DropdownController extends Controller
             ->select('id', 'angkatan')
             ->where('kategori', 'pelajar')
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
             ->get()
             ->map(function ($item) {
@@ -444,6 +445,7 @@ class DropdownController extends Controller
             ->select('id', 'angkatan')
             ->where('kategori', 'santri')
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->orderByRaw('SUBSTRING(angkatan, -4) DESC')
             ->get()
             ->map(function ($item) {

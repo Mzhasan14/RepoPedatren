@@ -8,6 +8,7 @@ use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
 use App\Http\Controllers\api\Auth\UserController;
 use App\Http\Controllers\api\DashboardController;
+use App\Http\Controllers\api\JenisBerkasController;
 use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\keluarga\WaliController;
 use App\Http\Controllers\api\wilayah\KamarController;
@@ -1121,3 +1122,7 @@ Route::prefix('tagihan-santri')->group(function () {
 Route::prefix('pembayaran')->group(function () {
     Route::post('/', [PembayaranController::class, 'bayar']);
 })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('jenis-berkas', JenisBerkasController::class);
+});

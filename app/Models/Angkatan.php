@@ -6,9 +6,11 @@ use App\Models\TahunAjaran;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Angkatan extends Model
 {
+    use SoftDeletes;
     protected $table = 'angkatan';
 
     protected $fillable = [
