@@ -53,10 +53,10 @@ class BiodataRequest extends FormRequest
             'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
             'nama_pendidikan_terakhir' => 'nullable|string',
 
-            'no_telepon' => 'required|string|max:20',
+            'no_telepon' => 'nullable|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:100',
                 Rule::unique('biodata', 'email')->ignore($biodataId),
