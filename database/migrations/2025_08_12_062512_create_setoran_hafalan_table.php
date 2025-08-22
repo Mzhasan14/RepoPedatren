@@ -31,15 +31,21 @@ return new class extends Migration
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
-            // $table->foreignId('ustadz_id')->constrained('ustadz')->cascadeOnDelete();
             $table->date('tanggal');
             $table->enum('jenis_setoran', ['baru', 'murojaah']);
-            $table->string('surat', 20);
-            $table->unsignedSmallInteger('ayat_mulai');
-            $table->unsignedSmallInteger('ayat_selesai');
+            $table->string('surat', 20)->nullable();
+            
+            // Jika jenis setoran baru
+            $table->unsignedSmallInteger('ayat_mulai')->nullable();
+            $table->unsignedSmallInteger('ayat_selesai')->nullable();
+
+            // Jika jenis setoran murojaah
+            $table->unsignedTinyInteger('juz_mulai')->nullable();
+            $table->unsignedTinyInteger('juz_selesai')->nullable();
+
             $table->enum('nilai', ['lancar', 'cukup', 'kurang']);
             $table->text('catatan')->nullable();
-            $table->enum('status', ['proses', 'tuntas']);
+            $table->enum('status', ['proses', 'tuntas'])->default('proses')->nullable();
 
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();

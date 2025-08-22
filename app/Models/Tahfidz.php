@@ -19,6 +19,8 @@ class Tahfidz extends Model
         'surat',
         'ayat_mulai',
         'ayat_selesai',
+        'juz_mulai',
+        'juz_selesai',
         'nilai',
         'catatan',
         'status',
