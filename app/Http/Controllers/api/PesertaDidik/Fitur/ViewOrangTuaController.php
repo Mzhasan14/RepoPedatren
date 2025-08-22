@@ -7,20 +7,27 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
+use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
 use Illuminate\Support\Facades\Auth;
-use App\Services\PesertaDidik\Fitur\ViewOrangTuaService;
-use App\Http\Requests\PesertaDidik\Fitur\ViewOrangTuaRequest;
+use App\Services\PesertaDidik\OrangTua\TransaksiAnakService;
+use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 
 class ViewOrangTuaController extends Controller
 {
     protected $viewOrangTuaService;
+    protected $viewHafalanService;
 
-    public function __construct(ViewOrangTuaService $viewOrangTuaService)
+    public function __construct(
+        TransaksiAnakService $viewOrangTuaService,
+        HafalanAnakService $viewHafalanService
+        )
     {
         $this->viewOrangTuaService = $viewOrangTuaService;
+        $this->viewHafalanService = $viewHafalanService;
     }
 
-    public function getTransaksiAnak(ViewOrangTuaRequest $request): JsonResponse
+    public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
     {
         try {
             $filters = array_filter($request->only([
@@ -50,6 +57,54 @@ class ViewOrangTuaController extends Controller
                 'success' => false,
                 'status'  => 500,
                 'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function getTahfidzAnak(ViewHafalanRequest $request)
+    {
+        try {
+            $dataAnak = $request->validated();
+
+            $result = $this->viewHafalanService->getTahfidzAnak($dataAnak);
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@getTahfidzAnak error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id'   => Auth::id(),
+                'santri_id' => $request->santri_id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data tahfidz anak.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function getNadhomanAnak(ViewHafalanRequest $request)
+    {
+        try {
+            $dataAnak = $request->validated();
+
+            $result = $this->viewHafalanService->getNadhomanAnak($dataAnak);
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@getNadhomanAnak error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id'   => Auth::id(),
+                'santri_id' => $request->santri_id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data nadhoman anak.',
+                'status'  => 500,
                 'data'    => []
             ], 500);
         }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\PesertaDidik\Fitur;
+namespace App\Services\PesertaDidik\OrangTua;
 
 use Exception;
 use App\Models\Transaksi;
@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
-class ViewOrangTuaService
+class TransaksiAnakService
 {
     public function getTransaksiAnak(array $filters = [], int $perPage = 25)
     {
