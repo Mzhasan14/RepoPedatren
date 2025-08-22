@@ -153,8 +153,6 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
-    Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
-    Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
     Route::put('/catatan-afektif/{id}/kategori', [AdministrasiCatatanAfektifController::class, 'updateKategori']);
     Route::get('/catatan-afektif/{id}/show', [AdministrasiCatatanAfektifController::class, 'Listedit']);
     Route::put('/catatan-kognitif/{id}/kategori', [CatatanKognitifController::class, 'updateKategori']);
@@ -189,7 +187,10 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
-
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|waliasuh', 'throttle:200,1'])->group(function () {
+    Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
+    Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
+});
 Route::prefix('import')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:200,1'])->group(function () {
     Route::post('/santri', [PesertaDidikController::class, 'importSantri']);
     Route::post('/pegawai', [PegawaiController::class, 'importPegawai']);
@@ -855,6 +856,8 @@ Route::prefix('crud')
             Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
             Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
             Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
+
+            Route::post('hubungkanwaliasuh',[WaliasuhController::class,'createFromSantri']);
         });
     });
 
@@ -917,7 +920,9 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/golongan', [DropdownController::class, 'menuKategoriGolonganAndGolongan']);
     Route::get('/golongan-gabungan', [DropdownController::class, 'menuKategoriGolonganGabungan']);
     Route::get('/semester', [DropdownController::class, 'semester']);
-    Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan']);
+    Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan'])
+        ->middleware('role:superadmin|wali asuh');
+    Route::get('/hubungkanwaliasuh', [DropdownController::class, 'hubungkanwaliasuh']);
 
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);

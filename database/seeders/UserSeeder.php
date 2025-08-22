@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Biodata;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -30,13 +31,18 @@ class UserSeeder extends Seeder
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
         }
-
+        $getRandomBiodataId = function () {
+            return Biodata::inRandomOrder()->value('id'); // langsung ambil ID random
+        };
         // Superadmin
-        $superadmin = User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@example.com',
-            'password' => Hash::make('password'),
+        $superadmin = User::find(1);
+        $superadmin->update([
+            'name'       => 'Super Admin',
+            'email'      => 'superadmin@example.com',
+            'password'   => Hash::make('password'),
+            'biodata_id' => $getRandomBiodataId(),
         ]);
+
         $superadmin->assignRole('superadmin');
 
         // Admin
@@ -44,6 +50,7 @@ class UserSeeder extends Seeder
             'name' => 'Admin',
             'email' => 'admin@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $admin->assignRole('admin');
 
@@ -52,6 +59,7 @@ class UserSeeder extends Seeder
             'name' => 'Super Visor',
             'email' => 'supervisor@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $supervisor->assignRole('supervisor');
 
@@ -61,6 +69,7 @@ class UserSeeder extends Seeder
                 'name' => "Ustadz {$i}",
                 'email' => "ustadz{$i}@example.com",
                 'password' => Hash::make('password'),
+                'biodata_id'  => $getRandomBiodataId(),
             ]);
             $ustadz->assignRole('ustadz');
         }
@@ -70,6 +79,7 @@ class UserSeeder extends Seeder
             'name' => 'Wali Asuh User',
             'email' => 'waliasuh@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $WaliAsuh->assignRole('waliasuh');
 
@@ -77,6 +87,7 @@ class UserSeeder extends Seeder
             'name' => 'Kamtib',
             'email' => 'kamtib@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $kamtib->assignRole('kamtib');
 
@@ -84,6 +95,7 @@ class UserSeeder extends Seeder
             'name' => 'Biktren',
             'email' => 'biktren@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $biktren->assignRole('biktren');
 
@@ -91,6 +103,7 @@ class UserSeeder extends Seeder
             'name' => 'Pengasuh',
             'email' => 'pengasuh@example.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $pengasuh->assignRole('pengasuh');
 
@@ -99,6 +112,7 @@ class UserSeeder extends Seeder
             'name' => 'Pusdatren Admin',
             'email' => 'pusdatren@gmail.com',
             'password' => Hash::make('password'),
+            'biodata_id'  => $getRandomBiodataId(),
         ]);
         $pusdatren->assignRole('superadmin');
 
@@ -107,6 +121,7 @@ class UserSeeder extends Seeder
                 'name'     => "Petugas {$i}",
                 'email'    => "petugas{$i}@example.com",
                 'password' => Hash::make('password'),
+                'biodata_id'  => $getRandomBiodataId(),
             ]);
 
             $user->assignRole('petugas');
