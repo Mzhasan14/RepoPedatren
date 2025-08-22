@@ -43,7 +43,7 @@ class KartuService
         }
 
         $data['created_by'] = Auth::id();
-
+        
         $kartu = Kartu::create($data);
         $kartu->load([
             'santri:id,nis,biodata_id',

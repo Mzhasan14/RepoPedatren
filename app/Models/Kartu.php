@@ -14,6 +14,7 @@ class Kartu extends Model
     protected $fillable = [
         'santri_id',
         'uid_kartu',
+        'pin',
         'aktif',
         'tanggal_terbit',
         'tanggal_expired',
