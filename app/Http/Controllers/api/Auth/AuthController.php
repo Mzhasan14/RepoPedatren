@@ -49,6 +49,7 @@ class AuthController extends Controller
             'user'      => new UserResource($user),
             'token'     => $token,
             'outlet_id' => $result['outlet_id'],
+            'anak'     => $result['anak'] ?? null,
         ], $result['status']);
     }
 

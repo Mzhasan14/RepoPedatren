@@ -5,12 +5,13 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class AuthService
 {
@@ -40,7 +41,7 @@ class AuthService
 
     public function login(string $email, string $password): array
     {
-        $user = User::with('detail_user_outlet')->where('email', $email)->first();
+        $user = User::with('detail_user_outlet', 'biodata')->where('email', $email)->first();
 
         if (! $user) {
             return [
@@ -69,6 +70,48 @@ class AuthService
             ];
         }
 
+        if ($user->hasRole('orang_tua')) {
+            $biodataId = $user->biodata->id;
+            $noKk = DB::table('keluarga as k')
+                ->where('k.id_biodata', $biodataId)
+                ->value('no_kk');
+
+            if (!$noKk) {
+                return [
+                    'success' => false,
+                    'message' => 'Data keluarga tidak ditemukan.',
+                    'data' => null,
+                    'status' => 404,
+                ];
+            }
+
+            $anak = DB::table('keluarga as k')
+                ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+                ->join('santri as s', 'b.id', '=', 's.biodata_id')
+                ->leftjoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
+                ->select('b.id as biodata_id', 's.id as santri_id', 'b.nama')
+                ->whereNull('otw.id_biodata')
+                ->where('k.no_kk', $noKk)
+                ->where('k.id_biodata', '!=', $biodataId)->get();
+
+            if ($anak->isEmpty()) {
+                return [
+                    'success' => false,
+                    'message' => 'Tidak ada data anak yang ditemukan.',
+                    'data' => null,
+                    'status' => 404,
+                ];
+            }
+
+            $anakData = $anak->map(function ($item) {
+                return [
+                    'biodata_id' => $item->biodata_id,
+                    'santri_id' => $item->santri_id,
+                    'nama' => $item->nama,
+                ];
+            });
+        }
+
         activity('auth')
             ->event('login')
             ->performedOn($user)
@@ -87,9 +130,10 @@ class AuthService
             'data' => $user,
             'status' => 200,
             'outlet_id' => $user->detail_user_outlet?->outlet_id, // null jika tidak ada
+            'anak' => $anakData ?? null,
         ];
     }
-    
+
 
     public function logout($token)
     {
