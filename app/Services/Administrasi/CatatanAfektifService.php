@@ -30,10 +30,7 @@ class CatatanAfektifService
         if ($user->hasRole('waliasuh')) {
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
-                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->join('user_biodata as ub', 'b.id', 'ub.biodata_id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
-                ->where('u.id', $user->id)
+                ->where('s.biodata_id', $user->biodata_id)
                 ->value('wa.id');
         }
 
@@ -57,13 +54,12 @@ class CatatanAfektifService
 
             // Relasi created_by → user → role superadmin
             ->leftJoin('users as cu', 'cu.id', '=', 'catatan_afektif.created_by')
+            ->leftJoin('biodata as bsc', 'bsc.id', '=', 'cu.biodata_id')
             ->leftJoin('model_has_roles as mhr', function ($join) {
                 $join->on('cu.id', '=', 'mhr.model_id')
                     ->where('mhr.model_type', '=', DB::raw("'App\\\\Models\\\\User'"));
             })
             ->leftJoin('roles as r', 'r.id', '=', 'mhr.role_id')
-            ->leftJoin('user_biodata as ubc', 'ubc.user_id', '=', 'cu.id')
-            ->leftJoin('biodata as bsc', 'bsc.id', '=', 'ubc.biodata_id')
 
             // Foto santri (catatan)
             ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
@@ -83,7 +79,6 @@ class CatatanAfektifService
             })
             ->leftJoin('berkas as FotoSuperAdmin', 'FotoSuperAdmin.id', '=', 'fotoLastSuperAdmin.last_id')
 
-            // ->orderBy('catatan_afektif.id', 'asc')
             ->orderBy('catatan_afektif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh
@@ -190,7 +185,6 @@ class CatatanAfektifService
             ], 500);
         }
     }
-
 
     public function formatData($results, $kategori = null)
     {
@@ -364,10 +358,10 @@ class CatatanAfektifService
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->join('user_biodata as ub', 'ub.biodata_id', 'b.id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->join('users as u', 'u.biodata_id', '=', 'b.id') // langsung ke users
                 ->where('u.id', $user->id)
                 ->value('wa.id');
+
 
             if (! $waliAsuhId) {
                 return [

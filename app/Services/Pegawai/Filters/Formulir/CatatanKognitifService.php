@@ -21,10 +21,12 @@ class CatatanKognitifService
 
         $kognitif = Catatan_kognitif::with([
             'santri.biodata',
+            // Relasi untuk wali asuh
             'waliAsuh.santri.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
                 ->limit(1),
+            // Relasi untuk superadmin
             'creator.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
@@ -35,11 +37,11 @@ class CatatanKognitifService
             ->orderByDesc('tanggal_buat')
             ->get()
             ->map(function ($item) {
-                $isSuperAdmin = $item->creator?->hasRole('superadmin');
+                $isSuperAdmin = optional($item->creator)->hasRole('superadmin');
 
                 if ($isSuperAdmin) {
                     // Pencatat adalah superadmin
-                    $pencatatBiodata = $item->creator?->biodata?->first();
+                    $pencatatBiodata = $item->creator?->biodata;
                     $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
                     $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
                     $status = 'Superadmin';
@@ -90,10 +92,12 @@ class CatatanKognitifService
 
         $item = Catatan_kognitif::with([
             'santri.biodata',
+            // Relasi wali asuh → santri → biodata → berkas
             'waliAsuh.santri.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
                 ->limit(1),
+            // Relasi superadmin → biodata → berkas
             'creator.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
@@ -105,11 +109,11 @@ class CatatanKognitifService
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
-        $isSuperAdmin = $item->creator?->hasRole('superadmin');
+        $isSuperAdmin = optional($item->creator)->hasRole('superadmin');
 
         if ($isSuperAdmin) {
             // Pencatat = superadmin → ambil dari biodata user
-            $pencatatBiodata = $item->creator?->biodata?->first();
+            $pencatatBiodata = $item->creator?->biodata;
             $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
             $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
             $status = 'Superadmin';

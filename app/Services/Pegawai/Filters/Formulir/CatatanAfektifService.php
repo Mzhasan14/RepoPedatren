@@ -23,9 +23,9 @@ class CatatanAfektifService
             'santri.domisili.wilayah',
             'santri.pendidikan.jurusan',
             'santri.pendidikan.lembaga',
-            // Relasi untuk wali asuh
+            // Relasi untuk wali_asuh
             'waliAsuh.santri.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
-            // Relasi untuk superadmin
+            // Relasi untuk superadmin (creator)
             'creator.biodata.berkas' => fn($q) => $q->where('jenis_berkas_id', $pasFotoId)->latest('id')->limit(1),
             'creator.roles'
         ])
@@ -38,14 +38,14 @@ class CatatanAfektifService
 
                 if ($isSuperAdmin) {
                     // Data superadmin
-                    $pencatatBiodata = optional($item->creator?->biodata?->first());
+                    $pencatatBiodata = $item->creator?->biodata;
                     $pencatatUuid = $pencatatBiodata?->id;
                     $namaPencatat = $pencatatBiodata?->nama ?? $item->creator?->name ?? 'Super Admin';
                     $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
                     $status = 'Superadmin';
                 } elseif ($item->waliAsuh) {
                     // Data wali asuh
-                    $pencatatBiodata = optional($item->waliAsuh?->santri?->biodata);
+                    $pencatatBiodata = $item->waliAsuh?->santri?->biodata;
                     $pencatatUuid = $pencatatBiodata?->id;
                     $namaPencatat = $pencatatBiodata?->nama ?? '-';
                     $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
@@ -82,7 +82,6 @@ class CatatanAfektifService
         ];
     }
 
-
     public function show($id): array
     {
         $pasFotoId = DB::table('jenis_berkas')
@@ -90,10 +89,12 @@ class CatatanAfektifService
             ->value('id');
 
         $afektif = Catatan_afektif::with([
+            // Relasi wali asuh → santri → biodata → berkas
             'waliAsuh.santri.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
                 ->limit(1),
+            // Relasi superadmin → biodata → berkas
             'creator.biodata.berkas' => fn($q) => $q
                 ->where('jenis_berkas_id', $pasFotoId)
                 ->latest('id')
@@ -105,11 +106,11 @@ class CatatanAfektifService
             return ['status' => false, 'message' => 'Data tidak ditemukan'];
         }
 
-        $isSuperAdmin = $afektif->creator?->hasRole('superadmin');
+        $isSuperAdmin = optional($afektif->creator)->hasRole('superadmin');
 
         if ($isSuperAdmin) {
             // Pencatat = superadmin → ambil dari biodata user
-            $pencatatBiodata = $afektif->creator?->biodata?->first();
+            $pencatatBiodata = $afektif->creator?->biodata;
             $fotoPath = $pencatatBiodata?->berkas?->first()?->file_path ?? 'default.jpg';
             $namaPencatat = $pencatatBiodata?->nama ?? $afektif->creator?->name ?? 'Super Admin';
             $status = 'Superadmin';
@@ -144,7 +145,6 @@ class CatatanAfektifService
 
         return ['status' => true, 'data' => $data];
     }
-
 
     public function Listshow($id): array
     {

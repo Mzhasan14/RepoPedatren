@@ -283,24 +283,17 @@ class WaliasuhController extends Controller
         try {
             $result = $this->waliasuhService->createFromSantri($request->santri_ids);
 
-            return response()->json([
-                'message'      => 'Proses selesai',
-                'total_input'  => count($result['input']),
-                'total_unik'   => count($result['unique']),
-                'berhasil'     => count($result['success']),
-                'gagal'        => $result['failed'],
-            ], 200);
+            return response()->json($result, 200);
         } catch (\Throwable $e) {
-            // log biar gampang debug di backend
             Log::error('Gagal membuat wali asuh', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data wali asuh',
+                'message' => 'Proses gagal',
                 'error'   => $e->getMessage(),
-            ], 500);
+            ], 400);
         }
     }
 
@@ -318,7 +311,7 @@ class WaliasuhController extends Controller
         ];
 
         $columnOrder = [
-            'no_kk',           // di depan
+            'no_kk',
             'nik',
             'niup',
             'nama',

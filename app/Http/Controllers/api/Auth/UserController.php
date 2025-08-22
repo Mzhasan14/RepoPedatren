@@ -37,27 +37,12 @@ class UserController extends Controller
         $payload = $request->validated();
         $actor = $request->user();
 
-        // Validasi autentikasi dan hak akses
-        // if (!$actor) {
-        //     return response()->json(['message' => 'Belum login.'], 401);
-        // }
         if (!$actor->hasRole('superadmin')) {
             return response()->json(['message' => 'Tidak berhak menugaskan role'], 403);
         }
 
         DB::beginTransaction();
         try {
-            // Buat user baru
-            $user = User::create([
-                'name' => $payload['name'],
-                'email' => $payload['email'],
-                'password' => Hash::make($payload['password']),
-                'status' => (bool)($payload['status'] ?? true),
-            ]);
-
-            // Tetapkan role
-            $user->syncRoles([$payload['role']]);
-
             // Inisialisasi variabel biodata
             $biodataModel = null;
             $note = null;
@@ -74,15 +59,17 @@ class UserController extends Controller
                 }
             }
 
-            // Simpan mapping user <-> biodata
-            if ($biodataModel) {
-                DB::table('user_biodata')->insert([
-                    'biodata_id' => $biodataModel->id,
-                    'user_id' => $user->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            // Buat user baru langsung dengan biodata_id
+            $user = User::create([
+                'name' => $payload['name'],
+                'email' => $payload['email'],
+                'password' => Hash::make($payload['password']),
+                'status' => (bool)($payload['status'] ?? true),
+                'biodata_id' => $biodataModel?->id, // langsung simpan id biodata
+            ]);
+
+            // Tetapkan role
+            $user->syncRoles([$payload['role']]);
 
             DB::commit();
 
@@ -165,19 +152,17 @@ class UserController extends Controller
                 $user->assignRole($payload['role']);
             }
 
-            // Update atau mapping biodata
+            // Update atau mapping biodata langsung di kolom biodata_id
             $biodataModel = null;
             $note = null;
 
             if (!empty($payload['biodata'])) {
-                $biodataModel = $this->handleBiodataCreationOrMapping($payload['biodata'], $actor, $note, $user->id);
+                $biodataModel = $this->handleBiodataCreationOrMapping($payload['biodata'], $actor, $note);
+                $user->update(['biodata_id' => $biodataModel->id]);
             } elseif (!empty($payload['biodata_id'])) {
                 $byId = Biodata::find($payload['biodata_id']);
                 if ($byId) {
-                    DB::table('user_biodata')->updateOrInsert(
-                        ['user_id' => $user->id],
-                        ['biodata_id' => $byId->id, 'updated_at' => now(), 'created_at' => now()]
-                    );
+                    $user->update(['biodata_id' => $byId->id]);
                     $biodataModel = $byId;
                     $note = 'Biodata sudah ada, dipetakan melalui biodata_id.';
                 }
@@ -217,19 +202,17 @@ class UserController extends Controller
     /**
      * Tangani pembuatan atau pemetaan biodata untuk store/update.
      */
-    private function handleBiodataCreationOrMapping(array $b, $actor, ?string &$note = null, ?int $userId = null)
+    private function handleBiodataCreationOrMapping(array $b, $actor, ?string &$note = null)
     {
         $biodataModel = null;
 
         if (!empty($b['nik'])) {
-            // Cek biodata berdasarkan NIK
             $found = Biodata::where('nik', $b['nik'])->lockForUpdate()->first();
 
             if ($found) {
                 $biodataModel = $found;
                 $note = 'Biodata dengan NIK ditemukan, digunakan atau dipetakan.';
             } else {
-                // Buat biodata baru
                 try {
                     $b['created_by'] = $actor->id;
                     $biodataModel = Biodata::create($b);
@@ -242,18 +225,9 @@ class UserController extends Controller
                 }
             }
         } else {
-            // Tanpa NIK, selalu buat biodata baru
             $b['created_by'] = $actor->id;
             $biodataModel = Biodata::create($b);
             $note = 'Biodata baru dibuat.';
-        }
-
-        // Map ke user jika userId diberikan
-        if ($userId && $biodataModel) {
-            DB::table('user_biodata')->updateOrInsert(
-                ['user_id' => $userId],
-                ['biodata_id' => $biodataModel->id, 'created_at' => now(), 'updated_at' => now()]
-            );
         }
 
         return $biodataModel;

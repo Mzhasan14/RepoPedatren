@@ -41,8 +41,7 @@ class AnakasuhService
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s','s.id','wa.id_santri')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->join('user_biodata as ub','b.id','=','ub.biodata_id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->join('users as u', 'u.biodata_id', '=', 'b.id')
                 ->where('u.id', $user->id)
                 ->value('wa.id');
         }
