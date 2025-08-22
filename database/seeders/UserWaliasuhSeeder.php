@@ -15,7 +15,7 @@ class UserWaliasuhSeeder extends Seeder
     public function run(): void
     {
         // 1. Ambil User Wali Asuh
-        $waliAsuhUser = User::where('email', 'waliasuh@example.com')->first();
+        $waliAsuhUser = User::where('email', 'wali_asuh@example.com')->first();
 
         if (!$waliAsuhUser) {
             $this->command->warn('User Wali Asuh belum ada.');

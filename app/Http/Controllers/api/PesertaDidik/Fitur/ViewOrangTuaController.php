@@ -7,24 +7,29 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
-use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
 use App\Services\PesertaDidik\OrangTua\TransaksiAnakService;
+use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
+use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 
 class ViewOrangTuaController extends Controller
 {
     protected $viewOrangTuaService;
     protected $viewHafalanService;
+    protected $viewPresensiJamaahAnakService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
-        HafalanAnakService $viewHafalanService
+        HafalanAnakService $viewHafalanService,
+        PresensiJamaahAnakService $viewPresensiJamaahAnakService
         )
     {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
+        $this->viewPresensiJamaahAnakService = $viewPresensiJamaahAnakService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -104,6 +109,59 @@ class ViewOrangTuaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data nadhoman anak.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function getPresensiJamaahAnak(PresensiJamaahAnakRequest $request): JsonResponse
+    {
+        try {
+
+            $result = $this->viewPresensiJamaahAnakService->getPresensiJamaahAnak($request->validated());
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@getPresensiJamaahAnak error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id'   => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data presensi jamaah anak.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function getPresensiToday(Request $request): JsonResponse
+    {
+        try {
+            $santriId = $request->get('santri_id');
+            if (!$santriId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Santri ID tidak ditemukan.',
+                    'status'  => 400,
+                ], 400);
+            }
+
+            $result = $this->viewPresensiJamaahAnakService->getPresensiToday($santriId);
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@getPresensiToday error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id'   => Auth::id(),
+                'santri_id' => request()->get('santri_id'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data presensi hari ini.',
                 'status'  => 500,
                 'data'    => []
             ], 500);
