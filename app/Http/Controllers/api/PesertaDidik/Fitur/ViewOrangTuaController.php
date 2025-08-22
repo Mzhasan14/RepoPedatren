@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Services\PesertaDidik\Fitur\ViewOrangTuaService;
 use App\Http\Requests\PesertaDidik\Fitur\ViewOrangTuaRequest;
 
@@ -22,21 +23,28 @@ class ViewOrangTuaController extends Controller
     public function getTransaksiAnak(ViewOrangTuaRequest $request): JsonResponse
     {
         try {
-            $filters = $request->only([
+            $filters = array_filter($request->only([
                 'santri_id',
                 'outlet_id',
                 'kategori_id',
                 'date_from',
                 'date_to',
                 'q'
-            ]);
-            $perPage = 25;
+            ]));
+
+            $perPage = $request->get('per_page', 25);
 
             $result = $this->viewOrangTuaService->getTransaksiAnak($filters, $perPage);
 
-            return response()->json($result, $result['status']);
+            $status = $result['status'] ?? 200;
+
+            return response()->json($result, $status);
         } catch (\Throwable $e) {
-            Log::error('ViewOrangTuaController@index error: ' . $e->getMessage(), ['exception' => $e]);
+            Log::error('ViewOrangTuaController@getTransaksiAnak error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id'   => Auth::id(),
+                'filters'   => $request->all()
+            ]);
 
             return response()->json([
                 'success' => false,
