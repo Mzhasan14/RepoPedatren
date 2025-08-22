@@ -50,7 +50,7 @@ class BiodataRequest extends FormRequest
             'dari_saudara' => 'nullable|integer',
 
             'tinggal_bersama' => 'nullable|string|max:40',
-            'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'jenjang_pendidikan_terakhir' => 'nullable|string',
             'nama_pendidikan_terakhir' => 'nullable|string',
 
             'no_telepon' => 'nullable|string|max:20',

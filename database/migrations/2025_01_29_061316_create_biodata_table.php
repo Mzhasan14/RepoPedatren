@@ -28,10 +28,11 @@ return new class extends Migration
             $table->string('no_telepon', 20)->nullable();
             $table->string('no_telepon_2', 20)->nullable();
             $table->string('email', 100)->nullable();
-            $table->enum(
-                'jenjang_pendidikan_terakhir',
-                ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
-            )->nullable();
+            $table->string('jenjang_pendidikan_terakhir')->nullable();
+            // $table->enum(
+            //     'jenjang_pendidikan_terakhir',
+            //     ['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']
+            // )->nullable();
             $table->string('nama_pendidikan_terakhir')->nullable();
             $table->tinyInteger('anak_keberapa')->nullable();
             $table->tinyInteger('dari_saudara')->nullable();
@@ -39,7 +40,7 @@ return new class extends Migration
             // $table->string('smartcard')->nullable();
             $table->boolean('status')->default(true);
             $table->boolean('wafat')->default(false);
-            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();

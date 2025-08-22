@@ -45,7 +45,7 @@ class CreateKhadamRequest extends FormRequest
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100|unique:biodata,email',
 
-            'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'jenjang_pendidikan_terakhir' => 'nullable|string',
             'nama_pendidikan_terakhir' => 'nullable|string|max:100',
             'anak_keberapa' => 'nullable|integer|min:1',
             'dari_saudara' => 'nullable|integer|min:1',

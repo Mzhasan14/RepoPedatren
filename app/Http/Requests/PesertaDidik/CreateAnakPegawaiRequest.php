@@ -46,7 +46,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100|unique:biodata,email',
 
-            'jenjang_pendidikan_terakhir' => 'nullable|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'jenjang_pendidikan_terakhir' => 'nullable|string',
             'nama_pendidikan_terakhir' => 'nullable|string|max:100',
             'anak_keberapa' => 'nullable|integer|min:1',
             'dari_saudara' => 'nullable|integer|min:1',
@@ -59,7 +59,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'tanggal_lahir_ayah' => 'required|date',
             'no_telepon_ayah' => 'required|string|max:20',
             'pekerjaan_ayah' => 'required|string|max:100',
-            'pendidikan_terakhir_ayah' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'pendidikan_terakhir_ayah' => 'required|string',
             'penghasilan_ayah' => 'required|string|max:100',
             'wafat_ayah' => 'required|integer|in:0,1',
 
@@ -70,7 +70,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'tanggal_lahir_ibu' => 'required|date',
             'no_telepon_ibu' => 'required|string|max:20',
             'pekerjaan_ibu' => 'required|string|max:100',
-            'pendidikan_terakhir_ibu' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'pendidikan_terakhir_ibu' => 'required|string',
             'penghasilan_ibu' => 'required|string|max:100',
             'wafat_ibu' => 'required|integer|in:0,1',
 
@@ -81,7 +81,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'tanggal_lahir_wali' => 'required|date',
             'no_telepon_wali' => 'required|string|max:20',
             'pekerjaan_wali' => 'required|string|max:100',
-            'pendidikan_terakhir_wali' => 'required|in:paud,sd/mi,smp/mts,sma/smk/ma,d3,d4,s1,s2',
+            'pendidikan_terakhir_wali' => 'required|string',
             'penghasilan_wali' => 'required|string|max:100',
 
             'mondok' => 'nullable|integer|in:0,1',
