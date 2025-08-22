@@ -65,6 +65,7 @@ use App\Http\Controllers\api\PesertaDidik\Transaksi\OutletController;
 use App\Http\Controllers\api\Administrasi\DetailPelanggaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\DomisiliController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\JadwalSholatController;
+use App\Http\Controllers\api\PesertaDidik\Fitur\ViewOrangTuaController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\KategoriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
@@ -1125,4 +1126,8 @@ Route::prefix('pembayaran')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('jenis-berkas', JenisBerkasController::class);
+});
+
+Route::prefix('view-ortu')->group(function () {
+    Route::get('/anak', [ViewOrangTuaController::class, 'getAnak']);
 });
