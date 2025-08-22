@@ -655,4 +655,38 @@ class DropdownController extends Controller
 
         return response()->json($data);
     }
+    public function hubungkanwaliasuh()
+    {
+        $query = DB::table('santri as s')
+            ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('pendidikan AS pd', function ($j) {
+                $j->on('b.id', '=', 'pd.biodata_id')
+                    ->where('pd.status', 'aktif');
+            })
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('domisili_santri AS ds', function ($join) {
+                $join->on('s.id', '=', 'ds.santri_id')
+                    ->where('ds.status', 'aktif');
+            })
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('kamar AS kk', 'ds.kamar_id', '=', 'kk.id')
+
+            ->leftJoin('anak_asuh as aa', 's.id', '=', 'aa.id_santri')
+            ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
+
+            ->whereNull('aa.id_santri')
+            ->whereNull('wa.id_santri')
+
+            ->select([
+                's.id',
+                'b.nama',
+                'l.nama_lembaga',
+                's.nis',
+                'w.nama_wilayah',
+                'kk.nama_kamar',
+            ])
+            ->get();
+
+        return response()->json($query);
+    }
 }

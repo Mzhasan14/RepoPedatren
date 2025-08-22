@@ -30,15 +30,16 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RoleSeeder::class,
+            AlamatSeeder::class,
+            SystemUserSeeder::class,
+            BiodataSeeder::class,
             UserSeeder::class,
             TahunAjaranSeeder::class,
             SemesterSeeder::class,
             AngkatanSeeder::class,
             PendidikanSeeder::class,
             WilayahSeeder::class,
-            AlamatSeeder::class,
             HubunganKeluargaSeeder::class,
-            BiodataSeeder::class,
             KategoriGolonganSeeder::class,
             GolonganSeeder::class,
             GolonganJabatanSeeder::class,
@@ -69,7 +70,6 @@ class DatabaseSeeder extends Seeder
             NadhomanSeeder::class,
             TahfidzSeeder::class,
             OutletSeeder::class,
-            UserBiodataSeeder::class,
             PembayaranSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai

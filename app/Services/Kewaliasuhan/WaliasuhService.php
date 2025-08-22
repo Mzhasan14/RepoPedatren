@@ -37,7 +37,7 @@ class WaliasuhService
         return DB::table('wali_asuh AS ws')
             ->join('santri AS s', 'ws.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
-            ->join('keluarga as k','k.id_biodata','=','b.id')
+            ->join('keluarga as k', 'k.id_biodata', '=', 'b.id')
             ->leftJoin('domisili_santri AS ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
@@ -664,5 +664,72 @@ class WaliasuhService
         })->values();
     }
 
+    public function createFromSantri(array $santriIds): array
+    {
+        DB::beginTransaction();
+        try {
+            // --- Cek duplikat ---
+            if (count($santriIds) !== count(array_unique($santriIds))) {
+                throw new \Exception("Terdapat duplikat ID santri di dalam input.");
+            }
 
+            $dataInsert = [];
+            $skipped = [];
+
+            foreach ($santriIds as $santriId) {
+                // 1. Sudah jadi wali asuh aktif?
+                $isWali = DB::table('wali_asuh')
+                    ->where('id_santri', $santriId)
+                    ->where('status', 1)
+                    ->exists();
+
+                if ($isWali) {
+                    $skipped[] = [
+                        'id'     => $santriId,
+                        'reason' => 'Sudah menjadi wali asuh aktif',
+                    ];
+                    continue;
+                }
+
+                // 2. Masih jadi anak asuh aktif?
+                $isAnakAsuh = DB::table('anak_asuh')
+                    ->where('id_santri', $santriId)
+                    ->where('status', 1)
+                    ->exists();
+
+                if ($isAnakAsuh) {
+                    $skipped[] = [
+                        'id'     => $santriId,
+                        'reason' => 'Masih tercatat sebagai anak asuh aktif',
+                    ];
+                    continue;
+                }
+
+                $dataInsert[] = [
+                    'id_santri'     => $santriId,
+                    'status'        => 1,
+                    'tanggal_mulai' => now()->toDateString(), // default hari ini
+                    'created_by' =>Auth::id(), 
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ];
+            }
+
+            if (!empty($dataInsert)) {
+                DB::table('wali_asuh')->insert($dataInsert);
+            }
+
+            DB::commit();
+
+            return [
+                'input'   => $santriIds,
+                'unique'  => $santriIds,
+                'success' => $dataInsert,
+                'failed'  => $skipped,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
 }

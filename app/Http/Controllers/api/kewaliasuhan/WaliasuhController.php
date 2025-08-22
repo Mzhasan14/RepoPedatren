@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Kewaliasuhan\CreateWaliAsuhRequest;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Kewaliasuhan\Wali_asuh;
@@ -276,6 +277,31 @@ class WaliasuhController extends Controller
             });
 
         return response()->json($data);
+    }
+    public function createFromSantri(CreateWaliAsuhRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->waliasuhService->createFromSantri($request->santri_ids);
+
+            return response()->json([
+                'message'      => 'Proses selesai',
+                'total_input'  => count($result['input']),
+                'total_unik'   => count($result['unique']),
+                'berhasil'     => count($result['success']),
+                'gagal'        => $result['failed'],
+            ], 200);
+        } catch (\Throwable $e) {
+            // log biar gampang debug di backend
+            Log::error('Gagal membuat wali asuh', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data wali asuh',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function exportExcel(Request $request)

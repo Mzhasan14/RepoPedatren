@@ -45,9 +45,9 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
+            // $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            // $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+            // $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('negara_id')->references('id')->on('negara')->onDelete('cascade');
             $table->foreign('provinsi_id')->references('id')->on('provinsi')->onDelete('cascade');
             $table->foreign('kabupaten_id')->references('id')->on('kabupaten')->onDelete('cascade');
