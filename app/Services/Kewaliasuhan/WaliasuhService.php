@@ -674,7 +674,6 @@ class WaliasuhService
             }
 
             $dataInsert = [];
-            $skipped = [];
 
             foreach ($santriIds as $santriId) {
                 // 1. Sudah jadi wali asuh aktif?
@@ -684,11 +683,7 @@ class WaliasuhService
                     ->exists();
 
                 if ($isWali) {
-                    $skipped[] = [
-                        'id'     => $santriId,
-                        'reason' => 'Sudah menjadi wali asuh aktif',
-                    ];
-                    continue;
+                    throw new \Exception("Santri ID {$santriId} sudah menjadi wali asuh aktif.");
                 }
 
                 // 2. Masih jadi anak asuh aktif?
@@ -698,34 +693,26 @@ class WaliasuhService
                     ->exists();
 
                 if ($isAnakAsuh) {
-                    $skipped[] = [
-                        'id'     => $santriId,
-                        'reason' => 'Masih tercatat sebagai anak asuh aktif',
-                    ];
-                    continue;
+                    throw new \Exception("Santri ID {$santriId} masih tercatat sebagai anak asuh aktif.");
                 }
 
                 $dataInsert[] = [
                     'id_santri'     => $santriId,
                     'status'        => 1,
-                    'tanggal_mulai' => now()->toDateString(), // default hari ini
-                    'created_by' =>Auth::id(), 
+                    'tanggal_mulai' => now()->toDateString(),
+                    'created_by'    => Auth::id(),
                     'created_at'    => now(),
                     'updated_at'    => now(),
                 ];
             }
 
-            if (!empty($dataInsert)) {
-                DB::table('wali_asuh')->insert($dataInsert);
-            }
+            DB::table('wali_asuh')->insert($dataInsert);
 
             DB::commit();
 
             return [
-                'input'   => $santriIds,
-                'unique'  => $santriIds,
-                'success' => $dataInsert,
-                'failed'  => $skipped,
+                'message' => 'Proses berhasil',
+                'data'    => $dataInsert,
             ];
         } catch (\Throwable $e) {
             DB::rollBack();

@@ -71,6 +71,7 @@ class DatabaseSeeder extends Seeder
             TahfidzSeeder::class,
             OutletSeeder::class,
             PembayaranSeeder::class,
+            UserWaliasuhSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai
         Activity::enableLogging();
