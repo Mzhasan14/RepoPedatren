@@ -4,10 +4,11 @@ namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\Fitur\ViewOrangTuaRequest;
 use App\Services\PesertaDidik\Fitur\ViewOrangTuaService;
+use App\Http\Requests\PesertaDidik\Fitur\ViewOrangTuaRequest;
 
 class ViewOrangTuaController extends Controller
 {
@@ -18,17 +19,30 @@ class ViewOrangTuaController extends Controller
         $this->viewOrangTuaService = $viewOrangTuaService;
     }
 
-    public function getAnak(ViewOrangTuaRequest $request)
+    public function getTransaksiAnak(ViewOrangTuaRequest $request): JsonResponse
     {
         try {
-            return $this->viewOrangTuaService->getAnak($request->biodata_id_ortu);
-        } catch (Exception $e) {
-            Log::error('Error mengambil data anak:' . $e->getMessage(), [
-                'biodata_id_ortu' => $request->biodata_id_ortu,
+            $filters = $request->only([
+                'santri_id',
+                'outlet_id',
+                'kategori_id',
+                'date_from',
+                'date_to',
+                'q'
             ]);
+            $perPage = 25;
+
+            $result = $this->viewOrangTuaService->getTransaksiAnak($filters, $perPage);
+
+            return response()->json($result, $result['status']);
+        } catch (\Throwable $e) {
+            Log::error('ViewOrangTuaController@index error: ' . $e->getMessage(), ['exception' => $e]);
+
             return response()->json([
-                'message' => 'Terjadi kesalahan saat mengambil data anak.',
-                'error' => $e->getMessage(),
+                'success' => false,
+                'status'  => 500,
+                'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
+                'data'    => []
             ], 500);
         }
     }

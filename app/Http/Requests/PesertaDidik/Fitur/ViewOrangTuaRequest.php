@@ -24,18 +24,33 @@ class ViewOrangTuaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'biodata_id_ortu' => 'required|uuid|exists:biodata,id',
+            'santri_id'   => 'required|integer|exists:santri,id',
+            'outlet_id'   => 'nullable|integer|exists:outlets,id',
+            'kategori_id' => 'nullable|integer|exists:kategori,id',
+            'date_from'   => 'nullable|date',
+            'date_to'     => 'nullable|date|after_or_equal:date_from',
+            'q'           => 'nullable|string|max:255',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'biodata_id_ortu.required' => 'ID biodata orang tua wajib diisi.',
-            'biodata_id_ortu.uuid' => 'ID biodata orang tua harus berupa angka.',
-            'biodata_id_ortu.exists' => 'ID biodata orang tua tidak ditemukan.',
+            'santri_id.required' => 'ID santri wajib diisi.',
+            'santri_id.integer'  => 'ID santri harus berupa angka.',
+            'santri_id.exists'   => 'ID santri tidak ditemukan.',
+            'outlet_id.integer' => 'ID outlet harus berupa angka.',
+            'outlet_id.exists'  => 'ID outlet tidak ditemukan.',
+            'kategori_id.integer' => 'ID kategori harus berupa angka.',
+            'kategori_id.exists'  => 'ID kategori tidak ditemukan.',
+            'date_from.date' => 'Tanggal awal harus berupa format tanggal yang valid.',
+            'date_to.date'             => 'Tanggal akhir harus berupa format tanggal yang valid.',
+            'date_to.after_or_equal'   => 'Tanggal akhir harus sama atau setelah tanggal awal.',
+            'q.string' => 'Parameter pencarian harus berupa teks.',
+            'q.max'    => 'Parameter pencarian maksimal 255 karakter.',
         ];
     }
+
 
     protected function failedValidation(Validator $validator)
     {

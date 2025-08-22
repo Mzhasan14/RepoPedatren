@@ -1134,5 +1134,5 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('view-ortu')->group(function () {
-    Route::get('/anak', [ViewOrangTuaController::class, 'getAnak']);
+    Route::get('/transaksi', [ViewOrangTuaController::class, 'getTransaksiAnak']);
 });
