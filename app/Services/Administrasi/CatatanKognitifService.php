@@ -30,10 +30,7 @@ class CatatanKognitifService
         if ($user->hasRole('waliasuh')) {
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
-                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->join('user_biodata as ub', 'b.id', 'ub.biodata_id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
-                ->where('u.id', $user->id)
+                ->where('s.biodata_id', $user->biodata_id)
                 ->value('wa.id');
         }
 
@@ -50,20 +47,21 @@ class CatatanKognitifService
             ->leftJoin('kelas', 'kelas.id', '=', 'pendidikan.kelas_id')
             ->leftJoin('rombel', 'rombel.id', '=', 'pendidikan.rombel_id')
 
-            // Relasi wali_asuh → pencatat biasa
+            // Relasi wali_asuh → pencatat
             ->leftJoin('wali_asuh', 'wali_asuh.id', '=', 'catatan_kognitif.id_wali_asuh')
             ->leftJoin('santri as ps', 'ps.id', '=', 'wali_asuh.id_santri')
             ->leftJoin('biodata as bp', 'bp.id', '=', 'ps.biodata_id')
 
             // Relasi created_by → user → role superadmin
             ->leftJoin('users as cu', 'cu.id', '=', 'catatan_kognitif.created_by')
+            ->leftJoin('biodata as bsc', 'bsc.id', '=', 'cu.biodata_id') // langsung cu.biodata_id
+
+            // Spatie roles
             ->leftJoin('model_has_roles as mhr', function ($join) {
                 $join->on('cu.id', '=', 'mhr.model_id')
                     ->where('mhr.model_type', '=', DB::raw("'App\\\\Models\\\\User'"));
             })
             ->leftJoin('roles as r', 'r.id', '=', 'mhr.role_id')
-            ->leftJoin('user_biodata as ubc', 'ubc.user_id', '=', 'cu.id')
-            ->leftJoin('biodata as bsc', 'bsc.id', '=', 'ubc.biodata_id')
 
             // Foto santri
             ->leftJoinSub($fotoLast, 'fotoLastCatatan', function ($join) {
@@ -82,14 +80,14 @@ class CatatanKognitifService
                 $join->on('bsc.id', '=', 'fotoLastSuperAdmin.biodata_id');
             })
             ->leftJoin('berkas as FotoSuperAdmin', 'FotoSuperAdmin.id', '=', 'fotoLastSuperAdmin.last_id')
-            // ->orderBy('catatan_kognitif.id', 'asc')
+
             ->orderBy('catatan_kognitif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh
         if ($user->hasRole('waliasuh') && $waliAsuhId) {
             $query->where('catatan_kognitif.id_wali_asuh', $waliAsuhId);
         } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
-            $query->whereRaw('1=0'); // user wali_asuh tapi tidak punya relasi → kosong
+            $query->whereRaw('1=0');
         }
 
         return $query;
@@ -280,10 +278,10 @@ class CatatanKognitifService
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->join('user_biodata as ub', 'ub.biodata_id', 'b.id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->join('users as u', 'u.biodata_id', '=', 'b.id') // langsung ke users
                 ->where('u.id', $user->id)
                 ->value('wa.id');
+
 
             if (! $waliAsuhId) {
                 return [

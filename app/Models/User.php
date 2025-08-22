@@ -25,6 +25,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'biodata_id',
         'status',
     ];
 
@@ -52,8 +53,9 @@ class User extends Authenticatable
     }
     public function biodata()
     {
-        return $this->belongsToMany(Biodata::class, 'user_biodata', 'user_id', 'biodata_id');
+        return $this->belongsTo(Biodata::class, 'biodata_id');
     }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
