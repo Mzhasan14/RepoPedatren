@@ -1046,7 +1046,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
     });
 
-    Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])->middeware('role:superadmin|admin|supervisor|petugas');
+    Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])->middleware('role:superadmin|admin|supervisor|petugas');
 
     Route::middleware('role:superadmin|admin')->group(function () {
         Route::post('outlet', [OutletController::class, 'store']);
