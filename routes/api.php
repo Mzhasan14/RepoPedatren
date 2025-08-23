@@ -858,7 +858,7 @@ Route::prefix('crud')
             Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
             Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 
-            Route::post('hubungkanwaliasuh',[WaliasuhController::class,'createFromSantri']);
+            Route::post('hubungkanwaliasuh', [WaliasuhController::class, 'createFromSantri']);
         });
     });
 
@@ -1041,11 +1041,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('kategori', [KategoriController::class, 'index']);
         Route::get('kategori/{kategori}', [KategoriController::class, 'show']);
-        Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById']);
 
         Route::get('detail-user-outlet', [DetailUserOutletController::class, 'index']);
         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
     });
+
+    Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])->middeware('role:superadmin|admin|supervisor|petugas');
 
     Route::middleware('role:superadmin|admin')->group(function () {
         Route::post('outlet', [OutletController::class, 'store']);

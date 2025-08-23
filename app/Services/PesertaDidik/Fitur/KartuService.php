@@ -3,27 +3,27 @@
 namespace App\Services\PesertaDidik\Fitur;
 
 use App\Models\Kartu;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class KartuService
 {
-    public function getAll(int $perPage = 25)
+    public function getAll($request, int $perPage = 25)
     {
-        $paginator = Kartu::with([
-            'santri:id,nis,biodata_id',
-            'santri.biodata:id,nama'
-        ])
-            ->latest()
-            ->paginate($perPage);
+        $query = DB::table('kartu as k')
+            ->select(
+                'k.*',
+                's.id as santri_id',
+                's.nis',
+                'b.id as biodata_id',
+                'b.nama'
+            )
+            ->leftJoin('santri as s', 'k.santri_id', '=', 's.id')
+            ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->orderByDesc('k.created_at');
 
-        return [
-            'total_data'   => $paginator->total(),
-            'current_page' => $paginator->currentPage(),
-            'per_page'     => $paginator->perPage(),
-            'total_pages'  => $paginator->lastPage(),
-            'data'         => $paginator->getCollection()->map(fn($item) => $this->transform($item))->values(),
-        ];
+        return $query;
     }
 
     public function getById(int $id)
@@ -43,7 +43,7 @@ class KartuService
         }
 
         $data['created_by'] = Auth::id();
-        
+
         $kartu = Kartu::create($data);
         $kartu->load([
             'santri:id,nis,biodata_id',

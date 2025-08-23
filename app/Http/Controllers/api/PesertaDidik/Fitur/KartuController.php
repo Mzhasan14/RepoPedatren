@@ -8,19 +8,35 @@ use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Fitur\KartuService;
 use App\Http\Requests\PesertaDidik\KartuStoreRequest;
 use App\Http\Requests\PesertaDidik\KartuUpdateRequest;
+use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
 
 class KartuController extends Controller
 {
     protected $service;
+    protected $filter;
 
-    public function __construct(KartuService $service)
+    public function __construct(KartuService $service, FilterPesertaDidikService $filter)
     {
         $this->service = $service;
+        $this->filter = $filter;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json($this->service->getAll());
+        $query = $this->service->getAll($request);
+        $query = $this->filter->pesertaDidikFilters($query, $request);
+
+        $perPage = (int) $request->input('limit', 25);
+        $currentPage = (int) $request->input('page', 1);
+
+        $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        return response()->json([
+            'data' => $results->items(),
+            'current_page' => $results->currentPage(),
+            'per_page' => $results->perPage(),
+            'total' => $results->total(),
+            'last_page' => $results->lastPage(),
+        ]);
     }
 
     public function show($id): JsonResponse

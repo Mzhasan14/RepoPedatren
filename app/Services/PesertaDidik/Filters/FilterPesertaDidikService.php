@@ -14,7 +14,6 @@ class FilterPesertaDidikService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);

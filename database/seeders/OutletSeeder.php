@@ -85,6 +85,7 @@ class OutletSeeder extends Seeder
 
         /**
          * DETAIL USER OUTLET (khusus user role = petugas)
+         * Semua petugas otomatis ditempatkan di Koperasi Pesantren
          */
         $users = DB::table('users')
             ->join('model_has_roles', function ($join) {
@@ -92,52 +93,17 @@ class OutletSeeder extends Seeder
                     ->where('model_has_roles.model_type', '=', 'App\\Models\\User');
             })
             ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-            ->where('roles.name', 'petugas') // hanya role petugas
+            ->where('roles.name', 'petugas')
             ->where('users.id', '!=', $adminId)
             ->pluck('users.id')
             ->toArray();
 
-        $outletIds = array_values($outletMap);
-
         $detailUserOutlet = [];
-        $assignedUsers = [];
-
-        foreach ($outletIds as $index => $outletId) {
-            if (!isset($users[$index])) continue;
-            $userId = $users[$index];
-
-            // skip jika sudah punya outlet
-            if (in_array($userId, $assignedUsers)) continue;
-
+        foreach ($users as $userId) {
             $detailUserOutlet[] = [
-                'user_id' => $userId,
-                'outlet_id' => $outletId,
-                'status' => true,
-                'created_by' => $adminId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-
-            $assignedUsers[] = $userId;
-        }
-
-        // khusus user tertentu, hanya kalau dia role petugas
-        if (!in_array(9, $assignedUsers) && in_array(9, $users)) {
-            $detailUserOutlet[] = [
-                'user_id' => 9,
-                'outlet_id' => $outletMap['Koperasi Pesantren'],
-                'status' => true,
-                'created_by' => $adminId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        if (!in_array(1, $assignedUsers) && in_array(1, $users)) {
-            $detailUserOutlet[] = [
-                'user_id' => 1,
-                'outlet_id' => $outletMap['Koperasi Pesantren'],
-                'status' => true,
+                'user_id'    => $userId,
+                'outlet_id'  => $outletMap['Koperasi Pesantren'],
+                'status'     => true,
                 'created_by' => $adminId,
                 'created_at' => now(),
                 'updated_at' => now(),
