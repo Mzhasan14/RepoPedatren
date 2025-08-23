@@ -24,6 +24,7 @@ class TransaksiRequest extends FormRequest
     public function rules()
     {
         return [
+            'outlet_id' => 'nullable|integer|exists:outlets,id',
             'uid_kartu' => 'required|string|max:50',
             'kategori_id' => 'required|integer|exists:kategori,id',
             'total_bayar' => 'required|numeric|min:0.01',

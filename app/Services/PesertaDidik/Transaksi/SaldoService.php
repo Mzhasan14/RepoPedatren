@@ -46,17 +46,20 @@ class SaldoService
                 ];
             }
 
-            // 2. Validasi user memiliki akses ke outlet
-            $userOutlet = DetailUserOutlet::where('user_id', $userId)
-                ->where('outlet_id', $outlet->id)
-                ->where('status', true)
-                ->first();
+            $user = Auth::user();
 
-            if (!$userOutlet) {
-                return [
-                    'status'  => false,
-                    'message' => 'Anda tidak memiliki akses untuk melakukan transaksi di outlet koperasi pesantren.'
-                ];
+            if (! $user->hasRole('superadmin')) {
+                $userOutlet = DetailUserOutlet::where('user_id', $userId)
+                    ->where('outlet_id', $outlet->id)
+                    ->where('status', true)
+                    ->first();
+
+                if (!$userOutlet) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Anda tidak memiliki akses untuk melakukan transaksi di outlet koperasi pesantren.'
+                    ];
+                }
             }
 
             if ($metode === 'scan') {
@@ -109,7 +112,7 @@ class SaldoService
                 'santri_id'      => $santri_id,
                 'outlet_id'      => $outlet->id,
                 'kategori_id'    => $kategoriId,
-                'user_outlet_id' => $userOutlet->id,
+                'user_outlet_id' =>  $user->hasRole('superadmin') ? null : $userOutlet->id,
                 'tipe'           => $tipe,
                 'jumlah'         => $jumlah,
                 'created_by'     => $userId,

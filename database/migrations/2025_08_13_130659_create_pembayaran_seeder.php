@@ -98,7 +98,7 @@ return new class extends Migration
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
             $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
-            $table->foreignId('user_outlet_id')->constrained('detail_user_outlet')->cascadeOnDelete(); // siapa + outlet
+            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->cascadeOnDelete(); // siapa + outlet
             $table->decimal('total_bayar', 15, 2);
             $table->dateTime('tanggal');
 

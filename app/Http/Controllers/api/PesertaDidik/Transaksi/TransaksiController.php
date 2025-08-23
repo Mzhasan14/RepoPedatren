@@ -47,6 +47,7 @@ class TransaksiController extends Controller
         $data = $request->validated();
 
         $result = $this->service->createTransaction(
+            $data['outlet_id'],
             $data['uid_kartu'],
             $data['kategori_id'],
             $data['total_bayar'],
@@ -85,6 +86,34 @@ class TransaksiController extends Controller
             return response()->json($result, $result['status']);
         } catch (\Throwable $e) {
             Log::error('TransactionController@index error: ' . $e->getMessage(), ['exception' => $e]);
+
+            return response()->json([
+                'success' => false,
+                'status'  => 500,
+                'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function transaksiToko(Request $request): JsonResponse
+    {
+        try {
+            $filters = $request->only([
+                'santri_id',
+                'outlet_id',
+                'kategori_id',
+                'date_from',
+                'date_to',
+                'q'
+            ]);
+            $perPage = 25;
+
+            $result = $this->service->transaksiToko($filters, $perPage);
+
+            return response()->json($result, $result['status']);
+        } catch (\Throwable $e) {
+            Log::error('TransactionController@transaksiToko error: ' . $e->getMessage(), ['exception' => $e]);
 
             return response()->json([
                 'success' => false,
