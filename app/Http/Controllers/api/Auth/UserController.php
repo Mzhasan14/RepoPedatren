@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api\Auth;
 
 use App\Models\User;
 use App\Models\Biodata;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +19,14 @@ class UserController extends Controller
     /**
      * Tampilkan daftar user beserta role.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $users = User::with('roles')->paginate(10);
-            return response()->json($users);
+            $users = User::with('roles');
+            $perPage = $request->input('limit', 25);
+            $currentPage = $request->input('page', 1);
+            $results = $users->paginate($perPage, ['*'], 'page', $currentPage);
+            return response()->json($results);
         } catch (\Throwable $e) {
             Log::error('Gagal mengambil data user: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json(['message' => 'Gagal mengambil data user'], 500);

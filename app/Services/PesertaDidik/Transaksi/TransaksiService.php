@@ -97,6 +97,7 @@ class TransaksiService
 
                 $outletId = $userOutlet->outlet_id;
             } else {
+                
                 $outletId = $outletId;
             }
 
