@@ -1064,7 +1064,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Transaksi
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::middleware('role:superadmin|supervisor|admin')->group(function () {
+    Route::middleware('role:superadmin|supervisor|admin|petugas')->group(function () {
         Route::post('scan-kartu', [TransaksiController::class, 'scan']);
         Route::get('transaksi', [TransaksiController::class, 'index']);
     });
