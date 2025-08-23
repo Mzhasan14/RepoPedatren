@@ -94,7 +94,7 @@ class UserController extends Controller
     public function show(User $user): JsonResponse
     {
         try {
-            $biodataId = DB::table('user_biodata')->where('user_id', $user->id)->value('biodata_id');
+            $biodataId = DB::table('user')->where('user_id', $user->id)->value('biodata_id');
             $biodata = $biodataId ? Biodata::find($biodataId) : null;
 
             $user = $user->load('roles');

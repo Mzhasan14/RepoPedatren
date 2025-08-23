@@ -24,10 +24,10 @@ class TahfidzRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
-            'santri_id'       => 'required|exists:santri,id',
-            'tanggal'         => 'required|date',
-            'jenis_setoran'   => 'required|in:baru,murojaah',
+            'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
+            'santri_id'       => ['required', 'exists:santri,id'],
+            'tanggal'         => ['required', 'date'],
+            'jenis_setoran'   => ['required', 'in:baru,murojaah'],
 
             // 📖 Jika jenis_setoran = baru
             'surat'        => ['required_if:jenis_setoran,baru', 'string', 'max:50'],
@@ -38,9 +38,9 @@ class TahfidzRequest extends FormRequest
             'juz_mulai'   => ['required_if:jenis_setoran,murojaah', 'integer', 'min:1', 'max:30'],
             'juz_selesai' => ['required_if:jenis_setoran,murojaah', 'integer', 'gte:juz_mulai', 'max:30'],
 
-            'nilai'   => 'required|in:lancar,cukup,kurang',
-            'catatan' => 'nullable|string|max:1000',
-            'status'  => 'required|in:proses,tuntas'
+            'nilai'   => ['required', 'in:lancar,cukup,kurang'],
+            'catatan' => ['nullable', 'string', 'max:255'],
+            'status'  => ['required_if:jenis_setoran,baru', 'in:proses,tuntas'],
         ];
     }
 

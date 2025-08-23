@@ -811,8 +811,8 @@ Route::prefix('crud')
 
             // Lembaga
             Route::post('lembaga', [LembagaController::class, 'store']);
-            Route::put('{id}/lembaga', [LembagaController::class, 'update']);
-            Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
+            Route::put('lembaga/{id}', [LembagaController::class, 'update']);
+            Route::delete('lembaga/{id}', [LembagaController::class, 'destroy']);
             Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
 
             // Wilayah (Blok, Kamar, Domisili)
