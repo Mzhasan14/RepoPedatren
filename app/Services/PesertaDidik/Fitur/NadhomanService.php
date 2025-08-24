@@ -149,7 +149,7 @@ class NadhomanService
 
         return $query->get();
     }
-    public function getSetoranDanRekapNadhoman($request, $id)
+    public function getSetoranDanRekapNadhoman($id)
     {
         // Query setoran nadhoman
         $nadhoman = DB::table('nadhoman as n')
@@ -202,10 +202,6 @@ class NadhomanService
             ->where('rn.santri_id', $id)
             ->orderBy('rn.id', 'desc')
             ->get();
-        if ($request->filled('tahun_ajaran_id')) {
-            $nadhoman->where('tahun_ajaran.id', $request->tahun_ajaran_id);
-            $rekap->where('tahun_ajaran.id', $request->tahun_ajaran_Id);
-        }
 
         return [
             'nadhoman'        => $nadhoman,

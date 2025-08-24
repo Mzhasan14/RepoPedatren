@@ -99,7 +99,7 @@ class TahfidzService
         }
     }
 
-    public function getSetoranDanRekap($request, $id)
+    public function getSetoranDanRekap($id)
     {
         // Query setoran tahfidz
         $tahfidz = DB::table('tahfidz as t')
@@ -168,11 +168,6 @@ class TahfidzService
             ->where('rt.santri_id', $id)
             ->orderBy('rt.id', 'desc')
             ->first();
-
-        if ($request->filled('tahun_ajaran_id')) {
-            $tahfidz->where('tahun_ajaran.id', $request->tahun_ajaran_id);
-            $rekap->where('tahun_ajaran.id', $request->tahun_ajaran_Id);
-        }
 
         return [
             'tahfidz' => $tahfidz,
