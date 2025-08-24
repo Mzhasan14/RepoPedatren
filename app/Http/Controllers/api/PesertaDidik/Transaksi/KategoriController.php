@@ -98,15 +98,26 @@ class KategoriController extends Controller
 
     public function kategoriById()
     {
-        $userId = Auth::id();
+        $user = Auth::user();
 
-        $kategori = DB::table('detail_user_outlet')
-            ->join('outlets', 'detail_user_outlet.outlet_id', '=', 'outlets.id')
-            ->join('outlet_kategori', 'outlet_kategori.outlet_id', '=', 'outlets.id')
-            ->join('kategori', 'outlet_kategori.kategori_id', '=', 'kategori.id')
-            ->where('detail_user_outlet.user_id', $userId)
-            ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
-            ->get();
+        if (! $user->hasRole('superadmin')) {
+            $kategori = DB::table('detail_user_outlet')
+                ->join('outlets', 'detail_user_outlet.outlet_id', '=', 'outlets.id')
+                ->join('outlet_kategori', 'outlet_kategori.outlet_id', '=', 'outlets.id')
+                ->join('kategori', 'outlet_kategori.kategori_id', '=', 'kategori.id')
+                ->where('detail_user_outlet.user_id', $user->id)
+                ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
+                ->get();
+        } else {
+            $kategori = DB::table('detail_user_outlet')
+                ->join('outlets', 'detail_user_outlet.outlet_id', '=', 'outlets.id')
+                ->join('outlet_kategori', 'outlet_kategori.outlet_id', '=', 'outlets.id')
+                ->join('kategori', 'outlet_kategori.kategori_id', '=', 'kategori.id')
+                ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
+                ->get();
+        }
+
+
 
         return response()->json([
             'success' => true,
