@@ -111,6 +111,7 @@ class TahfidzService
                 'biodata.nama as santri_nama',
                 't.tanggal',
                 't.jenis_setoran',
+                'tahun_ajaran.tahun_ajaran',
                 DB::raw("
                 CASE 
                     WHEN t.jenis_setoran = 'baru' THEN
@@ -155,7 +156,7 @@ class TahfidzService
             ->select(
                 'santri.nis',
                 'biodata.nama as santri_nama',
-                'tahun_ajaran.tahun_ajaran as tahun_ajaran',
+                'tahun_ajaran.tahun_ajaran',
                 'rt.total_surat',
                 'rt.persentase_khatam',
                 'rt.surat_tersisa',

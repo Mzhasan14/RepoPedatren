@@ -117,8 +117,6 @@ class KategoriController extends Controller
                 ->get();
         }
 
-
-
         return response()->json([
             'success' => true,
             'message' => 'Daftar kategori berhasil diambil',

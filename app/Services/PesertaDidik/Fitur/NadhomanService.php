@@ -163,6 +163,7 @@ class NadhomanService
                 'kitab.nama_kitab',
                 'n.tanggal',
                 'n.jenis_setoran',
+                'tahun_ajaran.tahun_ajaran',
                 DB::raw("
                     CONCAT(
                         n.bait_mulai,
@@ -194,6 +195,7 @@ class NadhomanService
             ->join('tahun_ajaran', 'rn.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
+                'tahun_ajaran.tahun_ajaran',
                 'biodata.nama as santri_nama',
                 'kitab.nama_kitab',
                 'rn.total_bait',
