@@ -13,6 +13,8 @@ use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use function Laravel\Prompts\select;
+
 class DropdownController extends Controller
 {
     public function menuWilayahBlokKamar()
@@ -688,5 +690,32 @@ class DropdownController extends Controller
             ->get();
 
         return response()->json($query);
+    }
+    public function dropdownWaliAsuh(Request $request)
+    {
+        $wilayahId    = $request->wilayah_id;
+        $jenisKelamin = $request->jenis_kelamin;
+
+        $waliAsuh = DB::table('wali_asuh as w')
+            ->join('santri as s', 's.id', '=', 'w.id_santri')
+            ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+            ->join('domisili_santri as ds', function ($join) {
+                $join->on('s.id', '=', 'ds.santri_id')
+                    ->where('ds.status', 'aktif');
+            })
+            ->whereNull('w.id_grup_wali_asuh') 
+            ->where('b.jenis_kelamin', $jenisKelamin) 
+            ->where('ds.wilayah_id', $wilayahId) 
+            ->select([
+                'w.id as id_waliasuh',
+                'b.nama as nama_waliasuh',
+                's.nis',
+            ])
+            ->get();
+
+        return response()->json([
+            'message' => 'Proses berhasil',
+            'data'    => $waliAsuh
+        ]);
     }
 }
