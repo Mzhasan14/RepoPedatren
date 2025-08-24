@@ -91,7 +91,7 @@ class NadhomanService
                 ])
                 ->event('create')
                 ->log("Setoran nadhoman berhasil ditambahkan");
-                
+
             return $setoranId;
         } catch (Exception $e) {
             DB::rollBack();
@@ -149,7 +149,7 @@ class NadhomanService
 
         return $query->get();
     }
-    public function getSetoranDanRekapNadhoman($id)
+    public function getSetoranDanRekapNadhoman($request, $id)
     {
         // Query setoran nadhoman
         $nadhoman = DB::table('nadhoman as n')
@@ -202,6 +202,10 @@ class NadhomanService
             ->where('rn.santri_id', $id)
             ->orderBy('rn.id', 'desc')
             ->get();
+        if ($request->filled('tahun_ajaran_id')) {
+            $nadhoman->where('tahun_ajaran.id', $request->tahun_ajaran_id);
+            $rekap->where('tahun_ajaran.id', $request->tahun_ajaran_Id);
+        }
 
         return [
             'nadhoman'        => $nadhoman,

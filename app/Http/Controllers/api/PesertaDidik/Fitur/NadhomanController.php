@@ -112,10 +112,10 @@ class NadhomanController extends Controller
             'data'         => $formatted,
         ]);
     }
-    public function getSetoranDanRekap($id)
+    public function getSetoranDanRekap(Request $request, $id)
     {
         try {
-            $result = $this->service->getSetoranDanRekapNadhoman($id);
+            $result = $this->service->getSetoranDanRekapNadhoman($request, $id);
 
             return response()->json([
                 'success' => true,

@@ -74,7 +74,7 @@ class TahfidzController extends Controller
     //     }
     // }
 
-    public function getSetoranDanRekap($id)
+    public function getSetoranDanRekap(Request $request, $id)
     {
         try {
             $result = $this->service->getSetoranDanRekap($id);
