@@ -96,7 +96,7 @@ class KategoriController extends Controller
         }
     }
 
-    public function kategoriById()
+    public function kategoriById(Request $request)
     {
         $user = Auth::user();
 
@@ -109,10 +109,10 @@ class KategoriController extends Controller
                 ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
                 ->get();
         } else {
-            $kategori = DB::table('detail_user_outlet')
-                ->join('outlets', 'detail_user_outlet.outlet_id', '=', 'outlets.id')
+            $kategori = DB::table('outlets')
                 ->join('outlet_kategori', 'outlet_kategori.outlet_id', '=', 'outlets.id')
                 ->join('kategori', 'outlet_kategori.kategori_id', '=', 'kategori.id')
+                ->where('outlet_kategori.outlet_id', $request->outlet_id)
                 ->select('kategori.id as kategori_id', 'kategori.nama_kategori', 'outlets.nama_outlet')
                 ->get();
         }

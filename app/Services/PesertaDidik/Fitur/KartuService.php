@@ -11,7 +11,21 @@ class KartuService
 {
     public function getAll($request, int $perPage = 25)
     {
+        $wpLast = DB::table('warga_pesantren')
+            ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
+            ->where('status', true)
+            ->groupBy('biodata_id');
+            
         $query = DB::table('kartu as k')
+            ->leftJoin('santri as s', 'k.santri_id', '=', 's.id')
+            ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
+            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftjoin('kabupaten AS kb', 'b.kabupaten_id', '=', 'kb.id')
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->select(
                 'k.*',
                 's.id as santri_id',
@@ -19,8 +33,6 @@ class KartuService
                 'b.id as biodata_id',
                 'b.nama'
             )
-            ->leftJoin('santri as s', 'k.santri_id', '=', 's.id')
-            ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
             ->orderByDesc('k.created_at');
 
         return $query;
