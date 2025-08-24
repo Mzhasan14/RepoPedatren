@@ -673,9 +673,18 @@ class DropdownController extends Controller
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('kamar AS kk', 'ds.kamar_id', '=', 'kk.id')
 
-            ->leftJoin('anak_asuh as aa', 's.id', '=', 'aa.id_santri')
-            ->leftJoin('wali_asuh as wa', 's.id', '=', 'wa.id_santri')
+            // hanya cek relasi anak_asuh yang masih aktif
+            ->leftJoin('anak_asuh as aa', function ($join) {
+                $join->on('s.id', '=', 'aa.id_santri')
+                    ->where('aa.status', true);
+            })
+            // hanya cek relasi wali_asuh yang masih aktif
+            ->leftJoin('wali_asuh as wa', function ($join) {
+                $join->on('s.id', '=', 'wa.id_santri')
+                    ->where('wa.status', true);
+            })
 
+            // tampilkan santri yang tidak sedang jadi anak asuh/wali asuh aktif
             ->whereNull('aa.id_santri')
             ->whereNull('wa.id_santri')
 
@@ -692,6 +701,7 @@ class DropdownController extends Controller
 
         return response()->json($query);
     }
+
     public function dropdownWaliAsuh(Request $request)
     {
         $wilayahId    = $request->wilayah_id;
@@ -704,9 +714,9 @@ class DropdownController extends Controller
                 $join->on('s.id', '=', 'ds.santri_id')
                     ->where('ds.status', 'aktif');
             })
-            ->whereNull('w.id_grup_wali_asuh') 
-            ->where('b.jenis_kelamin', $jenisKelamin) 
-            ->where('ds.wilayah_id', $wilayahId) 
+            ->whereNull('w.id_grup_wali_asuh')
+            ->where('b.jenis_kelamin', $jenisKelamin)
+            ->where('ds.wilayah_id', $wilayahId)
             ->select([
                 'w.id as id_waliasuh',
                 'b.nama as nama_waliasuh',
