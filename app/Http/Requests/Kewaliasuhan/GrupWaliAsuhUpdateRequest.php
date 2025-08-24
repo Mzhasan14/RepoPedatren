@@ -2,13 +2,13 @@
 
 namespace App\Http\Requests\Kewaliasuhan;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Support\Facades\DB;
 
-class grupWaliasuhRequest extends FormRequest
+class GrupWaliAsuhUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -27,49 +27,40 @@ class grupWaliasuhRequest extends FormRequest
     {
         return [
             'id_wilayah' => ['required', 'exists:wilayah,id'],
-            'nama_grup'  => [
-                'required',
-                'string',
-                Rule::unique('grup_wali_asuh', 'nama_grup')
-                    ->where(fn($q) => $q->where('id_wilayah', $this->id_wilayah)),
-            ],
+            'nama_grup'  => ['required', 'string', 'max:255'],
             'jenis_kelamin' => ['required', Rule::in(['l', 'p'])],
             'wali_asuh_id'  => [
-                'required',
-                'integer',
+                'nullable',
                 'exists:wali_asuh,id',
                 function ($attribute, $value, $fail) {
-                    if (DB::table('wali_asuh')
-                        ->where('id', $value)
-                        ->whereNotNull('id_grup_wali_asuh')
-                        ->exists()
-                    ) {
-                        $fail("Wali asuh dengan ID {$value} sudah memiliki grup.");
+                    if ($value) {
+                        $sudahPunyaGrup = DB::table('wali_asuh')
+                            ->where('id', $value)
+                            ->whereNotNull('id_grup_wali_asuh')
+                            ->exists();
+                        if ($sudahPunyaGrup) {
+                            $fail("Wali asuh dengan ID $value sudah terikat dengan grup lain.");
+                        }
                     }
-                },
+                }
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'id_wilayah.required' => 'Wilayah wajib dipilih.',
-            'id_wilayah.exists'   => 'Wilayah tidak valid.',
-
+            'id_wilayah.required' => 'Wilayah wajib diisi.',
+            'id_wilayah.exists'   => 'Wilayah tidak ditemukan.',
             'nama_grup.required'  => 'Nama grup wajib diisi.',
-            'nama_grup.unique'    => 'Nama grup sudah ada di wilayah ini.',
-
-            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
-            'jenis_kelamin.in'       => 'Jenis kelamin hanya boleh L atau P.',
-
-            'wali_asuh_id.required' => 'Wali asuh wajib dipilih.',
-            'wali_asuh_id.integer'  => 'ID wali asuh harus berupa angka.',
-            'wali_asuh_id.exists'   => 'Wali asuh tidak ditemukan.',
+            'nama_grup.string'    => 'Nama grup harus berupa teks.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib diisi.',
+            'jenis_kelamin.in'    => 'Jenis kelamin hanya boleh L atau P.',
+            'wali_asuh_id.exists' => 'Wali asuh tidak ditemukan.',
+            'status.boolean'      => 'Status hanya boleh true atau false.',
         ];
     }
-
-
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();

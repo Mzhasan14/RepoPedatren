@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use App\Services\Kewaliasuhan\GrupWaliasuhService;
 use App\Http\Requests\Kewaliasuhan\grupWaliasuhRequest;
+use App\Http\Requests\Kewaliasuhan\GrupWaliAsuhUpdateRequest;
 use App\Services\Kewaliasuhan\Filters\FilterGrupWaliasuhService;
 
 class GrupWaliAsuhController extends Controller
@@ -57,6 +58,29 @@ class GrupWaliAsuhController extends Controller
             'total_pages' => $results->lastPage(),
             'data' => $formatted,
         ]);
+    }
+    
+    public function detail($id): JsonResponse
+    {
+        try {
+            $result = $this->grupWaliasuhService->detail($id);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'data'   => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function index(): JsonResponse
@@ -116,7 +140,7 @@ class GrupWaliAsuhController extends Controller
     }
 
     // Update grup
-    public function update(grupWaliasuhRequest $request, $id)
+    public function update(GrupWaliAsuhUpdateRequest $request, $id)
     {
         $result = $this->grupWaliasuhService->update($request->validated(), $id);
         if (! $result['status']) {

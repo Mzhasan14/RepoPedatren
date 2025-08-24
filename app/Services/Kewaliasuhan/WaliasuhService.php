@@ -157,44 +157,24 @@ class WaliasuhService
                 }
             }
 
-            // 5. Cek apakah grup sesuai jenis kelamin santri
-            $grup = Grup_WaliAsuh::find($input['id_grup_wali_asuh'] ?? null);
-            if (!$grup) {
-                return ['status' => false, 'message' => 'Grup wali asuh tidak ditemukan.'];
-            }
-
-            $jenisKelaminSantri = $biodata->jenis_kelamin;
-            $jenisKelaminGrup = $grup->jenis_kelamin;
-
-            if (strtolower($jenisKelaminSantri) !== strtolower($jenisKelaminGrup)) {
+            // ✅ Validasi id_grup_wali_asuh wajib null
+            if (!empty($input['id_grup_wali_asuh'])) {
                 return [
                     'status' => false,
-                    'message' => 'Jenis kelamin santri tidak sesuai dengan grup wali asuh.'
+                    'message' => 'Tidak boleh langsung mengisi grup wali asuh di sini. Gunakan tabel kewaliasuhan.',
                 ];
             }
 
-            // Cek apakah sudah ada wali asuh aktif dalam grup ini
-            $waliAsuhAktifDiGrup = Wali_asuh::where('id_grup_wali_asuh', $grup->id)
-                ->where('status', true)
-                ->exists();
-
-            if ($waliAsuhAktifDiGrup) {
-                return [
-                    'status' => false,
-                    'message' => 'Sudah ada wali asuh aktif dalam grup ini. Tidak boleh lebih dari satu.',
-                ];
-            }
-
-            // 6. Buat data wali asuh
+            // 5. Buat data wali asuh
             $waliAsuh = Wali_asuh::create([
                 'id_santri' => $santri->id,
-                'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? null,
+                'id_grup_wali_asuh' => null, // selalu null
                 'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
                 'status' => true,
                 'created_by' => Auth::id(),
             ]);
 
-            // 7. Activity log
+            // 6. Activity log
             activity('wali_asuh_create')
                 ->performedOn($waliAsuh)
                 ->withProperties([
@@ -211,6 +191,7 @@ class WaliasuhService
             ];
         });
     }
+
 
     public function show(int $id): array
     {
@@ -252,38 +233,14 @@ class WaliasuhService
             // Simpan data lama untuk log
             $before = $waliAsuh->getOriginal();
 
-            // Nonaktifkan relasi lama jika grup berubah
-            if (isset($input['id_grup_wali_asuh']) && $input['id_grup_wali_asuh'] != $waliAsuh->id_grup_wali_asuh) {
-                Kewaliasuhan::where('id_wali_asuh', $waliAsuh->id)
-                    ->where('status', true)
-                    ->update([
-                        'status' => false,
-                        'tanggal_berakhir' => Carbon::now(),
-                        'updated_by' => Auth::id(),
-                        'updated_at' => now(),
-                    ]);
-
-                activity('kewaliasuhan_update')
-                    ->performedOn($waliAsuh)
-                    ->withProperties([
-                        'action' => 'nonaktif_relasi_lama',
-                        'grup_lama' => $waliAsuh->id_grup_wali_asuh,
-                        'grup_baru' => $input['id_grup_wali_asuh'],
-                    ])
-                    ->log('Nonaktifkan relasi karena perubahan grup wali asuh');
+            // ✅ Hanya boleh update tanggal_mulai
+            if (isset($input['tanggal_mulai'])) {
+                $waliAsuh->update([
+                    'tanggal_mulai' => Carbon::parse($input['tanggal_mulai']),
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
             }
-
-            // Update data
-            $updateData = [
-                'id_santri' => $input['id_santri'] ?? $waliAsuh->id_santri,
-                'id_grup_wali_asuh' => $input['id_grup_wali_asuh'] ?? $waliAsuh->id_grup_wali_asuh,
-                'tanggal_berakhir' => isset($input['tanggal_berakhir']) ? Carbon::parse($input['tanggal_berakhir']) : $waliAsuh->tanggal_berakhir,
-                'status' => $input['status'] ?? $waliAsuh->status,
-                'updated_by' => Auth::id(),
-                'updated_at' => now(),
-            ];
-
-            $waliAsuh->update($updateData);
 
             // Log aktivitas
             activity('wali_asuh_update')
@@ -292,15 +249,16 @@ class WaliasuhService
                     'before' => $before,
                     'after' => $waliAsuh->getChanges(),
                 ])
-                ->log('Data wali asuh diperbarui');
+                ->log('Tanggal mulai wali asuh diperbarui');
 
             return [
                 'status' => true,
-                'message' => 'waliasuh berhasil diperbarui',
+                'message' => 'Tanggal mulai wali asuh berhasil diperbarui',
                 'data' => $waliAsuh,
             ];
         });
     }
+
 
     public function keluarWaliasuh(array $input, int $id): array
     {

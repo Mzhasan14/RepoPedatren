@@ -80,6 +80,7 @@ use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\api\kewaliasuhan\KewaliasuhanController;
 
 // Auth
 Route::post('register', [UserController::class, 'store'])
@@ -173,7 +174,8 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/anakasuh', [AnakasuhController::class, 'getAllAnakasuh']);
     Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
     Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
-
+    Route::get('/kewaliasuhan/grup/{id}', [GrupWaliAsuhController::class, 'detail']);
+    
     // 👨‍🏫 Pegawai & Guru
     Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
@@ -858,7 +860,7 @@ Route::prefix('crud')
             Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
             Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 
-            Route::post('hubungkanwaliasuh', [WaliasuhController::class, 'createFromSantri']);
+            Route::post('kewaliasuhan', [KewaliasuhanController::class, 'store']);
         });
     });
 
@@ -924,7 +926,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan'])
         ->middleware('role:superadmin|wali asuh');
     Route::get('/hubungkanwaliasuh', [DropdownController::class, 'hubungkanwaliasuh']);
-
+    Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);
 
