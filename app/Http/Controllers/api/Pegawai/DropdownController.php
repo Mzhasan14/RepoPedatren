@@ -682,6 +682,7 @@ class DropdownController extends Controller
             ->select([
                 's.id',
                 'b.nama',
+                'b.jenis_kelamin',
                 'l.nama_lembaga',
                 's.nis',
                 'w.nama_wilayah',

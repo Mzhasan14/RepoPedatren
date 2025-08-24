@@ -24,8 +24,6 @@ class waliAsuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_santri' => 'required|exists:santri,id',
-            'id_grup_wali_asuh' => 'required|exists:grup_wali_asuh,id',
             'tanggal_mulai' => 'required|date',
         ];
     }

@@ -80,6 +80,7 @@ use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
+use App\Http\Controllers\api\kewaliasuhan\KewaliasuhanController;
 
 // Auth
 Route::post('register', [UserController::class, 'store'])
@@ -859,7 +860,7 @@ Route::prefix('crud')
             Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
             Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 
-            Route::post('hubungkanwaliasuh', [WaliasuhController::class, 'createFromSantri']);
+            Route::post('kewaliasuhan', [KewaliasuhanController::class, 'store']);
         });
     });
 
