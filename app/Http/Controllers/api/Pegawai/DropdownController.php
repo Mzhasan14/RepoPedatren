@@ -672,6 +672,7 @@ class DropdownController extends Controller
             })
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('kamar AS kk', 'ds.kamar_id', '=', 'kk.id')
+            ->leftJoin('blok AS bk', 'ds.blok_id', '=', 'bk.id')
 
             // hanya cek relasi anak_asuh yang masih aktif
             ->leftJoin('anak_asuh as aa', function ($join) {
@@ -696,6 +697,7 @@ class DropdownController extends Controller
                 's.nis',
                 'w.nama_wilayah',
                 'kk.nama_kamar',
+                'bk.nama_blok'
             ])
             ->get();
 
