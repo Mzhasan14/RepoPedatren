@@ -59,7 +59,7 @@ class GrupWaliAsuhController extends Controller
             'data' => $formatted,
         ]);
     }
-    
+
     public function detail($id): JsonResponse
     {
         try {
@@ -74,6 +74,28 @@ class GrupWaliAsuhController extends Controller
             return response()->json([
                 'status' => true,
                 'data'   => $result['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function nonaktifkanAnakAsuh(int $waliAsuhId, int $anakAsuhId): JsonResponse
+    {
+        try {
+            $result = $this->grupWaliasuhService->nonaktifkanAnakAsuh($waliAsuhId, $anakAsuhId);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 400); // atau 404 kalau datanya tidak ketemu
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => $result['message'],
             ]);
         } catch (\Exception $e) {
             return response()->json([

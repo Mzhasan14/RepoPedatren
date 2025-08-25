@@ -811,6 +811,10 @@ Route::prefix('crud')
             Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
             Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
             Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
+            Route::patch(
+                '/grup-wali-asuh/{waliAsuhId}/anak-asuh/{anakAsuhId}/nonaktif',
+                [GrupWaliAsuhController::class, 'nonaktifkanAnakAsuh']
+            );
 
             // Lembaga
             Route::post('lembaga', [LembagaController::class, 'store']);
@@ -927,7 +931,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan'])
         ->middleware('role:superadmin|wali asuh');
     Route::get('/hubungkanwaliasuh', [DropdownController::class, 'hubungkanwaliasuh']);
-    Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
+    // Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);
 
