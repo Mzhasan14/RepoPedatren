@@ -26,46 +26,23 @@ class grupWaliasuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wilayah' => ['required', 'exists:wilayah,id'],
-            'nama_grup'  => [
-                'required',
-                'string',
-                Rule::unique('grup_wali_asuh', 'nama_grup')
-                    ->where(fn($q) => $q->where('id_wilayah', $this->id_wilayah)),
-            ],
-            'jenis_kelamin' => ['required', Rule::in(['l', 'p'])],
-            'wali_asuh_id'  => [
-                'required',
-                'integer',
-                'exists:wali_asuh,id',
-                function ($attribute, $value, $fail) {
-                    if (DB::table('wali_asuh')
-                        ->where('id', $value)
-                        ->whereNotNull('id_grup_wali_asuh')
-                        ->exists()
-                    ) {
-                        $fail("Wali asuh dengan ID {$value} sudah memiliki grup.");
-                    }
-                },
-            ],
+            'id_wilayah'    => ['required', 'exists:wilayah,id'],
+            'nama_grup'     => ['required', 'string', 'max:255'],
+            'jenis_kelamin' => ['required', 'in:,p'], // L = Laki-laki, P = Perempuan
+            'wali_asuh_id'  => ['required', 'exists:santri,id'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'id_wilayah.required' => 'Wilayah wajib dipilih.',
-            'id_wilayah.exists'   => 'Wilayah tidak valid.',
-
-            'nama_grup.required'  => 'Nama grup wajib diisi.',
-            'nama_grup.unique'    => 'Nama grup sudah ada di wilayah ini.',
-
-            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'id_wilayah.required'    => 'Wilayah wajib dipilih.',
+            'id_wilayah.exists'      => 'Wilayah tidak valid.',
+            'nama_grup.required'     => 'Nama grup wajib diisi.',
+            'jenis_kelamin.required' => 'Jenis kelamin grup wajib dipilih.',
             'jenis_kelamin.in'       => 'Jenis kelamin hanya boleh L atau P.',
-
-            'wali_asuh_id.required' => 'Wali asuh wajib dipilih.',
-            'wali_asuh_id.integer'  => 'ID wali asuh harus berupa angka.',
-            'wali_asuh_id.exists'   => 'Wali asuh tidak ditemukan.',
+            'wali_asuh_id.required'  => 'Santri wali asuh wajib dipilih.',
+            'wali_asuh_id.exists'    => 'Santri wali asuh tidak ditemukan.',
         ];
     }
 
