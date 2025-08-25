@@ -12,31 +12,14 @@ class HafalanAnakService
     public function getTahfidzAnak($request)
     {
         $user = Auth::user();
-        $bioId = $user->biodata_id;
-
-        // 🔹 Ambil nomor KK orang tua
-        $noKk = DB::table('keluarga as k')
-            ->where('k.id_biodata', $bioId)
-            ->value('no_kk');
-
-        if (!$noKk) {
-            return [
-                'success' => false,
-                'message' => 'Data keluarga tidak ditemukan.',
-                'data' => null,
-                'status' => 404,
-            ];
-        }
+        $noKk = $user->no_kk;
 
         // 🔹 Ambil semua anak dari KK yang sama, exclude ortu
         $anak = DB::table('keluarga as k')
             ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
             ->join('santri as s', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
             ->select('s.id as santri_id')
-            ->whereNull('otw.id_biodata')
             ->where('k.no_kk', $noKk)
-            ->where('k.id_biodata', '!=', $bioId)
             ->get();
 
         if ($anak->isEmpty()) {
@@ -49,7 +32,7 @@ class HafalanAnakService
         }
 
         // 🔹 Cek apakah santri_id request valid
-        $dataAnak = $anak->firstWhere('santri_id', $request['santri_id']);
+        $dataAnak = $anak->firstWhere('santri_id', $request['santri_id'] ?? null);
 
         if (!$dataAnak) {
             return [
@@ -124,31 +107,14 @@ class HafalanAnakService
     public function getNadhomanAnak($request)
     {
         $user = Auth::user();
-        $bioId = $user->biodata_id;
-
-        // 🔹 Ambil nomor KK orang tua
-        $noKk = DB::table('keluarga as k')
-            ->where('k.id_biodata', $bioId)
-            ->value('no_kk');
-
-        if (!$noKk) {
-            return [
-                'success' => false,
-                'message' => 'Data keluarga tidak ditemukan.',
-                'data' => null,
-                'status' => 404,
-            ];
-        }
+        $noKk = $user->no_kk;
 
         // 🔹 Ambil semua anak dari KK yang sama, exclude ortu
         $anak = DB::table('keluarga as k')
             ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
             ->join('santri as s', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
             ->select('s.id as santri_id')
-            ->whereNull('otw.id_biodata')
             ->where('k.no_kk', $noKk)
-            ->where('k.id_biodata', '!=', $bioId)
             ->get();
 
         if ($anak->isEmpty()) {
@@ -161,7 +127,7 @@ class HafalanAnakService
         }
 
         // 🔹 Cek apakah santri_id request valid
-        $dataAnak = $anak->firstWhere('santri_id', $request['santri_id']);
+        $dataAnak = $anak->firstWhere('santri_id', $request['santri_id'] ?? null);
 
         if (!$dataAnak) {
             return [
@@ -171,7 +137,7 @@ class HafalanAnakService
                 'status'  => 403,
             ];
         }
-      
+
         $nadhoman = DB::table('nadhoman as n')
             ->leftJoin('santri', 'n.santri_id', '=', 'santri.id')
             ->leftJoin('biodata', 'santri.biodata_id', '=', 'biodata.id')

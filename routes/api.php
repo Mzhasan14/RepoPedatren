@@ -10,6 +10,7 @@ use App\Http\Controllers\api\Auth\UserController;
 use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\JenisBerkasController;
 use App\Http\Controllers\api\wilayah\BlokController;
+use App\Http\Controllers\api\Auth\AuthOrtuController;
 use App\Http\Controllers\api\keluarga\WaliController;
 use App\Http\Controllers\api\wilayah\KamarController;
 use App\Http\Controllers\api\Pegawai\PegawaiController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\api\PesertaDidik\NonDomisiliController;
 use App\Http\Controllers\api\PesertaDidik\TahunAjaranController;
 use App\Http\Controllers\api\keluarga\HubunganKeluargaController;
 use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
+use App\Http\Controllers\api\kewaliasuhan\KewaliasuhanController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\SholatController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
 use App\Http\Controllers\api\Biometric\BiometricProfileController;
@@ -80,7 +82,6 @@ use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
-use App\Http\Controllers\api\kewaliasuhan\KewaliasuhanController;
 
 // Auth
 Route::post('register', [UserController::class, 'store'])
@@ -1149,4 +1150,10 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
 
     Route::get('/presensi', [ViewOrangTuaController::class, 'getPresensiJamaahAnak']);
     Route::get('/presensi-today', [ViewOrangTuaController::class, 'getPresensiToday']);
+
 });
+
+// Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
+// Route::post('/register-ortu', [AuthController::class, 'registerOrtu']);
+Route::post('/login-ortu', [AuthOrtuController::class, 'login']);
+Route::post('/register-ortu', [AuthOrtuController::class, 'register']);

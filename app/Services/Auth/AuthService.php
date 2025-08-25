@@ -5,9 +5,11 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Models\UserOrtu;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -213,5 +215,85 @@ class AuthService
                 'user_agent' => request()->userAgent(),
             ])
             ->log("Password pengguna '{$user->email}' berhasil diubah");
+    }
+
+    public function loginOrtu(string $username, string $password)
+    {
+        try {
+            $user = UserOrtu::where('username', $username)->first();
+
+            if (! $user || ! Hash::check($password, $user->password)) {
+                return [
+                    'success' => false,
+                    'message' => 'Username atau Password salah.',
+                    'status'  => 401
+                ];
+            }
+
+            if (! $user->status) {
+                return [
+                    'success' => false,
+                    'message' => 'Akun Anda tidak aktif. Silakan hubungi admin.',
+                    'status'  => 403
+                ];
+            }
+
+            activity('auth')
+                ->event('login')
+                ->performedOn($user)
+                ->causedBy($user)
+                ->withProperties([
+                    'user_id'    => $user->id,
+                    'username'   => $user->username,
+                    'ip'         => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->log("Orang tua dengan username '{$user->username}' berhasil login");
+
+            return [
+                'success' => true,
+                'message' => 'Login berhasil.',
+                'data'    => $user,
+                'status'  => 200
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Error login orang tua', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => [
+                    'username' => $username,
+                    'password' => $password
+                ]
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat login. Silakan coba lagi.',
+                'status'  => 500
+            ];
+        }
+    }
+
+
+    public function changePasswordOrtu(UserOrtu $user, string $current, string $new): void
+    {
+        if (! Hash::check($current, $user->password)) {
+            abort(422, 'Current password is incorrect.');
+        }
+
+        $user->password = Hash::make($new);
+        $user->save();
+
+        activity('auth')
+            ->event('password_changed')
+            ->performedOn($user)
+            ->causedBy($user)
+            ->withProperties([
+                'user_id' => $user->id,
+                'username' => $user->username,
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->log("Password orang tua dengan username '{$user->username}' berhasil diubah");
     }
 }

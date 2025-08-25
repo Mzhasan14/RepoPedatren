@@ -12,45 +12,29 @@ class PresensiJamaahAnakService
 {
     public function getPresensiJamaahAnak($request)
     {
-        $user  = Auth::user();
-        $bioId = $user->biodata_id;
+        $user = Auth::user();
+        $noKk = $user->no_kk;
 
-        // 🔹 Ambil nomor KK orang tua
-        $noKk = DB::table('keluarga as k')
-            ->where('k.id_biodata', $bioId)
-            ->value('no_kk');
-
-        if (!$noKk) {
-            return [
-                'success' => false,
-                'message' => 'Data keluarga tidak ditemukan.',
-                'data'    => null,
-                'status'  => 404,
-            ];
-        }
-
-        // 🔹 Ambil semua anak dari KK yang sama
+        // 🔹 Ambil semua anak dari KK yang sama, exclude ortu
         $anak = DB::table('keluarga as k')
             ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
             ->join('santri as s', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
-            ->select('s.id as santri_id', 's.nis', 'b.nama as nama_santri')
-            ->whereNull('otw.id_biodata')
+            ->select('s.id as santri_id')
             ->where('k.no_kk', $noKk)
-            ->where('k.id_biodata', '!=', $bioId)
             ->get();
 
         if ($anak->isEmpty()) {
             return [
                 'success' => false,
                 'message' => 'Tidak ada data anak yang ditemukan.',
-                'data'    => null,
-                'status'  => 404,
+                'data' => null,
+                'status' => 404,
             ];
         }
 
-        // 🔹 Validasi santri_id
+        // 🔹 Cek apakah santri_id request valid
         $dataAnak = $anak->firstWhere('santri_id', $request['santri_id'] ?? null);
+
         if (!$dataAnak) {
             return [
                 'success' => false,
@@ -59,7 +43,7 @@ class PresensiJamaahAnakService
                 'status'  => 403,
             ];
         }
-        
+
         $now       = Carbon::now('Asia/Jakarta');
         $santriId  = $request['santri_id'] ?? null;
         $tanggal   = $request['tanggal'] ?? null;
@@ -77,12 +61,7 @@ class PresensiJamaahAnakService
             ];
         }
 
-        /**
-         * 🔹 Ambil Jadwal
-         */
         $jadwal       = $jadwalId ? JadwalSholat::with('sholat')->find($jadwalId) : null;
-        $jadwalNext   = null;
-        $statusPresensi = null;
 
         if ($tanggal) {
             $jadwalNext = JadwalSholat::with('sholat')
@@ -102,9 +81,6 @@ class PresensiJamaahAnakService
             ) ? 'waktunya_presensi' : 'belum_waktunya';
         }
 
-        /**
-         * 🔹 Query dasar presensi
-         */
         $baseQuery = DB::table('presensi_sholat')
             ->join('santri', 'presensi_sholat.santri_id', '=', 'santri.id')
             ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
@@ -120,9 +96,6 @@ class PresensiJamaahAnakService
             $baseQuery->where('presensi_sholat.status', ucfirst($status));
         }
 
-        /**
-         * 🔹 Totals
-         */
         $total_hadir       = (clone $baseQuery)->where('presensi_sholat.status', 'Hadir')->count();
         $total_presensi    = (clone $baseQuery)->count();
         $total_santri      = DB::table('santri')
@@ -133,9 +106,7 @@ class PresensiJamaahAnakService
             ->count();
         $total_tidak_hadir = max($total_santri - $total_hadir, 0);
 
-        /**
-         * 🔹 Ambil Data
-         */
+
         if (in_array($status, ['tidak_hadir', 'tidak-hadir'])) {
             if (!$tanggal) {
                 return [
@@ -204,23 +175,6 @@ class PresensiJamaahAnakService
                 'jenis_kelamin' => $gender,
                 'all'           => $showAll,
             ],
-            'jadwal_sholat'    => $jadwal ? [
-                'jadwal_id'   => $jadwal->id,
-                'sholat_id'   => $jadwal->sholat_id,
-                'nama_sholat' => $jadwal->sholat->nama_sholat ?? null,
-                'tanggal'     => $tanggal,
-                'jam_mulai'   => $jadwal->jam_mulai,
-                'jam_selesai' => $jadwal->jam_selesai,
-            ] : null,
-            'jadwal_mendatang' => $jadwalNext ? [
-                'jadwal_id'   => $jadwalNext->id,
-                'sholat_id'   => $jadwalNext->sholat_id,
-                'nama_sholat' => $jadwalNext->sholat->nama_sholat ?? null,
-                'tanggal'     => $tanggal,
-                'jam_mulai'   => $jadwalNext->jam_mulai,
-                'jam_selesai' => $jadwalNext->jam_selesai,
-            ] : null,
-            'status_presensi'  => $statusPresensi,
             'totals' => [
                 'total_hadir'             => $total_hadir,
                 'total_tidak_hadir'       => $total_tidak_hadir,
@@ -233,46 +187,28 @@ class PresensiJamaahAnakService
 
     public function getPresensiToday($request)
     {
+        $user = Auth::user();
+        $noKk = $user->no_kk;
 
-        $user  = Auth::user();
-        $bioId = $user->biodata_id;
-
-        // 🔹 Ambil nomor KK orang tua
-        $noKk = DB::table('keluarga as k')
-            ->where('k.id_biodata', $bioId)
-            ->value('no_kk');
-
-        if (!$noKk) {
-            return [
-                'success' => false,
-                'message' => 'Data keluarga tidak ditemukan.',
-                'data'    => null,
-                'status'  => 404,
-            ];
-        }
-
-        // 🔹 Ambil semua anak dari KK yang sama
+        // 🔹 Ambil semua anak dari KK yang sama, exclude ortu
         $anak = DB::table('keluarga as k')
             ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
             ->join('santri as s', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
             ->select('s.id as santri_id', 's.nis', 'b.nama as nama_santri')
-            ->whereNull('otw.id_biodata')
             ->where('k.no_kk', $noKk)
-            ->where('k.id_biodata', '!=', $bioId)
             ->get();
 
         if ($anak->isEmpty()) {
             return [
                 'success' => false,
                 'message' => 'Tidak ada data anak yang ditemukan.',
-                'data'    => null,
-                'status'  => 404,
+                'data' => null,
+                'status' => 404,
             ];
         }
 
-        // 🔹 Validasi santri_id
         $dataAnak = $anak->firstWhere('santri_id', $request['santri_id'] ?? null);
+
         if (!$dataAnak) {
             return [
                 'success' => false,
@@ -287,7 +223,6 @@ class PresensiJamaahAnakService
         $santriId = $request['santri_id'] ?? $dataAnak->santri_id;
         $sholatId = $request['sholat_id'] ?? null;
 
-        // 🔹 Ambil semua jadwal sholat yang berlaku hari ini
         $jadwalSholat = DB::table('sholat as s')
             ->join('jadwal_sholat as js', 'js.sholat_id', '=', 's.id')
             ->where('s.aktif', true)
@@ -306,14 +241,12 @@ class PresensiJamaahAnakService
             ->orderBy('s.urutan')
             ->get();
 
-        // 🔹 Ambil presensi anak hari ini
         $presensi = DB::table('presensi_sholat')
             ->where('santri_id', $santriId)
             ->whereDate('tanggal', $tanggal)
             ->get()
             ->keyBy('sholat_id');
 
-        // 🔹 Buat hasil akhir
         $result = $jadwalSholat->map(function ($row) use ($presensi, $santriId, $dataAnak, $tanggal, $now) {
             $dataPresensi = $presensi->get($row->sholat_id);
 

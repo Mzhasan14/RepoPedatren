@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\PesertaDidik\OrangTua;
+namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RegisterRequest extends FormRequest
+class LoginOrtuRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,24 +24,18 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'nama_ortu' => 'required|string|max:100',
-            // 'nik_ortu' => 'required|string|max:16|exists:biodata,nik',
-            // 'nis_anak' => 'required|string|max:20|exists:santri,nis',
-            'no_kk' => 'required|string|max:16|exists:keluarga,no_kk',
-            'nis_anak' => 'required|string|max:20|exists:santri,nis',
-            'no_hp' => 'nullable|string|max:15|unique:user_ortu,no_hp',
-            'email' => 'nullable|email|max:100|unique:user_ortu,email',
+            'username' => 'required|string|max:50',
             'password' => 'required|string|min:8|confirmed',
         ];
     }
 
-    public function failedValidation(Validator $validator)
+    protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
-            'error' => $errors,
+            'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
 
         throw new HttpResponseException($response);

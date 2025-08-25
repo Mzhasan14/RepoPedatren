@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
 use App\Services\PesertaDidik\OrangTua\TransaksiAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
+use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
 
 class ViewOrangTuaController extends Controller
 {
@@ -137,19 +138,10 @@ class ViewOrangTuaController extends Controller
         }
     }
 
-    public function getPresensiToday(Request $request): JsonResponse
+    public function getPresensiToday(PresensiJamaahTodayRequest $request): JsonResponse
     {
         try {
-            $santriId = $request->get('santri_id');
-            if (!$santriId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Santri ID tidak ditemukan.',
-                    'status'  => 400,
-                ], 400);
-            }
-
-            $result = $this->viewPresensiJamaahAnakService->getPresensiToday($santriId);
+            $result = $this->viewPresensiJamaahAnakService->getPresensiToday($request->validated());
 
             return response()->json($result, 200);
         } catch (Exception $e) {

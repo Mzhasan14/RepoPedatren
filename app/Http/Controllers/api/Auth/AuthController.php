@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\api\Auth;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\ChangePasswordRequest;
-use App\Http\Requests\ForgotPasswordRequest;
+use Illuminate\Http\JsonResponse;
+use App\Services\Auth\AuthService;
 use App\Http\Requests\LoginRequest;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginOrtuRequest;
+use Illuminate\Support\Facades\Password;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use App\Http\Resources\UserResource;
-use App\Services\Auth\AuthService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Password;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ForgotPasswordRequest;
 
 class AuthController extends Controller
 {
@@ -89,6 +90,39 @@ class AuthController extends Controller
     public function changePassword(ChangePasswordRequest $req): JsonResponse
     {
         $this->authService->changePassword(
+            $req->user(),
+            $req->current_password,
+            $req->new_password
+        );
+
+        return response()->json(['message' => 'Password telah diubah. Silakan login ulang.']);
+    }
+
+    public function loginOrtu(LoginOrtuRequest $req): JsonResponse
+    {
+        $result = $this->authService->loginOrtu($req->username, $req->password);
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], $result['status']);
+        }
+
+        $user = $result['data'];
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'success'   => true,
+            'message'   => $result['message'],
+            'user'      => new UserResource($user),
+            'token'     => $token,
+        ], $result['status']);
+    }
+
+    public function changePasswordOrtu(ChangePasswordRequest $req): JsonResponse
+    {
+        $this->authService->changePasswordOrtu(
             $req->user(),
             $req->current_password,
             $req->new_password

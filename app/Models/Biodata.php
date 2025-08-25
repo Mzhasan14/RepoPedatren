@@ -144,4 +144,14 @@ class Biodata extends Model
     {
         return $this->hasMany(RiwayatPendidikan::class, 'biodata_id', 'id');
     }
+
+    public function user()
+    {
+        return $this->hasMany(User::class, 'biodata_id', 'id');
+    }
+
+    public function userOrtu()
+    {
+        return $this->hasOne(UserOrtu::class, 'biodata_id', 'id');
+    }
 }
