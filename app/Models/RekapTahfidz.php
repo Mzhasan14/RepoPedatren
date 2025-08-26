@@ -13,7 +13,6 @@ class RekapTahfidz extends Model
 
     protected $fillable = [
         'santri_id',
-        'tahun_ajaran_id',
         'total_surat',
         'persentase_khatam',
         'surat_tersisa', 
@@ -33,12 +32,6 @@ class RekapTahfidz extends Model
     public function santri()
     {
         return $this->belongsTo(Santri::class);
-    }
-
-    // Relasi ke Tahun Ajaran
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
     }
 
     // Relasi ke User (yang membuat)

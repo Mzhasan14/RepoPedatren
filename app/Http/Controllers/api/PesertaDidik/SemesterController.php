@@ -151,6 +151,7 @@ class SemesterController extends Controller
                 ], 403);
             }
 
+            $semester->status = false;
             $semester->deleted_by = Auth::id();
             $semester->save();
             $semester->delete();

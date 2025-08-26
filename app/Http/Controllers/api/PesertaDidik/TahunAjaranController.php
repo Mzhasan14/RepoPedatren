@@ -142,10 +142,11 @@ class TahunAjaranController extends Controller
                 ], 403);
             }
 
+            $tahunAjaran->status = false;
             $tahunAjaran->deleted_by = Auth::id();
             $tahunAjaran->save();
             $tahunAjaran->delete();
-            
+
             DB::commit();
             return response()->json([
                 'success' => true,

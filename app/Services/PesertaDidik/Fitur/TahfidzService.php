@@ -4,6 +4,7 @@ namespace App\Services\PesertaDidik\Fitur;
 
 use Exception;
 use App\Models\Tahfidz;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,10 +18,29 @@ class TahfidzService
         DB::beginTransaction();
 
         try {
-            // Insert setoran
+            $tahunAjaranId = TahunAjaran::where('status', true)
+                ->orderByDesc('id')
+                ->value('id');
+
+            // --- CEK SURAT TERAKHIR ---
+            if ($data['jenis_setoran'] === 'baru') {
+                $suratTerakhir = DB::table('tahfidz')
+                    ->where('santri_id', $data['santri_id'])
+                    ->where('jenis_setoran', 'baru')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($suratTerakhir && $suratTerakhir->status !== 'tuntas') {
+                    throw new Exception(
+                        "Surat terakhir belum tuntas, harap selesaikan terlebih dahulu."
+                    );
+                }
+            }
+
+            // --- INSERT SETORAN ---
             $setoranId = DB::table('tahfidz')->insertGetId([
                 'santri_id'       => $data['santri_id'],
-                'tahun_ajaran_id' => $data['tahun_ajaran_id'],
+                'tahun_ajaran_id' => $tahunAjaranId,
                 'tanggal'         => $data['tanggal'],
                 'jenis_setoran'   => $data['jenis_setoran'],
                 'surat'           => $data['jenis_setoran'] === 'baru' ? $data['surat'] : null,
@@ -36,41 +56,47 @@ class TahfidzService
                 'updated_at'      => now(),
             ]);
 
-            // ========================
-            // FULL RECALCULATION PROGRESS (hanya untuk setoran 'baru')
-            // ========================
+            // --- UPDATE REKAP JIKA SETORAN BARU ---
             if ($data['jenis_setoran'] === 'baru') {
-                $tahfidzQuery = DB::table('tahfidz')
+                $suratTuntas = DB::table('tahfidz')
                     ->where('santri_id', $data['santri_id'])
-                    ->where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+                    ->where('jenis_setoran', 'baru')
                     ->where('status', 'tuntas')
-                    ->where('jenis_setoran', 'baru');
+                    ->distinct()
+                    ->pluck('surat');
 
-                $suratUnik   = $tahfidzQuery->distinct()->pluck('surat');
-                $totalSurat  = $suratUnik->count();
-                $persentase  = ($totalSurat / 114) * 100;
-                $suratTersisa = 114 - $totalSurat;
+                $totalSurat     = $suratTuntas->count();
+                $persentase     = ($totalSurat / 114) * 100;
+                $suratTersisa   = 114 - $totalSurat;
                 $sisaPersentase = 100 - $persentase;
+
+                // $jumlahSetoran = DB::table('tahfidz')
+                //     ->where('santri_id', $data['santri_id'])
+                //     ->where('jenis_setoran', 'baru')
+                //     ->whereIn('surat', $suratTuntas)
+                //     ->count();
 
                 $jumlahSetoran = DB::table('tahfidz')
                     ->where('santri_id', $data['santri_id'])
-                    ->where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+                    ->where('jenis_setoran', 'baru')
                     ->count();
+
                 $rataRataNilai = DB::table('tahfidz')
                     ->where('santri_id', $data['santri_id'])
-                    ->where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+                    ->where('jenis_setoran', 'baru')
+                    ->whereIn('surat', $suratTuntas)
                     ->avg('nilai');
 
                 $tanggalMulai = DB::table('tahfidz')
                     ->where('santri_id', $data['santri_id'])
-                    ->where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+                    ->where('jenis_setoran', 'baru')
                     ->min('tanggal');
+
                 $tanggalSelesai = $totalSurat >= 114 ? now() : null;
 
                 DB::table('rekap_tahfidz')->updateOrInsert(
                     [
-                        'santri_id'       => $data['santri_id'],
-                        'tahun_ajaran_id' => $data['tahun_ajaran_id'],
+                        'santri_id' => $data['santri_id'],
                     ],
                     [
                         'total_surat'       => $totalSurat,
@@ -95,12 +121,18 @@ class TahfidzService
             Log::error('Gagal simpan setoran: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+
+            // Lempar pesan sopan ke frontend
+            throw new Exception($e->getMessage());
         }
     }
 
+
     public function getSetoranDanRekap($id)
     {
+        $tahunAjaranId = TahunAjaran::where('status', true)
+            ->orderByDesc('id')
+            ->value('id');
         // Query setoran tahfidz
         $tahfidz = DB::table('tahfidz as t')
             ->leftJoin('santri', 't.santri_id', '=', 'santri.id')
@@ -152,11 +184,9 @@ class TahfidzService
             ->leftJoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
-            ->join('tahun_ajaran', 'rt.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
                 'biodata.nama as santri_nama',
-                'tahun_ajaran.tahun_ajaran',
                 'rt.total_surat',
                 'rt.persentase_khatam',
                 'rt.surat_tersisa',
@@ -178,12 +208,11 @@ class TahfidzService
 
     public function getAllRekap(Request $request)
     {
-        $query = DB::table('rekap_tahfidz as rt')
-            ->join('santri as s', 'rt.santri_id', '=', 's.id')
+        $query = DB::table('santri as s')
             ->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id')
+            ->leftJoin('rekap_tahfidz as rt', 'rt.santri_id', '=', 's.id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('pendidikan as pd', 's.id', '=', 'pd.biodata_id')
-            ->join('tahun_ajaran as ta', 'rt.tahun_ajaran_id', '=', 'ta.id')
             ->select(
                 's.id',
                 's.nis',
@@ -196,7 +225,6 @@ class TahfidzService
                 'rt.rata_rata_nilai',
                 'rt.tanggal_mulai',
                 'rt.tanggal_selesai',
-                'ta.tahun_ajaran as tahun_ajaran'
             )
             ->groupBy(
                 's.id',
@@ -210,7 +238,6 @@ class TahfidzService
                 'rt.rata_rata_nilai',
                 'rt.tanggal_mulai',
                 'rt.tanggal_selesai',
-                'ta.tahun_ajaran',
                 'rt.id'
             )
             ->orderBy('rt.id', 'desc');
@@ -241,7 +268,6 @@ class TahfidzService
                 'rata_rata_nilai'   => $item->rata_rata_nilai,
                 'tanggal_mulai'     => $item->tanggal_mulai,
                 'tanggal_selesai'   => $item->tanggal_selesai,
-                'tahun_ajaran'      => $item->tahun_ajaran,
             ];
         });
     }

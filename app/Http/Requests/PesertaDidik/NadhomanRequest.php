@@ -26,7 +26,7 @@ class NadhomanRequest extends FormRequest
         return [
             'santri_id'       => 'required|exists:santri,id',
             'kitab_id'        => 'required|exists:kitab,id',
-            'tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajaran,id',
             'tanggal'         => 'required|date',
             'jenis_setoran'   => 'required|in:baru,murojaah',
             'bait_mulai'      => 'required|integer|min:1',

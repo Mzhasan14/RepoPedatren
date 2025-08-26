@@ -105,6 +105,7 @@ class AngkatanController extends Controller
         DB::beginTransaction();
         try {
             $angkatan = Angkatan::findOrFail($id);
+            $angkatan->status = false;
             $angkatan->deleted_by = Auth::id();
             $angkatan->save();
             $angkatan->delete();

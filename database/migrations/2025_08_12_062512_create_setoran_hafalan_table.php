@@ -59,33 +59,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 3. rekap_tahfidz
-        // Schema::create('rekap_tahfidz', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-        //     $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
-
-        //     $table->unique(['santri_id', 'tahun_ajaran_id']);
-
-        //     $table->unsignedSmallInteger('total_surat')->default(0);
-        //     $table->decimal('persentase_khatam', 5, 2)->default(0.00);
-
-        //     $table->unsignedBigInteger('created_by');
-        //     $table->unsignedBigInteger('updated_by')->nullable();
-        //     $table->unsignedBigInteger('deleted_by')->nullable();
-
-        //     $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
-        //     $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-        //     $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-
-        //     $table->softDeletes();
-        //     $table->timestamps();
-        // });
-
         Schema::create('rekap_tahfidz', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri');
-            $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran');
             $table->unsignedTinyInteger('total_surat')->default(0);
             $table->decimal('persentase_khatam', 5, 2)->default(0.00);
             $table->unsignedTinyInteger('surat_tersisa')->default(114);
@@ -138,9 +114,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('kitab_id')->constrained('kitab')->cascadeOnDelete();
-            $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
 
-            $table->unique(['santri_id', 'kitab_id', 'tahun_ajaran_id']);
+            $table->unique(['santri_id', 'kitab_id']);
 
             $table->unsignedSmallInteger('total_bait')->default(0);
             $table->decimal('persentase_selesai', 5, 2)->default(0.00);

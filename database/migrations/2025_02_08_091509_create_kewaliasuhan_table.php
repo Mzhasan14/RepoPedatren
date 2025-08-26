@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('grup_wali_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
+            $table->foreignId('wali_asuh_id')->constrained('wali_asuh')->cascadeOnDelete();
             $table->string('nama_grup');
             $table->fullText('nama_grup');
             $table->enum('jenis_kelamin', ['l', 'p']);
@@ -33,7 +34,6 @@ return new class extends Migration
         Schema::create('wali_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_santri');
-            $table->unsignedBigInteger('id_grup_wali_asuh')->nullable();
             $table->date('tanggal_mulai');
             $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
             $table->unsignedBigInteger('created_by');
@@ -52,6 +52,7 @@ return new class extends Migration
         Schema::create('anak_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_santri');
+            $table->foreignId('wali_asuh_id')->constrained('wali_asuh')->cascadeOnDelete();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -65,25 +66,25 @@ return new class extends Migration
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
         });
 
-        Schema::create('kewaliasuhan', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_wali_asuh')->nullable();
-            $table->unsignedBigInteger('id_anak_asuh')->nullable();
-            $table->date('tanggal_mulai');
-            $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->softDeletes();
-            $table->boolean('status')->nullable()->default(true);
-            $table->timestamps();
+        // Schema::create('kewaliasuhan', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->unsignedBigInteger('id_wali_asuh')->nullable();
+        //     $table->unsignedBigInteger('id_anak_asuh')->nullable();
+        //     $table->date('tanggal_mulai');
+        //     $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
+        //     $table->unsignedBigInteger('created_by');
+        //     $table->unsignedBigInteger('updated_by')->nullable();
+        //     $table->unsignedBigInteger('deleted_by')->nullable();
+        //     $table->softDeletes();
+        //     $table->boolean('status')->nullable()->default(true);
+        //     $table->timestamps();
 
-            $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
-            $table->foreign('id_anak_asuh')->references('id')->on('anak_asuh')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-        });
+        //     $table->foreign('id_wali_asuh')->references('id')->on('wali_asuh')->onDelete('cascade');
+        //     $table->foreign('id_anak_asuh')->references('id')->on('anak_asuh')->onDelete('cascade');
+        //     $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+        //     $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+        //     $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
+        // });
     }
 
     /**
@@ -94,6 +95,6 @@ return new class extends Migration
         Schema::dropIfExists('anak_asuh');
         Schema::dropIfExists('wali_asuh');
         Schema::dropIfExists('grup_wali_asuh');
-        Schema::dropIfExists('kewaliasuhan');
+        // Schema::dropIfExists('kewaliasuhan');
     }
 };

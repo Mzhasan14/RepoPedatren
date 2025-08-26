@@ -13,7 +13,6 @@ class RekapNadhoman extends Model
     protected $table = 'rekap_nadhoman';
     protected $fillable = [
         'kitab_id',
-        'tahun_ajaran_id',
         'total_bait',
         'persentase_selesai',
         'created_by',
@@ -25,10 +24,5 @@ class RekapNadhoman extends Model
     public function kitab()
     {
         return $this->belongsTo(Kitab::class);
-    }
-
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
     }
 }

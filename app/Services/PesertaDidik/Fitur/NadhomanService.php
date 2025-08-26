@@ -2,10 +2,11 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use Exception;
+use App\Models\TahunAjaran;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NadhomanService
@@ -15,11 +16,15 @@ class NadhomanService
         DB::beginTransaction();
 
         try {
+            $tahunAjaranId = TahunAjaran::where('status', true)
+                ->orderByDesc('id')
+                ->value('id');
+
             // 1. Insert setoran nadhoman
             $setoranId = DB::table('nadhoman')->insertGetId([
                 'santri_id'       => $data['santri_id'],
                 'kitab_id'        => $data['kitab_id'],
-                'tahun_ajaran_id' => $data['tahun_ajaran_id'],
+                'tahun_ajaran_id' => $tahunAjaranId,
                 'tanggal'         => $data['tanggal'],
                 'jenis_setoran'   => $data['jenis_setoran'],
                 'bait_mulai'      => $data['bait_mulai'],
@@ -59,7 +64,6 @@ class NadhomanService
                     [
                         'santri_id'       => $data['santri_id'],
                         'kitab_id'        => $data['kitab_id'],
-                        'tahun_ajaran_id' => $data['tahun_ajaran_id'],
                     ],
                     [
                         'total_bait'         => $totalBaitSelesai,
@@ -135,7 +139,6 @@ class NadhomanService
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
             ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
-            ->join('tahun_ajaran', 'rn.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
                 'biodata.nama as santri_nama',
@@ -192,10 +195,8 @@ class NadhomanService
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
             ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
-            ->join('tahun_ajaran', 'rn.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
-                'tahun_ajaran.tahun_ajaran',
                 'biodata.nama as santri_nama',
                 'kitab.nama_kitab',
                 'rn.total_bait',
@@ -213,13 +214,12 @@ class NadhomanService
 
     public function getAllRekap(Request $request)
     {
-        $query = DB::table('rekap_nadhoman as rn')
-            ->join('santri as s', 'rn.santri_id', '=', 's.id')
+        $query = DB::table('santri as s')
+            ->leftjoin('rekap_nadhoman as rn', 'rn.santri_id', '=', 's.id')
             ->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('pendidikan as pd', 's.id', '=', 'pd.biodata_id')
             ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
-            ->join('tahun_ajaran', 'rn.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 's.id',
                 's.nis',
@@ -238,14 +238,6 @@ class NadhomanService
                 'rn.id'
             )
             ->orderBy('rn.id', 'desc');
-
-        if (! $request->filled('tahun_ajaran_id')) {
-            return $query;
-        }
-
-        if ($request->filled('tahun_ajaran_id')) {
-            $query->where('rn.tahun_ajaran_id', $request->tahun_ajaran_id);
-        }
 
         return $query;
     }

@@ -60,7 +60,6 @@ class NadhomanSeeder extends Seeder
                         [
                             'santri_id' => $santri->id,
                             'kitab_id'  => $kitab->id,
-                            'tahun_ajaran_id' => $tahunAjaranId
                         ],
                         [
                             'total_bait' => $totalBaitSetoran,

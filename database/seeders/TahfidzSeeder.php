@@ -80,7 +80,6 @@ class TahfidzSeeder extends Seeder
                 RekapTahfidz::updateOrCreate(
                     [
                         'santri_id'       => $santri->id,
-                        'tahun_ajaran_id' => $tahunAjaranId
                     ],
                     [
                         'total_surat'        => $totalSurat,

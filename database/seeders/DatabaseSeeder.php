@@ -68,7 +68,7 @@ class DatabaseSeeder extends Seeder
             LogPresensiSeeder::class,
             KitabSeeder::class,
             NadhomanSeeder::class,
-            TahfidzSeeder::class,
+            // TahfidzSeeder::class,
             OutletSeeder::class,
             PembayaranSeeder::class,
             // UserWaliasuhSeeder::class,

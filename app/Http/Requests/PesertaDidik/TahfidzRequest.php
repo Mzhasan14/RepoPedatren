@@ -24,7 +24,7 @@ class TahfidzRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
+            'tahun_ajaran_id' => ['nullable', 'exists:tahun_ajaran,id'],
             'santri_id'       => ['required', 'exists:santri,id'],
             'tanggal'         => ['required', 'date'],
             'jenis_setoran'   => ['required', 'in:baru,murojaah'],

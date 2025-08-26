@@ -24,7 +24,7 @@ class TahunAjaranRequest extends FormRequest
      */
     public function rules()
     {
-        $today = now()->toDateString();
+        // $today = now()->toDateString();
         $routeParam = $this->route('id');
         $id = is_object($routeParam) ? $routeParam->id : $routeParam;
 
@@ -38,7 +38,7 @@ class TahunAjaranRequest extends FormRequest
             'tanggal_mulai' => [
                 'required',
                 'date',
-                'after_or_equal:' . $today,
+                // 'after_or_equal:' . $today,
             ],
             'tanggal_selesai' => [
                 'required',
