@@ -44,7 +44,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
-            $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
+            // $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });
