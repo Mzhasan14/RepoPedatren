@@ -4,6 +4,7 @@ namespace App\Services\Kewaliasuhan\Filters;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FilterWaliasuhService
 {
@@ -14,7 +15,7 @@ class FilterWaliasuhService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyJenisWaliAsuhFilter($query, $request);
@@ -78,7 +79,7 @@ class FilterWaliasuhService
         return $query;
     }
 
-     
+
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
@@ -87,7 +88,7 @@ class FilterWaliasuhService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
             'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
@@ -103,7 +104,7 @@ class FilterWaliasuhService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -125,16 +126,27 @@ class FilterWaliasuhService
             return $query;
         }
 
-        if ($request->filled('jenis_wali_asuh')) {
-            if ($request->jenis_wali_asuh === 'dengan_grup') {
-                $query->whereNotNull('ws.id_grup_wali_asuh');
-            } elseif ($request->jenis_wali_asuh === 'tanpa_grup') {
-                $query->whereNull('ws.id_grup_wali_asuh');
-            }
+        $jenis = $request->jenis_wali_asuh;
+
+        if ($jenis === 'dengan_grup') {
+            // hanya wali asuh yang sudah punya grup
+            $query->whereExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('grup_wali_asuh as g')
+                    ->whereColumn('g.wali_asuh_id', 'ws.id');
+            });
+        } elseif ($jenis === 'tanpa_grup') {
+            // hanya wali asuh yang belum punya grup
+            $query->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('grup_wali_asuh as g')
+                    ->whereColumn('g.wali_asuh_id', 'ws.id');
+            });
         }
 
         return $query;
     }
+
 
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder
     {
@@ -185,7 +197,7 @@ class FilterWaliasuhService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->where(fn ($q) => $q->whereNull('pd.id')->orWhere('pd.status', '!=', 'aktif'));
+                    ->where(fn($q) => $q->whereNull('pd.id')->orWhere('pd.status', '!=', 'aktif'));
                 break;
             case 'pelajar':
                 $query->where('pd.status', 'aktif');
@@ -235,7 +247,7 @@ class FilterWaliasuhService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }

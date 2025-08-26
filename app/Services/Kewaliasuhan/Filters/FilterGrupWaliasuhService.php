@@ -44,7 +44,7 @@ class FilterGrupWaliasuhService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -69,19 +69,28 @@ class FilterGrupWaliasuhService
         $jenis = $request->grup_wali_asuh;
 
         if ($jenis === 'tidak_ada_wali_dan_anak') {
-            $query->whereNull('ws.id')->havingRaw('COUNT(aa.id) = 0');
+            // Grup tidak punya wali_asuh_id & tidak ada anak
+            $query->whereNull('gs.wali_asuh_id')
+                ->havingRaw('COUNT(aa.id) = 0');
         } elseif ($jenis === 'tidak_ada_wali') {
-            $query->whereNull('ws.id');
+            // Grup tidak punya wali_asuh
+            $query->whereNull('gs.wali_asuh_id');
         } elseif ($jenis === 'tidak_ada_anak') {
+            // Grup ada wali, tapi anak kosong
             $query->havingRaw('COUNT(aa.id) = 0');
         } elseif ($jenis === 'wali_ada_tapi_tidak_ada_anak') {
-            $query->whereNotNull('ws.id')->havingRaw('COUNT(aa.id) = 0');
+            // Ada wali tapi tidak ada anak
+            $query->whereNotNull('gs.wali_asuh_id')
+                ->havingRaw('COUNT(aa.id) = 0');
         } elseif ($jenis === 'anak_ada_tapi_tidak_ada_wali') {
-            $query->whereNull('ws.id')->havingRaw('COUNT(aa.id) > 0');
+            // Ada anak tapi tidak ada wali
+            $query->whereNull('gs.wali_asuh_id')
+                ->havingRaw('COUNT(aa.id) > 0');
         }
 
         return $query;
     }
+
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('nama')) {
@@ -89,7 +98,7 @@ class FilterGrupWaliasuhService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
             'MATCH(gs.nama_grup) AGAINST(? IN BOOLEAN MODE)',

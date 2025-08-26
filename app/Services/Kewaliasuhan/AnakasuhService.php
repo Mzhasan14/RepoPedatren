@@ -39,7 +39,7 @@ class AnakasuhService
         $waliAsuhId = null;
         if ($user->hasRole('waliasuh')) {
             $waliAsuhId = DB::table('wali_asuh as wa')
-                ->join('santri as s','s.id','wa.id_santri')
+                ->join('santri as s', 's.id', 'wa.id_santri')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->join('users as u', 'u.biodata_id', '=', 'b.id')
                 ->where('u.id', $user->id)
@@ -51,22 +51,21 @@ class AnakasuhService
             ->join('santri AS s', 'aa.id_santri', '=', 's.id')
             ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->join('keluarga as k', 'k.id_biodata', '=', 'b.id')
-            ->join('kewaliasuhan as ks', 'ks.id_anak_asuh', '=', 'aa.id')
-            ->join('wali_asuh as wa', 'ks.id_wali_asuh', '=', 'wa.id')
-            ->join('grup_wali_asuh as gw', 'wa.id_grup_wali_asuh', '=', 'gw.id')
+            ->join('wali_asuh as wa', 'aa.wali_asuh_id', '=', 'wa.id')
+            ->join('grup_wali_asuh as gw', 'wa.id', '=', 'gw.wali_asuh_id')
             ->leftJoin('domisili_santri AS ds', fn($j) => $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
             ->leftjoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftjoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
             ->leftjoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
             ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
             ->where('aa.status', true)
-            ->where('ks.status', true)
+            ->where('wa.status', true)
             ->select([
                 's.biodata_id',
                 'aa.id',
@@ -99,7 +98,7 @@ class AnakasuhService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'biodata_id' => $item->biodata_id,
             'id' => $item->id,
             'nis' => $item->nis,
@@ -118,10 +117,10 @@ class AnakasuhService
     {
         $list = DB::table('anak_asuh as as')
             ->join('santri as s', 'as.id_santri', '=', 's.id')
-            ->join('kewaliasuhan as k','k.id_anak_asuh','=','as.id')
-            ->join('wali_asuh as w','w.id','=','k.id_wali_asuh')
-            ->join('santri as sw','w.id_santri','=','sw.id')
-            ->join('biodata as b','sw.biodata_id','=','b.id')
+            ->join('kewaliasuhan as k', 'k.id_anak_asuh', '=', 'as.id')
+            ->join('wali_asuh as w', 'w.id', '=', 'k.id_wali_asuh')
+            ->join('santri as sw', 'w.id_santri', '=', 'sw.id')
+            ->join('biodata as b', 'sw.biodata_id', '=', 'b.id')
             ->where('s.biodata_id', $bioId)
             ->select([
                 'as.id as id_anak_asuh',
@@ -161,6 +160,7 @@ class AnakasuhService
         $santriIds = $data['santri_id'];
         $waliAsuhId = $data['id_wali_asuh'];
 
+        // Cek anak asuh aktif (sudah jadi anak di wali manapun)
         $anakAsuhAktif = Anak_Asuh::whereIn('id_santri', $santriIds)
             ->where('status', true)
             ->pluck('id_santri')
@@ -171,7 +171,7 @@ class AnakasuhService
 
         DB::beginTransaction();
         try {
-            // Ambil wali asuh dan jenis kelamin grup-nya
+            // Ambil wali asuh + grup
             $waliAsuh = Wali_asuh::with('santri.biodata', 'grupWaliAsuh')->find($waliAsuhId);
             if (! $waliAsuh || ! $waliAsuh->grupWaliAsuh) {
                 return [
@@ -182,9 +182,10 @@ class AnakasuhService
                 ];
             }
 
-            $jenisKelaminGrup = strtolower($waliAsuh->grupWaliAsuh->jenis_kelamin); // e.g. 'laki-laki'
+            $jenisKelaminGrup = strtolower($waliAsuh->grupWaliAsuh->jenis_kelamin); // 'l' / 'p' / 'campuran'
 
             foreach ($santriIds as $idSantri) {
+                // Cek apakah santri sudah jadi anak asuh aktif
                 if (in_array($idSantri, $anakAsuhAktif)) {
                     $dataGagal[] = [
                         'santri_id' => $idSantri,
@@ -193,7 +194,7 @@ class AnakasuhService
                     continue;
                 }
 
-                // Ambil jenis kelamin santri anak asuh
+                // Ambil jenis kelamin santri
                 $santri = Santri::with('biodata')->find($idSantri);
                 if (! $santri || ! $santri->biodata) {
                     $dataGagal[] = [
@@ -205,6 +206,7 @@ class AnakasuhService
 
                 $jenisKelaminSantri = strtolower($santri->biodata->jenis_kelamin);
 
+                // Validasi gender harus sama, kecuali grup campuran
                 if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
                     $dataGagal[] = [
                         'santri_id' => $idSantri,
@@ -213,24 +215,14 @@ class AnakasuhService
                     continue;
                 }
 
-                // Tambah ke tabel anak_asuh
-                $anakAsuh = Anak_Asuh::create([
-                    'id_santri' => $idSantri,
-                    'status' => true,
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-
-                // Tambah ke tabel kewaliasuhan
-                Kewaliasuhan::create([
-                    'id_wali_asuh' => $waliAsuhId,
-                    'id_anak_asuh' => $anakAsuh->id,
-                    'tanggal_mulai' => $now,
-                    'status' => true,
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                // Insert langsung ke anak_asuh dengan wali_asuh_id
+                Anak_Asuh::create([
+                    'id_santri'    => $idSantri,
+                    'wali_asuh_id' => $waliAsuhId,
+                    'status'       => true,
+                    'created_by'   => $userId,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
                 ]);
 
                 $dataBaru[] = $idSantri;
@@ -238,33 +230,32 @@ class AnakasuhService
 
             DB::commit();
 
-            // Pengecekan baru: Jika tidak ada satupun santri yang berhasil ditambahkan
-            if (empty($dataBaru) && !empty($dataGagal)) {
+            if (empty($dataBaru) && ! empty($dataGagal)) {
                 return [
-                    'success' => false, 
-                    'message' => 'Tidak ada santri yang berhasil ditambahkan. ' . count($dataGagal) . ' santri gagal ditambahkan.',
-                    'data_baru' => $dataBaru, 
+                    'success' => false,
+                    'message' => 'Tidak ada santri yang berhasil ditambahkan. ' . count($dataGagal) . ' gagal ditambahkan.',
+                    'data_baru' => $dataBaru,
                     'data_gagal' => $dataGagal,
                 ];
             }
-            // Jika ada yang berhasil (atau campuran berhasil dan gagal)
+
             return [
                 'success' => true,
-                'message' => 'Santri berhasil ditambahkan sebagai anak asuh dan dikaitkan dengan wali asuh. ' . count($dataBaru) . ' berhasil, ' . count($dataGagal) . ' gagal ditambahkan.',
+                'message' => count($dataBaru) . ' santri berhasil ditambahkan, ' . count($dataGagal) . ' gagal.',
                 'data_baru' => $dataBaru,
                 'data_gagal' => $dataGagal,
             ];
         } catch (\Exception $e) {
             DB::rollBack();
-
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(), // Lebih spesifik untuk kesalahan sistem
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
                 'data_baru' => [],
-                'data_gagal' => $santriIds, // Atau lebih spesifik ke santri yang gagal karena error ini
+                'data_gagal' => $santriIds,
             ];
         }
     }
+
 
     public function formStore(array $input, string $bioId): array
     {
@@ -354,34 +345,34 @@ class AnakasuhService
 
     public function show(int $id): array
     {
-            // 1. Langsung ambil data Kewaliasuhan berdasarkan ID yang diberikan
-            $kewaliasuhan = Kewaliasuhan::with([
-                'anakAsuh.santri.biodata', 
-                'waliAsuh.santri.biodata'
-            ])->findOrFail($id);
+        // 1. Langsung ambil data Kewaliasuhan berdasarkan ID yang diberikan
+        $kewaliasuhan = Kewaliasuhan::with([
+            'anakAsuh.santri.biodata',
+            'waliAsuh.santri.biodata'
+        ])->findOrFail($id);
 
-            // Jika kewaliasuhan ditemukan, ambil data terkait
-            $anakAsuh = $kewaliasuhan->anakAsuh;
-            $waliAsuh = $kewaliasuhan->waliAsuh;
+        // Jika kewaliasuhan ditemukan, ambil data terkait
+        $anakAsuh = $kewaliasuhan->anakAsuh;
+        $waliAsuh = $kewaliasuhan->waliAsuh;
 
-            // Lakukan pengecekan null safety
-            $nis = $anakAsuh->santri->nis ?? null;
-            $namaWaliAsuh = $waliAsuh->santri->biodata->nama ?? null;
+        // Lakukan pengecekan null safety
+        $nis = $anakAsuh->santri->nis ?? null;
+        $namaWaliAsuh = $waliAsuh->santri->biodata->nama ?? null;
 
-            return [
-                'status' => true,
-                'data' => [
-                    'id' => $kewaliasuhan->id,
-                    'id_anak_asuh' => $anakAsuh->id,
-                    'nis' => $nis, 
-                    'id_wali_asuh' => $waliAsuh->id, 
-                    'nama_wali_asuh' => $namaWaliAsuh, 
-                    'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
-                    'tanggal_akhir' => $kewaliasuhan->tanggal_akhir, 
-                    'status_kewaliasuhan' => $kewaliasuhan->status,
-                    'status_anak_asuh' => $anakAsuh->status
-                ]
-            ];
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $kewaliasuhan->id,
+                'id_anak_asuh' => $anakAsuh->id,
+                'nis' => $nis,
+                'id_wali_asuh' => $waliAsuh->id,
+                'nama_wali_asuh' => $namaWaliAsuh,
+                'tanggal_mulai' => $kewaliasuhan->tanggal_mulai,
+                'tanggal_akhir' => $kewaliasuhan->tanggal_akhir,
+                'status_kewaliasuhan' => $kewaliasuhan->status,
+                'status_anak_asuh' => $anakAsuh->status
+            ]
+        ];
 
         // $as = Anak_asuh::with(['santri', 'kewaliasuhan'])->where('kewaliasuhan.status', true)->find($id);
 
@@ -452,7 +443,8 @@ class AnakasuhService
             // Jika wali asuh tidak berubah
             if ($kewaliasuhanLama && $input['id_wali_asuh'] == $kewaliasuhanLama->id_wali_asuh) {
                 return [
-                    'status' => false, 'message' => 'Wali asuh sama dengan sebelumnya, tidak ada perubahan.',
+                    'status' => false,
+                    'message' => 'Wali asuh sama dengan sebelumnya, tidak ada perubahan.',
                 ];
             }
 
@@ -549,7 +541,7 @@ class AnakasuhService
                     'message' => 'Jenis kelamin santri tidak cocok dengan grup wali asuh baru.',
                 ];
             }
-            
+
             $tanggalPindah = Carbon::parse($input['tanggal_mulai'] ?? now());
 
             if ($tanggalPindah->lt(Carbon::parse($kewAliasuhLama->tanggal_mulai))) {
@@ -752,11 +744,11 @@ class AnakasuhService
             });
             $query->leftJoin('biodata as b_ibu2', 'ibu2.id_biodata_ibu', '=', 'b_ibu2.id');
         }
-        if (in_array('wali_asuh',$fields)) {
-            $query->leftjoin('kewaliasuhan as kw','kw.id_anak_asuh','=','as.id')
-            ->leftjoin('wali_asuh as wa','wa.id','=','kw.id_wali_asuh')
-            ->leftjoin('santri as sw','wa.id_santri','=','sw.id')
-            ->leftjoin('biodata as bw','sw.biodata_id','=','bw.id');
+        if (in_array('wali_asuh', $fields)) {
+            $query->leftjoin('kewaliasuhan as kw', 'kw.id_anak_asuh', '=', 'as.id')
+                ->leftjoin('wali_asuh as wa', 'wa.id', '=', 'kw.id_wali_asuh')
+                ->leftjoin('santri as sw', 'wa.id_santri', '=', 'sw.id')
+                ->leftjoin('biodata as bw', 'sw.biodata_id', '=', 'bw.id');
         }
 
         $select = [];
@@ -998,6 +990,5 @@ class AnakasuhService
         }
 
         return $headings;
-
     }
 }

@@ -22,7 +22,6 @@ class Wali_asuhFactory extends Factory
     {
         return [
             'id_santri' => Santri::inRandomOrder()->first()->id ?? Santri::factory(),
-            'id_grup_wali_asuh' => (new Grup_WaliAsuhhFactory)->create()->id,
             'tanggal_mulai' => now()->subYears(rand(1, 3)),
             'tanggal_berakhir' => null,
             'created_by' => 1,

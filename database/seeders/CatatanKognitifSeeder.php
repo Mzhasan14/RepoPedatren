@@ -16,22 +16,22 @@ class CatatanKognitifSeeder extends Seeder
      */
     public function run(): void
     {
-        $kewaliasuhanList = DB::table('kewaliasuhan')
-            ->join('anak_asuh', 'kewaliasuhan.id_anak_asuh', '=', 'anak_asuh.id')
+        $anakAsuhList = DB::table('anak_asuh')
             ->join('santri', 'anak_asuh.id_santri', '=', 'santri.id')
             ->where('santri.status', 'aktif')
-            ->select('kewaliasuhan.id_wali_asuh', 'anak_asuh.id_santri')
+            ->where('anak_asuh.status', true)
+            ->select('anak_asuh.wali_asuh_id', 'anak_asuh.id_santri')
             ->get();
 
-        if ($kewaliasuhanList->isEmpty()) {
-            $this->command->warn('Tidak ada relasi kewaliasuhan. Seeder CatatanKognitif dilewati.');
+        if ($anakAsuhList->isEmpty()) {
+            $this->command->warn('Tidak ada relasi anak asuh. Seeder CatatanKognitif dilewati.');
             return;
         }
 
-        foreach ($kewaliasuhanList->take(25) as $relasi) {
+        foreach ($anakAsuhList->take(25) as $relasi) {
             Catatan_kognitif::factory()->create([
-                'id_santri' => $relasi->id_santri,
-                'id_wali_asuh' => $relasi->id_wali_asuh,
+                'id_santri'   => $relasi->id_santri,
+                'id_wali_asuh' => $relasi->wali_asuh_id,
             ]);
         }
     }

@@ -98,7 +98,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data waliasuh: '.$e->getMessage());
+            Log::error('Gagal ambil data waliasuh: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -124,7 +124,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah waliasuh: '.$e->getMessage());
+            Log::error('Gagal tambah waliasuh: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -149,7 +149,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail Waliasuh: '.$e->getMessage());
+            Log::error('Gagal ambil detail Waliasuh: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -191,7 +191,7 @@ class WaliasuhController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar khadam: '.$e->getMessage());
+            Log::error('Gagal keluar khadam: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -257,27 +257,24 @@ class WaliasuhController extends Controller
         });
 
         return response()->json(['message' => 'Wali asuh dihapus']);
-
     }
 
     public function getWaliasuh()
     {
-        $data = Wali_Asuh::with([
-            'santri.biodata:id,nama',
-            'grupWaliAsuh:id,nama_grup',
-        ])
-            ->select('id', 'id_santri', 'id_grup_wali_asuh')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama' => $item->santri->biodata->nama ?? null,
-                    'nama_grup' => $item->grupWaliAsuh->nama_grup ?? null,
-                ];
-            });
+        $data = DB::table('wali_asuh as w')
+            ->join('santri as s', 's.id', '=', 'w.id_santri')
+            ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+            ->leftJoin('grup_wali_asuh as g', 'g.wali_asuh_id', '=', 'w.id')
+            ->select(
+                'w.id',
+                'b.nama as nama',
+                'g.nama_grup as nama_grup'
+            )
+            ->get();
 
         return response()->json($data);
     }
+
     public function createFromSantri(CreateWaliAsuhRequest $request): JsonResponse
     {
         try {

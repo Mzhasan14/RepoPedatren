@@ -15,19 +15,21 @@ class GrupWaliasuhService
     public function getAllGrupWaliasuh(Request $request)
     {
         return DB::table('grup_wali_asuh AS gs')
-            ->leftjoin('wali_asuh as ws', 'gs.id', '=', 'ws.id_grup_wali_asuh')
-            ->leftjoin('kewaliasuhan as ks', 'ks.id_wali_asuh', '=', 'ws.id')
-            ->leftjoin('anak_asuh AS aa', 'ks.id_anak_asuh', '=', 'aa.id')
-            ->leftjoin('santri AS s', 'ws.id_santri', '=', 's.id')
-            ->leftjoin('biodata AS b', 's.biodata_id', '=', 'b.id')
+            ->leftJoin('wali_asuh AS wa', 'gs.wali_asuh_id', '=', 'wa.id')
+            ->leftJoin('santri AS s', 'wa.id_santri', '=', 's.id')
+            ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
+            ->leftJoin('anak_asuh AS aa', function ($join) {
+                $join->on('wa.id', '=', 'aa.wali_asuh_id')
+                    ->where('aa.status', true);
+            })
             ->select([
                 'gs.id',
                 'gs.nama_grup as group',
                 's.nis',
-                'b.nama',
+                'b.nama as nama_wali_asuh',
                 'w.nama_wilayah',
-                DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh"),
+                DB::raw('COUNT(aa.id) as jumlah_anak_asuh'),
                 'gs.updated_at',
                 'gs.created_at',
                 'gs.status'
@@ -51,7 +53,7 @@ class GrupWaliasuhService
             'id' => $item->id,
             'group' => $item->group,
             'nis_wali_asuh' => $item->nis,
-            'nama_wali_asuh' => $item->nama,
+            'nama_wali_asuh' => $item->nama_wali_asuh,
             'wilayah' => $item->nama_wilayah,
             'jumlah_anak_asuh' => $item->jumlah_anak_asuh,
             'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
@@ -78,7 +80,7 @@ class GrupWaliasuhService
                     DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto")
                 )
                 ->leftJoin('wali_asuh as w', function ($join) {
-                    $join->on('w.id_grup_wali_asuh', '=', 'g.id')
+                    $join->on('g.wali_asuh_id', '=', 'w.id')
                         ->where('w.status', true);
                 })
                 ->leftJoin('santri as sw', 'sw.id', '=', 'w.id_santri')
@@ -110,26 +112,20 @@ class GrupWaliasuhService
                 ];
             }
 
-            // 🔹 Daftar Anak Asuh aktif
-            $anakAsuh = DB::table('kewaliasuhan as k')
+            // 🔹 Daftar Anak Asuh aktif (langsung dari tabel anak_asuh)
+            $anakAsuh = DB::table('anak_asuh as aa')
                 ->select(
                     'aa.id as anak_asuh_id',
                     'pd.no_induk',
                     'ab.nama'
                 )
-                ->leftJoin('anak_asuh as aa', function ($join) {
-                    $join->on('aa.id', '=', 'k.id_anak_asuh')
-                        ->where('aa.status', true);
-                })
                 ->leftJoin('santri as ai', 'ai.id', '=', 'aa.id_santri')
                 ->leftJoin('biodata as ab', 'ab.id', '=', 'ai.biodata_id')
-                ->join(
-                    'pendidikan AS pd',
-                    fn($j) =>
-                    $j->on('ab.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif')
-                )
-                ->where('k.id_wali_asuh', $group->wali_asuh_id)
-                ->where('k.status', true) // kewaliasuhan aktif
+                ->leftJoin('pendidikan AS pd', function ($j) {
+                    $j->on('ab.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif');
+                })
+                ->where('aa.status', true) // anak asuh aktif
+                ->where('aa.wali_asuh_id', $group->wali_asuh_id) // sesuai wali asuh di grup
                 ->orderBy('pd.no_induk')
                 ->get();
 
@@ -140,10 +136,10 @@ class GrupWaliasuhService
                     'group' => [
                         'grup_wali_id'     => $group->id,
                         'wali_asuh_id'     => $group->wali_asuh_id,
-                        'nama_group'     => $group->nama_group,
-                        'nama_wali_asuh' => $group->nama_wali_asuh,
-                        'wilayah'        => $group->wilayah,
-                        'foto'           => url($group->foto)
+                        'nama_group'       => $group->nama_group,
+                        'nama_wali_asuh'   => $group->nama_wali_asuh,
+                        'wilayah'          => $group->wilayah,
+                        'foto'             => url($group->foto)
                     ],
                     'total'     => $anakAsuh->count(),
                     'anak_asuh' => $anakAsuh
@@ -157,6 +153,7 @@ class GrupWaliasuhService
             ];
         }
     }
+
     public function nonaktifkanAnakAsuh(int $waliAsuhId, int $anakAsuhId): array
     {
         try {
