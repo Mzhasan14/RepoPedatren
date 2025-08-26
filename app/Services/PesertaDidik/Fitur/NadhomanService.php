@@ -20,7 +20,41 @@ class NadhomanService
                 ->orderByDesc('id')
                 ->value('id');
 
-            // 1. Insert setoran nadhoman
+            // --- VALIDASI SETORAN BARU ---
+            if ($data['jenis_setoran'] === 'baru') {
+                // 1. Cek apakah kitab ini sudah tuntas
+                $kitabSudahTuntas = DB::table('nadhoman')
+                    ->where('santri_id', $data['santri_id'])
+                    ->where('kitab_id', $data['kitab_id'])
+                    ->where('jenis_setoran', 'baru')
+                    ->where('status', 'tuntas')
+                    ->exists();
+
+                if ($kitabSudahTuntas) {
+                    throw new Exception("Kitab ini sudah selesai dituntaskan, tidak bisa setor ulang.");
+                }
+
+                // 2. Cek apakah bait sudah pernah disetorkan (overlap)
+                $sudahAda = DB::table('nadhoman')
+                    ->where('santri_id', $data['santri_id'])
+                    ->where('kitab_id', $data['kitab_id'])
+                    ->where('jenis_setoran', 'baru')
+                    ->where(function ($q) use ($data) {
+                        $q->whereBetween('bait_mulai', [$data['bait_mulai'], $data['bait_selesai']])
+                            ->orWhereBetween('bait_selesai', [$data['bait_mulai'], $data['bait_selesai']])
+                            ->orWhere(function ($sub) use ($data) {
+                                $sub->where('bait_mulai', '<=', $data['bait_mulai'])
+                                    ->where('bait_selesai', '>=', $data['bait_selesai']);
+                            });
+                    })
+                    ->exists();
+
+                if ($sudahAda) {
+                    throw new Exception("Bait {$data['bait_mulai']} - {$data['bait_selesai']} sudah pernah disetorkan, tidak bisa disetorkan lagi.");
+                }
+            }
+
+            // --- INSERT SETORAN ---
             $setoranId = DB::table('nadhoman')->insertGetId([
                 'santri_id'       => $data['santri_id'],
                 'kitab_id'        => $data['kitab_id'],
@@ -37,19 +71,15 @@ class NadhomanService
                 'updated_at'      => now(),
             ]);
 
-            // 2. Update rekap jika tuntas & baru
+            // --- UPDATE REKAP ---
             if ($data['status'] === 'tuntas' && $data['jenis_setoran'] === 'baru') {
-
-                // Hitung total bait yang sudah tuntas (berdasarkan range bait)
                 $totalBaitSelesai = DB::table('nadhoman')
                     ->where('santri_id', $data['santri_id'])
                     ->where('kitab_id', $data['kitab_id'])
-                    ->where('tahun_ajaran_id', $data['tahun_ajaran_id'])
                     ->where('status', 'tuntas')
                     ->where('jenis_setoran', 'baru')
                     ->sum(DB::raw('(bait_selesai - bait_mulai + 1)'));
 
-                // Ambil total bait dari tabel kitab
                 $totalBaitKitab = DB::table('kitab')
                     ->where('id', $data['kitab_id'])
                     ->value('total_bait');
@@ -59,11 +89,10 @@ class NadhomanService
                     $persentase = ($totalBaitSelesai / $totalBaitKitab) * 100;
                 }
 
-                // Update atau insert ke rekap_nadhoman
                 DB::table('rekap_nadhoman')->updateOrInsert(
                     [
-                        'santri_id'       => $data['santri_id'],
-                        'kitab_id'        => $data['kitab_id'],
+                        'santri_id' => $data['santri_id'],
+                        'kitab_id'  => $data['kitab_id'],
                     ],
                     [
                         'total_bait'         => $totalBaitSelesai,
@@ -76,6 +105,7 @@ class NadhomanService
 
             DB::commit();
 
+            // --- LOG AKTIVITAS ---
             $santri = DB::table('santri')
                 ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
                 ->select('santri.nis', 'biodata.nama')
@@ -88,7 +118,7 @@ class NadhomanService
                 ->withProperties([
                     'santri_id'  => $data['santri_id'],
                     'nis'        => $santri->nis ?? null,
-                    'nama'    => $santri->nama ?? null,
+                    'nama'       => $santri->nama ?? null,
                     'kitab_id'   => $data['kitab_id'],
                     'ip'         => request()->ip(),
                     'user_agent' => request()->userAgent(),
@@ -105,6 +135,7 @@ class NadhomanService
             throw $e;
         }
     }
+
 
     public function listSetoran($santriId)
     {

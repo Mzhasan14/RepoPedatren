@@ -167,7 +167,7 @@ return new class extends Migration
             $table->id();
             $table->string('kode_tagihan', 50)->unique();
             $table->string('nama_tagihan', 150);
- 
+
             $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
 
             $table->decimal('nominal', 15, 2)->default(0);
@@ -182,6 +182,22 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        /**
+         * MASTER POTONGAN (DISKON / BEASISWA / KHUSUS)
+         */
+        Schema::create('potongan', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama', 100); // contoh: Anak Pegawai, Saudara, Beasiswa, Khadam
+            $table->enum('jenis', ['persentase', 'nominal'])->default('nominal');
+            $table->decimal('nilai', 15, 2); // jika persentase: simpan 10 => 10%
+            $table->boolean('aktif')->default(true);
+            $table->text('keterangan')->nullable();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        
         Schema::create('tagihan_khusus', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
