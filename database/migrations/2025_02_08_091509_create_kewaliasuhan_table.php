@@ -11,6 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        
+
+        Schema::create('wali_asuh', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('id_santri');
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->softDeletes();
+            $table->boolean('status')->nullable()->default(true);
+            $table->timestamps();
+
+            $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
+            // $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
+        });
         Schema::create('grup_wali_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
@@ -29,24 +48,6 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('cascade');
-        });
-
-        Schema::create('wali_asuh', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_santri');
-            $table->date('tanggal_mulai');
-            $table->date('tanggal_berakhir')->nullable()->check('tanggal_berakhir IS NULL OR tanggal_berakhir >= tanggal_mulai');
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->softDeletes();
-            $table->boolean('status')->nullable()->default(true);
-            $table->timestamps();
-
-            $table->foreign('id_santri')->references('id')->on('santri')->onDelete('cascade');
-            // $table->foreign('id_grup_wali_asuh')->references('id')->on('grup_wali_asuh')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('anak_asuh', function (Blueprint $table) {
