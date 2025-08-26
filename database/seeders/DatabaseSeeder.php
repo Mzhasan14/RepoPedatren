@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
             DataKeluargaSeeder::class,
             JenisBerkasSeeder::class,
             BerkasSeeder::class,
-            WaliAnakAsuhSeeder::class,
+            // WaliAnakAsuhSeeder::class,
             PelanggaranSeeder::class,
             PerizinanSeeder::class,
             BerkasPerizinanSeeder::class,
