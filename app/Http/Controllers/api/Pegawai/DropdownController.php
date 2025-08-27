@@ -706,29 +706,33 @@ class DropdownController extends Controller
 
     public function dropdownWaliAsuh(Request $request)
     {
-        $wilayahId    = $request->wilayah_id;
-        $jenisKelamin = $request->jenis_kelamin;
-
-        $waliAsuh = DB::table('wali_asuh as w')
-            ->join('santri as s', 's.id', '=', 'w.id_santri')
-            ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-            ->join('domisili_santri as ds', function ($join) {
-                $join->on('s.id', '=', 'ds.santri_id')
-                    ->where('ds.status', 'aktif');
+        $query = DB::table('wali_asuh as ws')
+            ->join('grup_wali_asuh as gw', function ($join) {
+                $join->on('gw.wali_asuh_id', '=', 'ws.id')
+                    ->where('gw.status', true); // hanya grup aktif
             })
-            ->whereNull('w.id_grup_wali_asuh')
-            ->where('b.jenis_kelamin', $jenisKelamin)
-            ->where('ds.wilayah_id', $wilayahId)
+            ->join('santri as s', 's.id', '=', 'ws.id_santri')
+            ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+            ->leftJoin(
+                'domisili_santri AS ds',
+                fn($j) =>
+                $j->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif')
+            )
+            ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
+            ->leftJoin('blok AS bl', 'ds.blok_id', '=', 'bl.id')
+            ->leftJoin('kamar AS km', 'ds.kamar_id', '=', 'km.id')
+            ->where('ws.status', true) // hanya wali asuh aktif
             ->select([
-                'w.id as id_waliasuh',
-                'b.nama as nama_waliasuh',
+                'ws.id',
                 's.nis',
+                'b.nama',
+                'w.nama_wilayah',
+                'bl.nama_blok',
+                'km.nama_kamar',
+                'gw.nama_grup',   // optional: nama grupnya
             ])
             ->get();
 
-        return response()->json([
-            'message' => 'Proses berhasil',
-            'data'    => $waliAsuh
-        ]);
+        return response()->json($query);
     }
 }

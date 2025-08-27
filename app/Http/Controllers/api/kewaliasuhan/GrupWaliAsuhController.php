@@ -105,27 +105,27 @@ class GrupWaliAsuhController extends Controller
         }
     }
 
-    public function index(): JsonResponse
-    {
-        try {
-            $result = $this->grupWaliasuhService->index();
-            if (! $result['status']) {
-                return response()->json([
-                    'message' => $result['message'],
-                ], 404);
-            }
+    // public function index(): JsonResponse
+    // {
+    //     try {
+    //         $result = $this->grupWaliasuhService->index();
+    //         if (! $result['status']) {
+    //             return response()->json([
+    //                 'message' => $result['message'],
+    //             ], 404);
+    //         }
 
-            return response()->json([
-                'status' => true,
-                'data' => $result['data'],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'status' => true,
+    //             'data' => $result['data'],
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Terjadi kesalahan saat memproses data',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     public function show($id): JsonResponse
     {

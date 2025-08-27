@@ -20,7 +20,7 @@ class GrupWaliasuhService
             ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
             ->leftJoin('anak_asuh AS aa', function ($join) {
-                $join->on('wa.id', '=', 'aa.wali_asuh_id')
+                $join->on('gs.id', '=', 'aa.grup_wali_asuh_id')
                     ->where('aa.status', true);
             })
             ->select([
@@ -57,7 +57,7 @@ class GrupWaliasuhService
             'wilayah' => $item->nama_wilayah,
             'jumlah_anak_asuh' => $item->jumlah_anak_asuh,
             'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
-            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
+            'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s') ?? '-',
             'status' => $item->status
         ]);
     }
@@ -125,7 +125,7 @@ class GrupWaliasuhService
                     $j->on('ab.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif');
                 })
                 ->where('aa.status', true) // anak asuh aktif
-                ->where('aa.wali_asuh_id', $group->wali_asuh_id) // sesuai wali asuh di grup
+                ->where('aa.grup_wali_asuh_id', $group->id) 
                 ->orderBy('pd.no_induk')
                 ->get();
 
@@ -135,10 +135,10 @@ class GrupWaliasuhService
                 'data'    => [
                     'group' => [
                         'grup_wali_id'     => $group->id,
-                        'wali_asuh_id'     => $group->wali_asuh_id,
+                        'wali_asuh_id'     => $group->wali_asuh_id ?? '-',
                         'nama_group'       => $group->nama_group,
-                        'nama_wali_asuh'   => $group->nama_wali_asuh,
-                        'wilayah'          => $group->wilayah,
+                        'nama_wali_asuh'   => $group->nama_wali_asuh ?? '-',
+                        'wilayah'          => $group->wilayah ?? '-',
                         'foto'             => url($group->foto)
                     ],
                     'total'     => $anakAsuh->count(),
@@ -192,31 +192,42 @@ class GrupWaliasuhService
             ];
         }
     }
-    public function index(): array
-    {
-        $data = Grup_WaliAsuh::with(['wilayah'])->orderBy('id', 'asc')->get();
+    // public function index(): array
+    // {
+    //     $data = Grup_WaliAsuh::with(['wilayah'])->orderBy('id', 'asc')->get();
 
-        return [
-            'status' => true,
-            'data' => $data->map(fn($item) => [
-                'id' => $item->id,
-                'nama_grup' => $item->nama_status,
-                'wilayah' => $item->wilayah->nama_wilayah,
-                'jenis_kelamin' => $item->jenis_kelamin,
-                'status' => $item->status,
-                'created_by' => $item->created_by,
-                'created_at' => $item->created_at,
-                'updated_by' => $item->updated_by,
-                'updated_at' => $item->updated_at,
-                'deleted_by' => $item->deleted_by,
-                'deleted_at' => $item->deleted_at,
-            ]),
-        ];
-    }
+    //     return [
+    //         'status' => true,
+    //         'data' => $data->map(fn($item) => [
+    //             'id' => $item->id,
+    //             'nama_grup' => $item->nama_status,
+    //             'wilayah' => $item->wilayah->nama_wilayah,
+    //             'jenis_kelamin' => $item->jenis_kelamin,
+    //             'status' => $item->status,
+    //             'created_by' => $item->created_by,
+    //             'created_at' => $item->created_at,
+    //             'updated_by' => $item->updated_by,
+    //             'updated_at' => $item->updated_at,
+    //             'deleted_by' => $item->deleted_by,
+    //             'deleted_at' => $item->deleted_at,
+    //         ]),
+    //     ];
+    // }
 
     public function show(int $id)
     {
-        $hubungan = Grup_WaliAsuh::with('waliAsuh')->find($id);
+        $hubungan = DB::table('grup_wali_asuh AS gs')
+            ->leftJoin('wali_asuh AS wa', 'gs.wali_asuh_id', '=', 'wa.id')
+            ->select(
+                'gs.id',
+                'gs.nama_grup',
+                'gs.wali_asuh_id',
+                'gs.jenis_kelamin',
+                'gs.id_wilayah',
+                'gs.status',
+            )
+            ->where('gs.id', $id)
+            ->first();
 
         if (! $hubungan) {
             return [
@@ -227,7 +238,7 @@ class GrupWaliasuhService
 
         return [
             'status' => true,
-            'data'   => $hubungan,
+            'data' => $hubungan,
         ];
     }
 

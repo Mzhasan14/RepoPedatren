@@ -194,7 +194,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
-Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|waliasuh', 'throttle:200,1'])->group(function () {
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|wali_asuh', 'throttle:200,1'])->group(function () {
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
 });
@@ -675,13 +675,13 @@ Route::prefix('formulir')
 //     Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
 // });
 Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif'])
-    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin|supervisor', 'throttle:200,1']);
+    ->middleware(['auth:sanctum', 'role:wali_asuh|superadmin|supervisor', 'throttle:200,1']);
 Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif'])
-    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin|supervisor', 'throttle:200,1']);
+    ->middleware(['auth:sanctum', 'role:wali_asuh|superadmin|supervisor', 'throttle:200,1']);
 Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif'])
-    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
+    ->middleware(['auth:sanctum', 'role:wali_asuh|superadmin', 'throttle:200,1']);
 Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore'])
-    ->middleware(['auth:sanctum', 'role:waliasuh|superadmin', 'throttle:200,1']);
+    ->middleware(['auth:sanctum', 'role:wali_asuh|superadmin', 'throttle:200,1']);
 Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
 Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update'])
@@ -934,7 +934,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan'])
         ->middleware('role:superadmin|wali asuh');
     Route::get('/hubungkanwaliasuh', [DropdownController::class, 'hubungkanwaliasuh']);
-    // Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
+    Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);
     Route::get('/angkatan-pelajar', [DropDownAngkatanController::class, 'angkatanPelajar']);
 

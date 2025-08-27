@@ -32,7 +32,6 @@ class Wali_asuh extends Model
 
     protected $fillable = [
         'id_santri',
-        'id_grup_wali_asuh',
         'tanggal_mulai',
         'tanggal_berakhir',
         'created_by',
@@ -60,12 +59,17 @@ class Wali_asuh extends Model
 
     public function grupWaliAsuh()
     {
-        return $this->belongsTo(Grup_WaliAsuh::class, 'id_grup_wali_asuh', 'id');
+        return $this->hasMany(Grup_WaliAsuh::class, 'wali_asuh_id', 'id');
     }
 
-    public function Kewaliasuhan()
+    public function waliAsuh()
     {
-        return $this->hasOne(Kewaliasuhan::class, 'id_wali_asuh', 'id');
+        return $this->belongsTo(Wali_asuh::class, 'wali_asuh_id', 'id');
+    }
+
+    public function anakAsuh()
+    {
+        return $this->hasMany(Anak_Asuh::class, 'wali_asuh_id', 'id');
     }
 
     public function WaliAsuhPesrizinan()

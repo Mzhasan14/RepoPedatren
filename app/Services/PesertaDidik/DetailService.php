@@ -137,48 +137,97 @@ class DetailService
         ])->toArray();
 
         // --- Kewaliasuhan (jika ada) ---
-        $kew = null;
+        // $kew = null;
 
-        if ($santriId) {
-            $kew = DB::table('kewaliasuhan as kw')
-                ->join('wali_asuh as wa', 'kw.id_wali_asuh', '=', 'wa.id')
-                ->join('anak_asuh as aa', 'kw.id_anak_asuh', '=', 'aa.id')
-                ->join('santri as s_wali', 'wa.id_santri', '=', 's_wali.id')
-                ->join('biodata as bio_wali', 's_wali.biodata_id', '=', 'bio_wali.id')
-                ->join('santri as s_anak', 'aa.id_santri', '=', 's_anak.id')
-                ->join('biodata as bio_anak', 's_anak.biodata_id', '=', 'bio_anak.id')
-                ->leftJoin('grup_wali_asuh as gw', 'gw.id', '=', 'wa.id_grup_wali_asuh')
-                ->where('kw.status', true)
-                ->where(function ($q) use ($santriId) {
-                    $q->where('wa.id_santri', $santriId)
-                        ->orWhere('aa.id_santri', $santriId);
-                })
-                ->select(
-                    'kw.tanggal_mulai',
-                    'kw.tanggal_berakhir',
-                    'kw.status',
-                    'bio_wali.nama as nama_wali',
-                    'bio_anak.nama as nama_anak',
-                    'gw.nama_grup as group_kewaliasuhan',
-                    DB::raw("
-                        CASE 
-                            WHEN s_wali.id = $santriId THEN 'Wali Asuh'
-                            WHEN s_anak.id = $santriId THEN 'Anak Asuh'
-                            ELSE 'Tidak Diketahui'
-                        END as role
-                    ")
-                )
-                ->first();
+        // if ($santriId) {
+        //     $kew = DB::table('kewaliasuhan as kw')
+        //         ->join('wali_asuh as wa', 'kw.id_wali_asuh', '=', 'wa.id')
+        //         ->join('anak_asuh as aa', 'kw.id_anak_asuh', '=', 'aa.id')
+        //         ->join('santri as s_wali', 'wa.id_santri', '=', 's_wali.id')
+        //         ->join('biodata as bio_wali', 's_wali.biodata_id', '=', 'bio_wali.id')
+        //         ->join('santri as s_anak', 'aa.id_santri', '=', 's_anak.id')
+        //         ->join('biodata as bio_anak', 's_anak.biodata_id', '=', 'bio_anak.id')
+        //         ->leftJoin('grup_wali_asuh as gw', 'gw.id', '=', 'wa.id_grup_wali_asuh')
+        //         ->where('kw.status', true)
+        //         ->where(function ($q) use ($santriId) {
+        //             $q->where('wa.id_santri', $santriId)
+        //                 ->orWhere('aa.id_santri', $santriId);
+        //         })
+        //         ->select(
+        //             'kw.tanggal_mulai',
+        //             'kw.tanggal_berakhir',
+        //             'kw.status',
+        //             'bio_wali.nama as nama_wali',
+        //             'bio_anak.nama as nama_anak',
+        //             'gw.nama_grup as group_kewaliasuhan',
+        //             DB::raw("
+        //                 CASE 
+        //                     WHEN s_wali.id = $santriId THEN 'Wali Asuh'
+        //                     WHEN s_anak.id = $santriId THEN 'Anak Asuh'
+        //                     ELSE 'Tidak Diketahui'
+        //                 END as role
+        //             ")
+        //         )
+        //         ->first();
+        // }
+
+        // $data['Status_Santri']['Kewaliasuhan'] = $kew ? [[
+        //     'group_kewaliasuhan' => $kew->group_kewaliasuhan ?? '-',
+        //     'sebagai' => $kew->role,
+        //     $kew->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' => $kew->role === 'Anak Asuh' ? ($kew->nama_wali ?? '-') : ($kew->nama_anak ?? '-'),
+        //     'tanggal_mulai' => $kew->tanggal_mulai,
+        //     'tanggal_berakhir' => $kew->tanggal_berakhir ?? '-',
+        //     'status' => $kew->status ? 'Aktif' : 'Tidak Aktif',
+        // ]] : [];
+        // Ambil status kewaliasuhan
+
+        $kew = DB::table('santri as s')
+            ->where('s.id', $santriId)
+            ->leftJoin('wali_asuh as wa', function ($join) {
+                $join->on('s.id', '=', 'wa.id_santri')->where('wa.status', true);
+            })
+            ->leftJoin('anak_asuh as aa', function ($join) {
+                $join->on('s.id', '=', 'aa.id_santri')->where('aa.status', true);
+            })
+            ->leftJoin('grup_wali_asuh as gw_wali', 'gw_wali.wali_asuh_id', '=', 'wa.id')
+            ->leftJoin('grup_wali_asuh as gw_wali_dari', 'gw_wali_dari.id', '=', 'aa.grup_wali_asuh_id')
+            ->select([
+                DB::raw("CASE WHEN wa.id IS NOT NULL THEN gw_wali.nama_grup WHEN aa.id IS NOT NULL THEN gw_wali_dari.nama_grup ELSE '-' END as nama_grup"),
+                DB::raw("CASE WHEN wa.id IS NOT NULL THEN 'Wali Asuh' WHEN aa.id IS NOT NULL THEN 'Anak Asuh' ELSE '-' END as role"),
+                DB::raw("(SELECT GROUP_CONCAT(bio.nama SEPARATOR ', ')
+            FROM anak_asuh aa2
+            JOIN santri s2 ON aa2.id_santri = s2.id
+            JOIN biodata bio ON s2.biodata_id = bio.id
+            WHERE aa2.grup_wali_asuh_id = gw_wali.id AND aa2.status = true) as anak_asuh_names"),
+                DB::raw("(SELECT bio.nama
+            FROM grup_wali_asuh gw2
+            JOIN wali_asuh wa2 ON wa2.id = gw2.wali_asuh_id
+            JOIN santri s3 ON wa2.id_santri = s3.id
+            JOIN biodata bio ON s3.biodata_id = bio.id
+            WHERE gw2.id = aa.grup_wali_asuh_id AND wa2.status = true
+            LIMIT 1) as wali_asuh_names"),
+            ])
+            ->first();
+
+        $data['Status_Santri'] = [];
+        $data['Status_Santri']['Santri'] = [
+            [
+                'NIS' => '74037128467',
+                'Tanggal_Mulai' => '2023-09-16',
+                'Tanggal_Akhir' => '-',
+            ]
+        ];
+
+        $data['Status_Santri']['Kewaliasuhan'] = [];
+
+        if ($kew && $kew->role !== '-') {
+            $data['Status_Santri']['Kewaliasuhan'][] = [
+                'group_kewaliasuhan' => $kew->nama_grup ?? '-',
+                'sebagai' => $kew->role,
+                'Anak Asuh' => $kew->role === 'Wali Asuh' ? ($kew->anak_asuh_names ?? '-') : null,
+                'Nama Wali Asuh' => $kew->role === 'Anak Asuh' ? ($kew->wali_asuh_names ?? '-') : null,
+            ];
         }
-
-        $data['Status_Santri']['Kewaliasuhan'] = $kew ? [[
-            'group_kewaliasuhan' => $kew->group_kewaliasuhan ?? '-',
-            'sebagai' => $kew->role,
-            $kew->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' => $kew->role === 'Anak Asuh' ? ($kew->nama_wali ?? '-') : ($kew->nama_anak ?? '-'),
-            'tanggal_mulai' => $kew->tanggal_mulai,
-            'tanggal_berakhir' => $kew->tanggal_berakhir ?? '-',
-            'status' => $kew->status ? 'Aktif' : 'Tidak Aktif',
-        ]] : [];
 
 
         // --- Perizinan ---
