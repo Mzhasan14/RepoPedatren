@@ -72,6 +72,7 @@ use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\KategoriController;
 use App\Http\Controllers\api\PesertaDidik\formulir\KhadamFormController;
 use App\Http\Controllers\api\PesertaDidik\formulir\PendidikanController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\PotonganController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\TransaksiController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
@@ -79,7 +80,9 @@ use App\Http\Controllers\api\PesertaDidik\Pembayaran\PembayaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanKhususController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\SantriPotonganController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
+use App\Http\Controllers\api\PesertaDidik\Pembayaran\PotonganTagihanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
 
@@ -176,7 +179,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/anakasuh/{id}', [AnakasuhController::class, 'getDetailAnakasuh']);
     Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
     Route::get('/kewaliasuhan/grup/{id}', [GrupWaliAsuhController::class, 'detail']);
-    
+
     // 👨‍🏫 Pegawai & Guru
     Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
@@ -1107,14 +1110,30 @@ Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
     Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-// Tagihan Khusus
-Route::prefix('tagihan-khusus')->group(function () {
-    Route::get('/', [TagihanKhususController::class, 'index']);
-    Route::post('/', [TagihanKhususController::class, 'store']);
-    Route::get('/{id}', [TagihanKhususController::class, 'show']);
-    Route::put('/{id}', [TagihanKhususController::class, 'update']);
-    Route::delete('/{id}', [TagihanKhususController::class, 'destroy']);
+Route::prefix('potongan')->group(function () {
+    Route::get('/', [PotonganController::class, 'index']);
+    Route::get('/{potongan}', [PotonganController::class, 'show']);
+    Route::post('/', [PotonganController::class, 'store']);
+    Route::put('/{potongan}', [PotonganController::class, 'update']);
+    Route::delete('/{potongan}', [PotonganController::class, 'destroy']);
 });
+
+Route::prefix('santri-potongan')->group(function () {
+    Route::get('/', [SantriPotonganController::class, 'index']);
+    Route::get('/{santriPotongan}', [SantriPotonganController::class, 'show']);
+    Route::post('/', [SantriPotonganController::class, 'store']);
+    Route::put('/{santriPotongan}', [SantriPotonganController::class, 'update']);
+    Route::delete('/{santriPotongan}', [SantriPotonganController::class, 'destroy']);
+});
+
+// Tagihan Khusus
+// Route::prefix('tagihan-khusus')->group(function () {
+//     Route::get('/', [TagihanKhususController::class, 'index']);
+//     Route::post('/', [TagihanKhususController::class, 'store']);
+//     Route::get('/{id}', [TagihanKhususController::class, 'show']);
+//     Route::put('/{id}', [TagihanKhususController::class, 'update']);
+//     Route::delete('/{id}', [TagihanKhususController::class, 'destroy']);
+// });
 
 // Banks
 Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
@@ -1134,9 +1153,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::get('dashboard', [DashboardController::class, 'total']);
 
-Route::prefix('tagihan-santri')->group(function () {
-    Route::post('/', [TagihanSantriController::class, 'assign']);
-})->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+// Route::prefix('tagihan-santri')->group(function () {
+//     Route::post('/', [TagihanSantriController::class, 'assign']);
+// })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
 
 Route::prefix('pembayaran')->group(function () {
     Route::post('/', [PembayaranController::class, 'bayar']);
@@ -1154,7 +1173,6 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
 
     Route::get('/presensi', [ViewOrangTuaController::class, 'getPresensiJamaahAnak']);
     Route::get('/presensi-today', [ViewOrangTuaController::class, 'getPresensiToday']);
-
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);

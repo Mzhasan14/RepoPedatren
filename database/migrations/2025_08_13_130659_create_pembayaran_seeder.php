@@ -147,7 +147,6 @@ return new class extends Migration
         /**
          * VIRTUAL ACCOUNT
          */
-
         Schema::create('virtual_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
@@ -163,15 +162,15 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        /**
+         * MASTER TAGIHAN
+         */
         Schema::create('tagihan', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_tagihan', 50)->unique();
             $table->string('nama_tagihan', 150);
-
             $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
-
             $table->decimal('nominal', 15, 2)->default(0);
-            $table->date('jatuh_tempo')->nullable();
+            $table->date('jatuh_tempo')->nullable(); // default template, bukan wajib
             $table->boolean('status')->default(true);
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -183,63 +182,62 @@ return new class extends Migration
         });
 
         /**
-         * MASTER POTONGAN (DISKON / BEASISWA / KHUSUS)
+         * MASTER POTONGAN
          */
         Schema::create('potongan', function (Blueprint $table) {
             $table->id();
-            $table->string('nama', 100); // contoh: Anak Pegawai, Saudara, Beasiswa, Khadam
+            $table->string('nama', 100); // Anak Pegawai, Beasiswa, Khadam
             $table->enum('jenis', ['persentase', 'nominal'])->default('nominal');
-            $table->decimal('nilai', 15, 2); // jika persentase: simpan 10 => 10%
-            $table->boolean('aktif')->default(true);
+            $table->decimal('nilai', 15, 2); // persentase = 10 berarti 10%
+            $table->boolean('status')->default(true);
             $table->text('keterangan')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
         });
 
-        
-        Schema::create('tagihan_khusus', function (Blueprint $table) {
+        /**
+         * RELASI POTONGAN ↔ TAGIHAN
+         * (optional, jika potongan hanya berlaku utk jenis tagihan tertentu)
+         */
+        Schema::create('potongan_tagihan', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
-
-            $table->foreignId('angkatan_id')->nullable()->constrained('angkatan')->nullOnDelete();
-            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->nullOnDelete();
-            $table->foreignId('jurusan_id')->nullable()->constrained('jurusan')->nullOnDelete();
-            $table->enum('jenis_kelamin', ['l', 'p'])->nullable();
-            $table->enum('kategori_santri', ['mukim', 'non_mukim'])->nullable();
-            $table->enum('domisili', ['lokal', 'luar_kota'])->nullable();
-            $table->enum('kondisi_khusus', ['anak_pegawai', 'beasiswa', 'wna'])->nullable();
-
-            // Override nominal
-            $table->decimal('nominal', 15, 2)->nullable();
-
             $table->timestamps();
-            $table->softDeletes();
 
-            // Kombinasi aturan tidak boleh dobel
-            $table->unique([
-                'tagihan_id',
-                'angkatan_id',
-                'lembaga_id',
-                'jurusan_id',
-                'jenis_kelamin',
-                'kategori_santri',
-                'domisili',
-                'kondisi_khusus',
-            ], 'tagihan_khusus_unique');
+            $table->unique(['potongan_id', 'tagihan_id']);
         });
 
+        /**
+         * RELASI SANTRI ↔ POTONGAN
+         */
+        Schema::create('santri_potongan', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
+            $table->string('keterangan')->nullable();   
+            $table->boolean('status')->default(true);
+            $table->timestamps();   
+
+            $table->unique(['santri_id', 'potongan_id']);
+        });
+
+        /**
+         * TAGIHAN SANTRI (hasil generate per periode)
+         */
         Schema::create('tagihan_santri', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
 
+            $table->string('periode')->nullable(); // contoh: "2025-08"
             $table->decimal('nominal', 15, 2);
             $table->decimal('sisa', 15, 2)->default(0);
             $table->enum('status', ['pending', 'lunas', 'sebagian'])->default('pending');
 
             $table->date('tanggal_jatuh_tempo')->nullable();
-            $table->dateTime('tanggal_bayar')->nullable();
+            $table->dateTime('tanggal_bayar')->nullable(); // opsional (diisi dari transaksi terakhir)
             $table->string('keterangan')->nullable();
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -249,9 +247,9 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['tagihan_id', 'santri_id']);
+            $table->unique(['tagihan_id', 'santri_id', 'periode']);
             $table->index('status');
-            $table->index('santri_id');
+            $table->index(['santri_id', 'periode']);
         });
 
         /**
@@ -263,7 +261,7 @@ return new class extends Migration
             $table->foreignId('virtual_account_id')->nullable()->constrained('virtual_accounts')->nullOnDelete();
             $table->enum('metode', ['VA', 'CASH', 'SALDO', 'TRANSFER']);
             $table->decimal('jumlah_bayar', 15, 2);
-            $table->timestamp('tanggal_bayar')->useCurrent();
+            $table->dateTime('tanggal_bayar')->useCurrent();
             $table->enum('status', ['berhasil', 'pending', 'gagal'])->default('pending');
             $table->text('keterangan')->nullable();
 
@@ -275,7 +273,36 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        // Schema::create('tagihan_khusus', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
 
+        //     $table->foreignId('angkatan_id')->nullable()->constrained('angkatan')->nullOnDelete();
+        //     $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->nullOnDelete();
+        //     $table->foreignId('jurusan_id')->nullable()->constrained('jurusan')->nullOnDelete();
+        //     $table->enum('jenis_kelamin', ['l', 'p'])->nullable();
+        //     $table->enum('kategori_santri', ['mukim', 'non_mukim'])->nullable();
+        //     $table->enum('domisili', ['lokal', 'luar_kota'])->nullable();
+        //     $table->enum('kondisi_khusus', ['anak_pegawai', 'beasiswa', 'wna'])->nullable();
+
+        //     // Override nominal
+        //     $table->decimal('nominal', 15, 2)->nullable();
+
+        //     $table->timestamps();
+        //     $table->softDeletes();
+
+        //     // Kombinasi aturan tidak boleh dobel
+        //     $table->unique([
+        //         'tagihan_id',
+        //         'angkatan_id',
+        //         'lembaga_id',
+        //         'jurusan_id',
+        //         'jenis_kelamin',
+        //         'kategori_santri',
+        //         'domisili',
+        //         'kondisi_khusus',
+        //     ], 'tagihan_khusus_unique');
+        // });
         // /**
         //  * PAYMENT PROVIDERS (mis. midtrans, xendit, bank aggregator, dll)
         //  */

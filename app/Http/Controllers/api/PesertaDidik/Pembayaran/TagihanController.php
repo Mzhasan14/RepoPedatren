@@ -29,7 +29,7 @@ class TagihanController extends Controller
         try {
             $data = Tagihan::create([
                 'kode_tagihan' => $request->kode_tagihan,
-                'tipe' => $request->tipe,
+                'tipe' => $request->tipe,   
                 'nama_tagihan' => $request->nama_tagihan,
                 'nominal'      => $request->nominal,
                 'jatuh_tempo'  => $request->jatuh_tempo,
@@ -63,7 +63,6 @@ class TagihanController extends Controller
         try {
             $data = Tagihan::findOrFail($id);
             $data->update([
-                'kode_tagihan' => $request->kode_tagihan,
                 'tipe' => $request->tipe,
                 'nama_tagihan' => $request->nama_tagihan,
                 'nominal'      => $request->nominal,

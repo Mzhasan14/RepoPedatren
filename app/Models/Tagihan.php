@@ -12,29 +12,18 @@ class Tagihan extends Model
     protected $table = 'tagihan';
 
     protected $fillable = [
-        'kode_tagihan',
         'nama_tagihan',
+        'tipe',
         'nominal',
         'jatuh_tempo',
         'status',
         'created_by',
         'updated_by',
-        'deleted_by',
+        'deleted_by'
     ];
 
-    // Relasi ke User (pencatat aktivitas)
-    public function creator()
+    public function potongans()
     {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updater()
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function deleter()
-    {
-        return $this->belongsTo(User::class, 'deleted_by');
-    }
+        return $this->belongsToMany(Potongan::class, 'potongan_tagihan');
+    }   
 }
