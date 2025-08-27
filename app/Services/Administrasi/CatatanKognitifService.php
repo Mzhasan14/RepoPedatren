@@ -249,7 +249,8 @@ class CatatanKognitifService
     {
         $user = $request->user();
 
-        if (! $user->hasRole('waliasuh') && ! $user->hasRole('superadmin')) {
+        // Pastikan hanya wali_asuh atau superadmin yang bisa membuat catatan
+        if (! $user->hasRole('wali_asuh') && ! $user->hasRole('superadmin')) {
             return [
                 'status' => false,
                 'message' => 'Hanya wali asuh atau superadmin yang dapat membuat catatan kognitif.',
@@ -257,9 +258,11 @@ class CatatanKognitifService
             ];
         }
 
-        // Ambil data anak_asuh dari dropdown
-        $anakAsuh = DB::table('anak_asuh')
-            ->where('id', $input['id_anak_asuh'])
+        // Ambil data anak_asuh beserta wali_asuh_id dari grupnya
+        $anakAsuh = DB::table('anak_asuh as aa')
+            ->join('grup_wali_asuh as g', 'aa.grup_wali_asuh_id', '=', 'g.id')
+            ->select('aa.*', 'g.wali_asuh_id')
+            ->where('aa.id', $input['id_anak_asuh'])
             ->first();
 
         if (! $anakAsuh) {
@@ -271,17 +274,17 @@ class CatatanKognitifService
         }
 
         $idSantri = $anakAsuh->id_santri;
+        $waliAsuhId = null;
 
         // Tentukan id_wali_asuh
-        if ($user->hasRole('waliasuh')) {
+        if ($user->hasRole('wali_asuh')) {
             // Ambil ID wali_asuh dari user login
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->join('users as u', 'u.biodata_id', '=', 'b.id') // langsung ke users
+                ->join('users as u', 'u.biodata_id', '=', 'b.id')
                 ->where('u.id', $user->id)
                 ->value('wa.id');
-
 
             if (! $waliAsuhId) {
                 return [
@@ -291,13 +294,8 @@ class CatatanKognitifService
                 ];
             }
 
-            // Cek apakah anak_asuh milik wali_asuh ini
-            $cek = DB::table('kewaliasuhan')
-                ->where('id_wali_asuh', $waliAsuhId)
-                ->where('id_anak_asuh', $anakAsuh->id)
-                ->first();
-
-            if (! $cek) {
+            // Cek apakah anak_asuh termasuk grup wali_asuh ini
+            if ($anakAsuh->wali_asuh_id != $waliAsuhId) {
                 return [
                     'status' => false,
                     'message' => 'Santri bukan anak asuh Anda.',
@@ -305,18 +303,8 @@ class CatatanKognitifService
                 ];
             }
         } else {
-            // Superadmin → ambil wali_asuh sesuai anak_asuh
-            $waliAsuhId = DB::table('kewaliasuhan')
-                ->where('id_anak_asuh', $anakAsuh->id)
-                ->value('id_wali_asuh');
-
-            if (! $waliAsuhId) {
-                return [
-                    'status' => false,
-                    'message' => 'Belum ada wali asuh untuk anak asuh ini.',
-                    'data' => null,
-                ];
-            }
+            // Superadmin → cek dulu grup apakah punya wali_asuh_id
+            $waliAsuhId = $anakAsuh->wali_asuh_id ?: null;
         }
 
         // Cek status santri
@@ -329,10 +317,10 @@ class CatatanKognitifService
             ];
         }
 
-        // Simpan catatan baru
+        // Simpan catatan kognitif baru
         $catatan = Catatan_kognitif::create([
             'id_santri' => $idSantri,
-            'id_wali_asuh' => $waliAsuhId,
+            'id_wali_asuh' => $waliAsuhId, // nullable
             'kebahasaan_nilai' => $input['kebahasaan_nilai'],
             'kebahasaan_tindak_lanjut' => $input['kebahasaan_tindak_lanjut'],
             'baca_kitab_kuning_nilai' => $input['baca_kitab_kuning_nilai'],

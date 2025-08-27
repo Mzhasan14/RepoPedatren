@@ -167,65 +167,69 @@ class AnakasuhService
         $now = Carbon::now();
         $userId = Auth::id();
 
-        // 🔒 Pastikan tidak ada ID santri duplikat dari input
+        // 🔒 Hilangkan duplikat ID santri
         $santriIds = array_unique($data['santri_id']);
-        $waliAsuhId = $data['id_wali_asuh'];
+        $grupId = $data['grup_wali_asuh_id'];
 
         $dataBaru = [];
         $dataGagal = [];
 
         DB::beginTransaction();
         try {
-            // ✅ Ambil wali asuh + grup (pakai query builder)
-            $waliAsuh = DB::table('wali_asuh as w')
-                ->join('grup_wali_asuh as g', 'g.wali_asuh_id', '=', 'w.id')
-                ->select('w.id', 'g.jenis_kelamin')
-                ->where('w.id', $waliAsuhId)
-                ->where('w.status', true)
-                ->where('g.status', true)
+            // ✅ Ambil grup wali asuh aktif
+            $grup = DB::table('grup_wali_asuh')
+                ->select('id', 'jenis_kelamin', 'id_wilayah')
+                ->where('id', $grupId)
+                ->where('status', true)
                 ->first();
 
-            if (! $waliAsuh) {
+            if (!$grup) {
                 return [
                     'success' => false,
-                    'message' => 'Wali asuh atau grup tidak ditemukan.',
+                    'message' => 'Grup wali asuh tidak ditemukan atau tidak aktif.',
                     'data_baru' => [],
                     'data_gagal' => $santriIds,
                 ];
             }
 
-            $jenisKelaminGrup = strtolower($waliAsuh->jenis_kelamin);
+            $jenisKelaminGrup = strtolower($grup->jenis_kelamin);
 
-            // ✅ Cek anak asuh aktif (pakai query builder)
+            // ✅ Prefetch profil santri + domisili aktif sekaligus
+            $profilSantri = DB::table('santri as s')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->leftJoin('domisili_santri as ds', function ($join) {
+                    $join->on('ds.santri_id', '=', 's.id')
+                        ->where('ds.status', '=', 'aktif');
+                })
+                ->whereIn('s.id', $santriIds)
+                ->select(
+                    's.id',
+                    's.status as status_santri',
+                    'b.nama',
+                    'b.jenis_kelamin',
+                    'ds.wilayah_id as domisili_wilayah'
+                )
+                ->get()
+                ->keyBy('id');
+
+            // ✅ Ambil anak_asuh & wali_asuh aktif sekaligus
             $anakAsuhAktif = DB::table('anak_asuh')
                 ->whereIn('id_santri', $santriIds)
                 ->where('status', true)
                 ->pluck('id_santri')
                 ->toArray();
 
+            $waliAsuhAktif = DB::table('wali_asuh')
+                ->whereIn('id_santri', $santriIds)
+                ->where('status', true)
+                ->pluck('id_santri')
+                ->toArray();
+
             foreach ($santriIds as $idSantri) {
-                // Sudah jadi anak asuh aktif
-                if (in_array($idSantri, $anakAsuhAktif)) {
-                    $nama = DB::table('santri as s')
-                        ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                        ->where('s.id', $idSantri)
-                        ->value('b.nama');
+                $profil = $profilSantri->get($idSantri);
 
-                    $dataGagal[] = [
-                        'santri_id' => $idSantri,
-                        'message'   => "Santri {$nama} sudah menjadi anak asuh aktif.",
-                    ];
-                    continue;
-                }
-
-                // ✅ Ambil jenis kelamin santri via query builder
-                $santri = DB::table('santri as s')
-                    ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                    ->select('s.id', 'b.jenis_kelamin', 'b.nama')
-                    ->where('s.id', $idSantri)
-                    ->first();
-
-                if (! $santri) {
+                // 🚫 Data santri tidak ditemukan
+                if (!$profil) {
                     $dataGagal[] = [
                         'santri_id' => $idSantri,
                         'message'   => "Santri dengan ID {$idSantri} tidak ditemukan.",
@@ -233,43 +237,82 @@ class AnakasuhService
                     continue;
                 }
 
-                $jenisKelaminSantri = strtolower($santri->jenis_kelamin);
+                $nama = $profil->nama;
 
-                // Validasi gender
-                if ($jenisKelaminGrup !== 'campuran' && $jenisKelaminGrup !== $jenisKelaminSantri) {
+                // 🚫 Step 1: Status santri harus 'aktif'
+                if (strtolower($profil->status_santri) !== 'aktif') {
                     $dataGagal[] = [
                         'santri_id' => $idSantri,
-                        'message'   => "Santri {$santri->nama} tidak sesuai jenis kelamin grup wali asuh.",
+                        'message'   => "Santri {$nama} sudah tidak aktif.",
                     ];
                     continue;
                 }
 
-                // ✅ Insert anak_asuh
+                // 🚫 Step 2: Sudah jadi anak asuh aktif
+                if (in_array($idSantri, $anakAsuhAktif, true)) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message'   => "Santri {$nama} sudah menjadi anak asuh aktif.",
+                    ];
+                    continue;
+                }
+
+                // 🚫 Step 3: Sudah jadi wali asuh aktif
+                if (in_array($idSantri, $waliAsuhAktif, true)) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message'   => "Santri {$nama} sudah menjadi wali asuh aktif.",
+                    ];
+                    continue;
+                }
+
+                // 🚫 Step 4: Validasi domisili wilayah
+                if (!$profil->domisili_wilayah) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message'   => "Santri {$nama} belum memiliki wilayah aktif.",
+                    ];
+                    continue;
+                }
+
+                if ($profil->domisili_wilayah != $grup->id_wilayah) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message'   => "Wilayah santri {$nama} tidak sesuai dengan wilayah grup.",
+                    ];
+                    continue;
+                }
+
+                // 🚫 Step 5: Validasi gender
+                $jkSantri = strtolower($profil->jenis_kelamin);
+                if ($jenisKelaminGrup !== $jkSantri) {
+                    $dataGagal[] = [
+                        'santri_id' => $idSantri,
+                        'message'   => "Santri {$nama} tidak sesuai jenis kelamin grup wali asuh.",
+                    ];
+                    continue;
+                }
+
+                // ✅ Step 6: Insert anak_asuh
                 DB::table('anak_asuh')->insert([
-                    'id_santri'    => $idSantri,
-                    'wali_asuh_id' => $waliAsuhId,
-                    'status'       => true,
-                    'created_by'   => $userId,
-                    'created_at'   => $now,
-                    'updated_at'   => $now,
+                    'id_santri'         => $idSantri,
+                    'grup_wali_asuh_id' => $grupId,
+                    'status'            => true,
+                    'created_by'        => $userId,
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
                 ]);
 
-                $dataBaru[] = $idSantri;
+                $dataBaru[] = [
+                    'santri_id' => $idSantri,
+                    'nama' => $nama,
+                ];
             }
 
             DB::commit();
 
-            if (empty($dataBaru) && ! empty($dataGagal)) {
-                return [
-                    'success'    => false,
-                    'message'    => 'Tidak ada santri yang berhasil ditambahkan. ' . count($dataGagal) . ' gagal ditambahkan.',
-                    'data_baru'  => $dataBaru,
-                    'data_gagal' => $dataGagal,
-                ];
-            }
-
             return [
-                'success'    => true,
+                'success'    => !empty($dataBaru),
                 'message'    => count($dataBaru) . ' santri berhasil ditambahkan, ' . count($dataGagal) . ' gagal.',
                 'data_baru'  => $dataBaru,
                 'data_gagal' => $dataGagal,

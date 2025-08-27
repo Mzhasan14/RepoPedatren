@@ -199,7 +199,28 @@ class WaliasuhController extends Controller
             ], 500);
         }
     }
+    public function nonaktifkanWaliAsuh(int $waliAsuhId): JsonResponse
+    {
+        try {
+            $result = $this->waliasuhService->nonaktifkanWaliAsuh($waliAsuhId);
 
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'],
+                ], 400); // atau 404 kalau datanya tidak ketemu
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => $result['message'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function destroy($id)
     {
         DB::transaction(function () use ($id) {
@@ -275,10 +296,11 @@ class WaliasuhController extends Controller
         return response()->json($data);
     }
 
-    public function createFromSantri(CreateWaliAsuhRequest $request): JsonResponse
+    public function StoreToWali(CreateWaliAsuhRequest $request): JsonResponse
     {
         try {
-            $result = $this->waliasuhService->createFromSantri($request->santri_ids);
+            $validated = $request->validated();
+            $result = $this->waliasuhService->storeWaliAsuh($validated);
 
             return response()->json($result, 200);
         } catch (\Throwable $e) {
@@ -288,6 +310,7 @@ class WaliasuhController extends Controller
             ]);
 
             return response()->json([
+                'status'  => false,
                 'message' => 'Proses gagal',
                 'error'   => $e->getMessage(),
             ], 400);

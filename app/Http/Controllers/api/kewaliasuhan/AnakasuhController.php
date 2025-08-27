@@ -88,27 +88,27 @@ class AnakasuhController extends Controller
         ], 200);
     }
 
-    public function index($bioId): JsonResponse
-    {
-        try {
-            $result = $this->anakasuhService->index($bioId);
-            if (! $result['status']) {
-                return response()->json([
-                    'message' => $result['message'],
-                ], 404);
-            }
+    // public function index($bioId): JsonResponse
+    // {
+    //     try {
+    //         $result = $this->anakasuhService->index($bioId);
+    //         if (! $result['status']) {
+    //             return response()->json([
+    //                 'message' => $result['message'],
+    //             ], 404);
+    //         }
 
-            return response()->json([
-                'status' => true,
-                'data' => $result['data'],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'status' => true,
+    //             'data' => $result['data'],
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Terjadi kesalahan saat memproses data',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     public function store(anakAsuhRequest $request)
     {

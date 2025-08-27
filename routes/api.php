@@ -718,6 +718,7 @@ Route::prefix('crud')
             // Kewaliasuhan
             Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
             Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
+            Route::get('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'showGrub']);
 
             // Lembaga
             Route::get('lembaga', [LembagaController::class, 'index']);
@@ -814,10 +815,16 @@ Route::prefix('crud')
             Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
             Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
             Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
-            Route::patch(
-                '/grup-wali-asuh/{waliAsuhId}/anak-asuh/{anakAsuhId}/nonaktif',
+            Route::put(
+                '/grup-wali-asuh/{anakAsuhId}/nonaktif',
                 [GrupWaliAsuhController::class, 'nonaktifkanAnakAsuh']
             );
+            Route::put(
+                '/grup-wali-asuh/{waliAsuhId}/nonaktif/waliasuh',
+                [WaliasuhController::class, 'nonaktifkanWaliAsuh']
+            );
+
+            Route::post('/waliasuh',[WaliasuhController::class,'StoreToWali']);
 
             // Lembaga
             Route::post('lembaga', [LembagaController::class, 'store']);
@@ -932,7 +939,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('/golongan-gabungan', [DropdownController::class, 'menuKategoriGolonganGabungan']);
     Route::get('/semester', [DropdownController::class, 'semester']);
     Route::get('/anakasuhcatatan', [DropdownController::class, 'anakasuhcatatan'])
-        ->middleware('role:superadmin|wali asuh');
+        ->middleware('role:superadmin|wali_asuh');
     Route::get('/hubungkanwaliasuh', [DropdownController::class, 'hubungkanwaliasuh']);
     Route::get('/dropdownwaliasuh', [DropdownController::class, 'dropdownWaliAsuh']);
     Route::get('/angkatan-santri', [DropDownAngkatanController::class, 'angkatanSantri']);

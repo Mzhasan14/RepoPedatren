@@ -23,27 +23,28 @@ class GrupWaliAsuhUpdateRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+
     public function rules(): array
     {
         return [
-            'id_wilayah' => ['required', 'exists:wilayah,id'],
-            'nama_grup' => ['required', 'string', 'max:255'],
-            'jenis_kelamin' => ['required', 'in:l,p'],
-            'wali_asuh_id' => ['nullable', 'exists:santri,id'],
-            'status' => ['nullable', 'boolean'],
+            'nama_grup'     => 'sometimes|string|max:255',         // opsional, maksimal 255 karakter
+            'id_wilayah'    => 'sometimes|integer|exists:wilayah,id', // opsional, harus ada di tabel wilayah
+            'jenis_kelamin' => 'sometimes|in:l,p',                // opsional, hanya 'l' atau 'p'
+            'wali_asuh_id'  => 'sometimes|integer|exists:wali_asuh,id', // opsional, harus ada di tabel wali_asuh
+            // 'status' tidak perlu karena update status tidak diizinkan
         ];
     }
 
     public function messages(): array
     {
         return [
-            'id_wilayah.required' => 'Wilayah harus diisi.',
-            'id_wilayah.exists'   => 'Wilayah tidak ditemukan.',
-            'nama_grup.required'  => 'Nama grup wajib diisi.',
-            'jenis_kelamin.required' => 'Jenis kelamin grup wajib diisi.',
-            'jenis_kelamin.in'    => 'Jenis kelamin hanya boleh L atau P.',
-            'wali_asuh_id.exists' => 'Santri yang dipilih untuk wali asuh tidak valid.',
-            'status.boolean'      => 'Status harus berupa true atau false.',
+            'nama_grup.string'       => 'Nama grup harus berupa teks.',
+            'nama_grup.max'          => 'Nama grup maksimal 255 karakter.',
+            'id_wilayah.integer'     => 'Wilayah tidak valid.',
+            'id_wilayah.exists'      => 'Wilayah tidak ditemukan.',
+            'jenis_kelamin.in'       => 'Jenis kelamin grup hanya boleh L (laki-laki) atau P (perempuan).',
+            'wali_asuh_id.integer'   => 'Wali asuh tidak valid.',
+            'wali_asuh_id.exists'    => 'Wali asuh tidak ditemukan.',
         ];
     }
     protected function failedValidation(Validator $validator)

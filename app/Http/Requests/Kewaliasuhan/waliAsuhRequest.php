@@ -25,6 +25,17 @@ class waliAsuhRequest extends FormRequest
     {
         return [
             'tanggal_mulai' => 'required|date',
+            'grup_wali_asuh_id' => 'nullable|integer|exists:grup_wali_asuh,id',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
+            'tanggal_mulai.date' => 'Format tanggal mulai tidak valid.',
+            'grup_wali_asuh_id.integer' => 'Grup wali asuh harus berupa angka.',
+            'grup_wali_asuh_id.exists' => 'Grup wali asuh tidak ditemukan.',
         ];
     }
 

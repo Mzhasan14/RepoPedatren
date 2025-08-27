@@ -26,23 +26,25 @@ class grupWaliasuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wilayah'    => ['required', 'exists:wilayah,id'],
             'nama_grup'     => ['required', 'string', 'max:255'],
-            'jenis_kelamin' => ['required', 'in:,p'], // L = Laki-laki, P = Perempuan
-            'wali_asuh_id'  => ['required', 'exists:santri,id'],
+            'jenis_kelamin' => ['required', 'in:l,p'],
+            'id_wilayah'    => ['required', 'exists:wilayah,id'],
+            'wali_asuh_id'  => ['nullable', 'integer', 'exists:wali_asuh,id'],
         ];
     }
 
     public function messages(): array
     {
         return [
+            'nama_grup.required'     => 'Nama grup wajib diisi.',
+            'nama_grup.string'       => 'Nama grup harus berupa teks.',
+            'nama_grup.max'          => 'Nama grup maksimal 255 karakter.',
+            'jenis_kelamin.required' => 'Jenis kelamin grup wajib diisi.',
+            'jenis_kelamin.in'       => 'Jenis kelamin hanya boleh "l" atau "p".',
             'id_wilayah.required'    => 'Wilayah wajib dipilih.',
             'id_wilayah.exists'      => 'Wilayah tidak valid.',
-            'nama_grup.required'     => 'Nama grup wajib diisi.',
-            'jenis_kelamin.required' => 'Jenis kelamin grup wajib dipilih.',
-            'jenis_kelamin.in'       => 'Jenis kelamin hanya boleh L atau P.',
-            'wali_asuh_id.required'  => 'Santri wali asuh wajib dipilih.',
-            'wali_asuh_id.exists'    => 'Santri wali asuh tidak ditemukan.',
+            'wali_asuh_id.integer'   => 'Wali asuh tidak valid.',
+            'wali_asuh_id.exists'    => 'Wali asuh tidak ditemukan.',
         ];
     }
 

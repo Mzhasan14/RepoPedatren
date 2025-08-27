@@ -47,16 +47,17 @@ class KewaliasuhanController extends Controller
 
             // Sukses
             return response()->json([
-                'message' => 'Data berhasil ditambah',
+                'message' => $result['message'],
                 'data' => [
-                    'grup' => $result['grup'],
-                    'wali_asuh' => $result['wali_asuh'],
-                    'anak_asuh' => $result['anak_asuh'],
+                    'grup'       => $result['grup'],
+                    'wali_asuh'  => $result['wali_asuh'],
+                    'anak_asuh'  => $result['anak_asuh'],
+                    'gagal'      => $result['gagal'], // 🔹 tambahkan
                 ],
             ]);
         } catch (\Exception $e) {
             // Log error agar bisa dilacak
-            Log::error('Gagal tambah waliasuh: '.$e->getMessage());
+            Log::error('Gagal tambah waliasuh: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',

@@ -622,12 +622,18 @@ class DropdownController extends Controller
         $user = $request->user();
 
         $query = DB::table('anak_asuh as aa')
-            ->leftJoin('kewaliasuhan as k', 'aa.id', '=', 'k.id_anak_asuh')
+            ->join('grup_wali_asuh as g', 'aa.grup_wali_asuh_id', '=', 'g.id')
             ->leftJoin('santri as s', 'aa.id_santri', '=', 's.id')
             ->leftJoin('biodata as b', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('pendidikan AS pd', fn($j) => $j->on('b.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif'))
+            ->leftJoin('pendidikan AS pd', function ($j) {
+                $j->on('b.id', '=', 'pd.biodata_id')
+                    ->where('pd.status', 'aktif');
+            })
             ->leftJoin('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
-            ->leftJoin('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            ->leftJoin('domisili_santri AS ds', function ($join) {
+                $join->on('s.id', '=', 'ds.santri_id')
+                    ->where('ds.status', 'aktif');
+            })
             ->leftJoin('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
             ->leftJoin('kamar AS kk', 'ds.kamar_id', '=', 'kk.id')
             ->select([
@@ -639,24 +645,25 @@ class DropdownController extends Controller
                 's.nis'
             ]);
 
-        // Filter role waliasuh
-        if ($user->hasRole('waliasuh')) {
-            // Ambil ID wali_asuh dari user
+        // Filter role wali_asuh
+        if ($user->hasRole('wali_asuh')) {
+            // Ambil ID wali_asuh dari user login
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->join('user_biodata as ub', 'ub.biodata_id', 'b.id')
-                ->join('users as u', 'u.id', '=', 'ub.user_id')
+                ->join('users as u', 'u.biodata_id', '=', 'b.id')
                 ->where('u.id', $user->id)
                 ->value('wa.id');
 
-            $query->where('k.id_wali_asuh', $waliAsuhId);
+            // Filter anak_asuh yang tergabung di grup milik wali_asuh ini
+            $query->where('g.wali_asuh_id', $waliAsuhId);
         }
 
         $data = $query->get();
 
         return response()->json($data);
     }
+
     public function hubungkanwaliasuh()
     {
         $query = DB::table('santri as s')
@@ -688,7 +695,7 @@ class DropdownController extends Controller
             // tampilkan santri yang tidak sedang jadi anak asuh/wali asuh aktif
             ->whereNull('aa.id_santri')
             ->whereNull('wa.id_santri')
-
+            ->where('s.status', 'aktif')
             ->select([
                 's.id',
                 'b.nama',

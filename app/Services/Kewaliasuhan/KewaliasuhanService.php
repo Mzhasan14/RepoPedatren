@@ -12,142 +12,444 @@ use Illuminate\Support\Facades\DB;
 
 class KewaliasuhanService
 {
-    public function createGrup(array $data)
+    // public function createGrup(array $data)
+    // {
+    //     $now = Carbon::now();
+    //     $userId = Auth::id();
+
+    //     $waliId   = $data['wali_santri_id'];          // 1 wali asuh
+    //     $anakIds  = array_unique($data['anak_santri_ids']); // banyak anak
+    //     $idWilayah = $data['id_wilayah'];
+    //     $namaGrup  = $data['nama_grup'];
+
+    //     $dataBaru = [
+    //         'wali_asuh' => null,
+    //         'grup'      => null,
+    //         'anak_asuh' => [],
+    //     ];
+    //     $dataGagal = [];
+
+    //     DB::beginTransaction();
+    //     try {
+    //         // ✅ Prefetch semua santri (wali + anak-anak)
+    //         $allIds = array_merge([$waliId], $anakIds);
+    //         $profilSantri = DB::table('santri as s')
+    //             ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+    //             ->leftJoin('domisili_santri as ds', function ($join) {
+    //                 $join->on('ds.santri_id', '=', 's.id')
+    //                     ->where('ds.status', '=', 'aktif');
+    //             })
+    //             ->whereIn('s.id', $allIds)
+    //             ->select(
+    //                 's.id',
+    //                 's.status as status_santri',
+    //                 'b.nama',
+    //                 'b.jenis_kelamin',
+    //                 'ds.wilayah_id as domisili_wilayah'
+    //             )
+    //             ->get()
+    //             ->keyBy('id');
+
+    //         // ✅ Cek wali asuh valid
+    //         $wali = $profilSantri->get($waliId);
+    //         if (!$wali) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => "Santri wali dengan ID {$waliId} tidak ditemukan.",
+    //                 'data'    => [],
+    //             ];
+    //         }
+
+    //         if (strtolower($wali->status_santri) !== 'aktif') {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => "Santri {$wali->nama} tidak aktif, tidak bisa jadi wali asuh.",
+    //                 'data'    => [],
+    //             ];
+    //         }
+
+    //         if (!$wali->domisili_wilayah) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => "Santri {$wali->nama} belum memiliki wilayah aktif.",
+    //                 'data'    => [],
+    //             ];
+    //         }
+
+    //         if ($wali->domisili_wilayah != $idWilayah) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => "Wilayah wali asuh {$wali->nama} tidak sesuai dengan wilayah grup.",
+    //                 'data'    => [],
+    //             ];
+    //         }
+
+    //         // 🚫 Cek apakah sudah aktif jadi wali/anak
+    //         $waliSudahAnak = DB::table('anak_asuh')
+    //             ->where('id_santri', $waliId)
+    //             ->where('status', true)
+    //             ->exists();
+
+    //         $waliSudahWali = DB::table('wali_asuh')
+    //             ->where('id_santri', $waliId)
+    //             ->where('status', true)
+    //             ->exists();
+
+    //         if ($waliSudahAnak || $waliSudahWali) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => "Santri {$wali->nama} sudah terdaftar sebagai wali/anak asuh aktif.",
+    //                 'data'    => [],
+    //             ];
+    //         }
+
+    //         // ✅ Buat wali_asuh baru
+    //         $waliAsuhId = DB::table('wali_asuh')->insertGetId([
+    //             'id_santri'      => $waliId,
+    //             'tanggal_mulai'  => $now->toDateString(),
+    //             'status'         => true,
+    //             'created_by'     => $userId,
+    //             'created_at'     => $now,
+    //             'updated_at'     => $now,
+    //         ]);
+
+    //         // ✅ Buat grup baru
+    //         $jenisKelaminGrup = strtolower($wali->jenis_kelamin);
+    //         $grupId = DB::table('grup_wali_asuh')->insertGetId([
+    //             'id_wilayah'    => $idWilayah,
+    //             'wali_asuh_id'  => $waliAsuhId,
+    //             'nama_grup'     => $namaGrup,
+    //             'jenis_kelamin' => $jenisKelaminGrup,
+    //             'status'        => true,
+    //             'created_by'    => $userId,
+    //             'created_at'    => $now,
+    //             'updated_at'    => $now,
+    //         ]);
+
+    //         $dataBaru['wali_asuh'] = [
+    //             'id'   => $waliAsuhId,
+    //             'nama' => $wali->nama,
+    //         ];
+    //         $dataBaru['grup'] = [
+    //             'id'   => $grupId,
+    //             'nama' => $namaGrup,
+    //         ];
+
+    //         // ✅ Insert anak-anak asuh
+    //         foreach ($anakIds as $anakId) {
+    //             $anak = $profilSantri->get($anakId);
+
+    //             if (!$anak) {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Santri dengan ID {$anakId} tidak ditemukan.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (strtolower($anak->status_santri) !== 'aktif') {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Santri {$anak->nama} sudah tidak aktif.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (!$anak->domisili_wilayah) {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Santri {$anak->nama} belum memiliki wilayah aktif.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if ($anak->domisili_wilayah != $idWilayah) {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Wilayah santri {$anak->nama} tidak sesuai dengan grup.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (strtolower($anak->jenis_kelamin) !== $jenisKelaminGrup) {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Santri {$anak->nama} tidak sesuai jenis kelamin grup.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             // 🚫 Cek duplikat aktif
+    //             $anakSudahAnak = DB::table('anak_asuh')
+    //                 ->where('id_santri', $anakId)
+    //                 ->where('status', true)
+    //                 ->exists();
+
+    //             $anakSudahWali = DB::table('wali_asuh')
+    //                 ->where('id_santri', $anakId)
+    //                 ->where('status', true)
+    //                 ->exists();
+
+    //             if ($anakSudahAnak || $anakSudahWali) {
+    //                 $dataGagal[] = [
+    //                     'santri_id' => $anakId,
+    //                     'message'   => "Santri {$anak->nama} sudah terdaftar sebagai anak/wali asuh aktif.",
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             DB::table('anak_asuh')->insert([
+    //                 'id_santri'         => $anakId,
+    //                 'grup_wali_asuh_id' => $grupId,
+    //                 'status'            => true,
+    //                 'created_by'        => $userId,
+    //                 'created_at'        => $now,
+    //                 'updated_at'        => $now,
+    //             ]);
+
+    //             $dataBaru['anak_asuh'][] = [
+    //                 'id'   => $anakId,
+    //                 'nama' => $anak->nama,
+    //             ];
+    //         }
+
+    //         DB::commit();
+
+    //         return [
+    //             'success'    => true,
+    //             'message'    => count($dataBaru['anak_asuh']) . " anak berhasil ditambahkan, " . count($dataGagal) . " gagal.",
+    //             'data_baru'  => $dataBaru,
+    //             'data_gagal' => $dataGagal,
+    //         ];
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return [
+    //             'success' => false,
+    //             'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+    //             'data'    => [],
+    //         ];
+    //     }
+    // }
+    public function createGrup(array $data): array
     {
+        $now = Carbon::now();
         $userId = Auth::id();
 
-        return DB::transaction(function () use ($data, $userId) {
-            $now = Carbon::now();
+        $waliId         = $data['wali_santri_id'];           // 1 wali asuh
+        $anakIds        = array_unique($data['anak_santri_ids']); // banyak anak
+        $idWilayah      = $data['id_wilayah'];
+        $namaGrup       = $data['nama_grup'];
+        $jenisKelaminGrup = $data['jenis_kelamin']; // ⬅️ ambil dari inputan
 
-            $anakIds = array_column($data['anak_asuh'], 'id_santri');
-            $waliId = $data['wali_asuh']['id_santri'];
+        $dataBaru = [
+            'wali_asuh' => null,
+            'grup'      => null,
+            'anak_asuh' => [],
+        ];
+        $dataGagal = [];
 
-            // ===== Validasi dasar =====
-            if (in_array($waliId, $anakIds)) {
-                throw new \Exception("Santri yang dipilih sebagai wali asuh tidak boleh ada dalam daftar anak asuh.");
+        DB::beginTransaction();
+        try {
+            // ✅ Prefetch semua santri (wali + anak-anak)
+            $allIds = array_merge([$waliId], $anakIds);
+            $profilSantri = DB::table('santri as s')
+                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
+                ->leftJoin('domisili_santri as ds', function ($join) {
+                    $join->on('ds.santri_id', '=', 's.id')
+                        ->where('ds.status', '=', 'aktif');
+                })
+                ->whereIn('s.id', $allIds)
+                ->select(
+                    's.id',
+                    's.status as status_santri',
+                    'b.nama',
+                    'b.jenis_kelamin',
+                    'ds.wilayah_id as domisili_wilayah'
+                )
+                ->get()
+                ->keyBy('id');
+
+            // ✅ Validasi wali asuh
+            $wali = $profilSantri->get($waliId);
+            if (!$wali) {
+                return [
+                    'status'  => false,
+                    'message' => "Santri wali dengan ID {$waliId} tidak ditemukan.",
+                ];
             }
 
-            // ===== Validasi wali asuh: tidak boleh sudah anak asuh aktif =====
-            $waliExistAsAnak = DB::table('anak_asuh')
+            if (strtolower($wali->status_santri) !== 'aktif') {
+                return [
+                    'status'  => false,
+                    'message' => "Santri {$wali->nama} sudah tidak aktif, tidak bisa jadi wali asuh.",
+                ];
+            }
+
+            if (!$wali->domisili_wilayah) {
+                return [
+                    'status'  => false,
+                    'message' => "Santri {$wali->nama} belum memiliki wilayah aktif, tidak bisa jadi wali asuh.",
+                ];
+            }
+
+            if ($wali->domisili_wilayah != $idWilayah) {
+                return [
+                    'status'  => false,
+                    'message' => "Santri {$wali->nama} tidak bisa jadi wali asuh karena wilayah tidak sesuai dengan wilayah grup.",
+                ];
+            }
+
+            if ($wali->jenis_kelamin !== $jenisKelaminGrup) {
+                return [
+                    'status'  => false,
+                    'message' => "Santri {$wali->nama} tidak bisa jadi wali asuh karena jenis kelamin tidak sesuai grup.",
+                ];
+            }
+
+            // 🚫 Cek apakah wali sudah aktif jadi wali/anak
+            $waliSudahAnak = DB::table('anak_asuh')
                 ->where('id_santri', $waliId)
                 ->where('status', true)
                 ->exists();
 
-            if ($waliExistAsAnak) {
-                throw new \Exception("Santri yang dipilih sebagai wali asuh sudah menjadi anak asuh aktif.");
-            }
-
-            // ===== Validasi wali asuh: tidak boleh sudah wali asuh aktif =====
-            $waliExistAsWali = DB::table('wali_asuh')
+            $waliSudahWali = DB::table('wali_asuh')
                 ->where('id_santri', $waliId)
                 ->where('status', true)
                 ->exists();
 
-            if ($waliExistAsWali) {
-                throw new \Exception("Santri yang dipilih sebagai wali asuh sudah menjadi wali asuh aktif.");
+            if ($waliSudahAnak || $waliSudahWali) {
+                return [
+                    'status'  => false,
+                    'message' => "Santri {$wali->nama} sudah terdaftar sebagai wali/anak asuh aktif.",
+                ];
             }
 
-            // ===== Validasi anak asuh: tidak boleh sudah anak asuh aktif =====
-            $anakExistAsAnak = DB::table('anak_asuh as a')
-                ->join('santri as s', 's.id', '=', 'a.id_santri')
-                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->whereIn('a.id_santri', $anakIds)
-                ->where('a.status', true)
-                ->pluck('b.nama')
-                ->toArray();
+            // ✅ Buat wali_asuh baru
+            $waliAsuhId = DB::table('wali_asuh')->insertGetId([
+                'id_santri'      => $waliId,
+                'tanggal_mulai'  => $now->toDateString(),
+                'status'         => true,
+                'created_by'     => $userId,
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
 
-            if (count($anakExistAsAnak) > 0) {
-                throw new \Exception("Santri berikut sudah menjadi anak asuh aktif: " . implode(', ', $anakExistAsAnak) . ".");
-            }
-
-            // ===== Validasi anak asuh: tidak boleh sudah wali asuh aktif =====
-            $anakExistAsWali = DB::table('wali_asuh as w')
-                ->join('santri as s', 's.id', '=', 'w.id_santri')
-                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->whereIn('w.id_santri', $anakIds)
-                ->where('w.status', true)
-                ->pluck('b.nama')
-                ->toArray();
-
-            if (count($anakExistAsWali) > 0) {
-                throw new \Exception("Santri berikut sudah menjadi wali asuh aktif: " . implode(', ', $anakExistAsWali) . ".");
-            }
-
-
-            // ===== Ambil data wali asuh (nama + gender) =====
-            $waliSantri = DB::table('santri as s')
-                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->where('s.id', $waliId)
-                ->select('s.id as santri_id', 'b.nama as nama_lengkap', 'b.jenis_kelamin')
-                ->first();
-
-            if (!$waliSantri) {
-                throw new \Exception("Data wali asuh tidak ditemukan.");
-            }
-
-            $waliGender = $waliSantri->jenis_kelamin;
-
-            // ===== Ambil semua anak asuh (nama + gender) =====
-            $anakList = DB::table('santri as s')
-                ->join('biodata as b', 'b.id', '=', 's.biodata_id')
-                ->whereIn('s.id', $anakIds)
-                ->get(['s.id as santri_id', 'b.nama as nama_lengkap', 'b.jenis_kelamin']);
-
-            // ===== Validasi gender anak asuh vs wali =====
-            foreach ($anakList as $anak) {
-                if ($anak->jenis_kelamin !== $waliGender) {
-                    throw new \Exception("Santri {$anak->nama_lengkap} (ID {$anak->santri_id}) jenis kelaminnya tidak sama dengan wali asuh {$waliSantri->nama_lengkap}.");
-                }
-            }
-
-            // ===== Validasi gender grup vs wali =====
-            if ($waliGender !== $data['jenis_kelamin']) {
-                throw new \Exception("Jenis kelamin grup tidak sesuai dengan wali asuh {$waliSantri->nama_lengkap}.");
-            }
-
-            // ===== 1. Buat grup =====
-            $grup = Grup_WaliAsuh::create([
-                'id_wilayah'    => $data['id_wilayah'],
-                'nama_grup'     => $data['nama_grup'],
-                'jenis_kelamin' => $data['jenis_kelamin'],
+            // ✅ Buat grup baru
+            $grupId = DB::table('grup_wali_asuh')->insertGetId([
+                'id_wilayah'    => $idWilayah,
+                'wali_asuh_id'  => $waliAsuhId,
+                'nama_grup'     => $namaGrup,
+                'jenis_kelamin' => $jenisKelaminGrup,
+                'status'        => true,
                 'created_by'    => $userId,
+                'created_at'    => $now,
+                'updated_at'    => $now,
             ]);
 
-            // ===== 2. Buat wali asuh =====
-            $waliAsuh = Wali_Asuh::create([
-                'id_santri'           => $waliSantri->santri_id,
-                'id_grup_wali_asuh'   => $grup->id,
-                'tanggal_mulai'       => $now,
-                'created_by'          => $userId,
-            ]);
+            $dataBaru['wali_asuh'] = [
+                'id'   => $waliAsuhId,
+                'nama' => $wali->nama,
+            ];
+            $dataBaru['grup'] = [
+                'id'   => $grupId,
+                'nama' => $namaGrup,
+            ];
 
-            $anakAsuhIds = [];
+            // ✅ Insert anak-anak asuh
+            foreach ($anakIds as $anakId) {
+                $anak = $profilSantri->get($anakId);
 
-            // ===== 3. Buat anak asuh & relasi kewaliasuhan =====
-            foreach ($anakList as $anak) {
-                $anakAsuh = Anak_Asuh::create([
-                    'id_santri'  => $anak->santri_id,
-                    'created_by' => $userId,
+                if (!$anak) {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Santri dengan ID {$anakId} tidak ditemukan.",
+                    ];
+                    continue;
+                }
+
+                if (strtolower($anak->status_santri) !== 'aktif') {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Santri {$anak->nama} sudah tidak aktif.",
+                    ];
+                    continue;
+                }
+
+                if (!$anak->domisili_wilayah) {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Santri {$anak->nama} belum memiliki wilayah aktif.",
+                    ];
+                    continue;
+                }
+
+                if ($anak->domisili_wilayah != $idWilayah) {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Wilayah santri {$anak->nama} tidak sesuai dengan grup.",
+                    ];
+                    continue;
+                }
+
+                if ($anak->jenis_kelamin !== $jenisKelaminGrup) {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Santri {$anak->nama} tidak sesuai jenis kelamin grup.",
+                    ];
+                    continue;
+                }
+
+                // 🚫 Cek duplikat aktif
+                $anakSudahAnak = DB::table('anak_asuh')
+                    ->where('id_santri', $anakId)
+                    ->where('status', true)
+                    ->exists();
+
+                $anakSudahWali = DB::table('wali_asuh')
+                    ->where('id_santri', $anakId)
+                    ->where('status', true)
+                    ->exists();
+
+                if ($anakSudahAnak || $anakSudahWali) {
+                    $dataGagal[] = [
+                        'santri_id' => $anakId,
+                        'message'   => "Santri {$anak->nama} sudah terdaftar sebagai anak/wali asuh aktif.",
+                    ];
+                    continue;
+                }
+
+                DB::table('anak_asuh')->insert([
+                    'id_santri'         => $anakId,
+                    'grup_wali_asuh_id' => $grupId,
+                    'status'            => true,
+                    'created_by'        => $userId,
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
                 ]);
 
-                $anakAsuhIds[] = $anakAsuh->id;
-
-                Kewaliasuhan::create([
-                    'id_wali_asuh'   => $waliAsuh->id,
-                    'id_anak_asuh'   => $anakAsuh->id,
-                    'tanggal_mulai'  => $now,
-                    'created_by'     => $userId,
-                ]);
+                $dataBaru['anak_asuh'][] = [
+                    'id'   => $anakId,
+                    'nama' => $anak->nama,
+                ];
             }
+
+            DB::commit();
 
             return [
-                'status'    => true,
-                'message'   => 'Grup wali asuh berhasil dibuat',
-                'grup'      => $grup,
-                'wali_asuh' => $waliAsuh,
-                'anak_asuh' => $anakAsuhIds,
+                'status'     => true,
+                'message'    => count($dataBaru['anak_asuh']) . " anak berhasil ditambahkan, " . count($dataGagal) . " gagal.",
+                'grup'       => $dataBaru['grup'],
+                'wali_asuh'  => $dataBaru['wali_asuh'],
+                'anak_asuh'  => $dataBaru['anak_asuh'],
+                'gagal'      => $dataGagal,
             ];
-        });
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status'  => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+            ];
+        }
     }
     public function update(array $data)
     {

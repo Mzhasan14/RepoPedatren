@@ -24,37 +24,32 @@ class KewaliasuhanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wilayah' => 'required|exists:wilayah,id',
-            'nama_grup' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:l,p',
+            'wali_santri_id'   => 'required|integer|exists:santri,id',
+            'anak_santri_ids'  => 'required|array|min:1',
+            'anak_santri_ids.*' => 'integer|exists:santri,id|distinct',
 
-            'wali_asuh.id_santri' => 'required|exists:santri,id',
-
-            'anak_asuh' => 'required|array|min:1',
-            'anak_asuh.*.id_santri' => 'required|distinct|exists:santri,id',
+            'nama_grup'        => 'required|string|max:255',
+            'id_wilayah'       => 'required|integer|exists:wilayah,id',
+            'jenis_kelamin'    => 'required|in:l,p',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'id_wilayah.required' => 'Wilayah harus dipilih.',
-            'id_wilayah.exists' => 'Wilayah tidak valid.',
+            'wali_santri_id.required' => 'Santri wali asuh wajib dipilih.',
+            'wali_santri_id.exists'   => 'Santri wali asuh tidak ditemukan.',
+
+            'anak_santri_ids.required' => 'Minimal pilih satu santri anak asuh.',
+            'anak_santri_ids.array'    => 'Format anak asuh tidak valid.',
+            'anak_santri_ids.*.exists' => 'Ada santri anak asuh yang tidak valid.',
+            'anak_santri_ids.*.distinct' => 'Santri anak asuh tidak boleh duplikat.',
+
             'nama_grup.required' => 'Nama grup wajib diisi.',
-            'nama_grup.string' => 'Nama grup harus berupa teks.',
-            'nama_grup.max' => 'Nama grup maksimal 255 karakter.',
-            'jenis_kelamin.required' => 'Jenis kelamin grup wajib dipilih.',
-            'jenis_kelamin.in' => 'Jenis kelamin grup harus Laki-laki (l) atau Perempuan (p).',
+            'id_wilayah.required' => 'Wilayah grup wajib dipilih.',
+            'id_wilayah.exists' => 'Wilayah tidak ditemukan.',
 
-            'wali_asuh.id_santri.required' => 'Santri wali asuh harus dipilih.',
-            'wali_asuh.id_santri.exists' => 'Santri wali asuh tidak valid.',
-
-            'anak_asuh.required' => 'Minimal 1 anak asuh harus dipilih.',
-            'anak_asuh.array' => 'Anak asuh harus berupa array.',
-            'anak_asuh.min' => 'Minimal 1 anak asuh harus dipilih.',
-            'anak_asuh.*.id_santri.required' => 'ID Santri anak asuh harus diisi.',
-            'anak_asuh.*.id_santri.distinct' => 'Santri anak asuh tidak boleh duplikat.',
-            'anak_asuh.*.id_santri.exists' => 'Santri anak asuh tidak valid.',
+            'jenis_kelamin.in' => 'Jenis kelamin grup hanya boleh "l" atau "p".',
         ];
     }
     protected function failedValidation(Validator $validator)

@@ -82,10 +82,10 @@ class GrupWaliAsuhController extends Controller
             ], 500);
         }
     }
-    public function nonaktifkanAnakAsuh(int $waliAsuhId, int $anakAsuhId): JsonResponse
+    public function nonaktifkanAnakAsuh(int $anakAsuhId): JsonResponse
     {
         try {
-            $result = $this->grupWaliasuhService->nonaktifkanAnakAsuh($waliAsuhId, $anakAsuhId);
+            $result = $this->grupWaliasuhService->nonaktifkanAnakAsuh($anakAsuhId);
 
             if (! $result['status']) {
                 return response()->json([
@@ -137,7 +137,16 @@ class GrupWaliAsuhController extends Controller
 
         return response()->json(['data' => $result['data']]);
     }
+    public function showGrub($id): JsonResponse
+    {
+        $result = $this->grupWaliasuhService->showGrup($id);
 
+        if (! $result['status']) {
+            return response()->json(['message' => $result['message']], 404);
+        }
+
+        return response()->json(['data' => $result['data']]);
+    }
     public function store(grupWaliasuhRequest $request)
     {
         try {

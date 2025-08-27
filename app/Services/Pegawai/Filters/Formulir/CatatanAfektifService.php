@@ -210,16 +210,16 @@ class CatatanAfektifService
     {
         $user = $request->user();
 
-
-        // Pastikan hanya superadmin yang bisa menjalankan ini
+        // Pastikan hanya superadmin
         if (! $user->hasRole('superadmin')) {
             return [
                 'status' => false,
                 'message' => 'Hanya superadmin yang dapat membuat catatan afektif untuk biodata ini.',
             ];
         }
-        return DB::transaction(function () use ($data, $bioId) {
-            // 1. Ambil santri berdasarkan biodata_id
+
+        return DB::transaction(function () use ($data, $bioId, $user) {
+            // Ambil santri berdasarkan biodata_id
             $santri = Santri::where('biodata_id', $bioId)
                 ->latest()
                 ->first();
@@ -238,9 +238,11 @@ class CatatanAfektifService
                 ];
             }
 
-            // 2. Cek apakah santri memiliki anak_asuh
-            $anakAsuh = DB::table('anak_asuh')
-                ->where('id_santri', $santri->id)
+            // Ambil anak_asuh terkait santri
+            $anakAsuh = DB::table('anak_asuh as aa')
+                ->join('grup_wali_asuh as g', 'aa.grup_wali_asuh_id', '=', 'g.id')
+                ->select('aa.*', 'g.wali_asuh_id')
+                ->where('aa.id_santri', $santri->id)
                 ->first();
 
             if (! $anakAsuh) {
@@ -250,7 +252,7 @@ class CatatanAfektifService
                 ];
             }
 
-            // 3. Cek apakah santri adalah wali_asuh → jika iya, tidak boleh
+            // Cek apakah santri adalah wali_asuh → jika iya, tidak boleh
             $isWaliAsuh = DB::table('wali_asuh')
                 ->where('id_santri', $santri->id)
                 ->exists();
@@ -262,44 +264,22 @@ class CatatanAfektifService
                 ];
             }
 
-            // 4. Cek jika masih ada catatan afektif aktif untuk santri
-            $existing = Catatan_afektif::where('id_santri', $santri->id)
-                ->whereNull('tanggal_selesai')
-                ->where('status', 1)
-                ->first();
+            // Ambil wali_asuh_id dari grup anak_asuh, boleh null
+            $waliAsuhId = $anakAsuh->wali_asuh_id ?: null;
 
-            if ($existing) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri masih memiliki Catatan Afektif aktif.',
-                ];
-            }
-
-            // 5. Ambil id_wali_asuh dari tabel kewaliasuhan terkait anak_asuh
-            $waliAsuhId = DB::table('kewaliasuhan')
-                ->where('id_anak_asuh', $anakAsuh->id)
-                ->value('id_wali_asuh');
-
-            if (! $waliAsuhId) {
-                return [
-                    'status' => false,
-                    'message' => 'Belum ada wali asuh untuk anak asuh ini.',
-                ];
-            }
-
-            // 6. Buat Catatan Afektif baru
+            // Buat Catatan Afektif baru
             $afektif = Catatan_afektif::create([
                 'id_santri' => $santri->id,
-                'id_wali_asuh' => $waliAsuhId,
+                'id_wali_asuh' => $waliAsuhId, // bisa nullable
                 'kepedulian_nilai' => $data['kepedulian_nilai'],
                 'kepedulian_tindak_lanjut' => $data['kepedulian_tindak_lanjut'],
                 'kebersihan_nilai' => $data['kebersihan_nilai'],
                 'kebersihan_tindak_lanjut' => $data['kebersihan_tindak_lanjut'],
                 'akhlak_nilai' => $data['akhlak_nilai'],
                 'akhlak_tindak_lanjut' => $data['akhlak_tindak_lanjut'],
-                'tanggal_buat' =>  now(),
+                'tanggal_buat' => now(),
                 'status' => 1,
-                'created_by' => Auth::id(),
+                'created_by' => $user->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -310,7 +290,6 @@ class CatatanAfektifService
             ];
         });
     }
-
     // public function keluarAfektif(array $input, int $id): array
     // {
     //     return DB::transaction(function () use ($input, $id) {

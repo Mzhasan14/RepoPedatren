@@ -15,7 +15,10 @@ class GrupWaliasuhService
     public function getAllGrupWaliasuh(Request $request)
     {
         return DB::table('grup_wali_asuh AS gs')
-            ->leftJoin('wali_asuh AS wa', 'gs.wali_asuh_id', '=', 'wa.id')
+            ->leftJoin('wali_asuh AS wa', function ($join) {
+                $join->on('gs.wali_asuh_id', '=', 'wa.id')
+                    ->where('wa.status', true);
+            })
             ->leftJoin('santri AS s', 'wa.id_santri', '=', 's.id')
             ->leftJoin('biodata AS b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('wilayah AS w', 'gs.id_wilayah', '=', 'w.id')
@@ -125,7 +128,7 @@ class GrupWaliasuhService
                     $j->on('ab.id', '=', 'pd.biodata_id')->where('pd.status', 'aktif');
                 })
                 ->where('aa.status', true) // anak asuh aktif
-                ->where('aa.grup_wali_asuh_id', $group->id) 
+                ->where('aa.grup_wali_asuh_id', $group->id)
                 ->orderBy('pd.no_induk')
                 ->get();
 
@@ -154,26 +157,22 @@ class GrupWaliasuhService
         }
     }
 
-    public function nonaktifkanAnakAsuh(int $waliAsuhId, int $anakAsuhId): array
+    public function nonaktifkanAnakAsuh(int $anakAsuhId): array
     {
         try {
-            DB::transaction(function () use ($waliAsuhId, $anakAsuhId) {
-                // Nonaktifkan kewaliasuhan
-                DB::table('kewaliasuhan')
-                    ->where('id_wali_asuh', $waliAsuhId)
-                    ->where('id_anak_asuh', $anakAsuhId)
+            DB::transaction(function () use ($anakAsuhId) {
+                $anakAsuh = DB::table('anak_asuh')
+                    ->where('id', $anakAsuhId)
                     ->where('status', true)
-                    ->update([
-                        'status' => false,
-                        'tanggal_berakhir' => now(),
-                        'updated_by' => Auth::id(),
-                        'updated_at' => now(),
-                    ]);
+                    ->first();
+
+                if (!$anakAsuh) {
+                    throw new \Exception('Anak asuh tidak ditemukan atau sudah nonaktif');
+                }
 
                 // Nonaktifkan anak asuh
                 DB::table('anak_asuh')
                     ->where('id', $anakAsuhId)
-                    ->where('status', true)
                     ->update([
                         'status' => false,
                         'updated_by' => Auth::id(),
@@ -192,6 +191,7 @@ class GrupWaliasuhService
             ];
         }
     }
+
     // public function index(): array
     // {
     //     $data = Grup_WaliAsuh::with(['wilayah'])->orderBy('id', 'asc')->get();
@@ -241,10 +241,27 @@ class GrupWaliasuhService
             'data' => $hubungan,
         ];
     }
+    public function showGrup(string $id)
+    {
+        $grup = Grup_WaliAsuh::find($id);
+
+        if (!$grup) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Grup wali asuh tidak ditemukan',
+                'data' => null
+            ], 404);
+        }
+        return [
+            'status' => true,
+            'data' => $grup,
+        ];
+    }
 
     public function store(array $data): array
     {
         return DB::transaction(function () use ($data) {
+
             if (!Auth::id()) {
                 return [
                     'status' => false,
@@ -253,82 +270,87 @@ class GrupWaliasuhService
                 ];
             }
 
-            // 1. Ambil santri yang dipilih
-            $santri = DB::table('santri as s')
-                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->select('s.id', 'b.jenis_kelamin')
-                ->where('s.id', $data['wali_asuh_id'])
-                ->first();
+            $waliAsuhId = null;
 
-            if (!$santri) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri tidak ditemukan',
-                    'data' => null,
-                ];
+            // Jika wali_asuh_id dikirim dan bukan null, cek validitasnya
+            if (!empty($data['wali_asuh_id'])) {
+                $waliAsuh = DB::table('wali_asuh as ws')
+                    ->join('santri as s', 'ws.id_santri', '=', 's.id')
+                    ->join('biodata as b', 'b.id', 's.biodata_id')
+                    ->leftJoin('domisili_santri as ds', function ($join) {
+                        $join->on('s.id', '=', 'ds.santri_id')
+                            ->where('ds.status', 'aktif');
+                    })
+                    ->leftJoin('wilayah as w', 'ds.wilayah_id', '=', 'w.id')
+                    ->select('ws.id', 's.id as id_santri', 'ds.wilayah_id', 'b.jenis_kelamin')
+                    ->where('ws.id', $data['wali_asuh_id'])
+                    ->where('ws.status', true)
+                    ->first();
+
+                if (!$waliAsuh) {
+                    return [
+                        'status' => false,
+                        'message' => 'Wali asuh tidak ditemukan atau tidak aktif',
+                        'data' => null,
+                    ];
+                }
+
+                // Validasi jenis kelamin
+                if ($waliAsuh->jenis_kelamin !== $data['jenis_kelamin']) {
+                    return [
+                        'status' => false,
+                        'message' => 'Jenis kelamin wali asuh tidak sesuai dengan jenis kelamin grup',
+                        'data' => null,
+                    ];
+                }
+
+                // Validasi wilayah
+                if (is_null($waliAsuh->wilayah_id)) {
+                    return [
+                        'status' => false,
+                        'message' => 'Wali asuh belum memiliki wilayah, tidak bisa ditambahkan ke grup',
+                        'data' => null,
+                    ];
+                }
+
+                if ($waliAsuh->wilayah_id != $data['id_wilayah']) {
+                    return [
+                        'status' => false,
+                        'message' => 'Wilayah wali asuh tidak sesuai dengan wilayah grup',
+                        'data' => null,
+                    ];
+                }
+
+                // Validasi: wali asuh belum memiliki grup aktif
+                $grupAktif = DB::table('grup_wali_asuh')
+                    ->where('wali_asuh_id', $waliAsuh->id)
+                    ->where('status', true)
+                    ->exists();
+
+                if ($grupAktif) {
+                    return [
+                        'status' => false,
+                        'message' => 'Wali asuh ini sudah terhubung dengan grup wali asuh aktif',
+                        'data' => null,
+                    ];
+                }
+
+                $waliAsuhId = $waliAsuh->id;
             }
 
-            // 2. Validasi jenis kelamin
-            if ($santri->jenis_kelamin !== $data['jenis_kelamin']) {
-                return [
-                    'status' => false,
-                    'message' => 'Jenis kelamin santri tidak sesuai dengan jenis kelamin grup',
-                    'data' => null,
-                ];
-            }
-
-            // 3. Cek apakah santri masih aktif sebagai anak asuh
-            $anakAsuhAktif = DB::table('anak_asuh')
-                ->where('id_santri', $santri->id)
-                ->where('status', true)
-                ->exists();
-
-            if ($anakAsuhAktif) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri ini masih aktif sebagai anak asuh, tidak bisa dijadikan wali asuh',
-                    'data' => null,
-                ];
-            }
-
-            // 4. Cek apakah santri sudah aktif sebagai wali asuh
-            $waliAsuhAktif = DB::table('wali_asuh')
-                ->where('id_santri', $santri->id)
-                ->where('status', true)
-                ->exists();
-
-            if ($waliAsuhAktif) {
-                return [
-                    'status' => false,
-                    'message' => 'Santri ini sudah aktif sebagai wali asuh',
-                    'data' => null,
-                ];
-            }
-
-            // 5. Buat grup baru
+            // Buat grup baru
             $grup = Grup_WaliAsuh::create([
                 'id_wilayah'    => $data['id_wilayah'],
+                'wali_asuh_id'  => $waliAsuhId, // bisa null
                 'nama_grup'     => $data['nama_grup'],
                 'jenis_kelamin' => $data['jenis_kelamin'],
-                'created_by'    => Auth::id(),
                 'status'        => true,
                 'created_by'    => Auth::id(),
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
 
-            // 6. Buat wali asuh baru
-            $waliAsuhId = DB::table('wali_asuh')->insertGetId([
-                'id_santri'         => $santri->id,
-                'id_grup_wali_asuh' => $grup->id,
-                'status'            => true,
-                'tanggal_mulai'     => now(),
-                'created_by'        => Auth::id(),
-                'created_at'        => now(),
-                'updated_at'        => now(),
-            ]);
-
-            // 7. Log activity
+            // Log activity
             activity('grup_wali_asuh_create')
                 ->performedOn($grup)
                 ->withProperties([
@@ -338,11 +360,11 @@ class GrupWaliasuhService
                     'user_agent'     => request()->userAgent(),
                 ])
                 ->event('create_grup_wali_asuh')
-                ->log('Grup wali asuh baru berhasil dibuat dengan wali asuh baru');
+                ->log('Grup wali asuh baru berhasil dibuat');
 
             return [
                 'status'  => true,
-                'message' => 'Grup wali asuh dan wali asuh baru berhasil dibuat',
+                'message' => 'Grup wali asuh baru berhasil dibuat',
                 'data'    => [
                     'grup'      => $grup,
                     'wali_asuh' => $waliAsuhId,
@@ -352,105 +374,121 @@ class GrupWaliasuhService
     }
 
 
-
     public function update(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
             $grup = Grup_WaliAsuh::find($id);
 
             if (!$grup) {
-                return ['status' => false, 'message' => 'Data tidak ditemukan'];
+                return ['status' => false, 'message' => 'Data grup tidak ditemukan'];
+            }
+
+            // 🔹 Cek apakah grup aktif
+            if (!$grup->status) {
+                return ['status' => false, 'message' => 'Grup ini sudah tidak aktif, tidak bisa diupdate'];
             }
 
             $jenisKelaminBaru = $data['jenis_kelamin'] ?? $grup->jenis_kelamin;
+            $wilayahBaru      = $data['id_wilayah'] ?? $grup->id_wilayah;
 
-            // 🔹 Validasi anak asuh
-            $anakTidakSesuai = DB::table('anak_asuh')
-                ->join('kewaliasuhan', 'anak_asuh.id', '=', 'kewaliasuhan.id_anak_asuh')
-                ->join('santri', 'anak_asuh.id_santri', '=', 'santri.id')
-                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-                ->whereIn('kewaliasuhan.id_wali_asuh', function ($query) use ($id) {
-                    $query->select('id')
-                        ->from('wali_asuh')
-                        ->where('id_grup_wali_asuh', $id)
-                        ->where('status', true);
-                })
-                ->where('biodata.jenis_kelamin', '!=', $jenisKelaminBaru)
+            // 🔹 Validasi anak asuh: jenis kelamin
+            $anakTidakSesuaiJK = DB::table('anak_asuh as aa')
+                ->join('santri as s', 'aa.id_santri', '=', 's.id')
+                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                ->where('aa.grup_wali_asuh_id', $id)
+                ->where('aa.status', true)
+                ->where('b.jenis_kelamin', '!=', $jenisKelaminBaru)
                 ->exists();
 
-            if ($anakTidakSesuai) {
+            if ($anakTidakSesuaiJK) {
                 return [
                     'status' => false,
-                    'message' => 'Jenis kelamin grup tidak sesuai dengan anak asuh dalam grup ini.'
+                    'message' => 'Jenis kelamin grup tidak sesuai dengan salah satu anak asuh.'
+                ];
+            }
+
+            // 🔹 Validasi anak asuh: wilayah
+            $anakTidakSesuaiWilayah = DB::table('anak_asuh as aa')
+                ->join('santri as s', 'aa.id_santri', '=', 's.id')
+                ->leftJoin('domisili_santri as ds', function ($join) {
+                    $join->on('ds.santri_id', '=', 's.id')->where('ds.status', 'aktif');
+                })
+                ->where('aa.grup_wali_asuh_id', $id)
+                ->where('aa.status', true)
+                ->where(function ($q) use ($wilayahBaru) {
+                    $q->where('ds.wilayah_id', '!=', $wilayahBaru)
+                        ->orWhereNull('ds.wilayah_id');
+                })
+                ->exists();
+
+            if ($anakTidakSesuaiWilayah) {
+                return [
+                    'status' => false,
+                    'message' => 'Wilayah grup tidak sesuai dengan salah satu anak asuh.'
                 ];
             }
 
             // Simpan data lama sebelum update
             $before = $grup->getOriginal();
 
-            // Update data grup
+            // Update atribut dasar grup
             $grup->fill([
-                'id_wilayah'    => $data['id_wilayah'] ?? $grup->id_wilayah,
+                'id_wilayah'    => $wilayahBaru,
                 'nama_grup'     => $data['nama_grup'] ?? $grup->nama_grup,
                 'jenis_kelamin' => $jenisKelaminBaru,
                 'updated_by'    => Auth::id(),
-                'status'        => $data['status'] ?? $grup->status,
                 'updated_at'    => now(),
             ]);
 
-            // 🔹 Jika ada wali_asuh_id baru → nonaktifkan wali lama & buat baru
+            // 🔹 Jika ada wali_asuh pengganti
             if (isset($data['wali_asuh_id'])) {
-                // 1. Validasi gender wali baru
-                $waliBaruTidakSesuai = DB::table('santri as s')
-                    ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                    ->where('s.id', $data['wali_asuh_id'])
-                    ->where('b.jenis_kelamin', '!=', $jenisKelaminBaru)
-                    ->exists();
-
-                if ($waliBaruTidakSesuai) {
-                    return [
-                        'status' => false,
-                        'message' => 'Wali asuh yang dipilih tidak sesuai dengan jenis kelamin grup.'
-                    ];
-                }
-
-                // 2. Nonaktifkan wali lama
-                DB::table('wali_asuh')
-                    ->where('id_grup_wali_asuh', $id)
-                    ->where('status', true)
-                    ->update([
-                        'status'          => false,
-                        'tanggal_berakhir' => now(),
-                        'updated_by'    => Auth::id(),
-                        'updated_at'      => now(),
-                    ]);
-
-                // 3. Tambahkan wali asuh baru
-                DB::table('wali_asuh')->insert([
-                    'id_santri'         => $data['wali_asuh_id'],
-                    'id_grup_wali_asuh' => $id,
-                    'status'            => true,
-                    'tanggal_mulai'     => now(),
-                    'created_by'        => Auth::id(),
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
-                ]);
-            } else {
-                // 🔹 Jika tidak ada wali baru → validasi wali lama sesuai gender
-                $waliLamaTidakSesuai = DB::table('wali_asuh as w')
+                $waliAsuhPengganti = DB::table('wali_asuh as w')
                     ->join('santri as s', 'w.id_santri', '=', 's.id')
                     ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                    ->where('w.id_grup_wali_asuh', $id)
-                    ->where('w.status', true)
-                    ->where('b.jenis_kelamin', '!=', $jenisKelaminBaru)
+                    ->leftJoin('domisili_santri as ds', function ($join) {
+                        $join->on('ds.santri_id', '=', 's.id')->where('ds.status', 'aktif');
+                    })
+                    ->where('w.id', $data['wali_asuh_id'])
+                    ->where('w.status', true) // hanya wali aktif
+                    ->select('w.id as wali_id', 's.id as santri_id', 'b.jenis_kelamin', 'ds.wilayah_id')
+                    ->first();
+
+                if (!$waliAsuhPengganti) {
+                    return ['status' => false, 'message' => 'Wali asuh pengganti tidak valid atau tidak aktif'];
+                }
+
+                // 🚫 Pastikan wali asuh pengganti belum dipakai di grup lain
+                $sudahDipakai = DB::table('grup_wali_asuh')
+                    ->where('wali_asuh_id', $waliAsuhPengganti->wali_id)
+                    ->where('status', true)
+                    ->where('id', '!=', $id)
                     ->exists();
 
-                if ($waliLamaTidakSesuai) {
+                if ($sudahDipakai) {
                     return [
                         'status' => false,
-                        'message' => 'Jenis kelamin grup tidak sesuai dengan wali asuh yang ada di grup ini.'
+                        'message' => 'Wali asuh pengganti sudah memiliki grup wali aktif lain.'
                     ];
                 }
+
+                // 🔹 Validasi jenis kelamin wali asuh pengganti
+                if ($waliAsuhPengganti->jenis_kelamin !== $jenisKelaminBaru) {
+                    return [
+                        'status' => false,
+                        'message' => 'Jenis kelamin wali asuh pengganti tidak sesuai dengan grup.'
+                    ];
+                }
+
+                // 🔹 Validasi wilayah wali asuh pengganti
+                if (!$waliAsuhPengganti->wilayah_id || $waliAsuhPengganti->wilayah_id != $wilayahBaru) {
+                    return [
+                        'status' => false,
+                        'message' => 'Wilayah wali asuh pengganti tidak sesuai dengan grup atau belum terdaftar.'
+                    ];
+                }
+
+                // ✅ Update grup dengan wali asuh pengganti
+                $grup->wali_asuh_id = $waliAsuhPengganti->wali_id;
             }
 
             // 🔹 Cek perubahan

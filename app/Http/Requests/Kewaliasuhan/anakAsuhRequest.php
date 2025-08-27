@@ -24,21 +24,27 @@ class anakAsuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_wali_asuh' => 'required|exists:wali_asuh,id',
+            // wajib array & minimal 1 santri
             'santri_id' => 'required|array|min:1',
-            'santri_id.*' => 'required|exists:santri,id',
-        ];
+            // tiap id harus integer & ada di tabel santri
+            'santri_id.*' => 'integer|exists:santri,id',
 
+            // wajib ada grup_wali_asuh yang aktif
+            'grup_wali_asuh_id' => 'required|integer|exists:grup_wali_asuh,id',
+        ];
     }
 
     public function messages(): array
     {
         return [
-            'id_wali_asuh.required' => 'Wali asuh wajib dipilih.',
-            'id_wali_asuh.exists' => 'Wali asuh tidak ditemukan.',
-            'santri_id.required' => 'Minimal satu santri harus dipilih.',
-            'santri_id.array' => 'Format santri harus berupa array.',
-            'santri_id.*.exists' => 'Beberapa santri tidak valid atau tidak ditemukan.',
+            'santri_id.required' => 'Santri wajib dipilih.',
+            'santri_id.array'    => 'Format santri tidak valid.',
+            'santri_id.min'      => 'Minimal pilih satu santri.',
+            'santri_id.*.exists' => 'Santri yang dipilih tidak ditemukan.',
+
+            'grup_wali_asuh_id.required' => 'Grup wali asuh wajib dipilih.',
+            'grup_wali_asuh_id.integer'  => 'Grup wali asuh tidak valid.',
+            'grup_wali_asuh_id.exists'   => 'Grup wali asuh tidak ditemukan.',
         ];
     }
 

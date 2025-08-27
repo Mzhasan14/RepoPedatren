@@ -5,6 +5,7 @@ namespace App\Http\Requests\Kewaliasuhan;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\DB;
 
 class CreateWaliAsuhRequest extends FormRequest
 {
@@ -24,20 +25,27 @@ class CreateWaliAsuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'santri_ids'   => ['required', 'array', 'min:1'],
-            'santri_ids.*' => ['integer', 'distinct', 'exists:santri,id'],
+            'id_santri' => [
+                'required',
+                'integer',
+                'exists:santri,id', // cukup pastikan id santri ada
+            ],
+            'grup_wali_asuh_id' => [
+                'nullable',
+                'integer',
+                'exists:grup_wali_asuh,id', // hanya cek id ada, tanpa cek status
+            ],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'santri_ids.required'   => 'Daftar santri harus diisi.',
-            'santri_ids.array'      => 'Format daftar santri tidak valid.',
-            'santri_ids.min'        => 'Minimal pilih 1 santri.',
-            'santri_ids.*.integer'  => 'ID santri harus berupa angka.',
-            'santri_ids.*.exists'   => 'Santri dengan ID tersebut tidak ditemukan.',
-            'santri_ids.*.distinct' => 'Terdapat duplikat ID santri di dalam input.',
+            'id_santri.required' => 'Santri wajib dipilih.',
+            'id_santri.integer'  => 'Santri tidak valid.',
+            'id_santri.exists'   => 'Santri tidak ditemukan.',
+            'grup_wali_asuh_id.integer' => 'Grup wali asuh tidak valid.',
+            'grup_wali_asuh_id.exists'  => 'Grup wali asuh tidak ditemukan.',
         ];
     }
     protected function failedValidation(Validator $validator)
