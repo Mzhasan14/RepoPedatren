@@ -4,9 +4,11 @@ namespace App\Http\Controllers\api\PesertaDidik\Pembayaran;
 
 use App\Models\Tagihan;
 use App\Models\TagihanSantri;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Pembayaran\TagihanSantriService;
 use App\Http\Requests\PesertaDidik\Pembayaran\TagihanSantriRequest;
+use App\Http\Requests\PesertaDidik\Pembayaran\TagihanSantriManualRequest;
 
 class TagihanSantriController extends Controller
 {
@@ -40,13 +42,32 @@ class TagihanSantriController extends Controller
             $request->only('jenis_kelamin')
         );
 
-      return response()->json([
-        'message'      => 'Tagihan santri berhasil digenerate.',
-        'total_santri' => $result['total_santri'],
-    ]);
+        return response()->json([
+            'message'      => 'Tagihan santri berhasil digenerate.',
+            'total_santri' => $result['total_santri'],
+        ]);
     }
 
+    public function generateManual(TagihanSantriManualRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->service->generateManual(
+                $request->tagihan_id,
+                $request->periode,
+                $request->santri_ids
+            );
 
+            return response()->json([
+                'message' => 'Tagihan manual berhasil dibuat.',
+                'data'    => $result
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal membuat tagihan manual.',
+                'error'   => $e->getMessage()
+            ], 422);
+        }
+    }
 
     // List semua tagihan per santri (opsional tambahan)
     public function listBySantri($santriId)

@@ -1110,6 +1110,7 @@ Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
     Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
+// Potongan
 Route::prefix('potongan')->group(function () {
     Route::get('/', [PotonganController::class, 'index']);
     Route::get('/{potongan}', [PotonganController::class, 'show']);
@@ -1118,29 +1119,23 @@ Route::prefix('potongan')->group(function () {
     Route::delete('/{potongan}', [PotonganController::class, 'destroy']);
 });
 
+// Potongan Santri
 Route::prefix('santri-potongan')->group(function () {
     Route::get('/', [SantriPotonganController::class, 'index']);
-    Route::get('/{santriPotongan}', [SantriPotonganController::class, 'show']);
     Route::post('/', [SantriPotonganController::class, 'store']);
-    Route::put('/{santriPotongan}', [SantriPotonganController::class, 'update']);
-    Route::delete('/{santriPotongan}', [SantriPotonganController::class, 'destroy']);
+    Route::get('/{id}', [SantriPotonganController::class, 'show']); 
+    Route::put('/{id}', [SantriPotonganController::class, 'update']);
+    Route::delete('/{id}', [SantriPotonganController::class, 'destroy']);
 });
 
+// Tagihan Santri
 Route::prefix('tagihan-santri')->group(function () {
     Route::get('/', [TagihanSantriController::class, 'index']);        // list tagihan
     Route::get('/{id}', [TagihanSantriController::class, 'show']);     // detail tagihan
     Route::post('/generate', [TagihanSantriController::class, 'generate']); // generate tagihan santri
+    Route::post('/generate-manual', [TagihanSantriController::class, 'generateManual']); // generate tagihan manual santri
     Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']); // daftar tagihan santri
 });
-
-// Tagihan Khusus
-// Route::prefix('tagihan-khusus')->group(function () {
-//     Route::get('/', [TagihanKhususController::class, 'index']);
-//     Route::post('/', [TagihanKhususController::class, 'store']);
-//     Route::get('/{id}', [TagihanKhususController::class, 'show']);
-//     Route::put('/{id}', [TagihanKhususController::class, 'update']);
-//     Route::delete('/{id}', [TagihanKhususController::class, 'destroy']);
-// });
 
 // Banks
 Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {

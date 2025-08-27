@@ -20,8 +20,8 @@ class TagihanSantriRequest extends FormRequest
     {
         return [
             'tagihan_id'     => 'required|exists:tagihan,id',
-            'periode'        => 'required|string|max:20', // contoh: 2025-08
-            'jenis_kelamin'  => 'nullable|in:l,p', // opsional (L=putra, P=putri)
+            'periode'        => 'nullable|string|max:20', 
+            'jenis_kelamin'  => 'nullable|in:l,p', 
         ];
     }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SantriPotongan extends Model
 {
@@ -11,19 +12,18 @@ class SantriPotongan extends Model
     protected $fillable = [
         'santri_id',
         'potongan_id',
-        'tanggal_mulai',
-        'tanggal_selesai',
         'keterangan',
+        'status',
+        'berlaku_dari',
+        'berlaku_sampai',
     ];
 
-    // Relasi ke Santri
-    public function santri()
+    public function santri(): BelongsTo
     {
         return $this->belongsTo(Santri::class);
     }
 
-    // Relasi ke Potongan
-    public function potongan()
+    public function potongan(): BelongsTo
     {
         return $this->belongsTo(Potongan::class);
     }

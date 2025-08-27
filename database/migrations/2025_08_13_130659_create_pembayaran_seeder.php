@@ -216,12 +216,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
-            $table->string('keterangan')->nullable();   
+            $table->string('keterangan')->nullable();
             $table->boolean('status')->default(true);
-            $table->timestamps();   
+            $table->date('berlaku_dari')->nullable();
+            $table->date('berlaku_sampai')->nullable();
+            $table->timestamps();
 
             $table->unique(['santri_id', 'potongan_id']);
         });
+
 
         /**
          * TAGIHAN SANTRI (hasil generate per periode)

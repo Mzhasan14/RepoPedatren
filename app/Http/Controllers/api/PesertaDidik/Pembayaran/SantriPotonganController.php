@@ -9,110 +9,86 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Services\PesertaDidik\Pembayaran\SantriPotonganService;
 use App\Http\Requests\PesertaDidik\Pembayaran\SantriPotonganRequest;
 
 class SantriPotonganController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    protected SantriPotonganService $service;
+
+    public function __construct(SantriPotonganService $service)
+    {
+        $this->service = $service;
+    }
+
+    public function index(Request $request)
     {
         try {
-            $query = SantriPotongan::with(['santri', 'potongan']);
+            $data = $this->service->list($request->all());
+            return response()->json([
+                'message' => 'Daftar santri potongan',
+                'data'    => $data
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('SantriPotonganController index error', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Terjadi kesalahan saat mengambil data.'], 500);
+        }
+    }
 
-            if ($request->filled('santri_id')) {
-                $query->where('santri_id', $request->santri_id);
+    public function show(int $id)
+    {
+        try {
+            $data = $this->service->find($id);
+            if (!$data) {
+                return response()->json(['message' => 'Data tidak ditemukan.'], 404);
             }
 
-            if ($request->filled('potongan_id')) {
-                $query->where('potongan_id', $request->potongan_id);
+            return response()->json([
+                'message' => 'Detail santri potongan',
+                'data'    => $data
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Gagal mengambil detail data.'], 500);
+        }
+    }
+
+
+    public function store(SantriPotonganRequest $request)
+    {
+        try {
+            $result = $this->service->assign($request->validated());
+            return response()->json([
+                'message' => 'Potongan berhasil ditetapkan ke santri.',
+                'result'  => $result
+            ], 201);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Gagal menyimpan potongan santri.'], 500);
+        }
+    }
+
+    public function update(SantriPotonganRequest $request, int $id)
+    {
+        try {
+            $updated = $this->service->update($id, $request->validated());
+            if (!$updated) {
+                return response()->json(['message' => 'Data tidak ditemukan.'], 404);
             }
-
-            $data = $query->get();
-            return response()->json(['success' => true, 'data' => $data], 200);
-        } catch (Exception $e) {
-            Log::error('Failed to fetch santri_potongan', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil daftar santri potongan',
-                'error'   => $e->getMessage()
-            ], 500);
+            return response()->json(['message' => 'Data berhasil diperbarui.']);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Gagal memperbarui data.'], 500);
         }
     }
 
-    public function show(SantriPotongan $santriPotongan): JsonResponse
+    public function destroy(int $id)
     {
         try {
-            $santriPotongan->load(['santri', 'potongan']);
-            return response()->json(['success' => true, 'data' => $santriPotongan], 200);
-        } catch (Exception $e) {
-            Log::error('Failed to fetch santri_potongan detail', ['id' => $santriPotongan->id, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil detail santri potongan',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function store(SantriPotonganRequest $request): JsonResponse
-    {
-        DB::beginTransaction();
-        try {
-            $santriPotongan = SantriPotongan::create($request->validated());
-
-            DB::commit();
-            Log::info('SantriPotongan created', ['id' => $santriPotongan->id]);
-
-            return response()->json(['success' => true, 'data' => $santriPotongan], 201);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to create santri_potongan', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat santri potongan',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function update(SantriPotonganRequest $request, SantriPotongan $santriPotongan): JsonResponse
-    {
-        DB::beginTransaction();
-        try {
-            $santriPotongan->update($request->validated());
-
-            DB::commit();
-            Log::info('SantriPotongan updated', ['id' => $santriPotongan->id]);
-
-            return response()->json(['success' => true, 'data' => $santriPotongan], 200);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to update santri_potongan', ['id' => $santriPotongan->id, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengupdate santri potongan',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function destroy(SantriPotongan $santriPotongan): JsonResponse
-    {
-        DB::beginTransaction();
-        try {
-            $santriPotongan->delete();
-
-            DB::commit();
-            Log::info('SantriPotongan deleted', ['id' => $santriPotongan->id]);
-
-            return response()->json(['success' => true, 'message' => 'Santri potongan berhasil dihapus'], 200);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete santri_potongan', ['id' => $santriPotongan->id, 'error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus santri potongan',
-                'error'   => $e->getMessage()
-            ], 500);
+            $deleted = $this->service->delete($id);
+            if (!$deleted) {
+                return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+            }
+            return response()->json(['message' => 'Data berhasil dihapus.']);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Gagal menghapus data.'], 500);
         }
     }
 }

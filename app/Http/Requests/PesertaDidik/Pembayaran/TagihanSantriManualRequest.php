@@ -3,8 +3,10 @@
 namespace App\Http\Requests\PesertaDidik\Pembayaran;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
-class SantriPotonganRequest extends FormRequest
+class TagihanSantriManualRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,17 +24,14 @@ class SantriPotonganRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'potongan_id'   => 'required|exists:potongan,id',
-            'santri_ids'    => 'required_without:id|array|min:1',
-            'santri_ids.*'  => 'required|exists:santri,id',
-            'keterangan'    => 'nullable|string|max:255',
-            'status'        => 'boolean',
-            'berlaku_dari'   => 'nullable|date',
-            'berlaku_sampai' => 'nullable|date|after_or_equal:berlaku_dari',
+            'tagihan_id'  => 'required|exists:tagihan,id',
+            'periode'     => 'required|string',
+            'santri_ids'  => 'required|array|min:1',
+            'santri_ids.*' => 'required|exists:santri,id',
         ];
     }
 
-    public function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    public function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
 
@@ -41,6 +40,6 @@ class SantriPotonganRequest extends FormRequest
             'error' => $errors,
         ], 422);
 
-        throw new \Illuminate\Http\Exceptions\HttpResponseException($response);
+        throw new HttpResponseException($response);
     }
 }

@@ -56,28 +56,6 @@ class TahfidzService
                     throw new Exception("Ayat {$data['ayat_mulai']} pada surat {$data['surat']} sudah pernah disetorkan, tidak boleh dobel.");
                 }
 
-                // // 3. Cek surat terakhir
-                // $suratTerakhir = DB::table('tahfidz')
-                //     ->where('santri_id', $data['santri_id'])
-                //     ->where('jenis_setoran', 'baru')
-                //     ->orderByDesc('id')
-                //     ->first();
-
-                // if ($suratTerakhir) {
-                //     if ($data['surat'] == $suratTerakhir->surat) {
-                //         if ($data['status'] !== 'tuntas' && $suratTerakhir->status !== 'tuntas') {
-                //             throw new Exception(
-                //                 "Surat terakhir belum tuntas, harap selesaikan terlebih dahulu."
-                //             );
-                //         }
-                //     } else {
-                //         if ($suratTerakhir->status !== 'tuntas') {
-                //             throw new Exception(
-                //                 "Surat terakhir belum tuntas, harap selesaikan terlebih dahulu."
-                //             );
-                //         }
-                //     }
-                // }
             }
 
             // --- INSERT SETORAN ---
