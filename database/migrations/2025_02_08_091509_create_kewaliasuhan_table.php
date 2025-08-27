@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        
+
 
         Schema::create('wali_asuh', function (Blueprint $table) {
             $table->id();
@@ -33,7 +33,7 @@ return new class extends Migration
         Schema::create('grup_wali_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_wilayah');
-            $table->foreignId('wali_asuh_id')->constrained('wali_asuh')->cascadeOnDelete();
+            $table->foreignId('wali_asuh_id')->nullable()->constrained('wali_asuh')->nullOnDelete();
             $table->string('nama_grup');
             $table->fullText('nama_grup');
             $table->enum('jenis_kelamin', ['l', 'p']);
@@ -53,7 +53,7 @@ return new class extends Migration
         Schema::create('anak_asuh', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_santri');
-            $table->foreignId('wali_asuh_id')->constrained('wali_asuh')->cascadeOnDelete();
+            $table->foreignId('grup_wali_asuh_id')->constrained('grup_wali_asuh')->cascadeOnDelete();
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();

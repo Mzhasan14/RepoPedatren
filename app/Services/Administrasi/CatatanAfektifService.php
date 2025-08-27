@@ -27,7 +27,7 @@ class CatatanAfektifService
 
         // Ambil ID wali_asuh jika user role wali_asuh
         $waliAsuhId = null;
-        if ($user->hasRole('waliasuh')) {
+        if ($user->hasRole('wali_asuh')) {
             $waliAsuhId = DB::table('wali_asuh as wa')
                 ->join('santri as s', 's.id', '=', 'wa.id_santri')
                 ->where('s.biodata_id', $user->biodata_id)
@@ -82,9 +82,9 @@ class CatatanAfektifService
             ->orderBy('catatan_afektif.tanggal_buat', 'desc');
 
         // Filter khusus wali_asuh
-        if ($user->hasRole('waliasuh') && $waliAsuhId) {
+        if ($user->hasRole('wali_asuh') && $waliAsuhId) {
             $query->where('catatan_afektif.id_wali_asuh', $waliAsuhId);
-        } elseif ($user->hasRole('waliasuh') && !$waliAsuhId) {
+        } elseif ($user->hasRole('wali_asuh') && !$waliAsuhId) {
             $query->whereRaw('1=0'); // user wali_asuh tapi tidak punya relasi → kosong
         }
 

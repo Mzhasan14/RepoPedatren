@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('catatan_afektif', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_santri');
-            $table->unsignedBigInteger('id_wali_asuh');
+            $table->unsignedBigInteger('id_wali_asuh')->nullable();
             $table->enum('kepedulian_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('kepedulian_tindak_lanjut');
             $table->enum('kebersihan_nilai', ['A', 'B', 'C', 'D', 'E']);

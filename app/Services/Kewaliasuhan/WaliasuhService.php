@@ -49,6 +49,7 @@ class WaliasuhService
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
+            ->leftJoin('grup_wali_asuh as g', 'g.wali_asuh_id', '=', 'ws.id')
             ->where('ws.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')->whereNull('ws.deleted_at'))
             ->select([
@@ -195,21 +196,40 @@ class WaliasuhService
 
     public function show(int $id): array
     {
-        $wa = Wali_asuh::with(['santri', 'grupWaliAsuh'])->find($id);
+        // Ambil semua history wali asuh untuk santri tertentu
+        $histories = DB::table('wali_asuh as wa')
+            ->leftJoin('santri as s', 'wa.id_santri', '=', 's.id')
+            ->leftJoin('grup_wali_asuh as gw', 'wa.id', '=', 'gw.wali_asuh_id')
+            ->where('wa.id', $id)
+            ->select([
+                'wa.id',
+                's.nis',
+                'gw.id as grup_id',
+                'wa.tanggal_mulai',
+                'wa.tanggal_berakhir',
+                'wa.status',
+            ])
+            ->orderBy('wa.tanggal_mulai', 'asc')
+            ->get();
 
-        if (!$wa) {
+        if ($histories->isEmpty()) {
             return ['status' => false, 'message' => 'Data tidak ditemukan.'];
         }
 
+        $data = $histories->map(function ($wa) {
+            return [
+                'id' => $wa->id,
+                'nis' => $wa->nis,
+                'id_grup_wali_asuh' => $wa->grup_id ?? '-',
+                'tanggal_mulai' => $wa->tanggal_mulai,
+                'tanggal_akhir' => $wa->tanggal_berakhir ?? '-',
+                'tanggal_akhir' => $wa->status ?? '-',
+            ];
+        })->toArray();
+
         return [
             'status' => true,
-            'data' => [
-                'id' => $wa->id,
-                'nis' => $wa->santri->nis,
-                'grup' => $wa->grupWaliAsuh->nama_grup,
-                'tanggal_mulai' => $wa->tanggal_mulai,
-                'tanggal_akhir' => $wa->tanggal_berakhir,
-            ]
+            'data' => $data
         ];
     }
 

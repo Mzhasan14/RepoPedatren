@@ -122,30 +122,18 @@ class FilterWaliasuhService
 
     public function applyJenisWaliAsuhFilter(Builder $query, Request $request): Builder
     {
-        if (! $request->filled('jenis_wali_asuh')) {
-            return $query;
+        if ($request->filled('jenis_wali_asuh')) {
+            $jenis = $request->jenis_wali_asuh;
+
+            if ($jenis === 'dengan_grup') {
+                $query->whereNotNull('g.id'); // ada grup
+            } elseif ($jenis === 'tanpa_grup') {
+                $query->whereNull('g.id'); // tidak ada grup
+            }
         }
-
-        $jenis = $request->jenis_wali_asuh;
-
-        if ($jenis === 'dengan_grup') {
-            // hanya wali asuh yang sudah punya grup
-            $query->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('grup_wali_asuh as g')
-                    ->whereColumn('g.wali_asuh_id', 'ws.id');
-            });
-        } elseif ($jenis === 'tanpa_grup') {
-            // hanya wali asuh yang belum punya grup
-            $query->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('grup_wali_asuh as g')
-                    ->whereColumn('g.wali_asuh_id', 'ws.id');
-            });
-        }
-
         return $query;
     }
+
 
 
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder

@@ -68,24 +68,34 @@ class FilterGrupWaliasuhService
 
         $jenis = $request->grup_wali_asuh;
 
-        if ($jenis === 'tidak_ada_wali_dan_anak') {
-            // Grup tidak punya wali_asuh_id & tidak ada anak
-            $query->whereNull('gs.wali_asuh_id')
-                ->havingRaw('COUNT(aa.id) = 0');
-        } elseif ($jenis === 'tidak_ada_wali') {
-            // Grup tidak punya wali_asuh
-            $query->whereNull('gs.wali_asuh_id');
-        } elseif ($jenis === 'tidak_ada_anak') {
-            // Grup ada wali, tapi anak kosong
-            $query->havingRaw('COUNT(aa.id) = 0');
-        } elseif ($jenis === 'wali_ada_tapi_tidak_ada_anak') {
-            // Ada wali tapi tidak ada anak
-            $query->whereNotNull('gs.wali_asuh_id')
-                ->havingRaw('COUNT(aa.id) = 0');
-        } elseif ($jenis === 'anak_ada_tapi_tidak_ada_wali') {
-            // Ada anak tapi tidak ada wali
-            $query->whereNull('gs.wali_asuh_id')
-                ->havingRaw('COUNT(aa.id) > 0');
+        switch ($jenis) {
+            case 'tidak_ada_wali_dan_anak':
+                // Grup tidak punya wali & anak
+                $query->whereNull('gs.wali_asuh_id')
+                    ->havingRaw('COUNT(aa.id) = 0');
+                break;
+
+            case 'tidak_ada_wali':
+                // Grup tidak punya wali
+                $query->whereNull('gs.wali_asuh_id');
+                break;
+
+            case 'tidak_ada_anak':
+                // Grup ada wali tapi anak kosong
+                $query->havingRaw('COUNT(aa.id) = 0');
+                break;
+
+            case 'wali_ada_tapi_tidak_ada_anak':
+                // Grup punya wali tapi anak kosong
+                $query->whereNotNull('gs.wali_asuh_id')
+                    ->havingRaw('COUNT(aa.id) = 0');
+                break;
+
+            case 'anak_ada_tapi_tidak_ada_wali':
+                // Grup punya anak tapi tidak ada wali
+                $query->whereNull('gs.wali_asuh_id')
+                    ->havingRaw('COUNT(aa.id) > 0');
+                break;
         }
 
         return $query;

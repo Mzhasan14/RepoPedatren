@@ -14,7 +14,7 @@ class FilterAnakasuhService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
@@ -77,7 +77,7 @@ class FilterAnakasuhService
         return $query;
     }
 
-     
+
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
@@ -86,7 +86,7 @@ class FilterAnakasuhService
         }
 
         // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $phrase = '"' . trim($request->nama) . '"';
 
         return $query->whereRaw(
             'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
@@ -102,7 +102,7 @@ class FilterAnakasuhService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn ($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('rd.id')->orWhere('rd.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -167,7 +167,7 @@ class FilterAnakasuhService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->where(fn ($q) => $q->whereNull('pd.id')->orWhere('pd.status', '!=', 'aktif'));
+                    ->where(fn($q) => $q->whereNull('pd.id')->orWhere('pd.status', '!=', 'aktif'));
                 break;
             case 'pelajar':
                 $query->where('pd.status', 'aktif');
@@ -217,7 +217,7 @@ class FilterAnakasuhService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }
@@ -227,17 +227,41 @@ class FilterAnakasuhService
 
     public function applySorting(Builder $query, Request $request): Builder
     {
+        // Jika tidak ada parameter sort_by, kembalikan query tanpa perubahan
         if (! $request->filled('sort_by')) {
             return $query;
         }
 
+        // Daftar kolom yang diperbolehkan untuk sorting
         $allowed = ['id', 'nama', 'niup', 'jenis_kelamin'];
+
+        // Ambil parameter dari request
         $by = strtolower($request->sort_by);
         $order = ($request->filled('sort_order') && strtolower($request->sort_order) === 'desc') ? 'desc' : 'asc';
 
         if (in_array($by, $allowed, true)) {
-            $query->orderBy($by, $order);
+            // Default kolom
+            $column = $by;
+
+            // Tambahkan prefix tabel jika kolom ambigu
+            switch ($by) {
+                case 'jenis_kelamin':
+                    $column = 'b.jenis_kelamin';
+                    break;
+                case 'id':
+                    $column = 'biodata.id';
+                    break;
+                case 'nama':
+                    $column = 'biodata.nama';
+                    break;
+                case 'niup':
+                    $column = 'biodata.niup';
+                    break;
+            }
+
+            $query->orderBy($column, $order);
         } else {
+            // Jika kolom tidak diperbolehkan, hentikan query
             $query->whereRaw('0 = 1');
         }
 

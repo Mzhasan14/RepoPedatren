@@ -28,6 +28,7 @@ class Grup_WaliAsuh extends Model
 
     protected $fillable = [
         'id_wilayah',
+        'wali_asuh_id',
         'nama_grup',
         'jenis_kelamin',
         'created_by',
@@ -52,8 +53,9 @@ class Grup_WaliAsuh extends Model
 
     public function waliAsuh()
     {
-        return $this->hasOne(Wali_asuh::class, 'id_grup_wali_asuh', 'id');
+        return $this->belongsTo(Wali_asuh::class, 'wali_asuh_id', 'id');
     }
+
 
     public function anakAsuh()
     {

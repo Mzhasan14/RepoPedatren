@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('catatan_kognitif', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_santri');
-            $table->unsignedBigInteger('id_wali_asuh');
+            $table->unsignedBigInteger('id_wali_asuh')->nullable();
             $table->enum('kebahasaan_nilai', ['A', 'B', 'C', 'D', 'E']);
             $table->text('kebahasaan_tindak_lanjut');
             $table->enum('baca_kitab_kuning_nilai', ['A', 'B', 'C', 'D', 'E']);

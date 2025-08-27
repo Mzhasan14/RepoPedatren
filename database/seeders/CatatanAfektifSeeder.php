@@ -16,26 +16,27 @@ class CatatanAfektifSeeder extends Seeder
      */
     public function run(): void
     {
-        $anakAsuhList = DB::table('anak_asuh')
-            ->where('status', true)
+        // Ambil anak asuh aktif yang grupnya punya wali_asuh
+        $anakAsuhList = DB::table('anak_asuh as aa')
+            ->join('grup_wali_asuh as g', 'aa.grup_wali_asuh_id', '=', 'g.id')
+            ->where('aa.status', true)
+            ->whereNotNull('g.wali_asuh_id') // grup harus punya wali
+            ->select('aa.id_santri', 'g.wali_asuh_id')
             ->get();
 
         if ($anakAsuhList->isEmpty()) {
-            $this->command->warn('Tidak ada anak asuh aktif. Seeder CatatanAfektif dilewati.');
+            $this->command->warn('Tidak ada anak asuh dengan grup yang punya wali. Seeder CatatanAfektif dilewati.');
             return;
         }
 
         // Batasi misal 25 catatan
         foreach ($anakAsuhList->take(25) as $anak) {
-            $santriId = $anak->id_santri;
-            $waliAsuhId = $anak->wali_asuh_id;
-
-            if (! $santriId || ! $waliAsuhId) continue;
-
             Catatan_afektif::factory()->create([
-                'id_santri'   => $santriId,
-                'id_wali_asuh' => $waliAsuhId,
+                'id_santri'    => $anak->id_santri,
+                'id_wali_asuh' => $anak->wali_asuh_id,
             ]);
         }
+
+        $this->command->info('✅ Seeder CatatanAfektif selesai.');
     }
 }

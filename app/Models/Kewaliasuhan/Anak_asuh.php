@@ -29,6 +29,7 @@ class Anak_asuh extends Model
 
     protected $fillable = [
         'id_santri',
+        'grup_wali_asuh_id',
         'created_by',
         'updated_by',
         'status',
