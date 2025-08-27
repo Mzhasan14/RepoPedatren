@@ -40,15 +40,10 @@ class TagihanSantriController extends Controller
             $request->only('jenis_kelamin')
         );
 
-        return response()->json([
-            'message'             => 'Tagihan santri berhasil digenerate.',
-            'total_santri_biasa'  => $result['total_santri_biasa'],
-            'total_anak_pegawai'  => $result['total_anak_pegawai'],
-            'total_bersaudara'    => $result['total_bersaudara'],
-            'total_khadam'        => $result['total_khadam'],
-            'total_putra'         => $result['total_putra'],
-            'total_putri'         => $result['total_putri'],
-        ]);
+      return response()->json([
+        'message'      => 'Tagihan santri berhasil digenerate.',
+        'total_santri' => $result['total_santri'],
+    ]);
     }
 
 
