@@ -15,7 +15,7 @@ class AnakPegawai extends Model
     protected $table = 'anak_pegawai';
 
     protected $fillable = [
-        'santri_id',
+        'biodata_id',
         'pegawai_id',
         'status_hubungan',
         'status',

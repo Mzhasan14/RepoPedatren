@@ -1126,6 +1126,13 @@ Route::prefix('santri-potongan')->group(function () {
     Route::delete('/{santriPotongan}', [SantriPotonganController::class, 'destroy']);
 });
 
+Route::prefix('tagihan-santri')->group(function () {
+    Route::get('/', [TagihanSantriController::class, 'index']);        // list tagihan
+    Route::get('/{id}', [TagihanSantriController::class, 'show']);     // detail tagihan
+    Route::post('/generate', [TagihanSantriController::class, 'generate']); // generate tagihan santri
+    Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']); // daftar tagihan santri
+});
+
 // Tagihan Khusus
 // Route::prefix('tagihan-khusus')->group(function () {
 //     Route::get('/', [TagihanKhususController::class, 'index']);

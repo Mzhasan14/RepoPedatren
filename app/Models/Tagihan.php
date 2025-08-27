@@ -26,4 +26,10 @@ class Tagihan extends Model
     {
         return $this->belongsToMany(Potongan::class, 'potongan_tagihan');
     }   
+
+    public function tagihanSantri()
+{
+    return $this->hasMany(\App\Models\TagihanSantri::class);
+}
+
 }
