@@ -788,7 +788,7 @@ class WaliasuhService
                 ];
             }
 
-            // 🔹 Ambil santri yang statusnya aktif (backend handle)
+            // 🔹 Ambil santri yang statusnya aktif 
             $santri = DB::table('santri as s')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->select('s.id', 'b.jenis_kelamin', 's.status')
@@ -813,6 +813,19 @@ class WaliasuhService
                 return [
                     'status' => false,
                     'message' => 'Santri ini sudah menjadi wali asuh aktif.',
+                    'data' => null,
+                ];
+            }
+            // 🔹 Cek apakah santri sudah menjadi anak asuh aktif
+            $alreadyAnakAsuh = DB::table('anak_asuh')
+                ->where('id_santri', $santri->id)
+                ->where('status', true) // aktif
+                ->exists();
+
+            if ($alreadyAnakAsuh) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri ini sudah menjadi anak asuh, tidak bisa dijadikan wali asuh.',
                     'data' => null,
                 ];
             }
