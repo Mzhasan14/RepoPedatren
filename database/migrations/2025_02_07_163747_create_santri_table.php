@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('biodata_id');
             $table->string('nis')->unique()->nullable();
             $table->unsignedBigInteger('angkatan_id')->nullable();
-            $table->date('tanggal_masuk');
+            $table->date('tanggal_masuk')->nullable();
             $table->date('tanggal_keluar')->nullable();
             $table->enum('status', ['aktif', 'alumni', 'do', 'berhenti', 'nonaktif'])->default('aktif');
             $table->unsignedBigInteger('created_by');

@@ -209,15 +209,6 @@ class DetailService
             ])
             ->first();
 
-        $data['Status_Santri'] = [];
-        $data['Status_Santri']['Santri'] = [
-            [
-                'NIS' => '74037128467',
-                'Tanggal_Mulai' => '2023-09-16',
-                'Tanggal_Akhir' => '-',
-            ]
-        ];
-
         $data['Status_Santri']['Kewaliasuhan'] = [];
 
         if ($kew && $kew->role !== '-') {

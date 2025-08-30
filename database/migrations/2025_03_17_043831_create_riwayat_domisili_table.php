@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('wilayah_id');
             $table->unsignedBigInteger('blok_id')->nullable();
             $table->unsignedBigInteger('kamar_id')->nullable();
-            $table->datetime('tanggal_masuk');
+            $table->datetime('tanggal_masuk')->nullable();
             $table->datetime('tanggal_keluar')->nullable();
             $table->enum('status', ['pindah', 'keluar']);
             $table->unsignedBigInteger('created_by');

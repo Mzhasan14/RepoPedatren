@@ -322,16 +322,36 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $mondokVal = strtolower((string)($row['status_mondok'] ?? ''));
 
                 if ($mondokVal === '' || $mondokVal === 'iya') {
+                    $angkatanId   = $this->findAngkatanId($row['angkatan_santri'] ?? null, 'santri', $excelRow);
+
+                    // cari tahun dari tabel angkatan
+                    $tahunAngkatan = null;
+                    if ($angkatanId) {
+                        $tahunAngkatan = DB::table('angkatan')->where('id', $angkatanId)->value('angkatan');
+                    }
+
+                    // Tentukan tanggal masuk santri
+                    if (!empty($row['tanggal_masuk_santri'])) {
+                        $tanggalMasukSantri = $row['tanggal_masuk_santri'];
+                    } elseif ($tahunAngkatan) {
+                        // default tanggal masuk pesantren → awal tahun ajaran
+                        $tanggalMasukSantri = $tahunAngkatan . '-07-01';
+                    } else {
+                        // fallback terakhir kalau angkatan tidak ditemukan
+                        $tanggalMasukSantri = null;
+                    }
+
                     $santriId = DB::table('santri')->insertGetId([
-                        'biodata_id' => $biodataId,
-                        'nis' => $row['no_induk_santri'] ?? null,
-                        'angkatan_id' => $this->findAngkatanId($row['angkatan_santri'] ?? null, 'santri', $excelRow),
-                        'tanggal_masuk' => $row['tanggal_masuk_santri'] ?? now(),
-                        'status' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
+                        'biodata_id'   => $biodataId,
+                        'nis'          => $row['no_induk_santri'] ?? null,
+                        'angkatan_id'  => $angkatanId,
+                        'tanggal_masuk' => $tanggalMasukSantri,
+                        'status'       => 'aktif',
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                        'created_by'   => $this->userId ?? 1
                     ]);
+
 
                     if (!empty(trim($row['wilayah'] ?? ''))) {
                         DB::table('domisili_santri')->insert([
@@ -339,7 +359,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                             'wilayah_id' => $this->findId('wilayah', $row['wilayah'], $excelRow, false),
                             'blok_id' => $this->findId('blok', $row['blok'] ?? null, $excelRow, false),
                             'kamar_id' => $this->findId('kamar', $row['kamar'] ?? null, $excelRow, false),
-                            'tanggal_masuk' => $row['tanggal_masuk_domisili'] ?? now(),
+                            'tanggal_masuk' => $row['tanggal_masuk_domisili'] ?? null,
                             'status' => 'aktif',
                             'created_at' => now(),
                             'updated_at' => now(),
@@ -357,7 +377,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                         'kelas_id' => $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false),
                         'rombel_id' => $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false),
                         'angkatan_id' => $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false),
-                        'tanggal_masuk' => $row['tanggal_masuk_pendidikan'] ?? now(),
+                        'tanggal_masuk' => $row['tanggal_masuk_pendidikan'] ?? null,
                         'status' => 'aktif',
                         'created_at' => now(),
                         'updated_at' => now(),

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('kelas_id')->nullable();
             $table->unsignedBigInteger('rombel_id')->nullable();
             $table->unsignedBigInteger('angkatan_id')->nullable();
-            $table->date('tanggal_masuk');
+            $table->date('tanggal_masuk')->nullable();
             $table->date('tanggal_keluar')->nullable();
             $table->enum('status', ['selesai', 'lulus', 'do', 'batal_lulus', 'pindah', 'berhenti', 'nonaktif']);
             $table->unsignedBigInteger('created_by');
