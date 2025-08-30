@@ -341,17 +341,36 @@ class SantriImport implements ToCollection, WithHeadingRow
                         $tanggalMasukSantri = null;
                     }
 
-                    $santriId = DB::table('santri')->insertGetId([
-                        'biodata_id'   => $biodataId,
-                        'nis'          => $row['no_induk_santri'] ?? null,
-                        'angkatan_id'  => $angkatanId,
-                        'tanggal_masuk' => $tanggalMasukSantri,
-                        'status'       => 'aktif',
-                        'created_at'   => now(),
-                        'updated_at'   => now(),
-                        'created_by'   => $this->userId ?? 1
-                    ]);
+                    // ambil 2 digit terakhir tahun
+                    $tahunMasuk2Digit = $tahunAngkatan ? substr($tahunAngkatan, -2) : date('y');
 
+                    // generate nomor urut terakhir untuk angkatan ini
+                    $lastUrut = DB::table('santri')
+                        ->where('angkatan_id', $angkatanId)
+                        ->select(DB::raw("MAX(RIGHT(nis,3)) as last_urut"))
+                        ->value('last_urut');
+
+                    $nextUrut = str_pad(((int) $lastUrut) + 1, 3, '0', STR_PAD_LEFT);
+
+                    // generate nis unik
+                    do {
+                        $random = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+                        $nis = $tahunMasuk2Digit . '11' . $random . $nextUrut;
+                    } while (
+                        DB::table('santri')->where('nis', $nis)->exists()
+                    );
+
+                    // insert santri
+                    $santriId = DB::table('santri')->insertGetId([
+                        'biodata_id'    => $biodataId,
+                        'nis'           => $nis,
+                        'angkatan_id'   => $angkatanId,
+                        'tanggal_masuk' => $tanggalMasukSantri,
+                        'status'        => 'aktif',
+                        'created_at'    => now(),
+                        'updated_at'    => now(),
+                        'created_by'    => $this->userId ?? 1
+                    ]);
 
                     if (!empty(trim($row['wilayah'] ?? ''))) {
                         DB::table('domisili_santri')->insert([
