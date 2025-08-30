@@ -180,7 +180,7 @@ class FilterNonDomisiliService
         }
 
         $query->where('s.angkatan_id', $request->angkatan_santri);
-
+        
         return $query;
     }
 

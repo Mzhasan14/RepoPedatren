@@ -55,7 +55,7 @@ class PesertaDidikService
             ->where('b.status', true)
             ->where(fn($q) => $q->whereNull('b.deleted_at')
                 ->whereNull('s.deleted_at'));
-        
+
         return $query;
     }
 
@@ -491,9 +491,35 @@ class PesertaDidikService
             // --- 6. PROSES SANTRI & DOMISILI ---
             $santriId = null;
             if (! empty($data['wilayah_id']) || ! empty($data['mondok'])) {
+                $angkatanId   = $data['angkatan_santri_id'] ?? null;
+
+                // cari tahun dari tabel angkatan
+                $tahunAngkatan = null;
+                if ($angkatanId) {
+                    $tahunAngkatan = DB::table('angkatan')->where('id', $angkatanId)->value('angkatan');
+                }
+
+                // ambil 2 digit terakhir tahun
+                $tahunMasuk2Digit = $tahunAngkatan ? substr($tahunAngkatan, -2) : date('y');
+
+                // generate nomor urut terakhir untuk angkatan ini
+                $lastUrut = DB::table('santri')
+                    ->where('angkatan_id', $angkatanId)
+                    ->select(DB::raw("MAX(RIGHT(nis,3)) as last_urut"))
+                    ->value('last_urut');
+
+                $nextUrut = str_pad(((int) $lastUrut) + 1, 3, '0', STR_PAD_LEFT);
+
+                // generate nis unik
+                do {
+                    $random = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+                    $nis = $tahunMasuk2Digit . '11' . $random . $nextUrut;
+                } while (
+                    DB::table('santri')->where('nis', $nis)->exists()
+                );
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $biodataId,
-                    'nis' => $data['nis'],
+                    'nis' => $nis,
                     'tanggal_masuk' => $data['tanggal_masuk_santri'] ?? $now,
                     'angkatan_id' => $data['angkatan_santri_id'],
                     'status' => 'aktif',

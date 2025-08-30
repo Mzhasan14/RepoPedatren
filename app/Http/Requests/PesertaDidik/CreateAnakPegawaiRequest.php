@@ -85,7 +85,7 @@ class CreateAnakPegawaiRequest extends FormRequest
             'penghasilan_wali' => 'required|string|max:100',
 
             'mondok' => 'nullable|integer|in:0,1',
-            'nis' => 'nullable|string|max:15|min:10|unique:santri,nis',
+            // 'nis' => 'nullable|string|max:15|min:10|unique:santri,nis',
             'tanggal_masuk_santri' => 'nullable|date',
 
             // Rencana Pendidikan
@@ -171,13 +171,13 @@ class CreateAnakPegawaiRequest extends FormRequest
             }
 
             // ✅ Validasi NIS jika mondok == 1 atau wilayah_id diisi
-            $mondok = $this->input('mondok');
-            $wilayahId = $this->input('wilayah_id');
-            $nis = $this->input('nis');
+            // $mondok = $this->input('mondok');
+            // $wilayahId = $this->input('wilayah_id');
+            // $nis = $this->input('nis');
 
-            if (($mondok == 1 || $wilayahId !== null) && empty($nis)) {
-                $validator->errors()->add('nis', 'Kolom NIS wajib diisi jika mondok atau wilayah diisi.');
-            }
+            // if (($mondok == 1 || $wilayahId !== null) && empty($nis)) {
+            //     $validator->errors()->add('nis', 'Kolom NIS wajib diisi jika mondok atau wilayah diisi.');
+            // }
 
             $validator->after(function ($validator) {
                 $mondok = $this->input('mondok');
