@@ -189,30 +189,30 @@ class GrupWaliAsuhController extends Controller
 
     public function getGrup(Request $request)
     {
-        $filter = $request->query('filter'); // ambil ?filter=xxx dari URL
+        $filter = $request->query('filter');
 
         $query = DB::table('grup_wali_asuh as gw')
-            ->leftJoin('wali_asuh as wa', 'wa.id', '=', 'gw.wali_asuh_id')
-            ->leftJoin('santri as s', 'wa.id_santri', '=', 's.id')
-            ->leftJoin('biodata as b', 'b.id', '=', 's.biodata_id')
-            ->leftJoin('wilayah as w', 'w.id', '=', 'gw.id_wilayah')
+            // hanya wali asuh aktif
+            ->leftJoin('wali_asuh as wa', function ($join) {
+                $join->on('wa.id', '=', 'gw.wali_asuh_id')
+                    ->where('wa.status', true);
+            })
+            // hanya santri aktif
+            ->leftJoin('santri as s', function ($join) {
+                $join->on('wa.id_santri', '=', 's.id')
+                    ->where('s.status', 'aktif');
+            })
+            // hanya biodata aktif
+            ->leftJoin('biodata as b', function ($join) {
+                $join->on('b.id', '=', 's.biodata_id')
+                    ->where('b.status', true);
+            })
+            // hanya wilayah aktif
+            ->leftJoin('wilayah as w', function ($join) {
+                $join->on('w.id', '=', 'gw.id_wilayah')
+                    ->where('w.status', true);
+            })
             ->where('gw.status', true)
-            ->where(function ($q) {
-                $q->whereNull('wa.id')
-                    ->orWhere('wa.status', true);
-            })
-            ->where(function ($q) {
-                $q->whereNull('s.id')
-                    ->orWhere('s.status', 'aktif');
-            })
-            ->where(function ($q) {
-                $q->whereNull('b.id')
-                    ->orWhere('b.status', true);
-            })
-            ->where(function ($q) {
-                $q->whereNull('w.id')
-                    ->orWhere('w.status', true);
-            })
             ->select([
                 'gw.id',
                 DB::raw("CONCAT_WS('', gw.nama_grup, 
@@ -225,7 +225,7 @@ class GrupWaliAsuhController extends Controller
                 'gw.jenis_kelamin'
             ]);
 
-        // 🔹 Filter tambahan
+        // 🔹 Tambahan filter opsional
         if ($filter === 'tanpa_wali_asuh') {
             $query->whereNull('gw.wali_asuh_id');
         } elseif ($filter === 'dengan_wali_asuh') {
