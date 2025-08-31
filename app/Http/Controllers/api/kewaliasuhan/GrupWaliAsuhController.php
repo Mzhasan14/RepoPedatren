@@ -187,11 +187,52 @@ class GrupWaliAsuhController extends Controller
         ]);
     }
 
-    public function getGrup()
+    public function getGrup(Request $request)
     {
-        return response()->json(
-            Grup_WaliAsuh::select('id', 'nama_grup')->get()
-        );
+        $filter = $request->query('filter');
+
+        $query = DB::table('grup_wali_asuh as gw')
+            // hanya wali asuh aktif
+            ->leftJoin('wali_asuh as wa', function ($join) {
+                $join->on('wa.id', '=', 'gw.wali_asuh_id')
+                    ->where('wa.status', true);
+            })
+            // hanya santri aktif
+            ->leftJoin('santri as s', function ($join) {
+                $join->on('wa.id_santri', '=', 's.id')
+                    ->where('s.status', 'aktif');
+            })
+            // hanya biodata aktif
+            ->leftJoin('biodata as b', function ($join) {
+                $join->on('b.id', '=', 's.biodata_id')
+                    ->where('b.status', true);
+            })
+            // hanya wilayah aktif
+            ->leftJoin('wilayah as w', function ($join) {
+                $join->on('w.id', '=', 'gw.id_wilayah')
+                    ->where('w.status', true);
+            })
+            ->where('gw.status', true)
+            ->select([
+                'gw.id',
+                DB::raw("CONCAT_WS('', gw.nama_grup, 
+                     CASE 
+                        WHEN b.nama IS NOT NULL AND b.nama <> '' 
+                        THEN CONCAT(' (', b.nama, ')') 
+                        ELSE '' 
+                     END) as nama_grup"),
+                'w.nama_wilayah as wilayah',
+                'gw.jenis_kelamin'
+            ]);
+
+        // 🔹 Tambahan filter opsional
+        if ($filter === 'tanpa_wali_asuh') {
+            $query->whereNull('gw.wali_asuh_id');
+        } elseif ($filter === 'dengan_wali_asuh') {
+            $query->whereNotNull('gw.wali_asuh_id');
+        }
+
+        return $query->get();
     }
 
     public function destroy($id)
