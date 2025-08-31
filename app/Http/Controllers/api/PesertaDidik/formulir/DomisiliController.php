@@ -39,7 +39,7 @@ class DomisiliController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil data domisili: '.$e->getMessage());
+            Log::error('Gagal ambil data domisili: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -68,7 +68,7 @@ class DomisiliController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal tambah domisili: '.$e->getMessage());
+            Log::error('Gagal tambah domisili: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -96,7 +96,7 @@ class DomisiliController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail domisili: '.$e->getMessage());
+            Log::error('Gagal ambil detail domisili: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -125,7 +125,7 @@ class DomisiliController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update domisili: '.$e->getMessage());
+            Log::error('Gagal update domisili: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -154,7 +154,7 @@ class DomisiliController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah domisili: '.$e->getMessage());
+            Log::error('Gagal pindah domisili: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -172,21 +172,17 @@ class DomisiliController extends Controller
             $validated = $request->validated();
             $result = $this->domisili->keluarDomisili($validated, $id);
 
-            if (! $result['status']) {
-                return response()->json([
-                    'message' => $result['message'],
-                ], 200);
-            }
-
             return response()->json([
+                'status'  => $result['status'],
                 'message' => $result['message'],
-            ]);
+            ], $result['status'] ? 200 : 200);
         } catch (\Exception $e) {
-            Log::error('Gagal keluar domisili: '.$e->getMessage());
+            Log::error('Gagal keluar domisili: ' . $e->getMessage());
 
             return response()->json([
+                'status'  => false,
                 'message' => 'Terjadi kesalahan saat memproses data',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

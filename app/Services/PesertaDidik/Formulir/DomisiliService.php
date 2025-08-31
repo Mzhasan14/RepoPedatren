@@ -164,7 +164,6 @@ class DomisiliService
             ],
         ];
     }
-
     public function pindahDomisili(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
@@ -224,6 +223,28 @@ class DomisiliService
                 ];
             }
 
+            // ✅ Tambahan: hanya cek wali_asuh + grup aktif jika wilayah berubah
+            if ($aktif->wilayah_id != $input['wilayah_id']) {
+                $waliAsuh = DB::table('wali_asuh')
+                    ->where('id_santri', $aktif->santri_id)
+                    ->where('status', true)
+                    ->first();
+
+                if ($waliAsuh) {
+                    $punyaGrupAktif = DB::table('grup_wali_asuh')
+                        ->where('wali_asuh_id', $waliAsuh->id)
+                        ->where('status', true)
+                        ->exists();
+
+                    if ($punyaGrupAktif) {
+                        return [
+                            'status'  => false,
+                            'message' => 'Santri masih terdaftar sebagai wali asuh di grup aktif. Mohon keluarkan dari grup lalu aktifkan kembali di wilayah yang sesuai.'
+                        ];
+                    }
+                }
+            }
+
             // Simpan ke riwayat
             RiwayatDomisili::create([
                 'santri_id' => $aktif->santri_id,
@@ -251,6 +272,126 @@ class DomisiliService
         });
     }
 
+    // public function pindahDomisili(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $aktif = DomisiliSantri::find($id);
+
+    //         if (! $aktif) {
+    //             return ['status' => false, 'message' => 'Domisili aktif tidak ditemukan.'];
+    //         }
+
+    //         $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+    //         $tanggalLama = Carbon::parse($aktif->tanggal_masuk);
+
+    //         if ($tanggalBaru->lt($tanggalLama)) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+    //             ];
+    //         }
+
+    //         // Ambil data yang akan divalidasi
+    //         $santri = Santri::find($aktif->santri_id);
+    //         $biodata = $santri ? $santri->biodata : null;
+    //         $wilayahBaru = Wilayah::find($input['wilayah_id']);
+    //         $kamarBaru = Kamar::find($input['kamar_id']);
+
+    //         if (! $biodata) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data santri/biodata tidak ditemukan.',
+    //             ];
+    //         }
+
+    //         // --- Validasi jenis_kelamin dengan kategori wilayah ---
+    //         $jenisKelamin = strtolower($biodata->jenis_kelamin ?? '');
+    //         $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+
+    //         if (
+    //             ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+    //             ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+    //         ) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah yang dipilih.',
+    //             ];
+    //         }
+
+    //         // --- Validasi kapasitas kamar ---
+    //         $jumlahPenghuni = DomisiliSantri::where('kamar_id', $input['kamar_id'])
+    //             ->where('status', 'aktif')
+    //             ->count();
+
+    //         $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+    //         if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
+    //             ];
+    //         }
+
+    //         // Simpan ke riwayat
+    //         RiwayatDomisili::create([
+    //             'santri_id' => $aktif->santri_id,
+    //             'wilayah_id' => $aktif->wilayah_id,
+    //             'blok_id' => $aktif->blok_id,
+    //             'kamar_id' => $aktif->kamar_id,
+    //             'tanggal_masuk' => $aktif->tanggal_masuk,
+    //             'tanggal_keluar' => now(),
+    //             'status' => 'pindah',
+    //             'created_by' => $aktif->created_by,
+    //         ]);
+
+    //         // Update domisili aktif
+    //         $aktif->update([
+    //             'wilayah_id' => $input['wilayah_id'],
+    //             'blok_id' => $input['blok_id'],
+    //             'kamar_id' => $input['kamar_id'],
+    //             'tanggal_masuk' => $tanggalBaru,
+    //             'status' => 'aktif',
+    //             'updated_by' => Auth::id(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         return ['status' => true, 'data' => $aktif];
+    //     });
+    // }
+
+    // public function keluarDomisili(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $aktif = DomisiliSantri::find($id);
+    //         if (! $aktif) {
+    //             return ['status' => false, 'message' => 'Domisili aktif tidak ditemukan.'];
+    //         }
+
+    //         $tglKeluar = Carbon::parse($input['tanggal_keluar']);
+    //         if ($tglKeluar->lt(Carbon::parse($aktif->tanggal_masuk))) {
+    //             return ['status' => false, 'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.'];
+    //         }
+
+    //         RiwayatDomisili::create([
+    //             'santri_id' => $aktif->santri_id,
+    //             'wilayah_id' => $aktif->wilayah_id,
+    //             'blok_id' => $aktif->blok_id,
+    //             'kamar_id' => $aktif->kamar_id,
+    //             'tanggal_masuk' => $aktif->tanggal_masuk,
+    //             'tanggal_keluar' => $tglKeluar,
+    //             'status' => 'keluar',
+    //             'created_by' => $aktif->created_by,
+    //         ]);
+
+    //         $aktif->update([
+    //             'status' => 'keluar',
+    //             'tanggal_keluar' => $tglKeluar,
+    //             'updated_by' => Auth::id(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         return ['status' => true, 'message' => 'Santri telah keluar dari domisili.'];
+    //     });
+    // }
     public function keluarDomisili(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
@@ -264,28 +405,48 @@ class DomisiliService
                 return ['status' => false, 'message' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.'];
             }
 
+            // 🔹 Tambahan: cek apakah santri ini wali_asuh aktif
+            $waliAsuh = DB::table('wali_asuh')
+                ->where('id_santri', $aktif->santri_id)
+                ->where('status', true)
+                ->first();
+
+            if ($waliAsuh) {
+                // 🔹 Kalau wali_asuh punya grup aktif → larang keluar
+                $punyaGrupAktif = DB::table('grup_wali_asuh')
+                    ->where('wali_asuh_id', $waliAsuh->id)
+                    ->where('status', true)
+                    ->exists();
+
+                if ($punyaGrupAktif) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Santri masih terdaftar sebagai wali asuh di grup aktif. Mohon keluarkan dari grup lalu aktifkan kembali di wilayah yang sesuai.'
+                    ];
+                }
+            }
+
             RiwayatDomisili::create([
-                'santri_id' => $aktif->santri_id,
-                'wilayah_id' => $aktif->wilayah_id,
-                'blok_id' => $aktif->blok_id,
-                'kamar_id' => $aktif->kamar_id,
-                'tanggal_masuk' => $aktif->tanggal_masuk,
+                'santri_id'      => $aktif->santri_id,
+                'wilayah_id'     => $aktif->wilayah_id,
+                'blok_id'        => $aktif->blok_id,
+                'kamar_id'       => $aktif->kamar_id,
+                'tanggal_masuk'  => $aktif->tanggal_masuk,
                 'tanggal_keluar' => $tglKeluar,
-                'status' => 'keluar',
-                'created_by' => $aktif->created_by,
+                'status'         => 'keluar',
+                'created_by'     => $aktif->created_by,
             ]);
 
             $aktif->update([
-                'status' => 'keluar',
+                'status'         => 'keluar',
                 'tanggal_keluar' => $tglKeluar,
-                'updated_by' => Auth::id(),
-                'updated_at' => now(),
+                'updated_by'     => Auth::id(),
+                'updated_at'     => now(),
             ]);
 
             return ['status' => true, 'message' => 'Santri telah keluar dari domisili.'];
         });
     }
-
     public function update(array $input, int $id): array
     {
         return DB::transaction(function () use ($input, $id) {
@@ -342,6 +503,28 @@ class DomisiliService
                 ];
             }
 
+            // ✅ Tambahan: cek wali_asuh + grup aktif hanya jika wilayah berubah
+            if ($dom->wilayah_id != $input['wilayah_id']) {
+                $waliAsuh = DB::table('wali_asuh')
+                    ->where('id_santri', $dom->santri_id)
+                    ->where('status', true)
+                    ->first();
+
+                if ($waliAsuh) {
+                    $punyaGrupAktif = DB::table('grup_wali_asuh')
+                        ->where('wali_asuh_id', $waliAsuh->id)
+                        ->where('status', true)
+                        ->exists();
+
+                    if ($punyaGrupAktif) {
+                        return [
+                            'status'  => false,
+                            'message' => 'Santri masih terdaftar sebagai wali asuh di grup aktif. Mohon keluarkan dari grup lalu aktifkan kembali di wilayah yang sesuai.'
+                        ];
+                    }
+                }
+            }
+
             $dom->update([
                 'wilayah_id' => $input['wilayah_id'],
                 'blok_id' => $input['blok_id'],
@@ -354,4 +537,73 @@ class DomisiliService
             return ['status' => true, 'data' => $dom];
         });
     }
+
+    // public function update(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $dom = DomisiliSantri::find($id);
+    //         if (! $dom) {
+    //             return ['status' => false, 'message' => 'Domisili aktif tidak ditemukan.'];
+    //         }
+
+    //         $tanggalBaru = Carbon::parse($input['tanggal_masuk']);
+    //         $tanggalLama = Carbon::parse($dom->tanggal_masuk);
+
+    //         if ($tanggalBaru->lt($tanggalLama)) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tanggal masuk baru tidak boleh lebih awal dari tanggal masuk sebelumnya (' . $tanggalLama->format('Y-m-d') . '). Silakan periksa kembali tanggal yang Anda input.',
+    //             ];
+    //         }
+
+    //         // --- VALIDASI JENIS_KELAMIN DAN KAPASITAS KAMAR ---
+    //         $santri = Santri::find($dom->santri_id);
+    //         $biodata = $santri ? $santri->biodata : null;
+    //         $wilayahBaru = Wilayah::find($input['wilayah_id']);
+    //         $kamarBaru = Kamar::find($input['kamar_id']);
+
+    //         if (! $biodata) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data santri/biodata tidak ditemukan.',
+    //             ];
+    //         }
+
+    //         $jenisKelamin = strtolower($biodata->jenis_kelamin ?? '');
+    //         $kategoriWilayah = strtolower($wilayahBaru->kategori ?? '');
+
+    //         if (
+    //             ($jenisKelamin === 'l' && $kategoriWilayah !== 'putra') ||
+    //             ($jenisKelamin === 'p' && $kategoriWilayah !== 'putri')
+    //         ) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Jenis kelamin santri tidak sesuai dengan kategori wilayah yang dipilih.',
+    //             ];
+    //         }
+
+    //         $jumlahPenghuni = DomisiliSantri::where('kamar_id', $input['kamar_id'])
+    //             ->where('status', 'aktif')
+    //             ->where('id', '<>', $dom->id) // exclude current record
+    //             ->count();
+    //         $kapasitasKamar = $kamarBaru->kapasitas ?? 0;
+    //         if ($kapasitasKamar > 0 && $jumlahPenghuni >= $kapasitasKamar) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Kamar sudah penuh, kapasitas maksimum telah tercapai.',
+    //             ];
+    //         }
+
+    //         $dom->update([
+    //             'wilayah_id' => $input['wilayah_id'],
+    //             'blok_id' => $input['blok_id'],
+    //             'kamar_id' => $input['kamar_id'],
+    //             'tanggal_masuk' => Carbon::parse($input['tanggal_masuk']),
+    //             'updated_by' => Auth::id(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         return ['status' => true, 'data' => $dom];
+    //     });
+    // }
 }
