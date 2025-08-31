@@ -31,6 +31,7 @@ class UserSeeder extends Seeder
             'wali_asuh',
             'biktren',
             'kamtib',
+            'orang_tua'
         ];
 
         foreach ($roles as $role) {

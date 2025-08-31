@@ -2,16 +2,21 @@
 
 namespace App\Services\PesertaDidik;
 
-use App\Models\Biodata;
+use Exception;
 use App\Models\Santri;
-use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Biodata;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Validation\ValidationException;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
 
 class PesertaDidikService
 {
@@ -546,20 +551,73 @@ class PesertaDidikService
 
             // --- 7. PROSES BERKAS (MULTI FILE) ---
             if (! empty($data['berkas']) && is_array($data['berkas'])) {
+                $maxWidth = 1200;
+                $quality  = 85;
+
+                // Gunakan ImageManager v3 dengan driver GD
+                $manager = new ImageManager(new Driver());
+
                 foreach ($data['berkas'] as $item) {
                     if (! ($item['file_path'] instanceof UploadedFile)) {
                         throw new \Exception('Berkas tidak valid');
                     }
-                    $url = Storage::url($item['file_path']->store('PesertaDidik', 'public'));
-                    DB::table('berkas')->insert([
-                        'biodata_id' => $biodataId,
-                        'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
-                        'file_path' => $url,
-                        'status' => true,
-                        'created_by' => $userId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
+
+                    try {
+                        $uploaded = $item['file_path'];
+                        $mime     = $uploaded->getClientMimeType() ?? '';
+
+                        if (str_starts_with($mime, 'image/')) {
+                            // Baca dan orientasikan foto
+                            $img = $manager->read($uploaded->getRealPath())->orient();
+
+                            // Resize gambar tanpa merusak aspek rasio
+                            $img = $img->scale(width: $maxWidth);
+
+                            // Konversi semua gambar ke JPEG agar lebih kecil dan konsisten
+                            $encodedImage = $img->toJpeg($quality);
+
+                            // Nama file unik
+                            $filename   = time() . '_' . uniqid() . '.jpg';
+                            $storedPath = 'PesertaDidik/' . $filename;
+
+                            // Simpan ke storage/public
+                            Storage::disk('public')->put($storedPath, (string) $encodedImage);
+
+                            // Optimalkan gambar pakai Spatie
+                            $fullPath = storage_path('app/public/' . $storedPath);
+                            $optimizerChain = OptimizerChainFactory::create();
+                            $optimizerChain->optimize($fullPath);
+
+                            $url = Storage::url($storedPath);
+                        } else {
+                            // Kalau bukan gambar, simpan langsung tanpa resize
+                            $storedPath = $uploaded->store('PesertaDidik', 'public');
+                            $fullPath   = storage_path('app/public/' . $storedPath);
+
+                            try {
+                                $optimizerChain = OptimizerChainFactory::create();
+                                $optimizerChain->optimize($fullPath);
+                            } catch (\Exception $e) {
+                            }
+
+                            $url = Storage::url($storedPath);
+                        }
+
+                        DB::table('berkas')->insert([
+                            'biodata_id'      => $biodataId,
+                            'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
+                            'file_path'       => $url,
+                            'status'          => true,
+                            'created_by'      => $userId,
+                            'created_at'      => $now,
+                            'updated_at'      => $now,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Gagal memproses berkas: ' . $e->getMessage(), [
+                            'file' => $item['file_path'] ? $item['file_path']->getClientOriginalName() : null,
+                        ]);
+                        throw $e;
+                    }
                 }
             }
 

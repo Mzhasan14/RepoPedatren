@@ -8,29 +8,38 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PesertaDidik\OrangTua\PerizinanService;
 use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
 use App\Services\PesertaDidik\OrangTua\TransaksiAnakService;
+use App\Http\Requests\PesertaDidik\OrangTua\PerizinanRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\PelanggaranRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
+use App\Services\PesertaDidik\OrangTua\PelanggaranService;
 
 class ViewOrangTuaController extends Controller
 {
     protected $viewOrangTuaService;
     protected $viewHafalanService;
     protected $viewPresensiJamaahAnakService;
+    protected $viewPerizinanService;
+    protected $viewPelanggaranService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
         HafalanAnakService $viewHafalanService,
-        PresensiJamaahAnakService $viewPresensiJamaahAnakService
-        )
-    {
+        PresensiJamaahAnakService $viewPresensiJamaahAnakService,
+        PerizinanService $viewPerizinanService,
+        PelanggaranService $viewPelanggaranService
+    ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
         $this->viewPresensiJamaahAnakService = $viewPresensiJamaahAnakService;
+        $this->viewPerizinanService = $viewPerizinanService;
+        $this->viewPelanggaranService = $viewPelanggaranService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -151,6 +160,40 @@ class ViewOrangTuaController extends Controller
                 'santri_id' => request()->get('santri_id'),
             ]);
 
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data presensi hari ini.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function perizinan(PerizinanRequest $request)
+    {
+        try {
+            $result = $this->viewPerizinanService->perizinan($request->validated());
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@ perizinan error : ', $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data presensi hari ini.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function pelanggaran(PelanggaranRequest $request)
+    {
+        try {
+            $result = $this->viewPelanggaranService->pelanggaran($request->validated());
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@ pelanggaran error : ', $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data presensi hari ini.',

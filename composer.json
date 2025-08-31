@@ -9,11 +9,13 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "bepsvpt/secure-headers": "^9.0",
+        "intervention/image": "^3.11",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "3.1.64",
         "spatie/laravel-activitylog": "^4.10",
+        "spatie/laravel-image-optimizer": "^1.8",
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {

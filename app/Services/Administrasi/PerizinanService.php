@@ -111,7 +111,6 @@ class PerizinanService
             'pr.updated_at',
             DB::raw("COALESCE(br.file_path, 'default.jpg') AS foto_profil"),
         ];
-        // JOIN default, ex: domisili, pendidikan, users
 
         return $query->select($fields);
     }

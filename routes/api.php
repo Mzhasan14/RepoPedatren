@@ -1182,6 +1182,10 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
 
     Route::get('/presensi', [ViewOrangTuaController::class, 'getPresensiJamaahAnak']);
     Route::get('/presensi-today', [ViewOrangTuaController::class, 'getPresensiToday']);
+
+    Route::get('/perizinan', [ViewOrangTuaController::class, 'perizinan']);
+    Route::get('/pelanggaran', [ViewOrangTuaController::class, 'pelanggaran']);
+
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
