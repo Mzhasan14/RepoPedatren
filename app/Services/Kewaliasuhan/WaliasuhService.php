@@ -387,54 +387,44 @@ class WaliasuhService
             ];
         });
     }
-    public function nonaktifkanWaliAsuh(int $waliAsuhId): array
+    public function lepasWaliAsuhDariGrup(int $waliAsuhId): array
     {
         try {
             DB::transaction(function () use ($waliAsuhId) {
                 $waliAsuh = DB::table('wali_asuh')
                     ->where('id', $waliAsuhId)
-                    ->where('status', true)
+                    ->where('status', true) // pastikan masih aktif
                     ->first();
 
                 if (!$waliAsuh) {
-                    throw new \Exception('Wali asuh tidak ditemukan atau sudah nonaktif');
+                    throw new \Exception('Wali asuh tidak ditemukan atau tidak aktif');
                 }
 
-                // Nonaktifkan wali asuh
-                DB::table('wali_asuh')
-                    ->where('id', $waliAsuhId)
-                    ->update([
-                        'status' => false,
-                        'tanggal_berakhir' => now(),
-                        'updated_by' => Auth::id(),
-                        'updated_at' => now(),
-                    ]);
-
-                // Cek apakah wali asuh memiliki grup
+                // Cek apakah wali asuh terhubung dengan grup
                 $grup = DB::table('grup_wali_asuh')
                     ->where('wali_asuh_id', $waliAsuhId)
                     ->get();
 
                 if ($grup->count() > 0) {
-                    // Set wali_asuh_id di grup menjadi null
+                    // Lepaskan wali asuh dari grup
                     DB::table('grup_wali_asuh')
                         ->where('wali_asuh_id', $waliAsuhId)
                         ->update([
                             'wali_asuh_id' => null,
-                            'updated_by' => Auth::id(),
-                            'updated_at' => now(),
+                            'updated_by'   => Auth::id(),
+                            'updated_at'   => now(),
                         ]);
                 }
             });
 
             return [
                 'status'  => true,
-                'message' => 'Wali asuh berhasil dinonaktifkan',
+                'message' => 'Wali asuh berhasil dilepaskan dari grup',
             ];
         } catch (\Exception $e) {
             return [
                 'status'  => false,
-                'message' => 'Gagal menonaktifkan wali asuh: ' . $e->getMessage(),
+                'message' => 'Gagal melepaskan wali asuh dari grup: ' . $e->getMessage(),
             ];
         }
     }

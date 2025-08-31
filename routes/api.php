@@ -821,7 +821,7 @@ Route::prefix('crud')
             );
             Route::put(
                 '/grup-wali-asuh/{waliAsuhId}/nonaktif/waliasuh',
-                [WaliasuhController::class, 'nonaktifkanWaliAsuh']
+                [WaliasuhController::class, 'lepasWaliAsuhDariGrup']
             );
 
             Route::post('/waliasuh',[WaliasuhController::class,'StoreToWali']);

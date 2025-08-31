@@ -272,6 +272,34 @@ class GrupWaliasuhService
 
             $waliAsuhId = null;
 
+            // 🔹 Validasi jenis kelamin grup sesuai wilayah
+            $wilayah = DB::table('wilayah')
+                ->where('id', $data['id_wilayah'])
+                ->where('status', true)
+                ->first();
+
+            if (!$wilayah) {
+                return [
+                    'status' => false,
+                    'message' => 'Wilayah tidak ditemukan atau tidak aktif',
+                    'data' => null,
+                ];
+            }
+
+            // mapping enum jenis_kelamin grup -> kategori wilayah
+            $mapJenis = [
+                'l' => 'putra',
+                'p' => 'putri',
+            ];
+
+            if (isset($mapJenis[$data['jenis_kelamin']]) && $wilayah->kategori !== $mapJenis[$data['jenis_kelamin']]) {
+                return [
+                    'status' => false,
+                    'message' => 'Jenis kelamin grup tidak sesuai dengan kategori wilayah',
+                    'data' => null,
+                ];
+            }
+
             // Jika wali_asuh_id dikirim dan bukan null, cek validitasnya
             if (!empty($data['wali_asuh_id'])) {
                 $waliAsuh = DB::table('wali_asuh as ws')
@@ -295,7 +323,7 @@ class GrupWaliasuhService
                     ];
                 }
 
-                // Validasi jenis kelamin
+                // Validasi jenis kelamin wali asuh
                 if ($waliAsuh->jenis_kelamin !== $data['jenis_kelamin']) {
                     return [
                         'status' => false,
@@ -304,7 +332,7 @@ class GrupWaliasuhService
                     ];
                 }
 
-                // Validasi wilayah
+                // Validasi wilayah wali asuh
                 if (is_null($waliAsuh->wilayah_id)) {
                     return [
                         'status' => false,
@@ -321,7 +349,7 @@ class GrupWaliasuhService
                     ];
                 }
 
-                // Validasi: wali asuh belum memiliki grup aktif
+                // Validasi wali asuh belum punya grup aktif
                 $grupAktif = DB::table('grup_wali_asuh')
                     ->where('wali_asuh_id', $waliAsuh->id)
                     ->where('status', true)

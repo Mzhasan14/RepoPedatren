@@ -24,7 +24,7 @@ class KeluarWaliasuhRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal_berakhir' => 'nullable|date|after_or_equal:tanggal_mulai',
+            'tanggal_berakhir' => 'required|date|after_or_equal:tanggal_mulai',
         ];
     }
 

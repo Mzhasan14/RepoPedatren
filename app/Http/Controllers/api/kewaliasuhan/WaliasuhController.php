@@ -199,10 +199,10 @@ class WaliasuhController extends Controller
             ], 500);
         }
     }
-    public function nonaktifkanWaliAsuh(int $waliAsuhId): JsonResponse
+    public function lepasWaliAsuhDariGrup(int $waliAsuhId): JsonResponse
     {
         try {
-            $result = $this->waliasuhService->nonaktifkanWaliAsuh($waliAsuhId);
+            $result = $this->waliasuhService->lepasWaliAsuhDariGrup($waliAsuhId);
 
             if (! $result['status']) {
                 return response()->json([
