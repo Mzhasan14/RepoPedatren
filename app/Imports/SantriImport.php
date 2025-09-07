@@ -341,26 +341,26 @@ class SantriImport implements ToCollection, WithHeadingRow
                         $tanggalMasukSantri = null;
                     }
 
-                    // ambil 2 digit terakhir tahun
+                    // 🔹 Ambil 2 digit terakhir tahun
                     $tahunMasuk2Digit = $tahunAngkatan ? substr($tahunAngkatan, -2) : date('y');
 
-                    // generate nomor urut terakhir untuk angkatan ini
+                    // 🔹 Cari nomor urut terakhir untuk tahun ini (berdasarkan 2 digit awal NIS)
                     $lastUrut = DB::table('santri')
-                        ->where('angkatan_id', $angkatanId)
-                        ->select(DB::raw("MAX(RIGHT(nis,3)) as last_urut"))
+                        ->whereRaw("LEFT(nis, 2) = ?", [$tahunMasuk2Digit])
+                        ->select(DB::raw("MAX(RIGHT(nis, 4)) as last_urut"))
                         ->value('last_urut');
 
-                    $nextUrut = str_pad(((int) $lastUrut) + 1, 3, '0', STR_PAD_LEFT);
+                    $nextUrut = str_pad(((int) $lastUrut) + 1, 4, '0', STR_PAD_LEFT);
 
-                    // generate nis unik
+                    // 🔹 Generate NIS unik
                     do {
-                        $random = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
-                        $nis = $tahunMasuk2Digit . '11' . $random . $nextUrut;
+                        $random = str_pad(rand(0, 99), 2, '0', STR_PAD_LEFT); // 2 digit random
+                        $nis = $tahunMasuk2Digit . '01' . $random . $nextUrut;
                     } while (
                         DB::table('santri')->where('nis', $nis)->exists()
                     );
 
-                    // insert santri
+                    // 🔹 Insert santri
                     $santriId = DB::table('santri')->insertGetId([
                         'biodata_id'    => $biodataId,
                         'nis'           => $nis,

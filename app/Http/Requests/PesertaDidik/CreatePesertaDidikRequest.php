@@ -29,8 +29,8 @@ class CreatePesertaDidikRequest extends FormRequest
             'provinsi_id' => 'required|exists:provinsi,id',
             'kabupaten_id' => 'required|exists:kabupaten,id',
             'kecamatan_id' => 'required|exists:kecamatan,id',
-            'jalan' => 'required|string|max:255',
-            'kode_pos' => 'required|string|max:10',
+            'jalan' => 'nullable|string|max:255',
+            'kode_pos' => 'nullable|string|max:10',
             'nama' => 'required|string|max:100',
 
             // Aturan fleksibel antara nik/no_kk dan passport

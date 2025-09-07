@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use App\Models\Pendidikan\Rombel;
 use Illuminate\Support\Facades\DB;
 use App\Models\Kewilayahan\Wilayah;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -82,7 +83,7 @@ class BiodataService
 
         // Cari berkas dengan jenis "Pas foto"
         $pasFoto = $biodata->berkas
-            ->firstWhere(fn($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas Foto');
+            ->firstWhere(fn($berkas) => $berkas->jenisBerkas?->nama_jenis_berkas === 'Pas foto');
 
         return [
             'status' => true,
@@ -114,7 +115,7 @@ class BiodataService
                 // 'smartcard' => $biodata->smartcard,
                 'wafat' => (bool) $biodata->wafat,
                 'status' => (bool) $biodata->status,
-                'pas_foto_url' => $pasFoto ? url($pasFoto->file_path) : null,
+                'pas_foto_url' => $pasFoto ? URL::to($pasFoto->file_path) : null,
                 // Tambahkan dua baris di bawah ini
                 'pekerjaan' => $pekerjaan,
                 'penghasilan' => $penghasilan,

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('provinsi_id')->nullable();
             $table->unsignedBigInteger('kabupaten_id')->nullable();
             $table->unsignedBigInteger('kecamatan_id')->nullable();
-            $table->string('jalan')->nullable()->nullable();
+            $table->string('jalan')->nullable();
             $table->string('kode_pos')->nullable();
             $table->string('nama', 100);
             $table->string('no_passport')->nullable();
