@@ -80,11 +80,9 @@ class HafalanAnakService
             ->leftJoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
-            ->join('tahun_ajaran', 'rt.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
                 'biodata.nama as santri_nama',
-                'tahun_ajaran.tahun_ajaran as tahun_ajaran',
                 'rt.total_surat',
                 'rt.persentase_khatam',
                 'rt.surat_tersisa',
@@ -177,7 +175,6 @@ class HafalanAnakService
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
             ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
             ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
-            ->join('tahun_ajaran', 'rn.tahun_ajaran_id', '=', 'tahun_ajaran.id')
             ->select(
                 'santri.nis',
                 'biodata.nama as santri_nama',
