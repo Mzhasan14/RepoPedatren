@@ -30,7 +30,7 @@ class GrupWaliAsuhUpdateRequest extends FormRequest
             'nama_grup'     => 'sometimes|string|max:255',         // opsional, maksimal 255 karakter
             'id_wilayah'    => 'sometimes|integer|exists:wilayah,id', // opsional, harus ada di tabel wilayah
             'jenis_kelamin' => 'sometimes|in:l,p',                // opsional, hanya 'l' atau 'p'
-            'wali_asuh_id'  => 'sometimes|integer|exists:wali_asuh,id', // opsional, harus ada di tabel wali_asuh
+            'wali_asuh_id'  => 'nullable|integer|exists:wali_asuh,id', // opsional, harus ada di tabel wali_asuh
             // 'status' tidak perlu karena update status tidak diizinkan
         ];
     }

@@ -261,39 +261,41 @@ class GrupWaliAsuhController extends Controller
                 ], 410);
             }
 
-            // Cek apakah grup masih memiliki anggota aktif
-            $hasActiveMembers = Wali_asuh::where('id_grup_wali_asuh', $id)
+            // 🔹 Nonaktifkan semua anak asuh di grup
+            DB::table('anak_asuh')
+                ->where('grup_wali_asuh_id', $id)
                 ->where('status', true)
-                ->exists();
+                ->update([
+                    'status'     => false,
+                    'deleted_by' => Auth::id(),
+                    'deleted_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-            if ($hasActiveMembers) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Tidak dapat menghapus grup yang masih memiliki anggota aktif',
-                ], 400);
-            }
-
-            // Ubah status menjadi non aktif, isi kolom deleted_by dan deleted_at
+            // 🔹 Null-kan wali_asuh_id di grup
+            $grup->wali_asuh_id = null;
             $grup->status = false;
             $grup->deleted_by = Auth::id();
             $grup->deleted_at = now();
             $grup->save();
 
-            // Log activity
+            // 🔹 Log activity
             activity('grup_wali_asuh_nonaktifkan')
                 ->performedOn($grup)
+                ->causedBy(Auth::user())
                 ->withProperties([
                     'deleted_at' => $grup->deleted_at,
                     'deleted_by' => $grup->deleted_by,
                 ])
                 ->event('nonaktif_grup_wali_asuh')
-                ->log('Grup wali asuh dinonaktifkan tanpa dihapus (soft update)');
+                ->log('Grup wali asuh dinonaktifkan: anak asuh nonaktif, wali asuh tetap aktif, wali_asuh_id di-grup di-null-kan');
 
             return response()->json([
                 'status' => true,
-                'message' => 'Grup wali asuh berhasil dinonaktifkan',
+                'message' => 'Grup wali asuh berhasil dinonaktifkan. Semua anak asuh di grup ini sudah dinonaktifkan, wali asuh tetap aktif.',
                 'data' => [
-                    'deleted_at' => $grup->deleted_at,
+                    'deleted_at'    => $grup->deleted_at,
+                    'wali_asuh_id'  => $grup->wali_asuh_id,
                 ],
             ]);
         });
@@ -302,46 +304,48 @@ class GrupWaliAsuhController extends Controller
     public function activate($id)
     {
         return DB::transaction(function () use ($id) {
+            // 🔒 Pastikan pengguna terautentikasi
             if (!Auth::id()) {
                 return response()->json([
-                    'status' => false,
+                    'status'  => false,
                     'message' => 'Pengguna tidak terautentikasi',
                 ], 401);
             }
 
+            // 🔎 Cari grup waliasuh termasuk yang soft deleted
             $grup = Grup_WaliAsuh::withTrashed()->find($id);
 
             if (!$grup) {
                 return response()->json([
-                    'status' => false,
+                    'status'  => false,
                     'message' => 'Data grup wali asuh tidak ditemukan',
                 ], 404);
             }
 
-            // Jika status sudah aktif
+            // 🚫 Jika sudah aktif, tidak perlu diaktifkan lagi
             if ($grup->status) {
                 return response()->json([
-                    'status' => false,
+                    'status'  => false,
                     'message' => 'Grup wali asuh sudah dalam keadaan aktif',
                 ], 400);
             }
 
-            // Aktifkan kembali
-            $grup->status = true;
+            // ✅ Aktifkan kembali hanya grup
+            $grup->status     = true;
             $grup->deleted_by = null;
             $grup->deleted_at = null;
             $grup->updated_by = Auth::id();
             $grup->updated_at = now();
             $grup->save();
 
-            // Log activity
+            // 📝 Catat log aktivitas
             activity('grup_wali_asuh_restore')
                 ->performedOn($grup)
                 ->event('restore_grup_wali_asuh')
                 ->log('Grup wali asuh berhasil diaktifkan kembali');
 
             return response()->json([
-                'status' => true,
+                'status'  => true,
                 'message' => 'Grup wali asuh berhasil diaktifkan kembali',
             ]);
         });

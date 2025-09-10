@@ -793,6 +793,7 @@ class WaliasuhService
                     'data' => null,
                 ];
             }
+
             // 🔹 Cek apakah santri sudah menjadi wali asuh aktif (di tabel wali_asuh saja)
             $alreadyWaliAsuh = DB::table('wali_asuh')
                 ->where('id_santri', $santri->id)
@@ -806,6 +807,7 @@ class WaliasuhService
                     'data' => null,
                 ];
             }
+
             // 🔹 Cek apakah santri sudah menjadi anak asuh aktif
             $alreadyAnakAsuh = DB::table('anak_asuh')
                 ->where('id_santri', $santri->id)
@@ -820,6 +822,21 @@ class WaliasuhService
                 ];
             }
 
+            // 🔹 Cek domisili aktif santri (wajib meskipun tanpa grup)
+            $domisili = DB::table('domisili_santri as ds')
+                ->where('ds.santri_id', $santri->id)
+                ->where('ds.status', 'aktif')
+                ->value('ds.wilayah_id');
+
+            if (!$domisili) {
+                return [
+                    'status' => false,
+                    'message' => 'Santri belum memiliki wilayah aktif',
+                    'data' => null,
+                ];
+            }
+
+            // 🔹 Jika ada grup dipilih
             $grupId = $data['grup_wali_asuh_id'] ?? null;
 
             if ($grupId) {
@@ -853,19 +870,7 @@ class WaliasuhService
                     ];
                 }
 
-                $domisili = DB::table('domisili_santri as ds')
-                    ->where('ds.santri_id', $santri->id)
-                    ->where('ds.status', 'aktif')
-                    ->value('ds.wilayah_id');
-
-                if (!$domisili) {
-                    return [
-                        'status' => false,
-                        'message' => 'Santri belum memiliki wilayah aktif',
-                        'data' => null,
-                    ];
-                }
-
+                // 🔹 Validasi kecocokan wilayah santri dengan grup
                 if ($domisili != $grup->id_wilayah) {
                     return [
                         'status' => false,
@@ -874,7 +879,7 @@ class WaliasuhService
                     ];
                 }
 
-                // Cek apakah santri sudah jadi wali asuh di grup lain
+                // 🔹 Cek apakah santri sudah jadi wali asuh di grup lain
                 $grupAktif = DB::table('grup_wali_asuh as g')
                     ->join('wali_asuh as ws', 'g.wali_asuh_id', '=', 'ws.id')
                     ->where('ws.id_santri', $santri->id)
@@ -920,9 +925,9 @@ class WaliasuhService
                 ->performedOn($waliAsuh)
                 ->causedBy(Auth::user())
                 ->withProperties([
-                    'grup_id'   => $grupId,
-                    'santri_id' => $santri->id,
-                    'ip'        => request()->ip(),
+                    'grup_id'    => $grupId,
+                    'santri_id'  => $santri->id,
+                    'ip'         => request()->ip(),
                     'user_agent' => request()->userAgent(),
                 ])
                 ->event('create_wali_asuh')
