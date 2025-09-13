@@ -817,10 +817,10 @@ class AnakasuhService
             $query->leftJoin('biodata as b_ibu2', 'ibu2.id_biodata_ibu', '=', 'b_ibu2.id');
         }
         if (in_array('wali_asuh', $fields)) {
-            $query->leftjoin('kewaliasuhan as kw', 'kw.id_anak_asuh', '=', 'as.id')
-                ->leftjoin('wali_asuh as wa', 'wa.id', '=', 'kw.id_wali_asuh')
-                ->leftjoin('santri as sw', 'wa.id_santri', '=', 'sw.id')
-                ->leftjoin('biodata as bw', 'sw.biodata_id', '=', 'bw.id');
+            $query->leftJoin('grup_wali_asuh as gwa', 'aa.grup_wali_asuh_id', '=', 'gwa.id')
+                ->leftJoin('wali_asuh as wa2', 'gwa.wali_asuh_id', '=', 'wa2.id')
+                ->leftJoin('santri as sw2', 'wa2.id_santri', '=', 'sw2.id')
+                ->leftJoin('biodata as bw2', 'sw2.biodata_id', '=', 'bw2.id');
         }
 
         $select = [];
@@ -894,19 +894,19 @@ class AnakasuhService
                     $select[] = 'b_ibu2.nama as nama_ibu';
                     break;
                 case 'grup':
-                    $select[] = 'gs.nama_grup';
+                    $select[] = 'gwa.nama_grup';
                     break;
                 case 'wali_asuh':
-                    $select[] = 'bw.nama as nama_wali_asuh';
+                    $select[] = 'bw2.nama as nama_wali_asuh';
                     break;
                 case 'created_at':
-                    $select[] = 'ws.created_at';
+                    $select[] = 'wa2.created_at';
                     break;
                 case 'updated_at':
                     $select[] = DB::raw('GREATEST(
-                    ws.updated_at,
-                    COALESCE(s.updated_at, ws.updated_at),
-                    COALESCE(b.updated_at, ws.updated_at)
+                    wa2.updated_at,
+                    COALESCE(s.updated_at, wa2.updated_at),
+                    COALESCE(b.updated_at, wa2.updated_at)
                 ) as updated_at');
                     break;
             }

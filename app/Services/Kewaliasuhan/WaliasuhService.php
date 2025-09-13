@@ -536,7 +536,7 @@ class WaliasuhService
         }
         // Tambahan untuk melihat grup dan jenis kelamin wali asuh
         if (in_array('grup_wali_asuh', $fields)) {
-            $query->leftJoin('grup_wali_asuh as gwa', 'ws.id_grup_wali_asuh', '=', 'gwa.id');
+            $query->leftJoin('grup_wali_asuh as gwa', 'gwa.wali_asuh_id', '=', 'ws.id');
         }
         $select = [];
 

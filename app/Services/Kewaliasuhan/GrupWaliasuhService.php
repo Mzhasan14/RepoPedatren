@@ -666,7 +666,13 @@ class GrupWaliasuhService
         }
 
         if (in_array('angkatan_santri', $fields)) {
-            $query->leftJoin('angkatan as as', 's.angkatan_id', '=', 'as.id');
+            $query->leftJoin('angkatan as ag', 's.angkatan_id', '=', 'ag.id');
+        }
+
+        if (in_array('nama_wali_asuh', $fields) || in_array('jenis_kelamin_wali_asuh', $fields)) {
+            $query->leftJoin('wali_asuh as wa2', 'gs.wali_asuh_id', '=', 'wa2.id')
+                ->leftJoin('santri as sw', 'wa2.id_santri', '=', 'sw.id')
+                ->leftJoin('biodata as bw', 'sw.biodata_id', '=', 'bw.id'); // biodata wali asuh
         }
 
         // Select fields
@@ -687,7 +693,7 @@ class GrupWaliasuhService
                     $select[] = 's.nis';
                     break;
                 case 'nama_wali_asuh':
-                    $select[] = 'b.nama as nama_wali_asuh';
+                    $select[] = 'bw.nama as nama_wali_asuh';
                     break;
                 case 'no_kk':
                     $select[] = 'k.no_kk as no_kk';
@@ -699,13 +705,13 @@ class GrupWaliasuhService
                     $select[] = 'wp.niup as niup';
                     break;
                 case 'jenis_kelamin_wali_asuh':
-                    $select[] = 'b.jenis_kelamin as jenis_kelamin_wali_asuh';
+                    $select[] = 'bw.jenis_kelamin as jenis_kelamin_wali_asuh';
                     break;
                 case 'angkatan_santri':
-                    $select[] = 'as.angkatan as angkatan_santri';
+                    $select[] = 'ag.angkatan as angkatan_santri';
                     break;
                 case 'jumlah_anak_asuh':
-                    $select[] = DB::raw("COUNT(CASE WHEN ks.status = true THEN aa.id ELSE NULL END) as jumlah_anak_asuh");
+                    $select[] = DB::raw("COUNT(aa.id) as jumlah_anak_asuh");
                     break;
                 case 'created_at':
                     $select[] = 'gs.created_at';
@@ -719,6 +725,7 @@ class GrupWaliasuhService
             }
         }
 
+        // Group by default
         $groupBy = [
             'gs.id',
             'gs.nama_grup',
@@ -744,11 +751,15 @@ class GrupWaliasuhService
         }
 
         if (in_array('angkatan_santri', $fields)) {
-            $groupBy[] = 'as.angkatan';
+            $groupBy[] = 'ag.angkatan';
+        }
+
+        if (in_array('nama_wali_asuh', $fields) || in_array('jenis_kelamin_wali_asuh', $fields)) {
+            $groupBy[] = 'bw.nama';
+            $groupBy[] = 'bw.jenis_kelamin';
         }
 
         $query->groupBy(...$groupBy);
-
         $query->select($select);
 
         return $query;
