@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Services\PesertaDidik\OrangTua\PerizinanService;
 use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
@@ -18,6 +20,8 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
+use App\Services\PesertaDidik\OrangTua\CatatanAfektifService;
+use App\Services\PesertaDidik\OrangTua\CatatanKognitifService;
 use App\Services\PesertaDidik\OrangTua\PelanggaranService;
 
 class ViewOrangTuaController extends Controller
@@ -27,19 +31,25 @@ class ViewOrangTuaController extends Controller
     protected $viewPresensiJamaahAnakService;
     protected $viewPerizinanService;
     protected $viewPelanggaranService;
+    protected $CatatanAfektifService;
+    protected $CatatanKognitifService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
         HafalanAnakService $viewHafalanService,
         PresensiJamaahAnakService $viewPresensiJamaahAnakService,
         PerizinanService $viewPerizinanService,
-        PelanggaranService $viewPelanggaranService
+        PelanggaranService $viewPelanggaranService,
+        CatatanAfektifService $CatatanAfektifService,
+        CatatanKognitifService $CatatanKognitifService
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
         $this->viewPresensiJamaahAnakService = $viewPresensiJamaahAnakService;
         $this->viewPerizinanService = $viewPerizinanService;
         $this->viewPelanggaranService = $viewPelanggaranService;
+        $this->CatatanAfektifService = $CatatanAfektifService;
+        $this->CatatanKognitifService = $CatatanKognitifService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -197,6 +207,39 @@ class ViewOrangTuaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data presensi hari ini.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+    public function catatanAfektif(CatatanAfektifRequest $request)
+    {
+        try {
+            $result = $this->CatatanAfektifService->catatanAfektif($request->validated());
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@ Catatan Afektif error : ', $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Catatan Afektif.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function catatanKognitif(CatatanKognitifRequest $request)
+    {
+        try {
+            $result = $this->CatatanKognitifService->catatanKognitif($request->validated());
+
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@ Catatan Afektif error : ', $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Catatan Afektif.',
                 'status'  => 500,
                 'data'    => []
             ], 500);

@@ -137,7 +137,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     Route::get('/tahun-ajaran/{id}', [TahunAjaranController::class, 'show']);
 
-    // Angkatan 
+    // Angkatan
     Route::get('/angkatan', [AngkatanController::class, 'index']);
     Route::get('/angkatan/{id}', [AngkatanController::class, 'show']);
 
@@ -953,7 +953,7 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     Route::get('hubungan', [HubunganKeluargaController::class, 'getHubungan']);
 });
 
-// Endpoint menampilkan log  
+// Endpoint menampilkan log
 Route::get('/activity-logs', [ActivityController::class, 'index'])->middleware([
     'auth:sanctum',
     'role:superadmin|admin',
@@ -1130,7 +1130,7 @@ Route::prefix('potongan')->group(function () {
 Route::prefix('santri-potongan')->group(function () {
     Route::get('/', [SantriPotonganController::class, 'index']);
     Route::post('/', [SantriPotonganController::class, 'store']);
-    Route::get('/{id}', [SantriPotonganController::class, 'show']); 
+    Route::get('/{id}', [SantriPotonganController::class, 'show']);
     Route::put('/{id}', [SantriPotonganController::class, 'update']);
     Route::delete('/{id}', [SantriPotonganController::class, 'destroy']);
 });
@@ -1185,6 +1185,9 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
 
     Route::get('/perizinan', [ViewOrangTuaController::class, 'perizinan']);
     Route::get('/pelanggaran', [ViewOrangTuaController::class, 'pelanggaran']);
+    
+    Route::get('/catatanAfektif', [ViewOrangTuaController::class, 'catatanAfektif']);
+    Route::get('/catatanKognitif', [ViewOrangTuaController::class, 'catatanKognitif']);
 
 });
 
