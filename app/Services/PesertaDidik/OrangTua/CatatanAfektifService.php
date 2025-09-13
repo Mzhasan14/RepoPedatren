@@ -41,10 +41,6 @@ class CatatanAfektifService
             ];
         }
 
-        $perPage = $request['per_page'] ?? 25; // default 25
-        $page    = $request['page'] ?? 1;
-
-        // 🔹 Ambil catatan afektif anak tersebut
         $catatan = DB::table('catatan_afektif as ca')
             ->join('santri as s', 's.id', '=', 'ca.id_santri')
             ->join('biodata as b', 'b.id', '=', 's.biodata_id')
@@ -61,30 +57,23 @@ class CatatanAfektifService
                 'ca.akhlak_tindak_lanjut',
                 'ca.tanggal_buat'
             )
-            ->orderByDesc('ca.tanggal_buat')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderByDesc('ca.id')
+            ->first();
 
-        if ($catatan->isEmpty()) {
+        if (!$catatan) {
             return [
                 'success' => true,
                 'message' => 'Santri belum memiliki catatan afektif.',
-                'data'    => [],
+                'data'    => null,
                 'status'  => 200,
             ];
         }
 
-        // 🔹 Bungkus response biar rapi
         return [
             'success' => true,
-            'message' => 'Data catatan afektif berhasil diambil.',
+            'message' => 'Data catatan afektif terbaru berhasil diambil.',
             'status'  => 200,
-            'meta'    => [
-                'current_page' => $catatan->currentPage(),
-                'per_page'     => $catatan->perPage(),
-                'total'        => $catatan->total(),
-                'last_page'    => $catatan->lastPage(),
-            ],
-            'data'     => $catatan->items(),
+            'data'    => $catatan,
         ];
     }
 }

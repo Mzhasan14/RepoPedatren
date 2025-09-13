@@ -42,10 +42,6 @@ class CatatanKognitifService
             ];
         }
 
-        $perPage = $request['per_page'] ?? 25; // default 25
-        $page    = $request['page'] ?? 1;
-
-        // 🔹 Ambil catatan kognitif anak tersebut
         $catatan = DB::table('catatan_kognitif as ck')
             ->join('santri as s', 's.id', '=', 'ck.id_santri')
             ->join('biodata as b', 'b.id', '=', 's.biodata_id')
@@ -68,30 +64,23 @@ class CatatanKognitifService
                 'ck.baca_alquran_tindak_lanjut',
                 'ck.tanggal_buat'
             )
-            ->orderByDesc('ck.tanggal_buat')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderByDesc('ck.id')
+            ->first();
 
-        if ($catatan->isEmpty()) {
+        if (!$catatan) {
             return [
                 'success' => true,
                 'message' => 'Santri belum memiliki catatan kognitif.',
-                'data'    => [],
+                'data'    => null,
                 'status'  => 200,
             ];
         }
 
-        // 🔹 Bungkus response biar rapi
         return [
             'success' => true,
-            'message' => 'Data catatan kognitif berhasil diambil.',
+            'message' => 'Data catatan kognitif terbaru berhasil diambil.',
             'status'  => 200,
-            'meta'    => [
-                'current_page' => $catatan->currentPage(),
-                'per_page'     => $catatan->perPage(),
-                'total'        => $catatan->total(),
-                'last_page'    => $catatan->lastPage(),
-            ],
-            'data'     => $catatan->items(),
+            'data'    => $catatan,
         ];
     }
 }
