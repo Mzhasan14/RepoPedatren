@@ -307,7 +307,7 @@ class CatatanKognitifService
             if (! $anakAsuh) {
                 return [
                     'status' => false,
-                    'message' => 'Santri ini tidak memiliki anak asuh. Catatan kognitif tidak bisa dibuat.',
+                    'message' => 'Santri ini masih belum menjadi anak asuh. Catatan kognitif tidak bisa dibuat.',
                 ];
             }
 
