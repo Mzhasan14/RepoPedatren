@@ -248,7 +248,7 @@ class CatatanAfektifService
             if (! $anakAsuh) {
                 return [
                     'status' => false,
-                    'message' => 'Santri ini tidak memiliki anak asuh. Catatan tidak bisa dibuat.',
+                    'message' => 'Santri ini masih belum menjadi anak asuh. Catatan tidak bisa dibuat.',
                 ];
             }
 
