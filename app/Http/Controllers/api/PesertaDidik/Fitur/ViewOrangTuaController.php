@@ -23,6 +23,7 @@ use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
 use App\Services\PesertaDidik\OrangTua\CatatanAfektifService;
 use App\Services\PesertaDidik\OrangTua\CatatanKognitifService;
 use App\Services\PesertaDidik\OrangTua\PelanggaranService;
+use App\Services\PesertaDidik\OrangTua\ProfileSantriService;
 
 class ViewOrangTuaController extends Controller
 {
@@ -33,6 +34,7 @@ class ViewOrangTuaController extends Controller
     protected $viewPelanggaranService;
     protected $CatatanAfektifService;
     protected $CatatanKognitifService;
+    protected $ProfileSantriService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
@@ -41,7 +43,8 @@ class ViewOrangTuaController extends Controller
         PerizinanService $viewPerizinanService,
         PelanggaranService $viewPelanggaranService,
         CatatanAfektifService $CatatanAfektifService,
-        CatatanKognitifService $CatatanKognitifService
+        CatatanKognitifService $CatatanKognitifService,
+        ProfileSantriService $ProfileSantriService,
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
@@ -50,6 +53,7 @@ class ViewOrangTuaController extends Controller
         $this->viewPelanggaranService = $viewPelanggaranService;
         $this->CatatanAfektifService = $CatatanAfektifService;
         $this->CatatanKognitifService = $CatatanKognitifService;
+        $this->ProfileSantriService = $ProfileSantriService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -240,6 +244,22 @@ class ViewOrangTuaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data Catatan Afektif.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+    public function ProfileSantri(CatatanKognitifRequest $request)
+    {
+        try {
+            $result = $this->ProfileSantriService->ProfileSantri($request->validated());
+
+            return response()->json($result, $result['status']);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@ProfileSantri error : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Profile Santri.',
                 'status'  => 500,
                 'data'    => []
             ], 500);
