@@ -98,9 +98,12 @@ class ProfileSantriService
 
         // 🔹 Data Ortu & Wali
         $ortu = DB::table('keluarga as k')
-            ->join('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
+            ->leftJoin('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
-            ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+            ->leftJoin('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+            ->leftJoin('negara as n','n.id','=','bo.negara_id')
+            ->leftJoin('provinsi as pn','pn.id','=','bo.negara_id')
+            ->leftJoin('kabupaten as kn','kn.id','=','bo.negara_id')
             ->where('k.no_kk', $noKk)
             ->select([
                 'bo.nama',
@@ -110,6 +113,10 @@ class ProfileSantriService
                 'bo.nama_pendidikan_terakhir',
                 'bo.email',
                 'bo.no_telepon',
+                'bo.jalan',
+                'n.nama_negara',
+                'pn.nama_provinsi',
+                'kn.nama_kabupaten',
                 'ow.pekerjaan',
                 'ow.penghasilan',
                 'ow.wali',
