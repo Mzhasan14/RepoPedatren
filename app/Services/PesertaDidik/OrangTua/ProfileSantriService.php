@@ -61,6 +61,25 @@ class ProfileSantriService
             })
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas as br', 'br.id', '=', 'fl.last_id')
+            ->leftJoin(
+                'domisili_santri AS ds',
+                fn($join) =>
+                $join->on('s.id', '=', 'ds.santri_id')
+                    ->where('ds.status', 'aktif')
+            )
+            ->leftJoin('wilayah as w', 'w.id', '=', 'ds.wilayah_id')
+            ->leftJoin('blok as bb', 'bb.id', '=', 'ds.blok_id')
+            ->leftJoin('kamar as kk', 'kk.id', '=', 'ds.kamar_id')
+            ->leftJoin(
+                'pendidikan AS pd',
+                fn($j) =>
+                $j->on('b.id', '=', 'pd.biodata_id')
+                    ->where('pd.status', 'aktif')
+            )
+            ->leftJoin('lembaga as la', 'pd.lembaga_id', '=', 'la.id')
+            ->leftJoin('jurusan as js', 'pd.jurusan_id', '=', 'js.id')
+            ->leftJoin('kelas as kl', 'pd.kelas_id', '=', 'kl.id')
+            ->leftJoin('rombel as ro', 'pd.rombel_id', '=', 'ro.id')
             ->leftJoin('kecamatan as kc', 'b.kecamatan_id', '=', 'kc.id')
             ->leftJoin('kabupaten as kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoin('provinsi as pv', 'b.provinsi_id', '=', 'pv.id')
@@ -75,10 +94,17 @@ class ProfileSantriService
                 'b.tanggal_lahir',
                 DB::raw("CONCAT(b.anak_keberapa, ' dari ', b.dari_saudara, ' bersaudara') as anak_ke"),
                 DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) as umur"),
-                'kc.nama_kecamatan',
-                'kb.nama_kabupaten',
-                'pv.nama_provinsi',
-                'ng.nama_negara',
+                'w.nama_wilayah as wilayah',
+                'bb.nama_blok as blok',
+                'kk.nama_kamar as kamar',
+                'la.nama_lembaga as lembaga',
+                'js.nama_jurusan as jurusan',
+                'kl.nama_kelas as kelas',
+                'ro.nama_rombel as rombel',
+                'kc.nama_kecamatan as kecamatan',
+                'kb.nama_kabupaten as kabupaten',
+                'pv.nama_provinsi as provinsi',
+                'ng.nama_negara as negara',
                 'wp.niup',
                 DB::raw("COALESCE(br.file_path, 'default.png') as pas_foto"),
             ])
@@ -101,9 +127,9 @@ class ProfileSantriService
             ->leftJoin('orang_tua_wali as ow', 'k.id_biodata', '=', 'ow.id_biodata')
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
             ->leftJoin('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
-            ->leftJoin('negara as n','n.id','=','bo.negara_id')
-            ->leftJoin('provinsi as pn','pn.id','=','bo.negara_id')
-            ->leftJoin('kabupaten as kn','kn.id','=','bo.negara_id')
+            ->leftJoin('negara as n', 'n.id', '=', 'bo.negara_id')
+            ->leftJoin('provinsi as pn', 'pn.id', '=', 'bo.negara_id')
+            ->leftJoin('kabupaten as kn', 'kn.id', '=', 'bo.negara_id')
             ->where('k.no_kk', $noKk)
             ->select([
                 'bo.nama',
