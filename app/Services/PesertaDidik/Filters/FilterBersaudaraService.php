@@ -79,8 +79,6 @@ class FilterBersaudaraService
         return $query;
     }
 
-     
-
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('nama')) {
