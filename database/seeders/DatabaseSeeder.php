@@ -46,7 +46,6 @@ class DatabaseSeeder extends Seeder
             PegawaiSeeder::class,
             PengajarSeeder::class,
             KaryawanSeeder::class,
-            WaliKelasSeeder::class,
             PengurusSeeder::class,
             DataKeluargaSeeder::class,
             JenisBerkasSeeder::class,
@@ -73,6 +72,7 @@ class DatabaseSeeder extends Seeder
             PembayaranSeeder::class,
             // UserWaliasuhSeeder::class,
             UserOrangTuaSeeder::class,
+            WaliKelasSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai
         Activity::enableLogging();

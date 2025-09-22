@@ -30,14 +30,22 @@ class WaliKelasService
                     ->whereNull('pegawai.deleted_at');
             })
             ->join('biodata as b', 'b.id', '=', 'pegawai.biodata_id')
-            ->leftJoinSub($wpLast, 'wl', fn ($j) => $j->on('b.id', '=', 'wl.biodata_id'))
+            ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
-            ->leftJoinSub($fotoLast, 'fl', fn ($j) => $j->on('b.id', '=', 'fl.biodata_id'))
+            ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoin('rombel as r', 'r.id', '=', 'wali_kelas.rombel_id')
             ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
             ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
+            ->leftJoin('angkatan as akt', 'akt.id', '=', 'wali_kelas.angkatan_id')
+            ->leftJoin('pendidikan as pn', function ($join) {
+                $join->on('pn.lembaga_id', '=', 'wali_kelas.lembaga_id')
+                    ->on('pn.jurusan_id', '=', 'wali_kelas.jurusan_id')
+                    ->on('pn.kelas_id', '=', 'wali_kelas.kelas_id')
+                    ->on('pn.rombel_id', '=', 'wali_kelas.rombel_id')
+                    ->on('pn.angkatan_id', '=', 'wali_kelas.angkatan_id');
+            })
             ->whereNull('wali_kelas.periode_akhir')
             ->where('wali_kelas.status_aktif', 'aktif');
     }
@@ -45,7 +53,7 @@ class WaliKelasService
     {
         try {
             $query = $this->baseWalikelasQuery($request);
-
+            
             $fields = [
                 'pegawai.biodata_id as biodata_uuid',
                 'b.nama',
@@ -56,12 +64,22 @@ class WaliKelasService
                 'j.nama_jurusan',
                 'k.nama_kelas',
                 'r.gender_rombel',
-                DB::raw("CONCAT(wali_kelas.jumlah_murid, ' pelajar') as jumlah_murid"),
                 'r.nama_rombel',
                 DB::raw("DATE_FORMAT(wali_kelas.updated_at, '%Y-%m-%d %H:%i:%s') AS tgl_update"),
                 DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
-                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil")
+                DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil"),
+
+                // ✅ alias langsung di dalam DB::raw
+                DB::raw("
+        TRIM(BOTH ', ' FROM CONCAT_WS(', ',
+            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'aktif' THEN 1 ELSE 0 END), ' murid aktif'), '0 murid aktif'),
+            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'lulus' THEN 1 ELSE 0 END), ' murid lulus'), '0 murid lulus'),
+            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'do' THEN 1 ELSE 0 END), ' murid DO'), '0 murid DO'),
+            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'berhenti' THEN 1 ELSE 0 END), ' murid berhenti'), '0 murid berhenti')
+        )
+    ) as jumlah_murid")
             ];
+
 
             return $query->select($fields)->groupBy(
                 'pegawai.biodata_id',
@@ -75,7 +93,6 @@ class WaliKelasService
                 'k.nama_kelas',
                 'r.nama_rombel',
                 'r.gender_rombel',
-                'wali_kelas.jumlah_murid',
                 'wali_kelas.updated_at',
                 'wali_kelas.created_at'
             );
@@ -92,7 +109,7 @@ class WaliKelasService
 
     public function formatData($results)
     {
-        return collect($results->items())->map(fn ($item) => [
+        return collect($results->items())->map(fn($item) => [
             'id' => $item->biodata_uuid,
             'nama' => $item->nama,
             'niup' => $item->niup ?? '-',

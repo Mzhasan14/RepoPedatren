@@ -13,11 +13,11 @@ class WaliKelasService
 {
     public function index(string $bioId): array
     {
-        $waliKelas = WaliKelas::whereHas('pegawai.biodata', fn ($q) => $q->where('id', $bioId))
+        $waliKelas = WaliKelas::whereHas('pegawai.biodata', fn($q) => $q->where('id', $bioId))
             ->with(['pegawai.biodata', 'lembaga', 'jurusan', 'kelas', 'rombel'])
-            ->orderBy('periode_awal','desc')
+            ->orderBy('periode_awal', 'desc')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'id' => $item->id,
                 'Lembaga' => $item->lembaga->nama_lembaga ?? null,
                 'Jurusan' => $item->jurusan->nama_jurusan ?? null,
@@ -37,18 +37,46 @@ class WaliKelasService
 
     public function show($id): array
     {
-        $waliKelas = WaliKelas::select([
-            'id',
-            'lembaga_id',
-            'jurusan_id',
-            'kelas_id',
-            'rombel_id',
-            'jumlah_murid',
-            'status_aktif',
-            'periode_awal',
-            'periode_akhir',
-        ])
-            ->find($id);
+        $waliKelas = DB::table('wali_kelas as wk')
+            ->leftJoin('pendidikan as pn', function ($join) {
+                $join->on('pn.lembaga_id', '=', 'wk.lembaga_id')
+                    ->on('pn.jurusan_id', '=', 'wk.jurusan_id')
+                    ->on('pn.kelas_id', '=', 'wk.kelas_id')
+                    ->on('pn.rombel_id', '=', 'wk.rombel_id')
+                    ->on('pn.angkatan_id', '=', 'wk.angkatan_id');
+            })
+            ->where('wk.id', $id)
+            ->select(
+                'wk.id',
+                'wk.lembaga_id',
+                'wk.jurusan_id',
+                'wk.kelas_id',
+                'wk.rombel_id',
+                'wk.angkatan_id',
+                'wk.status_aktif',
+                'wk.periode_awal',
+                'wk.periode_akhir',
+                DB::raw("
+                TRIM(BOTH ', ' FROM CONCAT_WS(', ',
+                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'aktif' THEN 1 ELSE 0 END), ' murid aktif'), '0 murid aktif'),
+                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'lulus' THEN 1 ELSE 0 END), ' murid lulus'), '0 murid lulus'),
+                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'do' THEN 1 ELSE 0 END), ' murid DO'), '0 murid DO'),
+                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'berhenti' THEN 1 ELSE 0 END), ' murid berhenti'), '0 murid berhenti')
+                )
+            ) AS jumlah_murid")
+            )
+            ->groupBy(
+                'wk.id',
+                'wk.lembaga_id',
+                'wk.jurusan_id',
+                'wk.kelas_id',
+                'wk.rombel_id',
+                'wk.angkatan_id',
+                'wk.status_aktif',
+                'wk.periode_awal',
+                'wk.periode_akhir'
+            )
+            ->first();
 
         if (! $waliKelas) {
             return [
@@ -78,7 +106,7 @@ class WaliKelasService
         }
 
         // 2. Cek apakah sudah ada wali kelas aktif untuk biodata ini
-        $exist = WaliKelas::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
+        $exist = WaliKelas::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 

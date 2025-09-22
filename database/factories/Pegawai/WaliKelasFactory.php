@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Pegawai;
 
+use App\Models\Angkatan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\WaliKelas;
 use App\Models\Pendidikan\Jurusan;
@@ -42,7 +43,9 @@ class WaliKelasFactory extends Factory
             'rombel_id' => function () {
                 return Rombel::inRandomOrder()->first()->id;
             },
-            'jumlah_murid' => $this->faker->numberBetween(20, 40),
+            'angkatan_id' => function () {
+                return Angkatan::inRandomOrder()->first()->id;
+            },
             'periode_awal' => $tanggalMulai,
             'periode_akhir' => null,
             'created_by' => 1,
