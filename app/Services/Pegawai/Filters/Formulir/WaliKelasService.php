@@ -37,46 +37,8 @@ class WaliKelasService
 
     public function show($id): array
     {
-        $waliKelas = DB::table('wali_kelas as wk')
-            ->leftJoin('pendidikan as pn', function ($join) {
-                $join->on('pn.lembaga_id', '=', 'wk.lembaga_id')
-                    ->on('pn.jurusan_id', '=', 'wk.jurusan_id')
-                    ->on('pn.kelas_id', '=', 'wk.kelas_id')
-                    ->on('pn.rombel_id', '=', 'wk.rombel_id')
-                    ->on('pn.angkatan_id', '=', 'wk.angkatan_id');
-            })
-            ->where('wk.id', $id)
-            ->select(
-                'wk.id',
-                'wk.lembaga_id',
-                'wk.jurusan_id',
-                'wk.kelas_id',
-                'wk.rombel_id',
-                'wk.angkatan_id',
-                'wk.status_aktif',
-                'wk.periode_awal',
-                'wk.periode_akhir',
-                DB::raw("
-                TRIM(BOTH ', ' FROM CONCAT_WS(', ',
-                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'aktif' THEN 1 ELSE 0 END), ' murid aktif'), '0 murid aktif'),
-                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'lulus' THEN 1 ELSE 0 END), ' murid lulus'), '0 murid lulus'),
-                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'do' THEN 1 ELSE 0 END), ' murid DO'), '0 murid DO'),
-                    NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'berhenti' THEN 1 ELSE 0 END), ' murid berhenti'), '0 murid berhenti')
-                )
-            ) AS jumlah_murid")
-            )
-            ->groupBy(
-                'wk.id',
-                'wk.lembaga_id',
-                'wk.jurusan_id',
-                'wk.kelas_id',
-                'wk.rombel_id',
-                'wk.angkatan_id',
-                'wk.status_aktif',
-                'wk.periode_awal',
-                'wk.periode_akhir'
-            )
-            ->first();
+        // Ambil wali kelas dulu
+        $waliKelas = DB::table('wali_kelas')->where('id', $id)->first();
 
         if (! $waliKelas) {
             return [
@@ -85,9 +47,68 @@ class WaliKelasService
             ];
         }
 
+        // Function helper untuk null-safe comparison (tanpa angkatan)
+        $matchCondition = function ($query, $prefix, $waliKelas) {
+            $query->where(function ($q) use ($waliKelas, $prefix) {
+                $q->where("{$prefix}.kelas_id", $waliKelas->kelas_id)
+                    ->orWhere(function ($sub) use ($waliKelas, $prefix) {
+                        if (is_null($waliKelas->kelas_id)) {
+                            $sub->whereNull("{$prefix}.kelas_id");
+                        }
+                    });
+            })->where(function ($q) use ($waliKelas, $prefix) {
+                $q->where("{$prefix}.jurusan_id", $waliKelas->jurusan_id)
+                    ->orWhere(function ($sub) use ($waliKelas, $prefix) {
+                        if (is_null($waliKelas->jurusan_id)) {
+                            $sub->whereNull("{$prefix}.jurusan_id");
+                        }
+                    });
+            })->where(function ($q) use ($waliKelas, $prefix) {
+                $q->where("{$prefix}.rombel_id", $waliKelas->rombel_id)
+                    ->orWhere(function ($sub) use ($waliKelas, $prefix) {
+                        if (is_null($waliKelas->rombel_id)) {
+                            $sub->whereNull("{$prefix}.rombel_id");
+                        }
+                    });
+            });
+        };
+
+        // Query untuk murid sesuai status wali kelas
+        if ($waliKelas->status_aktif === 'aktif') {
+            // Ambil dari pendidikan (hanya murid aktif)
+            $murid = DB::table('pendidikan as pn')
+                ->where('pn.status', 'aktif')
+                ->where(function ($q) use ($waliKelas, $matchCondition) {
+                    $matchCondition($q, 'pn', $waliKelas);
+                })
+                ->select(DB::raw("
+                CONCAT(COUNT(*), ' murid aktif') AS jumlah_murid
+            "))
+                ->first();
+        } else {
+            // Ambil dari riwayat_pendidikan (semua status untuk histori)
+            $murid = DB::table('riwayat_pendidikan as rp')
+                ->where(function ($q) use ($waliKelas, $matchCondition) {
+                    $matchCondition($q, 'rp', $waliKelas);
+                })
+                ->select(DB::raw("
+                TRIM(BOTH ', ' FROM CONCAT_WS(', ',
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'lulus' THEN 1 ELSE 0 END), ' murid lulus'), '0 murid lulus'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'do' THEN 1 ELSE 0 END), ' murid DO'), '0 murid DO'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'berhenti' THEN 1 ELSE 0 END), ' murid berhenti'), '0 murid berhenti'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'selesai' THEN 1 ELSE 0 END), ' murid selesai'), '0 murid selesai'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'pindah' THEN 1 ELSE 0 END), ' murid pindah'), '0 murid pindah'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'batal_lulus' THEN 1 ELSE 0 END), ' murid batal lulus'), '0 murid batal lulus'),
+                    NULLIF(CONCAT(SUM(CASE WHEN rp.status = 'nonaktif' THEN 1 ELSE 0 END), ' murid nonaktif'), '0 murid nonaktif')
+                )
+            ) AS jumlah_murid
+            "))
+                ->first();
+        }
+
         return [
             'status' => true,
-            'data' => $waliKelas,
+            'data' => array_merge((array) $waliKelas, (array) $murid),
         ];
     }
 
@@ -134,7 +155,7 @@ class WaliKelasService
             'jurusan_id'    => $data['jurusan_id'] ?? null,
             'kelas_id'      => $data['kelas_id'] ?? null,
             'rombel_id'     => $data['rombel_id'] ?? null,
-            'jumlah_murid'  => $data['jumlah_murid'],
+            // 'jumlah_murid'  => $data['jumlah_murid'],
             'periode_awal'  => $data['periode_awal'] ?? now(),
             'status_aktif'  => 'aktif',
             'created_by'    => Auth::id(),
@@ -170,7 +191,7 @@ class WaliKelasService
                 'jurusan_id' => $input['jurusan_id'] ?? $wali->jurusan_id,
                 'kelas_id' => $input['kelas_id'] ?? $wali->kelas_id,
                 'rombel_id' => $input['rombel_id'] ?? $wali->rombel_id,
-                'jumlah_murid' => $input['jumlah_murid'] ?? $wali->jumlah_murid,
+                // 'jumlah_murid' => $input['jumlah_murid'] ?? $wali->jumlah_murid,
                 'periode_awal' => isset($input['periode_awal']) ? Carbon::parse($input['periode_awal']) : $wali->periode_awal,
                 'updated_by' => Auth::id(),
             ]);
@@ -219,7 +240,7 @@ class WaliKelasService
                 'jurusan_id' => $input['jurusan_id'] ?? null,
                 'kelas_id' => $input['kelas_id'] ?? null,
                 'rombel_id' => $input['rombel_id'] ?? null,
-                'jumlah_murid' => $input['jumlah_murid'] ?? '0',
+                // 'jumlah_murid' => $input['jumlah_murid'] ?? '0',
                 'periode_awal' => $tanggalMulaiBaru,
                 'status_aktif' => 'aktif',
                 'created_by' => Auth::id(),

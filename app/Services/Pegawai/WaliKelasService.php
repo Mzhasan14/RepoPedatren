@@ -43,8 +43,13 @@ class WaliKelasService
                 $join->on('pn.lembaga_id', '=', 'wali_kelas.lembaga_id')
                     ->on('pn.jurusan_id', '=', 'wali_kelas.jurusan_id')
                     ->on('pn.kelas_id', '=', 'wali_kelas.kelas_id')
-                    ->on('pn.rombel_id', '=', 'wali_kelas.rombel_id')
-                    ->on('pn.angkatan_id', '=', 'wali_kelas.angkatan_id');
+                    ->where(function ($q) {
+                        $q->whereColumn('pn.rombel_id', 'wali_kelas.rombel_id')
+                            ->orWhere(function ($sub) {
+                                $sub->whereNull('pn.rombel_id')
+                                    ->whereNull('wali_kelas.rombel_id');
+                            });
+                    });
             })
             ->whereNull('wali_kelas.periode_akhir')
             ->where('wali_kelas.status_aktif', 'aktif');
@@ -53,7 +58,7 @@ class WaliKelasService
     {
         try {
             $query = $this->baseWalikelasQuery($request);
-            
+
             $fields = [
                 'pegawai.biodata_id as biodata_uuid',
                 'b.nama',
@@ -69,15 +74,7 @@ class WaliKelasService
                 DB::raw("DATE_FORMAT(wali_kelas.created_at, '%Y-%m-%d %H:%i:%s') AS tgl_input"),
                 DB::raw("COALESCE(MAX(br.file_path), 'default.jpg') as foto_profil"),
 
-                // ✅ alias langsung di dalam DB::raw
-                DB::raw("
-        TRIM(BOTH ', ' FROM CONCAT_WS(', ',
-            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'aktif' THEN 1 ELSE 0 END), ' murid aktif'), '0 murid aktif'),
-            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'lulus' THEN 1 ELSE 0 END), ' murid lulus'), '0 murid lulus'),
-            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'do' THEN 1 ELSE 0 END), ' murid DO'), '0 murid DO'),
-            NULLIF(CONCAT(SUM(CASE WHEN pn.status = 'berhenti' THEN 1 ELSE 0 END), ' murid berhenti'), '0 murid berhenti')
-        )
-    ) as jumlah_murid")
+                DB::raw("CONCAT(COUNT(CASE WHEN pn.status = 'aktif' THEN 1 END), ' murid aktif') as jumlah_murid")
             ];
 
 

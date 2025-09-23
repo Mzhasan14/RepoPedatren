@@ -69,7 +69,7 @@ class CreatePegawaiRequest extends FormRequest
             'jabatan_karyawan' => 'nullable|required_if:karyawan,1|string|max:100',
             'keterangan_jabatan_karyawan' => 'nullable|required_if:karyawan,1|string|max:255',
             'tanggal_mulai_karyawan' => 'nullable|required_if:karyawan,1|date',
-  
+
             // ===== Pengajar =====
             'pengajar'                 => 'nullable|in:1,0',
             'golongan_id_pengajar'    => 'nullable|required_if:pengajar,1|nullable|exists:golongan,id',
@@ -95,8 +95,9 @@ class CreatePegawaiRequest extends FormRequest
             'lembaga_id_wali' => 'nullable|required_if:wali_kelas,1|exists:lembaga,id',
             'jurusan_id_wali' => 'nullable|required_if:wali_kelas,1|exists:jurusan,id',
             'kelas_id_wali' => 'nullable|required_if:wali_kelas,1|exists:kelas,id',
-            'rombel_id_wali' => 'nullable|required_if:wali_kelas,1|exists:rombel,id',
-            'jumlah_murid_wali' => 'nullable|required_if:wali_kelas,1|numeric|min:1',
+            'rombel_id_wali' => 'nullable|exists:rombel,id',
+            // 'rombel_id_wali' => 'nullable|nullable_if:wali_kelas,1|exists:rombel,id',
+            // 'jumlah_murid_wali' => 'nullable|required_if:wali_kelas,1|numeric|min:1',
             'periode_awal_wali' => 'nullable|required_if:wali_kelas,1|date',
 
             // ===== Berkas =====
@@ -120,7 +121,7 @@ class CreatePegawaiRequest extends FormRequest
             'no_telepon.required' => 'Nomor telepon wajib diisi.',
             'no_telepon.string' => 'Nomor telepon harus berupa teks.',
             'no_telepon.regex' => 'Format nomor telepon tidak valid. Gunakan format internasional, contoh: +6281234567890.',
-            
+
             'no_telepon_2.string' => 'Nomor telepon tambahan harus berupa teks.',
             'no_telepon_2.regex' => 'Format nomor telepon tambahan tidak valid. Gunakan format internasional, contoh: +6281234567890.',
             'email.required' => 'Email wajib diisi.',
@@ -198,7 +199,6 @@ class CreatePegawaiRequest extends FormRequest
             'jurusan_id_wali.exists' => 'Jurusan wali kelas tidak valid.',
             'kelas_id_wali.required_if' => 'Kelas wali wajib diisi saat wali kelas dipilih.',
             'kelas_id_wali.exists' => 'Kelas wali tidak valid.',
-            'rombel_id_wali.required_if' => 'Rombel wajib diisi saat wali kelas dipilih.',
             'rombel_id_wali.exists' => 'Rombel tidak valid.',
             'jumlah_murid_wali.required_if' => 'Jumlah murid wajib diisi saat wali kelas dipilih.',
             'jumlah_murid_wali.numeric' => 'Jumlah murid harus berupa angka.',

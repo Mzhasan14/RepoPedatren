@@ -43,9 +43,6 @@ class WaliKelasFactory extends Factory
             'rombel_id' => function () {
                 return Rombel::inRandomOrder()->first()->id;
             },
-            'angkatan_id' => function () {
-                return Angkatan::inRandomOrder()->first()->id;
-            },
             'periode_awal' => $tanggalMulai,
             'periode_akhir' => null,
             'created_by' => 1,

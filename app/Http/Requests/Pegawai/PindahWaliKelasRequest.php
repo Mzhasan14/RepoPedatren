@@ -28,7 +28,7 @@ class PindahWaliKelasRequest extends FormRequest
             'jurusan_id' => 'nullable|exists:jurusan,id',
             'kelas_id' => 'nullable|exists:kelas,id',
             'rombel_id' => 'nullable|exists:rombel,id',
-            'jumlah_murid' => 'required|string',
+            // 'jumlah_murid' => 'required|string',
             'periode_awal' => 'required|date|after_or_equal:today',
         ];
     }

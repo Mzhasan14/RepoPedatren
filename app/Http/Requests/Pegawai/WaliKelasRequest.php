@@ -28,7 +28,7 @@ class WaliKelasRequest extends FormRequest
             'jurusan_id' => ['required', 'exists:jurusan,id'],
             'kelas_id' => ['required', 'exists:kelas,id'],
             'rombel_id' => ['required', 'exists:rombel,id'],
-            'jumlah_murid' => ['required', 'numeric', 'min:1'],
+            // 'jumlah_murid' => ['required', 'numeric', 'min:1'],
             'periode_awal' => ['nullable', 'date'],
         ];
     }

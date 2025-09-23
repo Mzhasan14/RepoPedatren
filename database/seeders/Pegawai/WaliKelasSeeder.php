@@ -31,7 +31,6 @@ class WaliKelasSeeder extends Seeder
                     'jurusan_id'   => $pendidikan->jurusan_id,
                     'kelas_id'     => $pendidikan->kelas_id,
                     'rombel_id'    => $pendidikan->rombel_id,
-                    'angkatan_id'  => $pendidikan->angkatan_id,
                 ]);
             }
         }

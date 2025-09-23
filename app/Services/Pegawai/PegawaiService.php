@@ -91,12 +91,12 @@ class PegawaiService
                 'pegawai.biodata_id as biodata_uuid',
                 'b.nama',
                 DB::raw('COALESCE(b.nik, b.no_passport) AS identitas'),
-                DB::raw("CASE 
-                    WHEN b.jenis_kelamin = 'l' THEN 'Laki-laki' 
-                    WHEN b.jenis_kelamin = 'p' THEN 'Perempuan' 
-                    ELSE 'Tidak diketahui' 
+                DB::raw("CASE
+                    WHEN b.jenis_kelamin = 'l' THEN 'Laki-laki'
+                    WHEN b.jenis_kelamin = 'p' THEN 'Perempuan'
+                    ELSE 'Tidak diketahui'
                 END AS jenis_kelamin"),
-                DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ', 
+                DB::raw("TRIM(BOTH ', ' FROM CONCAT_WS(', ',
                             GROUP_CONCAT(DISTINCT CASE WHEN pengajar.id IS NOT NULL THEN 'Pengajar' END SEPARATOR ', '),
                             GROUP_CONCAT(DISTINCT CASE WHEN karyawan.id IS NOT NULL THEN 'Karyawan' END SEPARATOR ', '),
                             GROUP_CONCAT(DISTINCT CASE WHEN pengurus.id IS NOT NULL THEN 'Pengurus' END SEPARATOR ', '),
@@ -232,7 +232,7 @@ class PegawaiService
 
                 $pegawaiNonaktif = Pegawai::where('biodata_id', $existingBiodata->id)
                     ->where('status_aktif', 'tidak aktif')
-                    ->orderBy('id', 'desc') 
+                    ->orderBy('id', 'desc')
                     ->first();
 
                 if ($pegawaiNonaktif) {
@@ -336,7 +336,7 @@ class PegawaiService
                 ]);
             }
 
-            // Keluarga 
+            // Keluarga
             if (! $isExisting && ! empty($input['no_kk'])) {
                 Keluarga::create([
                     'id_biodata' => $biodata->id,
@@ -346,7 +346,7 @@ class PegawaiService
                 ]);
             }
 
-            // Warga pesantren 
+            // Warga pesantren
             if (! $isExisting && ! empty($input['niup'])) {
                 WargaPesantren::create([
                     'biodata_id' => $biodata->id,
@@ -472,7 +472,7 @@ class PegawaiService
                     'jurusan_id' => $input['jurusan_id_wali'] ?? null,
                     'kelas_id' => $input['kelas_id_wali'] ?? null,
                     'rombel_id' => $input['rombel_id_wali'] ?? null,
-                    'jumlah_murid' => $input['jumlah_murid_wali'] ?? null,
+                    // 'jumlah_murid' => $input['jumlah_murid_wali'] ?? null,
                     'periode_awal' => $input['periode_awal_wali'] ?? now(),
                     'status_aktif' => 'aktif',
                     'created_by' => Auth::id(),
