@@ -10,6 +10,9 @@ use App\Models\Pegawai\MataPelajaran;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
+use Intervention\Image\Drivers\Gd\Driver;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
+use Intervention\Image\ImageManager;
 use App\Models\Pegawai\WaliKelas;
 use App\Models\Santri;
 use App\Models\WargaPesantren;
@@ -76,7 +79,7 @@ class PegawaiService
             })
             ->leftJoinSub($fotoLast, 'fl', fn($j) => $j->on('b.id', '=', 'fl.biodata_id'))
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
-            ->where('pegawai.status_aktif','aktif')
+            ->where('pegawai.status_aktif', 'aktif')
             ->whereNull('pegawai.deleted_at');
 
         return $query;
@@ -357,7 +360,14 @@ class PegawaiService
             }
 
             // Simpan berkas
+            // --- PROSES BERKAS PEGAWAI (MULTI FILE) ---
             if (! empty($input['berkas']) && is_array($input['berkas'])) {
+                $maxWidth = 1200;
+                $quality  = 85;
+
+                // Gunakan ImageManager v3 dengan driver GD
+                $manager = new ImageManager(new Driver());
+
                 foreach ($input['berkas'] as $item) {
                     if (! ($item['file_path'] instanceof UploadedFile)) {
                         throw new \Exception('Berkas tidak valid');
@@ -376,18 +386,64 @@ class PegawaiService
                         }
                     }
 
-                    // Proses upload & create seperti biasa
-                    $path = $item['file_path']->store('berkas', 'public');
+                    try {
+                        $uploaded = $item['file_path'];
+                        $mime     = $uploaded->getClientMimeType() ?? '';
 
-                    Berkas::create([
-                        'biodata_id' => $biodata->id,
-                        'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
-                        'file_path' => Storage::url($path),
-                        'status' => true,
-                        'created_by' => Auth::id(),
-                    ]);
+                        if (str_starts_with($mime, 'image/')) {
+                            // Baca & orientasikan foto
+                            $img = $manager->read($uploaded->getRealPath())->orient();
+
+                            // Resize gambar tanpa merusak aspek rasio
+                            $img = $img->scale(width: $maxWidth);
+
+                            // Konversi semua gambar ke JPEG agar lebih kecil & konsisten
+                            $encodedImage = $img->toJpeg($quality);
+
+                            // Nama file unik
+                            $filename   = time() . '_' . uniqid() . '.jpg';
+                            $storedPath = 'Pegawai/' . $filename;
+
+                            // Simpan ke storage/public
+                            Storage::disk('public')->put($storedPath, (string) $encodedImage);
+
+                            // Optimalkan gambar pakai Spatie
+                            $fullPath = storage_path('app/public/' . $storedPath);
+                            $optimizerChain = OptimizerChainFactory::create();
+                            $optimizerChain->optimize($fullPath);
+
+                            $url = Storage::url($storedPath);
+                        } else {
+                            // Kalau bukan gambar, simpan langsung tanpa resize
+                            $storedPath = $uploaded->store('Pegawai', 'public');
+                            $fullPath   = storage_path('app/public/' . $storedPath);
+
+                            try {
+                                $optimizerChain = OptimizerChainFactory::create();
+                                $optimizerChain->optimize($fullPath);
+                            } catch (\Exception $e) {
+                            }
+
+                            $url = Storage::url($storedPath);
+                        }
+
+                        // Simpan ke DB
+                        Berkas::create([
+                            'biodata_id'      => $biodata->id,
+                            'jenis_berkas_id' => (int) $item['jenis_berkas_id'],
+                            'file_path'       => $url,
+                            'status'          => true,
+                            'created_by'      => Auth::id(),
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Gagal memproses berkas pegawai: ' . $e->getMessage(), [
+                            'file' => $item['file_path'] ? $item['file_path']->getClientOriginalName() : null,
+                        ]);
+                        throw $e;
+                    }
                 }
             }
+
 
             $hasRole =
                 !empty($input['karyawan']) ||
