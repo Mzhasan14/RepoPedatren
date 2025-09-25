@@ -415,6 +415,19 @@ class WaliasuhService
                             'updated_at'   => now(),
                         ]);
                 }
+
+                // === CATAT LOG AKTIVITAS ===
+                activity('lepas_wali_asuh_dari_grup')
+                    ->causedBy(Auth::user())
+                    ->performedOn(Wali_asuh::find($waliAsuhId)) // kalau ada modelnya
+                    ->withProperties([
+                        'wali_asuh_id' => $waliAsuhId,
+                        'grup_ids'     => $grup->pluck('id'), // grup yang dilepas
+                        'ip'           => request()->ip(),
+                        'user_agent'   => request()->userAgent(),
+                    ])
+                    ->event('remove')
+                    ->log("Wali asuh ID {$waliAsuhId} berhasil dilepaskan dari grup");
             });
 
             return [
@@ -597,7 +610,7 @@ class WaliasuhService
                     break;
                 case 'status':
                     $select[] = DB::raw(
-                        "CASE 
+                        "CASE
                             WHEN s.status = 'aktif' AND pd.status = 'aktif' THEN 'santri-pelajar'
                             WHEN s.status = 'aktif' THEN 'santri'
                             WHEN pd.status = 'aktif' THEN 'pelajar'
@@ -778,7 +791,7 @@ class WaliasuhService
                 ];
             }
 
-            // 🔹 Ambil santri yang statusnya aktif 
+            // 🔹 Ambil santri yang statusnya aktif
             $santri = DB::table('santri as s')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->select('s.id', 'b.jenis_kelamin', 's.status')

@@ -2,6 +2,7 @@
 
 namespace App\Services\Kewaliasuhan;
 
+use App\Models\Kewaliasuhan\Anak_asuh;
 use App\Models\Kewaliasuhan\Grup_WaliAsuh;
 use App\Models\Kewaliasuhan\Wali_asuh;
 use Illuminate\Http\Request;
@@ -178,6 +179,19 @@ class GrupWaliasuhService
                         'updated_by' => Auth::id(),
                         'updated_at' => now(),
                     ]);
+
+                activity('nonaktifkan_anak_asuh')
+                    ->causedBy(Auth::user())
+                    ->performedOn(Anak_asuh::find($anakAsuhId)) // kalau model ada
+                    ->withProperties([
+                        'anak_asuh_id' => $anakAsuhId,
+                        'nama'         => $anakAsuh->nama ?? null,
+                        'alasan'       => 'Nonaktif manual oleh admin',
+                        'ip'           => request()->ip(),
+                        'user_agent'   => request()->userAgent(),
+                    ])
+                    ->event('deactivate')
+                    ->log("Anak asuh ID {$anakAsuhId} berhasil dinonaktifkan.");
             });
 
             return [

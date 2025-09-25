@@ -534,7 +534,29 @@ class PegawaiService
                     'created_by' => Auth::id(),
                 ]);
             }
-
+            // --- 8. CATAT LOG AKTIVITAS (AUDIT TRAIL) ---
+            activity('registrasi_pegawai')
+                ->causedBy(Auth::user())
+                ->performedOn($pegawai)
+                ->withProperties([
+                    'biodata_id' => $biodata->id,
+                    'pegawai_id' => $pegawai->id,
+                    'roles' => [
+                        'karyawan'   => $resultData['karyawan']->id ?? null,
+                        'pengajar'   => $resultData['pengajar']->id ?? null,
+                        'pengurus'   => $resultData['pengurus']->id ?? null,
+                        'wali_kelas' => $resultData['wali_kelas']->id ?? null,
+                    ],
+                    'no_kk' => $input['no_kk'] ?? null,
+                    'nik' => $biodata->nik ?? null,
+                    'passport' => $biodata->no_passport ?? null,
+                    'mata_pelajaran' => collect($input['mata_pelajaran'] ?? [])->pluck('kode_mapel'),
+                    'berkas' => collect($input['berkas'] ?? [])->pluck('jenis_berkas_id'),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create_pegawai')
+                ->log("Registrasi pegawai baru atas nama {$biodata->nama} berhasil disimpan beserta biodata, peran, dan berkas.");
             DB::commit();
 
             return [

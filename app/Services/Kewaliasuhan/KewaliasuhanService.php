@@ -492,7 +492,20 @@ class KewaliasuhanService
             }
 
             DB::commit();
-
+            activity('create_grup_wali_asuh')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'grup'       => $dataBaru['grup'],
+                    'wali_asuh'  => $dataBaru['wali_asuh'],
+                    'anak_asuh'  => $dataBaru['anak_asuh'],
+                    'gagal'      => $dataGagal,
+                    'wilayah_id' => $idWilayah,
+                    'jenis_kelamin' => $jenisKelaminGrup,
+                    'ip'         => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('create')
+                ->log("Grup wali asuh '{$namaGrup}' berhasil dibuat dengan wali asuh {$wali->nama}.");
             return [
                 'status'     => true,
                 'message'    => count($dataBaru['anak_asuh']) . " anak berhasil ditambahkan, " . count($dataGagal) . " gagal.",
