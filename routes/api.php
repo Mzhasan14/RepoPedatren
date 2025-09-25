@@ -6,6 +6,7 @@ use App\Http\Controllers\api\KitabController;
 use App\Http\Controllers\api\PDF\PDFController;
 use App\Http\Controllers\api\ActivityController;
 use App\Http\Controllers\api\Auth\AuthController;
+use App\Http\Controllers\api\Auth\RoleController;
 use App\Http\Controllers\api\Auth\UserController;
 use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\JenisBerkasController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\Auth\AuthOrtuController;
 use App\Http\Controllers\api\keluarga\WaliController;
 use App\Http\Controllers\api\wilayah\KamarController;
+use App\Http\Controllers\api\Auth\PermissionController;
 use App\Http\Controllers\api\Pegawai\PegawaiController;
 use App\Http\Controllers\api\wilayah\WilayahController;
 use App\Http\Controllers\api\Pegawai\DropdownController;
@@ -825,7 +827,7 @@ Route::prefix('crud')
                 [WaliasuhController::class, 'lepasWaliAsuhDariGrup']
             );
 
-            Route::post('/waliasuh',[WaliasuhController::class,'StoreToWali']);
+            Route::post('/waliasuh', [WaliasuhController::class, 'StoreToWali']);
 
             // Lembaga
             Route::post('lembaga', [LembagaController::class, 'store']);
@@ -1191,10 +1193,14 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
     Route::get('/catatanKognitif', [ViewOrangTuaController::class, 'catatanKognitif']);
 
     Route::get('/ProfileSantri', [ViewOrangTuaController::class, 'ProfileSantri']);
-
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
 // Route::post('/register-ortu', [AuthController::class, 'registerOrtu']);
 Route::post('/login-ortu', [AuthOrtuController::class, 'login']);
 Route::post('/register-ortu', [AuthOrtuController::class, 'register']);
+
+Route::middleware('auth:sanctum', 'role:superadmin')->group(function () {
+    Route::apiResource('permissions', PermissionController::class);
+    Route::apiResource('roles', RoleController::class);
+});

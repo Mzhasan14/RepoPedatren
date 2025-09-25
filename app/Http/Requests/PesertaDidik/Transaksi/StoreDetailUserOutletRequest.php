@@ -20,7 +20,7 @@ class StoreDetailUserOutletRequest extends FormRequest
     {
         return [
             'user_id' => 'required|exists:users,id|unique:detail_user_outlet,user_id',
-            'outlet_id' => 'required|exists:outles,id',
+            'outlet_id' => 'required|exists:outlets,id',
             'status' => 'boolean',
         ];
     }
