@@ -42,7 +42,9 @@ class SantriService
             ->leftJoin('berkas AS br', 'br.id', '=', 'fl.last_id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->leftJoin('kecamatan AS kc', 'kc.id', '=', 'b.kecamatan_id')
             ->leftJoin('kabupaten AS kb', 'kb.id', '=', 'b.kabupaten_id')
+            ->leftJoin('provinsi AS pv', 'pv.id', '=', 'b.provinsi_id')
             ->leftJoinSub($keluargaLast, 'kl', fn($j) => $j->on('b.id', '=', 'kl.id_biodata'))
             ->leftJoin('keluarga as k', 'k.id', '=', 'kl.last_id')
             ->where('s.status', 'aktif')
@@ -67,8 +69,14 @@ class SantriService
             'bl.nama_blok',
             'l.nama_lembaga',
             'w.nama_wilayah',
+            'b.tanggal_lahir',
+            'b.tempat_lahir',
+            'b.jalan',
             DB::raw('YEAR(s.tanggal_masuk) as angkatan'),
             'kb.nama_kabupaten AS kota_asal',
+            'kc.nama_kecamatan',
+            'kb.nama_kabupaten',
+            'pv.nama_provinsi',
             's.created_at',
             DB::raw('GREATEST(
             s.updated_at,
@@ -93,8 +101,14 @@ class SantriService
             'wilayah' => $item->nama_wilayah ?? '-',
             'blok' => $item->nama_blok ?? '-',
             'kamar' => $item->nama_kamar ?? '-',
+            'tempat_lahir' => $item->tempat_lahir ?? '-',
+            'tanggal_lahir' => $item->tanggal_lahir ?? '-',
             'angkatan' => $item->angkatan,
             'kota_asal' => $item->kota_asal,
+            'jalan' => $item->jalan,
+            'kecamatan' => $item->nama_kecamatan ?? '-',
+            'kabupaten' => $item->nama_kabupaten ?? '-',
+            'provinsi' => $item->nama_provinsi ?? '-',
             'tgl_update' => Carbon::parse($item->updated_at)->translatedFormat('d F Y H:i:s') ?? '-',
             'tgl_input' => Carbon::parse($item->created_at)->translatedFormat('d F Y H:i:s'),
             'foto_profil' => url($item->foto_profil),
@@ -215,7 +229,7 @@ class SantriService
                     break;
                 case 'status':
                     $select[] = DB::raw(
-                        "CASE 
+                        "CASE
                             WHEN s.status = 'aktif' AND pd.status = 'aktif' THEN 'santri-pelajar'
                             WHEN s.status = 'aktif' THEN 'santri'
                             WHEN pd.status = 'aktif' THEN 'pelajar'
