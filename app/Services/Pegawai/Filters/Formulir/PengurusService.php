@@ -2,8 +2,11 @@
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
+use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
+use App\Models\Pegawai\Pengajar;
 use App\Models\Pegawai\Pengurus;
+use App\Models\Pegawai\WaliKelas;
 use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -13,11 +16,11 @@ class PengurusService
 {
     public function index(string $bioId): array
     {
-        $pengurus = Pengurus::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
+        $pengurus = Pengurus::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
             ->with(['pegawai.biodata'])
-            ->orderBy('tanggal_mulai','desc')
+            ->orderBy('tanggal_mulai', 'desc')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'id' => $item->id,
                 'jabatan_kontrak' => $item->jabatan,
                 'satuan_kerja' => $item->satuan_kerja,
@@ -108,7 +111,7 @@ class PengurusService
         }
 
         // 2. Cek apakah sudah ada pengurus aktif untuk biodata ini
-        $exist = Pengurus::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
+        $exist = Pengurus::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 
@@ -206,7 +209,7 @@ class PengurusService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if ($pengurus->tanggal_akhir) {
+            if ($pengurus->tanggal_akhir || $pengurus->status_aktif === 'tidak aktif') {
                 return [
                     'status' => false,
                     'message' => 'Data pengurus sudah ditandai selesai/nonaktif.',
@@ -221,15 +224,41 @@ class PengurusService
                 ];
             }
 
+            $pegawaiId = $pengurus->pegawai_id;
+
+            $masihAktif = (
+                Karyawan::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_selesai')
+                ->exists() ||
+
+                Pengajar::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tahun_akhir')
+                ->exists() ||
+
+                WaliKelas::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('periode_akhir')
+                ->exists()
+            );
+
             $pengurus->update([
-                'status_aktif' => 'tidak aktif',
-                'tanggal_akhir' => $tglAkhir,
-                'updated_by' => Auth::id(),
+                'status_aktif'   => 'tidak aktif',
+                'tanggal_akhir'  => $tglAkhir,
+                'updated_by'     => Auth::id(),
             ]);
+
+            if (! $masihAktif) {
+                Pegawai::where('id', $pegawaiId)->update([
+                    'status_aktif' => 'tidak aktif',
+                    'updated_by'   => Auth::id(),
+                ]);
+            }
 
             return [
                 'status' => true,
-                'data' => $pengurus,
+                'data'   => $pengurus,
             ];
         });
     }

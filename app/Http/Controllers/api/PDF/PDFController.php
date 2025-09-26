@@ -94,25 +94,32 @@ class PDFController extends Controller
         }
     }
 
-    public function downloadIdCard(Request $request)
+    public function downloadIdCardArrofiah(Request $request)
     {
         try {
-            // Ambil data santri dari service
-            $santri = $this->SantriService->getAllSantri($request)->get();
+            $query = $this->SantriService->getAllSantri($request);
+
+            // Kalau ada santri_ids → filter
+            if ($request->filled('santri_ids')) {
+                $santriIds = $request->input('santri_ids');
+
+                $query->whereIn('s.id', $santriIds);
+            }
+
+            $santri = $query->get();
 
             if ($santri->isEmpty()) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => 'Data santri tidak ditemukan.'
                 ], 404);
             }
 
-            // Generate PDF
             $pdf = Pdf::loadView('pdf.id_card', [
                 'santri' => $santri
             ])
                 ->setPaper([0, 0, 324, 203], 'portrait')
-                ->setOption('dpi', 300) // biar HD
+                ->setOption('dpi', 300)
                 ->setOption('isRemoteEnabled', true);
 
             return $pdf->download('id_card_santri.pdf');
@@ -122,9 +129,45 @@ class PDFController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Terjadi kesalahan saat membuat ID Card.'
             ], 500);
         }
+    }
+    public function downloadIdCardKanzus(Request $request)
+    {
+        // try {
+            $query = $this->SantriService->getAllSantri($request);
+
+            if ($request->filled('santri_ids')) {
+                $santriIds = $request->input('santri_ids');
+                $query->whereIn('s.id', $santriIds);
+            }
+
+            $santri = $query->get();
+
+            if ($santri->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Data santri tidak ditemukan.'
+                ], 404);
+            }
+
+            $pdf = Pdf::loadView('pdf.kanzus', compact('santri'))
+                ->setPaper([0, 0, 638, 1004], 'portrait')
+                ->setOption('dpi', 300)
+                ->setOption('isRemoteEnabled', true);
+
+            return $pdf->download("id_card_kanzus.pdf");
+        // } catch (\Throwable $e) {
+        //     Log::error("Download ID Card Kanzus Error: " . $e->getMessage(), [
+        //         'trace' => $e->getTraceAsString()
+        //     ]);
+
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Terjadi kesalahan saat membuat ID Card Kanzus.'
+        //     ], 500);
+        // }
     }
 }

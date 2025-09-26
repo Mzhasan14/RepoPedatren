@@ -114,17 +114,17 @@
 
     @endforeach
     <!-- {{-- Kartu Belakang --}} -->
-    <!-- <div class="id-card">
+    <div class="id-card">
         <img src="{{ public_path('images/idcard/belakang.png') }}" class="bg" >
-        <div class="rules">
+        <!-- <div class="rules">
             <ol>
                 <li>Kartu ini adalah Kartu Identitas Santri</li>
                 <li>Kartu ini digunakan untuk keperluan administrasi di Pesantren</li>
                 <li>Apabila kartu ini hilang, segera hubungi kantor pesantren dengan mengganti biaya administrasi</li>
                 <li>Kartu ini hanya berlaku di PP. Ar-Rofiyyah dan hanya bisa digunakan oleh pemiliknya selama masih aktif menjadi santri</li>
             </ol>
-        </div>
-    </div> -->
+        </div> -->
+    </div>
 </body>
 
 </html>
