@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api\PDF;
 
 use App\Http\Controllers\Controller;
 use App\Services\Pegawai\Filters\Formulir\JadwalService;
+use App\Services\PesertaDidik\SantriService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -12,13 +13,16 @@ use Illuminate\Support\Facades\Log;
 
 class PDFController extends Controller
 {
-        private JadwalService $JadwalService;
+    private JadwalService $JadwalService;
+    private SantriService $SantriService;
 
-        public function __construct(
-        JadwalService $JadwalService
-        ) {
-            $this->JadwalService = $JadwalService;
-        }
+    public function __construct(
+        JadwalService $JadwalService,
+        SantriService $SantriService
+    ) {
+        $this->JadwalService = $JadwalService;
+        $this->SantriService = $SantriService;
+    }
     public function downloadPdf(Request $request)
     {
         try {
@@ -72,21 +76,54 @@ class PDFController extends Controller
                 'data' => $formatted
             ])->setPaper('A4', 'portrait');
 
-            $filename = 'jadwal_'.$metaInfo['semester'].'_'.$metaInfo['kelas'].'_'.$metaInfo['rombel'].'.pdf';
+            $filename = 'jadwal_' . $metaInfo['semester'] . '_' . $metaInfo['kelas'] . '_' . $metaInfo['rombel'] . '.pdf';
 
             return Response::make($pdf->output(), 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             ]);
-
         } catch (\Throwable $e) {
-            Log::error("Download Jadwal PDF Error: ".$e->getMessage(), [
+            Log::error("Download Jadwal PDF Error: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan saat membuat PDF.'
+            ], 500);
+        }
+    }
+
+    public function downloadIdCard(Request $request)
+    {
+        try {
+            // Ambil data santri dari service
+            $santri = $this->SantriService->getAllSantri($request)->get();
+
+            if ($santri->isEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data santri tidak ditemukan.'
+                ], 404);
+            }
+
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.id_card', [
+                'santri' => $santri
+            ])
+                ->setPaper([0, 0, 324, 203], 'portrait')
+                ->setOption('dpi', 300) // biar HD
+                ->setOption('isRemoteEnabled', true);
+
+            return $pdf->download('id_card_santri.pdf');
+        } catch (\Throwable $e) {
+            Log::error("Download ID Card Error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat membuat ID Card.'
             ], 500);
         }
     }

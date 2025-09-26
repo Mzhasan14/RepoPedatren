@@ -226,6 +226,7 @@ Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor
     // Cetak Pdf
     Route::get('/jadwal/download-pdf', [PDFController::class, 'downloadPdf']);
 });
+Route::get('/id-card/download-pdf', [PDFController::class, 'downloadIdCard']);
 
 // Formulir Peserta Didik
 // Route::prefix('formulir')->middleware([
