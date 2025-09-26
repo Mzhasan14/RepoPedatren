@@ -106,7 +106,7 @@
 
         <div class="info">
             <p><strong>Nama</strong>: {{ $s->nama }}</p>
-            <p><strong>Nomor Induk</strong>: {{ $s->nis }}</p>
+            <p><strong>NIS</strong>: {{ $s->nis }}</p>
             <p><strong>TTL</strong>: {{ $s->tempat_lahir }}, {{ \Carbon\Carbon::parse($s->tanggal_lahir)->format('d M Y') }}</p>
             <p><strong>Alamat</strong>: {{ $s->jalan }}, {{ $s->nama_kecamatan }}, {{ $s->nama_kabupaten }}</p>
         </div>
