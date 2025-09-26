@@ -7,8 +7,8 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Times New Roman', Times, serif;
-            transform: scale(3.6) translate(0px, -25px);
+            font-family: 'Poppins', sans-serif;
+            transform: scale(4.2) translate(0px, -34px);
             transform-origin: top center;
         }
 
@@ -68,7 +68,7 @@
 
         .info strong {
             display: inline-block;
-            width: 80px;
+            width: 50px;
         }
 
         /* belakang (aturan kartu) */
@@ -108,13 +108,14 @@
             <p><strong>Nama</strong>: {{ $s->nama }}</p>
             <p><strong>NIS</strong>: {{ $s->nis }}</p>
             <p><strong>TTL</strong>: {{ $s->tempat_lahir }}, {{ \Carbon\Carbon::parse($s->tanggal_lahir)->format('d M Y') }}</p>
-            <p><strong>Alamat</strong>: {{ $s->jalan }}, {{ $s->nama_kecamatan }}, {{ $s->nama_kabupaten }}</p>
+            <p><strong>Alamat</strong>: {{ $s->jalan }}, {{ $s->nama_kecamatan }}, {{ $s->nama_kabupaten }}, {{ $s->nama_provinsi }}</p>
         </div>
     </div>
 
-    <!-- {{-- Kartu Belakang --}}
-    <div class="id-card">
-        <img src="{{ public_path('images/idcard/belakang.jpg') }}" class="bg" >
+    @endforeach
+    <!-- {{-- Kartu Belakang --}} -->
+    <!-- <div class="id-card">
+        <img src="{{ public_path('images/idcard/belakang.png') }}" class="bg" >
         <div class="rules">
             <ol>
                 <li>Kartu ini adalah Kartu Identitas Santri</li>
@@ -124,7 +125,6 @@
             </ol>
         </div>
     </div> -->
-    @endforeach
 </body>
 
 </html>
