@@ -4,6 +4,9 @@ namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
+use App\Models\Pegawai\Pengajar;
+use App\Models\Pegawai\Pengurus;
+use App\Models\Pegawai\WaliKelas;
 use App\Models\Santri;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -13,11 +16,11 @@ class KaryawanService
 {
     public function index(string $bioId): array
     {
-        $karyawan = Karyawan::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
+        $karyawan = Karyawan::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
             ->with(['pegawai.biodata'])
-            ->orderBy('tanggal_mulai','desc')
+            ->orderBy('tanggal_mulai', 'desc')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'id' => $item->id,
                 'jabatan_kontrak' => $item->jabatan,
                 'keterangan_jabatan' => $item->keterangan_jabatan,
@@ -74,7 +77,7 @@ class KaryawanService
         }
 
         // 2. Validasi Karyawan Aktif
-        $exist = Karyawan::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
+        $exist = Karyawan::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 
@@ -211,7 +214,7 @@ class KaryawanService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if ($karyawan->tanggal_selesai) {
+            if ($karyawan->tanggal_selesai || $karyawan->status_aktif === 'tidak aktif') {
                 return [
                     'status' => false,
                     'message' => 'Data karyawan sudah ditandai selesai/nonaktif.',
@@ -226,15 +229,42 @@ class KaryawanService
                 ];
             }
 
+            $pegawaiId = $karyawan->pegawai_id;
+
+            $masihAktif = (
+                Pengurus::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_akhir')
+                ->exists() ||
+
+                Pengajar::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tahun_akhir')
+                ->exists() ||
+
+                WaliKelas::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('periode_akhir')
+                ->exists()
+            );
+
             $karyawan->update([
-                'status_aktif' => 'tidak aktif',
+                'status_aktif'    => 'tidak aktif',
                 'tanggal_selesai' => $tglSelesai,
-                'updated_by' => Auth::id(),
+                'updated_by'      => Auth::id(),
             ]);
+
+            // Kalau tidak ada entitas lain yang aktif → nonaktifkan Pegawai juga
+            if (! $masihAktif) {
+                Pegawai::where('id', $pegawaiId)->update([
+                    'status_aktif'    => 'tidak aktif',
+                    'updated_by'      => Auth::id(),
+                ]);
+            }
 
             return [
                 'status' => true,
-                'data' => $karyawan,
+                'data'   => $karyawan,
             ];
         });
     }

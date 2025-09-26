@@ -4,10 +4,13 @@ namespace App\Services\Pegawai\Filters\Formulir;
 
 use App\Models\Pegawai\JadwalPelajaran;
 use App\Models\Pegawai\JamPelajaran;
+use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\MataPelajaran;
 use App\Models\Pegawai\MateriAjar;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
+use App\Models\Pegawai\Pengurus;
+use App\Models\Pegawai\WaliKelas;
 use App\Models\Pendidikan\Jurusan;
 use App\Models\Pendidikan\Kelas;
 use App\Models\Pendidikan\Lembaga;
@@ -22,11 +25,11 @@ class PengajarService
 {
     public function index(string $bioId): array
     {
-        $pengajar = Pengajar::whereHas('pegawai.biodata', fn ($query) => $query->where('id', $bioId))
+        $pengajar = Pengajar::whereHas('pegawai.biodata', fn($query) => $query->where('id', $bioId))
             ->with(['lembaga', 'golongan'])
-            ->orderBy('tahun_masuk','desc')
+            ->orderBy('tahun_masuk', 'desc')
             ->get()
-            ->map(fn ($p) => [
+            ->map(fn($p) => [
                 'id' => $p->id,
                 'nama_lembaga' => optional($p->lembaga)->nama_lembaga,
                 'nama_golongan' => optional($p->golongan)->nama_golongan,
@@ -53,7 +56,7 @@ class PengajarService
             ];
         }
 
-        $materi = $pengajar->mataPelajaran->map(fn ($m) => [
+        $materi = $pengajar->mataPelajaran->map(fn($m) => [
             'materi_id' => $m->id,
             'kode_mapel' => $m->kode_mapel,
             'nama_mapel' => $m->nama_mapel,
@@ -364,11 +367,11 @@ class PengajarService
 
     //     return ['status' => true, 'message' => 'Materi ajar berhasil ditambahkan.', 'data' => $pengajar->load('materiAjar')];
     // }
-    
+
     public function showMapelById(int $id): array
     {
         try {
-            $materi = MataPelajaran::select('id', 'lembaga_id','kode_mapel', 'nama_mapel','pengajar_id','status')
+            $materi = MataPelajaran::select('id', 'lembaga_id', 'kode_mapel', 'nama_mapel', 'pengajar_id', 'status')
                 ->findOrFail($id);
 
             return [
@@ -399,7 +402,7 @@ class PengajarService
             if ($kodeSudahAda) {
                 return [
                     'status' => false,
-                    'message' => 'Kode mata pelajaran '.$input['kode_mapel'].' sudah digunakan oleh data aktif lainnya.',
+                    'message' => 'Kode mata pelajaran ' . $input['kode_mapel'] . ' sudah digunakan oleh data aktif lainnya.',
                 ];
             }
 
@@ -443,7 +446,7 @@ class PengajarService
         }
 
         // 2. Cek apakah sudah ada pengajar aktif untuk biodata ini
-        $exist = Pengajar::whereHas('pegawai', fn ($q) => $q->where('biodata_id', $bioId))
+        $exist = Pengajar::whereHas('pegawai', fn($q) => $q->where('biodata_id', $bioId))
             ->where('status_aktif', 'aktif')
             ->first();
 
@@ -633,7 +636,7 @@ class PengajarService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if ($pengajar->tahun_akhir) {
+            if ($pengajar->tahun_akhir || $pengajar->status_aktif === 'tidak aktif') {
                 return [
                     'status' => false,
                     'message' => 'Data pengajar sudah ditandai selesai/nonaktif.',
@@ -641,13 +644,31 @@ class PengajarService
             }
 
             $tahunAkhir = Carbon::parse($input['tahun_akhir'] ?? '');
-
             if ($tahunAkhir->lt(Carbon::parse($pengajar->tahun_masuk))) {
                 return [
                     'status' => false,
                     'message' => 'Tahun akhir tidak boleh sebelum tahun masuk.',
                 ];
             }
+
+            $pegawaiId = $pengajar->pegawai_id;
+
+            $masihAktif = (
+                Karyawan::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_selesai')
+                ->exists() ||
+
+                Pengurus::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_akhir')
+                ->exists() ||
+
+                WaliKelas::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('periode_akhir')
+                ->exists()
+            );
 
             // Nonaktifkan pengajar
             $pengajar->update([
@@ -658,8 +679,7 @@ class PengajarService
 
             // Nonaktifkan mata pelajaran dan hapus jadwal terkait
             foreach ($pengajar->mataPelajaran as $mapel) {
-                $mapel->jadwalPelajaran()->delete(); // Hapus jadwal secara permanen
-
+                $mapel->jadwalPelajaran()->delete(); // hapus jadwal permanen
                 $mapel->update([
                     'status'     => false,
                     'updated_by' => Auth::id(),
@@ -667,13 +687,21 @@ class PengajarService
                 ]);
             }
 
+            if (! $masihAktif) {
+                Pegawai::where('id', $pegawaiId)->update([
+                    'status_aktif' => 'tidak aktif',
+                    'updated_by'   => Auth::id(),
+                ]);
+            }
+
             return [
-                'status' => true,
-                'message' => 'Pengajar berhasil dinonaktifkan dan mata pelajaran dinonaktifkan.',
-                'data'   => $pengajar->load('mataPelajaran.jadwalPelajaran'),
+                'status'  => true,
+                'message' => 'Pengajar berhasil dinonaktifkan, mata pelajaran dinonaktifkan, dan jadwal dihapus.',
+                'data'    => $pengajar->load('mataPelajaran.jadwalPelajaran'),
             ];
         });
     }
+
     public function nonaktifkanMataPelajaran(string $pengajarId, string $mataPelajaranId): array
     {
         $mapel = MataPelajaran::with('jadwalPelajaran')

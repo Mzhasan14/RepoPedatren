@@ -2,7 +2,10 @@
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
+use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
+use App\Models\Pegawai\Pengajar;
+use App\Models\Pegawai\Pengurus;
 use App\Models\Pegawai\WaliKelas;
 use App\Models\Santri;
 use Carbon\Carbon;
@@ -263,10 +266,10 @@ class WaliKelasService
                 return ['status' => false, 'message' => 'Data tidak ditemukan.'];
             }
 
-            if ($wali->periode_akhir) {
+            if ($wali->periode_akhir || $wali->status_aktif === 'tidak aktif') {
                 return [
                     'status' => false,
-                    'message' => 'Data wali kelas sudah ditandai selesai.',
+                    'message' => 'Data wali kelas sudah ditandai selesai/nonaktif.',
                 ];
             }
 
@@ -278,15 +281,41 @@ class WaliKelasService
                 ];
             }
 
+            $pegawaiId = $wali->pegawai_id;
+
+            $masihAktif = (
+                Karyawan::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_selesai')
+                ->exists() ||
+
+                Pengajar::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tahun_akhir')
+                ->exists() ||
+
+                Pengurus::where('pegawai_id', $pegawaiId)
+                ->where('status_aktif', 'aktif')
+                ->whereNull('tanggal_akhir')
+                ->exists()
+            );
+
             $wali->update([
-                'status_aktif' => 'tidak aktif',
+                'status_aktif'  => 'tidak aktif',
                 'periode_akhir' => $periodeAkhir,
-                'updated_by' => Auth::id(),
+                'updated_by'    => Auth::id(),
             ]);
+
+            if (! $masihAktif) {
+                Pegawai::where('id', $pegawaiId)->update([
+                    'status_aktif' => 'tidak aktif',
+                    'updated_by'   => Auth::id(),
+                ]);
+            }
 
             return [
                 'status' => true,
-                'data' => $wali,
+                'data'   => $wali,
             ];
         });
     }
