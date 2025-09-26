@@ -94,10 +94,9 @@ class PDFController extends Controller
         }
     }
 
-    public function downloadIdCard(Request $request)
+    public function downloadIdCardArrofiah(Request $request)
     {
         try {
-            // Ambil semua santri dulu (query builder, belum dieksekusi)
             $query = $this->SantriService->getAllSantri($request);
 
             // Kalau ada santri_ids → filter
@@ -116,7 +115,6 @@ class PDFController extends Controller
                 ], 404);
             }
 
-            // Generate PDF
             $pdf = Pdf::loadView('pdf.id_card', [
                 'santri' => $santri
             ])
@@ -135,5 +133,41 @@ class PDFController extends Controller
                 'message' => 'Terjadi kesalahan saat membuat ID Card.'
             ], 500);
         }
+    }
+    public function downloadIdCardKanzus(Request $request)
+    {
+        // try {
+            $query = $this->SantriService->getAllSantri($request);
+
+            if ($request->filled('santri_ids')) {
+                $santriIds = $request->input('santri_ids');
+                $query->whereIn('s.id', $santriIds);
+            }
+
+            $santri = $query->get();
+
+            if ($santri->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Data santri tidak ditemukan.'
+                ], 404);
+            }
+
+            $pdf = Pdf::loadView('pdf.kanzus', compact('santri'))
+                ->setPaper([0, 0, 638, 1004], 'portrait')
+                ->setOption('dpi', 300)
+                ->setOption('isRemoteEnabled', true);
+
+            return $pdf->download("id_card_kanzus.pdf");
+        // } catch (\Throwable $e) {
+        //     Log::error("Download ID Card Kanzus Error: " . $e->getMessage(), [
+        //         'trace' => $e->getTraceAsString()
+        //     ]);
+
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Terjadi kesalahan saat membuat ID Card Kanzus.'
+        //     ], 500);
+        // }
     }
 }
