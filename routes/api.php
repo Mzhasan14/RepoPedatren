@@ -905,7 +905,18 @@ Route::prefix('approve')
             [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'approveByPengasuh']
         )->middleware('role:superadmin|wali_asuh|pengasuh|admin');
     });
-
+Route::prefix('reject')
+    ->middleware(['auth:sanctum', 'throttle:30,1'])
+    ->group(function () {
+        Route::post(
+            '/perizinan/biktren/{id}',
+            [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'TolakByBiktren']
+        )->middleware('role:superadmin|biktren|admin');
+        Route::post(
+            '/perizinan/kamtib/{id}',
+            [\App\Http\Controllers\api\Administrasi\ApprovePerizinanController::class, 'TolakByKamtib']
+        )->middleware('role:superadmin|kamtib|admin');
+    });
 Route::prefix('fitur')->middleware(['auth:sanctum', 'role:superadmin|admin', 'throttle:60,1'])->group(function () {
     // Pendidikan
     Route::post('/pindah-jenjang', [\App\Http\Controllers\api\PesertaDidik\Fitur\PindahNaikJenjangController::class, 'pindah']);
