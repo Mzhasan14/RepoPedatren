@@ -12,7 +12,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Validation\ValidationException;
 use Spatie\ImageOptimizer\OptimizerChainFactory;
 
@@ -137,6 +139,7 @@ class PesertaDidikService
                     ]);
                 }
             }
+
 
             // --- 1. VALIDASI & PROSES BIODATA ---
             $nik = $data['nik'] ?? null;
@@ -472,21 +475,40 @@ class PesertaDidikService
                 }
             }
 
+            // Tambah domisili jika wilayah diisi
+            $jenisKelamin = $data['jenis_kelamin'] ?? null;
+
             // --- 5. PROSES PENDIDIKAN (JIKA ADA) ---
             if (! empty($data['lembaga_id'])) {
+
+                // kalau ada rombel_id → cek gender_rombel
+                if (! empty($data['rombel_id'])) {
+                    $rombel = DB::table('rombel')
+                        ->where('id', $data['rombel_id'])
+                        ->first();
+
+                    if (! $rombel) {
+                        throw new \Exception('Rombel tidak ditemukan');
+                    }
+
+                    if (strtolower($rombel->gender_rombel) !== strtolower($jenisKelamin)) {
+                        throw new \Exception("Rombel hanya untuk santri {$rombel->gender_rombel}, tidak sesuai dengan jenis kelamin yang dipilih");
+                    }
+                }
+
                 DB::table('pendidikan')->insert([
-                    'biodata_id' => $biodataId,
-                    'no_induk' => $data['no_induk'],
-                    'lembaga_id' => $data['lembaga_id'],
-                    'jurusan_id' => $data['jurusan_id'] ?? null,
-                    'kelas_id' => $data['kelas_id'] ?? null,
-                    'rombel_id' => $data['rombel_id'] ?? null,
-                    'angkatan_id' => $data['angkatan_pelajar_id'],
+                    'biodata_id'   => $biodataId,
+                    'no_induk'     => $data['no_induk'],
+                    'lembaga_id'   => $data['lembaga_id'],
+                    'jurusan_id'   => $data['jurusan_id'] ?? null,
+                    'kelas_id'     => $data['kelas_id'] ?? null,
+                    'rombel_id'    => $data['rombel_id'] ?? null,
+                    'angkatan_id'  => $data['angkatan_pelajar_id'],
                     'tanggal_masuk' => $data['tanggal_masuk_pendidikan'],
-                    'status' => 'aktif',
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'status'       => 'aktif',
+                    'created_by'   => $userId,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
                 ]);
             }
 
@@ -531,24 +553,45 @@ class PesertaDidikService
                 ]);
             }
 
-            // Tambah domisili jika wilayah diisi
+
+
+            // --- Validasi WILAYAH ---
             if (! empty($data['wilayah_id'])) {
+                $wilayah = DB::table('wilayah')
+                    ->where('id', $data['wilayah_id'])
+                    ->first();
+
+                if (! $wilayah) {
+                    throw new \Exception('Wilayah tidak ditemukan');
+                }
+
+                if (strtolower($wilayah->kategori) !== strtolower($jenisKelamin)) {
+                    throw new \Exception("Wilayah hanya untuk santri {$wilayah->kategori}, tidak sesuai dengan jenis kelamin yang dipilih");
+                }
+
                 DB::table('domisili_santri')->insert([
-                    'santri_id' => $santriId,
-                    'wilayah_id' => $data['wilayah_id'],
-                    'blok_id' => $data['blok_id'],
-                    'kamar_id' => $data['kamar_id'],
+                    'santri_id'     => $santriId,
+                    'wilayah_id'    => $data['wilayah_id'],
+                    'blok_id'       => $data['blok_id'],
+                    'kamar_id'      => $data['kamar_id'],
                     'tanggal_masuk' => $data['tanggal_masuk_domisili'],
-                    'status' => 'aktif',
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'status'        => 'aktif',
+                    'created_by'    => $userId,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
                 ]);
             }
 
-            // --- 7. PROSES BERKAS (MULTI FILE) ---
+            // --- Validasi PENDI
+
             // --- 7. PROSES BERKAS (MULTI FILE) ---
             if (! empty($data['berkas']) && is_array($data['berkas'])) {
+                $maxWidth = 1200;
+                $quality  = 85;
+
+                // Gunakan ImageManager v3 dengan driver GD
+                $manager = new ImageManager(new Driver());
+
                 foreach ($data['berkas'] as $item) {
                     if (! ($item['file_path'] instanceof UploadedFile)) {
                         throw new \Exception('Berkas tidak valid');
@@ -556,21 +599,33 @@ class PesertaDidikService
 
                     try {
                         $uploaded = $item['file_path'];
+                        $mime     = $uploaded->getClientMimeType() ?? '';
 
-                        // Simpan langsung ke storage/public tanpa resize
-                        $storedPath = $uploaded->store('PesertaDidik', 'public');
-                        $fullPath   = storage_path('app/public/' . $storedPath);
+                        if (str_starts_with($mime, 'image/')) {
+                            // Baca dan orientasikan foto
+                            $img = $manager->read($uploaded->getRealPath())->orient();
 
-                        // Optimalkan file (apapun formatnya: jpg, png, pdf, dll)
-                        try {
-                            $optimizerChain = OptimizerChainFactory::create();
-                            $optimizerChain->optimize($fullPath);
-                        } catch (\Exception $e) {
-                            Log::warning('Gagal optimasi file: ' . $e->getMessage());
+                            // Resize gambar tanpa merusak aspek rasio
+                            $img = $img->scale(width: $maxWidth);
+
+                            // Konversi semua gambar ke JPEG agar lebih kecil dan konsisten
+                            $encodedImage = $img->toJpeg($quality);
+
+                            // Nama file unik
+                            $filename   = time() . '_' . uniqid() . '.jpg';
+                            $storedPath = 'PesertaDidik/' . $filename;
+
+                            // Simpan ke storage/public
+                            Storage::disk('public')->put($storedPath, (string) $encodedImage);
+
+                            $url = Storage::url($storedPath);
+                        } else {
+                            // Kalau bukan gambar, simpan langsung tanpa resize
+                            $storedPath = $uploaded->store('PesertaDidik', 'public');
+                            $url        = Storage::url($storedPath);
                         }
 
-                        $url = Storage::url($storedPath);
-
+                        // Simpan ke DB
                         DB::table('berkas')->insert([
                             'biodata_id'      => $biodataId,
                             'jenis_berkas_id' => (int) $item['jenis_berkas_id'],

@@ -519,21 +519,40 @@ class AnakPegawaiService
                 }
             }
 
-            // --- 7. Proses pendidikan jika diisi ---
+            // Tambah domisili jika wilayah diisi
+            $jenisKelamin = $data['jenis_kelamin'] ?? null;
+
+            // --- 5. PROSES PENDIDIKAN (JIKA ADA) ---
             if (! empty($data['lembaga_id'])) {
+
+                // kalau ada rombel_id → cek gender_rombel
+                if (! empty($data['rombel_id'])) {
+                    $rombel = DB::table('rombel')
+                        ->where('id', $data['rombel_id'])
+                        ->first();
+
+                    if (! $rombel) {
+                        throw new \Exception('Rombel tidak ditemukan');
+                    }
+
+                    if (strtolower($rombel->gender_rombel) !== strtolower($jenisKelamin)) {
+                        throw new \Exception("Rombel hanya untuk santri {$rombel->gender_rombel}, tidak sesuai dengan jenis kelamin yang dipilih");
+                    }
+                }
+
                 DB::table('pendidikan')->insert([
-                    'biodata_id' => $biodataId,
-                    'no_induk' => $data['no_induk'],
-                    'lembaga_id' => $data['lembaga_id'],
-                    'jurusan_id' => $data['jurusan_id'] ?? null,
-                    'kelas_id' => $data['kelas_id'] ?? null,
-                    'rombel_id' => $data['rombel_id'] ?? null,
-                    'angkatan_id' => $data['angkatan_pelajar_id'],
+                    'biodata_id'   => $biodataId,
+                    'no_induk'     => $data['no_induk'],
+                    'lembaga_id'   => $data['lembaga_id'],
+                    'jurusan_id'   => $data['jurusan_id'] ?? null,
+                    'kelas_id'     => $data['kelas_id'] ?? null,
+                    'rombel_id'    => $data['rombel_id'] ?? null,
+                    'angkatan_id'  => $data['angkatan_pelajar_id'],
                     'tanggal_masuk' => $data['tanggal_masuk_pendidikan'],
-                    'status' => 'aktif',
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'status'       => 'aktif',
+                    'created_by'   => $userId,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
                 ]);
             }
 
@@ -579,16 +598,28 @@ class AnakPegawaiService
             }
 
             if (! empty($data['wilayah_id'])) {
+                $wilayah = DB::table('wilayah')
+                    ->where('id', $data['wilayah_id'])
+                    ->first();
+
+                if (! $wilayah) {
+                    throw new \Exception('Wilayah tidak ditemukan');
+                }
+
+                if (strtolower($wilayah->kategori) !== strtolower($jenisKelamin)) {
+                    throw new \Exception("Wilayah hanya untuk santri {$wilayah->kategori}, tidak sesuai dengan jenis kelamin yang dipilih");
+                }
+
                 DB::table('domisili_santri')->insert([
-                    'santri_id' => $santriId,
-                    'wilayah_id' => $data['wilayah_id'],
-                    'blok_id' => $data['blok_id'],
-                    'kamar_id' => $data['kamar_id'],
+                    'santri_id'     => $santriId,
+                    'wilayah_id'    => $data['wilayah_id'],
+                    'blok_id'       => $data['blok_id'],
+                    'kamar_id'      => $data['kamar_id'],
                     'tanggal_masuk' => $data['tanggal_masuk_domisili'],
-                    'status' => 'aktif',
-                    'created_by' => $userId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'status'        => 'aktif',
+                    'created_by'    => $userId,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
                 ]);
             }
 

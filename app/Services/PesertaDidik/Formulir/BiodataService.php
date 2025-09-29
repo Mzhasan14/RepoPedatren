@@ -130,7 +130,7 @@ class BiodataService
         $genderText = ($newGender == 'l') ? 'putra' : 'putri';
 
         // Cek Pendidikan → Rombel → gender_rombel
-        $pendidikan = Pendidikan::where('biodata_id', $bioId)->first();
+        $pendidikan = Pendidikan::where('biodata_id', $bioId)->where("status", "aktif")->first();
         $genderRombel = null;
         if ($pendidikan && $pendidikan->rombel_id) {
             // Pastikan relasi Rombel ada
@@ -153,7 +153,7 @@ class BiodataService
         $kategoriWilayah = null;
 
         if ($santri) {
-            $domisili = DomisiliSantri::where('santri_id', $santri->id)->first();
+            $domisili = DomisiliSantri::where('santri_id', $santri->id)->where("status", "aktif")->first();
         }
 
         if ($domisili && $domisili->wilayah_id) {
