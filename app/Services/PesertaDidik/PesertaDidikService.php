@@ -475,8 +475,13 @@ class PesertaDidikService
                 }
             }
 
-            // Tambah domisili jika wilayah diisi
             $jenisKelamin = $data['jenis_kelamin'] ?? null;
+
+            // mapping l → putra, p → putri
+            $genderSantri = null;
+            if ($jenisKelamin) {
+                $genderSantri = strtolower($jenisKelamin) === 'l' ? 'putra' : 'putri';
+            }
 
             // --- 5. PROSES PENDIDIKAN (JIKA ADA) ---
             if (! empty($data['lembaga_id'])) {
@@ -491,24 +496,24 @@ class PesertaDidikService
                         throw new \Exception('Rombel tidak ditemukan');
                     }
 
-                    if (strtolower($rombel->gender_rombel) !== strtolower($jenisKelamin)) {
+                    if (strtolower($rombel->gender_rombel) !== $genderSantri) {
                         throw new \Exception("Rombel hanya untuk santri {$rombel->gender_rombel}, tidak sesuai dengan jenis kelamin yang dipilih");
                     }
                 }
 
                 DB::table('pendidikan')->insert([
-                    'biodata_id'   => $biodataId,
-                    'no_induk'     => $data['no_induk'],
-                    'lembaga_id'   => $data['lembaga_id'],
-                    'jurusan_id'   => $data['jurusan_id'] ?? null,
-                    'kelas_id'     => $data['kelas_id'] ?? null,
-                    'rombel_id'    => $data['rombel_id'] ?? null,
-                    'angkatan_id'  => $data['angkatan_pelajar_id'],
+                    'biodata_id'    => $biodataId,
+                    'no_induk'      => $data['no_induk'],
+                    'lembaga_id'    => $data['lembaga_id'],
+                    'jurusan_id'    => $data['jurusan_id'] ?? null,
+                    'kelas_id'      => $data['kelas_id'] ?? null,
+                    'rombel_id'     => $data['rombel_id'] ?? null,
+                    'angkatan_id'   => $data['angkatan_pelajar_id'],
                     'tanggal_masuk' => $data['tanggal_masuk_pendidikan'],
-                    'status'       => 'aktif',
-                    'created_by'   => $userId,
-                    'created_at'   => $now,
-                    'updated_at'   => $now,
+                    'status'        => 'aktif',
+                    'created_by'    => $userId,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
                 ]);
             }
 
@@ -565,7 +570,7 @@ class PesertaDidikService
                     throw new \Exception('Wilayah tidak ditemukan');
                 }
 
-                if (strtolower($wilayah->kategori) !== strtolower($jenisKelamin)) {
+                if (strtolower($wilayah->kategori) !== strtolower($genderSantri)) {
                     throw new \Exception("Wilayah hanya untuk santri {$wilayah->kategori}, tidak sesuai dengan jenis kelamin yang dipilih");
                 }
 
