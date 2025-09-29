@@ -20,10 +20,12 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\SaldoRequest;
 use App\Services\PesertaDidik\OrangTua\CatatanAfektifService;
 use App\Services\PesertaDidik\OrangTua\CatatanKognitifService;
 use App\Services\PesertaDidik\OrangTua\PelanggaranService;
 use App\Services\PesertaDidik\OrangTua\ProfileSantriService;
+use App\Services\PesertaDidik\OrangTua\SaldoService;
 
 class ViewOrangTuaController extends Controller
 {
@@ -35,6 +37,7 @@ class ViewOrangTuaController extends Controller
     protected $CatatanAfektifService;
     protected $CatatanKognitifService;
     protected $ProfileSantriService;
+    protected $saldoService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
@@ -45,6 +48,7 @@ class ViewOrangTuaController extends Controller
         CatatanAfektifService $CatatanAfektifService,
         CatatanKognitifService $CatatanKognitifService,
         ProfileSantriService $ProfileSantriService,
+        SaldoService $saldoService
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
@@ -54,6 +58,7 @@ class ViewOrangTuaController extends Controller
         $this->CatatanAfektifService = $CatatanAfektifService;
         $this->CatatanKognitifService = $CatatanKognitifService;
         $this->ProfileSantriService = $ProfileSantriService;
+        $this->saldoService = $saldoService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -257,6 +262,22 @@ class ViewOrangTuaController extends Controller
             return response()->json($result, $result['status']);
         } catch (Exception $e) {
             Log::error('ViewOrangTuaController@ProfileSantri error : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Profile Santri.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+    public function saldo(SaldoRequest $request)
+    {
+        try {
+            $result = $this->saldoService->saldo($request->validated());
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@saldo error : ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil data Profile Santri.',

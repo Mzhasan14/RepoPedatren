@@ -1182,7 +1182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('jenis-berkas', JenisBerkasController::class);
 });
 
-Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmin')->group(function () {
+Route::prefix('view-ortu')->group(function () {
     Route::get('/transaksi', [ViewOrangTuaController::class, 'getTransaksiAnak']);
 
     Route::get('/tahfidz', [ViewOrangTuaController::class, 'getTahfidzAnak']);
@@ -1198,6 +1198,8 @@ Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:orang_tua|superadmi
     Route::get('/catatanKognitif', [ViewOrangTuaController::class, 'catatanKognitif']);
 
     Route::get('/ProfileSantri', [ViewOrangTuaController::class, 'ProfileSantri']);
+
+    Route::get('/saldo', [ViewOrangTuaController::class, 'saldo']);
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
