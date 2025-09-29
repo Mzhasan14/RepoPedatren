@@ -226,8 +226,12 @@ Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor
     // Cetak Pdf
     Route::get('/jadwal/download-pdf', [PDFController::class, 'downloadPdf']);
 });
-Route::get('/id-card/Arrofiah', [PDFController::class, 'downloadIdCardArrofiah']);
-Route::get('/id-card/kanzus', [PDFController::class, 'downloadIdCardKanzus']);
+Route::middleware(['auth:sanctum', 'role:superadmin|supervisor|admin','throttle:200,1'])->group(function () {
+    Route::prefix('id-card')->group(function () {
+        Route::get('/Arrofiah', [PDFController::class, 'downloadIdCardArrofiah']);
+        Route::get('/kanzus', [PDFController::class, 'downloadIdCardKanzus']);
+    });
+});
 
 // Formulir Peserta Didik
 // Route::prefix('formulir')->middleware([
