@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PesertaDidik\OrangTua\BayarTagihanRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\SaldoRequest;
+use App\Services\PesertaDidik\OrangTua\BayarTagihanService;
 use App\Services\PesertaDidik\OrangTua\CatatanAfektifService;
 use App\Services\PesertaDidik\OrangTua\CatatanKognitifService;
 use App\Services\PesertaDidik\OrangTua\PelanggaranService;
@@ -38,6 +40,7 @@ class ViewOrangTuaController extends Controller
     protected $CatatanKognitifService;
     protected $ProfileSantriService;
     protected $saldoService;
+    protected $bayarService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
@@ -48,7 +51,8 @@ class ViewOrangTuaController extends Controller
         CatatanAfektifService $CatatanAfektifService,
         CatatanKognitifService $CatatanKognitifService,
         ProfileSantriService $ProfileSantriService,
-        SaldoService $saldoService
+        SaldoService $saldoService,
+        BayarTagihanService $bayarService
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
@@ -59,6 +63,7 @@ class ViewOrangTuaController extends Controller
         $this->CatatanKognitifService = $CatatanKognitifService;
         $this->ProfileSantriService = $ProfileSantriService;
         $this->saldoService = $saldoService;
+        $this->bayarService = $bayarService;
     }
 
     public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -286,4 +291,22 @@ class ViewOrangTuaController extends Controller
             ], 500);
         }
     }
+    public function bayar(BayarTagihanRequest $request)
+    {
+        try {
+            $result = $this->bayarService->bayar($request->validated());
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@saldo error : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Profile Santri.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+
+
+
 }

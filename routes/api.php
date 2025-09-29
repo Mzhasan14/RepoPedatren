@@ -113,8 +113,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('delete/{user}', [UserController::class, 'destroy']);
 });
 
-
-
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle:200,1'])->group(function () {
     // 🏫 Santri & Peserta Didik
     Route::get('/pesertadidik', [PesertaDidikController::class, 'getAllPesertaDidik']);
@@ -155,9 +153,6 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/pengunjung', [PengunjungMahromController::class, 'getAllPengunjung']);
     Route::get('/pengunjung/{id}', [DetailPengunjungController::class, 'getDetailPengunjung']);
 
-    // 🚨 Administrasi
-    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
-    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
     Route::get('/pelanggaran', [PelanggaranController::class, 'getAllPelanggaran']);
     Route::get('/pelanggaran/{id}', [DetailPelanggaranController::class, 'getDetailPelanggaran']);
 
@@ -196,6 +191,12 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('pegawai/{id}', [DetailController::class, 'getDetail']);
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
+
+Route::prefix('data-pokok')->middleware('auth:sanctum', 'role:superadmin|supervisor|admin|kamtib|biktren')->group(function () {
+    // 🚨 Administrasi
+    Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
+    Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
+});
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|wali_asuh', 'throttle:200,1'])->group(function () {
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
@@ -228,7 +229,7 @@ Route::prefix('export')->middleware(['auth:sanctum', 'role:superadmin|supervisor
     // Cetak Pdf
     Route::get('/jadwal/download-pdf', [PDFController::class, 'downloadPdf']);
 });
-Route::middleware(['auth:sanctum', 'role:superadmin|supervisor|admin','throttle:200,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle:200,1'])->group(function () {
     Route::prefix('id-card')->group(function () {
         Route::get('/Arrofiah', [PDFController::class, 'downloadIdCardArrofiah']);
         Route::get('/kanzus', [PDFController::class, 'downloadIdCardKanzus']);
@@ -706,10 +707,11 @@ Route::prefix('crud')
         /**
          * GET routes → superadmin & supervisor
          */
+
+        // perizinan
+        Route::get('/{id}/perizinan', [PerizinanController::class, 'index'])->middleware('role:superadmin|supervisor|admin|biktren|kamtib');
+        Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show'])->middleware('role:superadmin|supervisor|admin|biktren|kamtib');
         Route::middleware('role:superadmin|supervisor|admin')->group(function () {
-            // perizinan
-            Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
-            Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
 
             // pelanggaran
             Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
@@ -1182,7 +1184,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('jenis-berkas', JenisBerkasController::class);
 });
 
-Route::prefix('view-ortu')->group(function () {
+Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:superadmin|orang_tua')->group(function () {
     Route::get('/transaksi', [ViewOrangTuaController::class, 'getTransaksiAnak']);
 
     Route::get('/tahfidz', [ViewOrangTuaController::class, 'getTahfidzAnak']);
@@ -1200,6 +1202,8 @@ Route::prefix('view-ortu')->group(function () {
     Route::get('/ProfileSantri', [ViewOrangTuaController::class, 'ProfileSantri']);
 
     Route::get('/saldo', [ViewOrangTuaController::class, 'saldo']);
+
+    Route::post('/bayar', [ViewOrangTuaController::class, 'bayar']);
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
