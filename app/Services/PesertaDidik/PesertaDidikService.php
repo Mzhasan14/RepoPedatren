@@ -12,9 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Validation\ValidationException;
 use Spatie\ImageOptimizer\OptimizerChainFactory;
 
@@ -139,7 +137,6 @@ class PesertaDidikService
                     ]);
                 }
             }
-
 
             // --- 1. VALIDASI & PROSES BIODATA ---
             $nik = $data['nik'] ?? null;
@@ -550,13 +547,8 @@ class PesertaDidikService
             }
 
             // --- 7. PROSES BERKAS (MULTI FILE) ---
+            // --- 7. PROSES BERKAS (MULTI FILE) ---
             if (! empty($data['berkas']) && is_array($data['berkas'])) {
-                $maxWidth = 1200;
-                $quality  = 85;
-
-                // Gunakan ImageManager v3 dengan driver GD
-                $manager = new ImageManager(new Driver());
-
                 foreach ($data['berkas'] as $item) {
                     if (! ($item['file_path'] instanceof UploadedFile)) {
                         throw new \Exception('Berkas tidak valid');
@@ -564,44 +556,20 @@ class PesertaDidikService
 
                     try {
                         $uploaded = $item['file_path'];
-                        $mime     = $uploaded->getClientMimeType() ?? '';
 
-                        if (str_starts_with($mime, 'image/')) {
-                            // Baca dan orientasikan foto
-                            $img = $manager->read($uploaded->getRealPath())->orient();
+                        // Simpan langsung ke storage/public tanpa resize
+                        $storedPath = $uploaded->store('PesertaDidik', 'public');
+                        $fullPath   = storage_path('app/public/' . $storedPath);
 
-                            // Resize gambar tanpa merusak aspek rasio
-                            $img = $img->scale(width: $maxWidth);
-
-                            // Konversi semua gambar ke JPEG agar lebih kecil dan konsisten
-                            $encodedImage = $img->toJpeg($quality);
-
-                            // Nama file unik
-                            $filename   = time() . '_' . uniqid() . '.jpg';
-                            $storedPath = 'PesertaDidik/' . $filename;
-
-                            // Simpan ke storage/public
-                            Storage::disk('public')->put($storedPath, (string) $encodedImage);
-
-                            // Optimalkan gambar pakai Spatie
-                            $fullPath = storage_path('app/public/' . $storedPath);
+                        // Optimalkan file (apapun formatnya: jpg, png, pdf, dll)
+                        try {
                             $optimizerChain = OptimizerChainFactory::create();
                             $optimizerChain->optimize($fullPath);
-
-                            $url = Storage::url($storedPath);
-                        } else {
-                            // Kalau bukan gambar, simpan langsung tanpa resize
-                            $storedPath = $uploaded->store('PesertaDidik', 'public');
-                            $fullPath   = storage_path('app/public/' . $storedPath);
-
-                            try {
-                                $optimizerChain = OptimizerChainFactory::create();
-                                $optimizerChain->optimize($fullPath);
-                            } catch (\Exception $e) {
-                            }
-
-                            $url = Storage::url($storedPath);
+                        } catch (\Exception $e) {
+                            Log::warning('Gagal optimasi file: ' . $e->getMessage());
                         }
+
+                        $url = Storage::url($storedPath);
 
                         DB::table('berkas')->insert([
                             'biodata_id'      => $biodataId,
@@ -620,6 +588,7 @@ class PesertaDidikService
                     }
                 }
             }
+
 
             // --- 8. CATAT LOG AKTIVITAS (AUDIT TRAIL) ---
             activity('registrasi_peserta_didik')
