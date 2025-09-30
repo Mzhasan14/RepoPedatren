@@ -31,7 +31,14 @@ class TagihanSantriService
                 ->leftJoin('khadam as kh', 'b.id', '=', 'kh.biodata_id')
                 ->leftJoin('anak_pegawai as ap', fn($join) => $join->on('b.id', '=', 'ap.biodata_id')->where('ap.status', true))
                 ->where('s.status', 'aktif')
-                ->select('s.id', 'b.jenis_kelamin', 's.biodata_id', 'k.no_kk', 'kh.status as khadam_status', 'ap.id as anak_pegawai_id');
+                ->select(
+                    's.id',
+                    'b.jenis_kelamin',
+                    's.biodata_id',
+                    'k.no_kk',
+                    'kh.status as khadam_status',
+                    'ap.id as anak_pegawai_id'
+                );
 
             if (!empty($filter['jenis_kelamin'])) {
                 $santriQuery->where('b.jenis_kelamin', $filter['jenis_kelamin']);
@@ -49,11 +56,13 @@ class TagihanSantriService
                 ->where('potongan.status', true)
                 ->get(['potongan.*']);
 
-            // ambil potongan personal santri (santri_potongan)
+            // ambil potongan personal santri yang terkait tagihan ini
             $potonganSantriList = DB::table('santri_potongan as sp')
                 ->join('potongan as p', 'p.id', '=', 'sp.potongan_id')
+                ->join('potongan_tagihan as pt', 'pt.potongan_id', '=', 'p.id')
                 ->where('sp.status', true)
                 ->where('p.status', true)
+                ->where('pt.tagihan_id', $tagihanId)
                 ->get([
                     'sp.santri_id',
                     'sp.berlaku_dari',
@@ -77,7 +86,7 @@ class TagihanSantriService
                     }
                 }
 
-                // potongan personal dari table santri_potongan
+                // potongan personal dari table santri_potongan (hanya untuk santri ini)
                 $personalPotongan = $potonganSantriList->where('santri_id', $santri->id);
                 foreach ($personalPotongan as $p) {
                     // validasi periode berlaku
@@ -120,6 +129,7 @@ class TagihanSantriService
             ];
         });
     }
+
 
     /**
      * cekKelayakanPotongan tanpa N+1 query
