@@ -38,7 +38,6 @@ class WaliKelasService
             ->leftJoin('kelas as k', 'k.id', '=', 'wali_kelas.kelas_id')
             ->leftJoin('jurusan as j', 'j.id', '=', 'wali_kelas.jurusan_id')
             ->leftJoin('lembaga as l', 'l.id', '=', 'wali_kelas.lembaga_id')
-            ->leftJoin('angkatan as akt', 'akt.id', '=', 'wali_kelas.angkatan_id')
             ->leftJoin('pendidikan as pn', function ($join) {
                 $join->on('pn.lembaga_id', '=', 'wali_kelas.lembaga_id')
                     ->on('pn.jurusan_id', '=', 'wali_kelas.jurusan_id')
