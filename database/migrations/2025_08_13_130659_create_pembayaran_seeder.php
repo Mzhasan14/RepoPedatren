@@ -116,19 +116,20 @@ return new class extends Migration
         Schema::create('transaksi_saldo', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
-            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
+
+            $table->foreignId('outlet_id')->nullable()->constrained('outlets')->nullOnDelete();
+            $table->foreignId('kategori_id')->nullable()->constrained('kategori')->nullOnDelete();
             $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->nullOnDelete();
+
             $table->enum('tipe', ['topup', 'debit', 'kredit', 'refund']);
             $table->decimal('jumlah', 15, 2);
 
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('keterangan')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
         });
+
 
         Schema::create('banks', function (Blueprint $table) {
             $table->id();
@@ -236,8 +237,7 @@ return new class extends Migration
 
             $table->string('periode')->nullable(); // contoh: "2025-08"
             $table->decimal('nominal', 15, 2);
-            $table->decimal('sisa', 15, 2)->default(0);
-            $table->enum('status', ['pending', 'lunas', 'sebagian'])->default('pending');
+            $table->enum('status', ['pending', 'lunas'])->default('pending');
 
             $table->date('tanggal_jatuh_tempo')->nullable();
             $table->dateTime('tanggal_bayar')->nullable(); // opsional (diisi dari transaksi terakhir)

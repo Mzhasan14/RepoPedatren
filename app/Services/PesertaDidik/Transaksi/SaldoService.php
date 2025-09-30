@@ -110,20 +110,23 @@ class SaldoService
             $saldo->updated_by = $userId;
             $saldo->save();
 
+            // Insert transaksi utama
             $transaksi = TransaksiSaldo::create([
                 'santri_id'      => $santri_id,
                 'outlet_id'      => $outlet->id,
                 'kategori_id'    => $kategoriId,
-                'user_outlet_id' =>  $user->hasRole('superadmin') ? null : $userOutlet->id,
+                'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
                 'tipe'           => $tipe,
                 'jumlah'         => $jumlah,
-                'created_by'     => $userId,
+                'keterangan'     => $tipe === 'topup'
+                    ? "Topup saldo sebesar Rp{$jumlah}"
+                    : "Tarik saldo sebesar Rp{$jumlah}",
             ]);
 
             // === 6. Jika topup, langsung potong tagihan santri ===
             if ($tipe === 'topup' && $saldo->saldo > 0) {
                 $tagihans = TagihanSantri::where('santri_id', $santri_id)
-                    ->whereIn('status', ['pending', 'sebagian'])
+                    ->where('status', 'pending')
                     ->orderBy('tanggal_jatuh_tempo', 'asc')
                     ->lockForUpdate()
                     ->get();
@@ -131,27 +134,26 @@ class SaldoService
                 foreach ($tagihans as $tagihan) {
                     if ($saldo->saldo <= 0) break;
 
-                    $sisaTagihan = $tagihan->sisa > 0 ? $tagihan->sisa : $tagihan->nominal;
-                    $bayar = min($saldo->saldo, $sisaTagihan);
+                    // hanya proses jika saldo cukup melunasi tagihan penuh
+                    if ($saldo->saldo >= $tagihan->nominal) {
+                        $saldo->saldo -= $tagihan->nominal;
+                        $saldo->save();
 
-                    $tagihan->sisa = $sisaTagihan - $bayar;
-                    $tagihan->status = $tagihan->sisa == 0 ? 'lunas' : 'sebagian';
-                    $tagihan->tanggal_bayar = Carbon::now();
-                    $tagihan->save();
+                        $tagihan->status        = 'lunas';
+                        $tagihan->tanggal_bayar = Carbon::now();
+                        $tagihan->save();
 
-                    $saldo->saldo -= $bayar;
-                    $saldo->save();
-
-                    // Catat pembayaran otomatis
-                    TransaksiSaldo::create([
-                        'santri_id'      => $santri_id,
-                        'outlet_id'      => $outlet->id,
-                        'kategori_id'    => $kategoriId, // bisa bedakan kategori "auto-debit"
-                        'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
-                        'tipe'           => 'debit',
-                        'jumlah'         => $bayar,
-                        'created_by'     => $userId,
-                    ]);
+                        // Catat pembayaran otomatis
+                        TransaksiSaldo::create([
+                            'santri_id'      => $santri_id,
+                            'outlet_id'      => $outlet->id,
+                            'kategori_id'    => $kategoriId,
+                            'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
+                            'tipe'           => 'debit',
+                            'jumlah'         => $tagihan->nominal,
+                            'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->nominal} dari saldo topup",
+                        ]);
+                    }
                 }
             }
 
@@ -205,7 +207,6 @@ class SaldoService
             ];
         }
     }
-
 
     // public function requestTopUp(string $santriId, float $nominal, UploadedFile $buktiTransfer)
     // {

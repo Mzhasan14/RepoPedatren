@@ -47,7 +47,7 @@ class BayarTagihanService
 
             // Validasi user (selain superadmin harus valid)
             if (!$user->hasRole('superadmin')) {
-                $santri = Santri::where('id', $tagihan->santri_id)->first();
+                $santri = Santri::find($tagihan->santri_id);
                 if (!$santri) {
                     return [
                         'success' => false,
@@ -57,51 +57,20 @@ class BayarTagihanService
                 }
             }
 
-            // Hitung sisa tagihan
-            $sisaTagihan = $tagihan->sisa > 0 ? $tagihan->sisa : $tagihan->nominal;
+            // Jumlah bayar = nominal tagihan
+            $jumlahBayar = $tagihan->nominal;
 
-            // Tentukan jumlah bayar
-            if (!empty($request['jumlah_bayar'])) {
-                $jumlahBayar = $request['jumlah_bayar'];
-
-                if ($jumlahBayar <= 0) {
-                    return [
-                        'success' => false,
-                        'data' => null,
-                        'message' => 'Jumlah bayar tidak valid.'
-                    ];
-                }
-
-                if ($jumlahBayar > $sisaTagihan) {
-                    return [
-                        'success' => false,
-                        'data' => null,
-                        'message' => 'Jumlah bayar melebihi sisa tagihan.'
-                    ];
-                }
-
-                if ($saldo->saldo < $jumlahBayar) {
-                    return [
-                        'success' => false,
-                        'data' => null,
-                        'message' => 'Saldo santri tidak mencukupi untuk membayar sebagian.'
-                    ];
-                }
-            } else {
-                $jumlahBayar = $sisaTagihan;
-
-                if ($saldo->saldo < $jumlahBayar) {
-                    return [
-                        'success' => false,
-                        'data' => null,
-                        'message' => 'Saldo santri tidak mencukupi untuk melunasi tagihan.'
-                    ];
-                }
+            // Cek saldo cukup
+            if ($saldo->saldo < $jumlahBayar) {
+                return [
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'Saldo santri tidak mencukupi untuk melunasi tagihan.'
+                ];
             }
 
-            // Update tagihan
-            $tagihan->sisa = $sisaTagihan - $jumlahBayar;
-            $tagihan->status = $tagihan->sisa == 0 ? 'lunas' : 'sebagian';
+            // Update tagihan → langsung lunas
+            $tagihan->status = 'lunas';
             $tagihan->tanggal_bayar = Carbon::now();
             $tagihan->save();
 
@@ -112,15 +81,15 @@ class BayarTagihanService
             $saldo->saldo -= $jumlahBayar;
             $saldo->save();
 
-            // Insert ke transaksi saldo
+            // Insert ke transaksi saldo (pakai struktur tabel kamu)
             $transaksi = TransaksiSaldo::create([
                 'santri_id'     => $tagihan->santri_id,
-                'tagihan_id'    => $tagihan->id,
-                'jenis'         => 'debet',
-                'nominal'       => $jumlahBayar,
-                'saldo_akhir'   => $saldo->saldo,
-                'keterangan'    => 'Pembayaran tagihan #' . $tagihan->id,
-                'created_by'    => $user->id,
+                'outlet_id'     => null,
+                'kategori_id'   => null,
+                'user_outlet_id' => null,
+                'tipe'          => 'debit',
+                'jumlah'        => $jumlahBayar,
+                'keterangan'    => 'Pembayaran tagihan #' . $tagihan->id . ' oleh orang tua'
             ]);
 
             // Activity log pakai Spatie
@@ -129,7 +98,7 @@ class BayarTagihanService
                 ->performedOn($saldo)
                 ->withProperties([
                     'santri_id'     => $tagihan->santri_id,
-                    'tipe'          => 'debet',
+                    'tipe'          => 'debit',
                     'jumlah'        => $jumlahBayar,
                     'saldo_sebelum' => $saldoLama,
                     'saldo_sesudah' => $saldo->saldo,
@@ -147,13 +116,10 @@ class BayarTagihanService
                     'tagihan_id'     => $tagihan->id,
                     'santri_id'      => $tagihan->santri_id,
                     'dibayar'        => $jumlahBayar,
-                    'sisa_tagihan'   => $tagihan->sisa,
                     'status_tagihan' => $tagihan->status,
                     'sisa_saldo'     => $saldo->saldo,
                 ],
-                'message' => $tagihan->status == 'lunas'
-                    ? 'Tagihan berhasil dilunasi.'
-                    : 'Pembayaran sebagian berhasil diproses.'
+                'message' => 'Tagihan berhasil dilunasi.'
             ];
         });
     }
