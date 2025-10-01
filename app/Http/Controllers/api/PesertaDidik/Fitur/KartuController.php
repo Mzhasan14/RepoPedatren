@@ -57,6 +57,11 @@ class KartuController extends Controller
     public function destroy($id): JsonResponse
     {
         $this->service->delete($id);
-        return response()->json(['message' => 'Kartu deleted successfully']);
+        return response()->json(['message' => 'Kartu berhasil dinonaktifkan']);
+    }
+    public function activate($id): JsonResponse
+    {
+        $this->service->activate($id);
+        return response()->json(['message' => 'Kartu berhasil diaktifkan kembali']);
     }
 }

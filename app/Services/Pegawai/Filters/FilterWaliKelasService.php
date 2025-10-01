@@ -105,15 +105,16 @@ class FilterWaliKelasService
         return $query;
     }
 
-    private function applyNamaFilter(Builder $query, Request $request): Builder
+    public function applyNamaFilter(Builder $query, Request $request): Builder
     {
-        if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+        if (! $request->filled('nama')) {
+            return $query;
         }
 
-        return $query;
-    }
+        $nama = trim($request->nama);
 
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
+    }
     private function applyGenderRomble(Builder $query, Request $request): Builder
     {
         if ($request->filled('gender_rombel')) {

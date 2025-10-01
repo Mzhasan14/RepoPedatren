@@ -131,4 +131,27 @@ class BerkasController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            $result = $this->berkas->destroy($id);
+
+            if (! $result['status']) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Data tidak ditemukan.',
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'message' => 'Berkas berhasil di delete',
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            Log::error("Gagal menghapus berkas: {$e->getMessage()}");
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan server.',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

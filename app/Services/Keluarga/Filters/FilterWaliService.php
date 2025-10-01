@@ -12,7 +12,7 @@ class FilterWaliService
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
         $this->applyJenisKelaminAnakFilter($query, $request);
-         
+
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyPhoneNumber($query, $request);
         $query = $this->applyWafatFilter($query, $request);
@@ -97,7 +97,7 @@ class FilterWaliService
         return $query;
     }
 
-     
+
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
@@ -105,13 +105,9 @@ class FilterWaliService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     public function applyPhoneNumber(Builder $query, Request $request): Builder
@@ -125,7 +121,7 @@ class FilterWaliService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }

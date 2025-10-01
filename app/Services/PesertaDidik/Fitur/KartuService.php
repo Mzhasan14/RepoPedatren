@@ -15,7 +15,7 @@ class KartuService
             ->select('biodata_id', DB::raw('MAX(id) AS last_id'))
             ->where('status', true)
             ->groupBy('biodata_id');
-            
+
         $query = DB::table('kartu as k')
             ->leftJoin('santri as s', 'k.santri_id', '=', 's.id')
             ->leftJoin('biodata as b', 's.biodata_id', '=', 'b.id')
@@ -113,10 +113,11 @@ class KartuService
     public function delete(int $id)
     {
         $kartu = Kartu::findOrFail($id);
-        $kartu->deleted_by = Auth::id();
-        $kartu->save();
 
-        $kartu->delete();
+        $kartu->aktif = false;
+        $kartu->updated_by   = Auth::id();
+        $kartu->updated_at   = now();
+        $kartu->save();
 
         activity('kartu')
             ->causedBy(Auth::user())
@@ -124,14 +125,38 @@ class KartuService
             ->withProperties([
                 'santri_id'  => $kartu->santri_id,
                 'nis'        => $kartu->santri->nis ?? null,
-                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'nama'       => $kartu->santri->biodata->nama ?? null,
                 'ip'         => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
-            ->event('delete')
-            ->log("Kartu berhasil dihapus");
+            ->event('deactivate')
+            ->log("Kartu berhasil dinonaktifkan");
 
-        return ['message' => 'Kartu berhasil dihapus'];
+        return ['message' => 'Kartu berhasil dinonaktifkan'];
+    }
+    public function activate(int $id)
+    {
+        $kartu = Kartu::findOrFail($id);
+
+        $kartu->aktif = true;
+        $kartu->updated_by   = Auth::id();
+        $kartu->updated_at   = now();
+        $kartu->save();
+
+        activity('kartu')
+            ->causedBy(Auth::user())
+            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->withProperties([
+                'santri_id'  => $kartu->santri_id,
+                'nis'        => $kartu->santri->nis ?? null,
+                'nama'       => $kartu->santri->biodata->nama ?? null,
+                'ip'         => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->event('activate')
+            ->log("Kartu berhasil diaktifkan kembali");
+
+        return ['message' => 'Kartu berhasil diaktifkan kembali'];
     }
 
     private function transform($kartu)

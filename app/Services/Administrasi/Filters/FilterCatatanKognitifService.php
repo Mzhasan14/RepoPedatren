@@ -51,14 +51,15 @@ class FilterCatatanKognitifService
         return $query;
     }
 
-    private function applyNamaFilter(Builder $query, Request $request): Builder
+    public function applyNamaFilter(Builder $query, Request $request): Builder
     {
-        // Filter Search Nama
-        if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(bs.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+        if (! $request->filled('nama')) {
+            return $query;
         }
 
-        return $query;
+        $nama = trim($request->nama);
+
+        return $query->whereRaw('LOWER(bs.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     private function applyLembagaFilter(Builder $query, Request $request): Builder

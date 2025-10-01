@@ -177,7 +177,7 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/kewaliasuhan/grup', [GrupWaliAsuhController::class, 'getAllGrupWaliasuh']);
     Route::get('/kewaliasuhan/grup/{id}', [GrupWaliAsuhController::class, 'detail']);
 
-    // 👨‍🏫 Pegawai & Guru
+    // 👨‍🏫 Pegawai
     Route::get('/pengajar', [PengajarController::class, 'getallPengajar']);
     Route::get('/pengurus', [PengurusController::class, 'dataPengurus']);
     Route::get('/walikelas', [WalikelasController::class, 'getDataWalikelas']);
@@ -501,6 +501,7 @@ Route::prefix('formulir')
             // Berkas
             Route::post('/{id}/berkas', [BerkasController::class, 'store']);
             Route::put('/{id}/berkas', [BerkasController::class, 'update']);
+            Route::delete('/{id}/berkas/delete', [BerkasController::class, 'destroy']);
 
             // Kepegawaian
             Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
@@ -1044,6 +1045,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/kartu', [KartuController::class, 'store']);
         Route::put('/kartu/{id}', [KartuController::class, 'update']);
         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
+        Route::put('/kartu/{id}/activate', [KartuController::class, 'activate']);
     });
 });
 
