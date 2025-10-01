@@ -107,12 +107,8 @@ class FilterGrupWaliasuhService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(gs.nama_grup) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(gs.nama_grup) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 }

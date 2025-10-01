@@ -24,7 +24,7 @@ class BerkasService
             ];
         }
 
-        $data = $br->map(fn (Berkas $br) => [
+        $data = $br->map(fn(Berkas $br) => [
             'id' => $br->id,
             'file_path' => url($br->file_path),
             'jenis_berkas_id' => $br->jenis_berkas_id,
@@ -146,6 +146,33 @@ class BerkasService
             return [
                 'status' => true,
                 'data' => $br,
+            ];
+        });
+    }
+    public function destroy(int $berkasId): array
+    {
+        return DB::transaction(function () use ($berkasId) {
+            $berkas = Berkas::find($berkasId);
+
+            if (! $berkas) {
+                return [
+                    'status' => false,
+                    'message' => 'Berkas tidak ditemukan.',
+                ];
+            }
+            if ($berkas->file_path) {
+                $relativePath = str_replace('/storage/', '', $berkas->file_path);
+
+                if (Storage::disk('public')->exists($relativePath)) {
+                    Storage::disk('public')->delete($relativePath);
+                }
+            }
+
+            $berkas->delete();
+
+            return [
+                'status' => true,
+                'message' => 'Berkas berhasil dihapus.',
             ];
         });
     }

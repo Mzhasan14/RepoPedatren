@@ -85,13 +85,9 @@ class FilterAlumniService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     public function applyLembagaPendidikanFilter(Builder $query, Request $request): Builder
@@ -138,7 +134,7 @@ class FilterAlumniService
                 case 'alumni santri non pelajar':
                     $query->where('s.status', 'alumni')
                         ->join('pendidikan as pd', 'pd.biodata_id', 'b.id')
-                        ->where(fn ($j) => $j->whereNull('pd.id'));
+                        ->where(fn($j) => $j->whereNull('pd.id'));
                     break;
                 case 'alumni santri tetapi masih pelajar aktif':
                     $query->where('s.status', 'alumni')
@@ -150,7 +146,7 @@ class FilterAlumniService
                     break;
                 case 'alumni pelajar non santri':
                     $query->where('rp.status', 'lulus')
-                        ->where(fn ($j) => $j->whereNull('s.id'));
+                        ->where(fn($j) => $j->whereNull('s.id'));
                     break;
                 case 'alumni pelajar tetapi masih santri aktif':
                     $query->where('rp.status', 'lulus')
@@ -202,7 +198,7 @@ class FilterAlumniService
             if ($pn === 'memiliki phone number') {
                 $query->whereNotNull('b.no_telepon')->where('b.no_telepon', '!=', '');
             } elseif ($pn === 'tidak ada phone number') {
-                $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '', '='));
+                $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '', '='));
             } else {
                 $query->whereRaw('0 = 1');
             }

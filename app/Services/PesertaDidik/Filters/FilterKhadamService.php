@@ -14,7 +14,7 @@ class FilterKhadamService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
         $query = $this->applyLembagaPendidikanFilter($query, $request);
@@ -78,7 +78,7 @@ class FilterKhadamService
         return $query;
     }
 
-     
+
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
@@ -86,13 +86,9 @@ class FilterKhadamService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     public function applyWilayahFilter(Builder $query, Request $request): Builder
@@ -104,11 +100,11 @@ class FilterKhadamService
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
 
-            return $query->where(fn ($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         if ($request->filled('wilayah')) {
-            $query->join('domisili_santri AS ds', fn ($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
+            $query->join('domisili_santri AS ds', fn($join) => $join->on('s.id', '=', 'ds.santri_id')->where('ds.status', 'aktif'))
                 ->join('wilayah AS w', 'ds.wilayah_id', '=', 'w.id')
                 ->where('w.nama_wilayah', $request->wilayah);
 
@@ -135,7 +131,7 @@ class FilterKhadamService
         }
 
         if ($request->filled('lembaga')) {
-            $query->join('pendidikan AS pd', fn ($j) => $j->on('s.id', '=', 'pd.santri_id')->where('pd.status', 'aktif'))
+            $query->join('pendidikan AS pd', fn($j) => $j->on('s.id', '=', 'pd.santri_id')->where('pd.status', 'aktif'))
                 ->join('lembaga AS l', 'pd.lembaga_id', '=', 'l.id')
                 ->where('l.nama_lembaga', $request->lembaga);
 
@@ -188,7 +184,7 @@ class FilterKhadamService
         if ($pn === 'memiliki phone number') {
             $query->whereNotNull('b.no_telepon')->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }

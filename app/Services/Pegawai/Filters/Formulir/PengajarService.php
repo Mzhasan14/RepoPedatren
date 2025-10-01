@@ -2,6 +2,7 @@
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
+use App\Models\AnakPegawai;
 use App\Models\Pegawai\JadwalPelajaran;
 use App\Models\Pegawai\JamPelajaran;
 use App\Models\Pegawai\Karyawan;
@@ -692,6 +693,12 @@ class PengajarService
                     'status_aktif' => 'tidak aktif',
                     'updated_by'   => Auth::id(),
                 ]);
+
+                // AnakPegawai::where('pegawai_id', $pegawaiId)->update([
+                //     'status' => false,
+                //     'updated_by'   => Auth::id(),
+                //     'updated_at'   => now(),
+                // ]);
             }
 
             return [

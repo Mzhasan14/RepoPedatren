@@ -14,7 +14,7 @@ class FilterNonDomisiliService
     {
         $query = $this->applyAlamatFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyNamaFilter($query, $request);
         $query = $this->applyKewaliasuhanFilter($query, $request);
         $query = $this->applyWilayahFilter($query, $request);
@@ -82,7 +82,7 @@ class FilterNonDomisiliService
         return $query;
     }
 
-     
+
 
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
@@ -90,13 +90,9 @@ class FilterNonDomisiliService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"'.trim($request->nama).'"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     public function applyKewaliasuhanFilter(Builder $query, Request $request): Builder
@@ -131,7 +127,7 @@ class FilterNonDomisiliService
 
         // Filter non domisili pesantren
         if ($request->wilayah === 'non domisili') {
-            return $query->where(fn ($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
+            return $query->where(fn($q) => $q->whereNull('ds.id')->orWhere('ds.status', '!=', 'aktif'));
         }
 
         $query->where('w.nama_wilayah', $request->wilayah);
@@ -180,7 +176,7 @@ class FilterNonDomisiliService
         }
 
         $query->where('s.angkatan_id', $request->angkatan_santri);
-        
+
         return $query;
     }
 
@@ -196,14 +192,14 @@ class FilterNonDomisiliService
                 break;
             case 'santri non pelajar':
                 $query->where('s.status', 'aktif')
-                    ->where(fn ($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
+                    ->where(fn($j) => $j->whereNull('pd.id')->orWhereNotIn('pd.status', ['aktif', 'cuti']));
                 break;
             case 'pelajar':
                 $query->where('pd.status', 'aktif');
                 break;
             case 'pelajar non santri':
                 $query->where('pd.status', 'aktif')
-                    ->where(fn ($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
+                    ->where(fn($j) => $j->whereNull('s.id')->orWhere('s.status', '!=', 'aktif'));
                 break;
             case 'santri-pelajar':
             case 'pelajar-santri':
@@ -246,7 +242,7 @@ class FilterNonDomisiliService
             $query->whereNotNull('b.no_telepon')
                 ->where('b.no_telepon', '!=', '');
         } elseif ($pn === 'tidak ada phone number') {
-            $query->where(fn ($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
+            $query->where(fn($q) => $q->whereNull('b.no_telepon')->orWhere('b.no_telepon', '=', ''));
         } else {
             $query->whereRaw('0 = 1');
         }

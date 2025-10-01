@@ -19,7 +19,7 @@ class FilterPengajarService
         $query = $this->applyUmurFilter($query, $request);
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyMapelFilter($query, $request);
         $query = $this->applyMasaKerjaFilter($query, $request);
         $query = $this->applyJabatanPengajarFilter($query, $request);
@@ -159,13 +159,15 @@ class FilterPengajarService
         return $query;
     }
 
-    private function applyNamaFilter(Builder $query, Request $request): Builder
+    public function applyNamaFilter(Builder $query, Request $request): Builder
     {
-        if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+        if (! $request->filled('nama')) {
+            return $query;
         }
 
-        return $query;
+        $nama = trim($request->nama);
+
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     private function applyGolonganJabatanFilter(Builder $query, Request $request): Builder
@@ -218,7 +220,6 @@ class FilterPengajarService
             $query->whereRaw('
                 TIMESTAMPDIFF(YEAR, pengajar.tahun_masuk, COALESCE(pengajar.tahun_akhir, ?)) BETWEEN ? AND ?
             ', [$today, $min, $max]);
-
         } elseif (is_numeric($masaKerja)) {
             // Format tunggal, misal: "1" untuk kurang dari 1 tahun
             $query->whereRaw('
@@ -268,7 +269,7 @@ class FilterPengajarService
             case 'tidak ada foto diri':
                 $query->where(function ($q) {
                     $q->where('br.jenis_berkas_id', 4)->whereNull('br.file_path')
-                    ->orWhereNull('br.jenis_berkas_id');
+                        ->orWhereNull('br.jenis_berkas_id');
                 });
                 break;
 

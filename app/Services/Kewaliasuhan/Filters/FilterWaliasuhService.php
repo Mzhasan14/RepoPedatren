@@ -87,15 +87,10 @@ class FilterWaliasuhService
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
-
     public function applyWilayahFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('wilayah')) {

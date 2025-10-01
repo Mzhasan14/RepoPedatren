@@ -19,19 +19,21 @@ class FilterKaryawanService
         $query = $this->applyUmurFilter($query, $request);
         $query = $this->applyPhoneFilter($query, $request);
         $query = $this->applyJenisKelaminFilter($query, $request);
-         
+
         $query = $this->applyGolonganJabatanFilter($query, $request);
 
         return $query;
     }
 
-    private function applyNamaFilter(Builder $query, Request $request): Builder
+    public function applyNamaFilter(Builder $query, Request $request): Builder
     {
-        if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+        if (! $request->filled('nama')) {
+            return $query;
         }
 
-        return $query;
+        $nama = trim($request->nama);
+
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     private function applyUmurFilter(Builder $query, Request $request): Builder
@@ -115,7 +117,7 @@ class FilterKaryawanService
             case 'tidak ada foto diri':
                 $query->where(function ($q) {
                     $q->where('br.jenis_berkas_id', 4)->whereNull('br.file_path')
-                    ->orWhereNull('br.jenis_berkas_id');
+                        ->orWhereNull('br.jenis_berkas_id');
                 });
                 break;
 

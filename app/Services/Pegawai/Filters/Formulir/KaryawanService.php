@@ -2,6 +2,7 @@
 
 namespace App\Services\Pegawai\Filters\Formulir;
 
+use App\Models\AnakPegawai;
 use App\Models\Pegawai\Karyawan;
 use App\Models\Pegawai\Pegawai;
 use App\Models\Pegawai\Pengajar;
@@ -254,12 +255,17 @@ class KaryawanService
                 'updated_by'      => Auth::id(),
             ]);
 
-            // Kalau tidak ada entitas lain yang aktif → nonaktifkan Pegawai juga
             if (! $masihAktif) {
                 Pegawai::where('id', $pegawaiId)->update([
                     'status_aktif'    => 'tidak aktif',
                     'updated_by'      => Auth::id(),
                 ]);
+
+                // AnakPegawai::where('pegawai_id', $pegawaiId)->update([
+                //     'status' => false,
+                //     'updated_by'   => Auth::id(),
+                //     'updated_at'   => now(),
+                // ]);
             }
 
             return [

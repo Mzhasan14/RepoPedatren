@@ -28,7 +28,7 @@ class FilterPesertaDidikService
         return $query;
     }
 
-     public function applyAngkatanSantri(Builder $query, Request $request): Builder
+    public function applyAngkatanSantri(Builder $query, Request $request): Builder
     {
         if (! $request->filled('angkatan_santri')) {
             return $query;
@@ -91,22 +91,31 @@ class FilterPesertaDidikService
         return $query;
     }
 
-     
-
     public function applyNamaFilter(Builder $query, Request $request): Builder
     {
         if (! $request->filled('nama')) {
             return $query;
         }
 
-        // tambahkan tanda kutip ganda di awal‑akhir
-        $phrase = '"' . trim($request->nama) . '"';
+        $nama = trim($request->nama);
 
-        return $query->whereRaw(
-            'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
-            [$phrase]
-        );
+        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
+
+    // public function applyNamaFilter(Builder $query, Request $request): Builder
+    // {
+    //     if (! $request->filled('nama')) {
+    //         return $query;
+    //     }
+
+    //     // tambahkan tanda kutip ganda di awal‑akhir
+    //     $phrase = '"' . trim($request->nama) . '"';
+
+    //     return $query->whereRaw(
+    //         'MATCH(b.nama) AGAINST(? IN BOOLEAN MODE)',
+    //         [$phrase]
+    //     );
+    // }
 
     public function applyWilayahFilter(Builder $query, Request $request): Builder
     {

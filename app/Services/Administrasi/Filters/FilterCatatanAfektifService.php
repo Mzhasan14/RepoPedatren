@@ -28,13 +28,13 @@ class FilterCatatanAfektifService
 
     private function applyNamaFilter(Builder $query, Request $request): Builder
     {
-        // Filter Search
-        if ($request->filled('nama')) {
-            $query->whereRaw('MATCH(bs.nama) AGAINST(? IN BOOLEAN MODE)', [$request->nama]);
+        if (! $request->filled('nama')) {
+            return $query;
         }
 
-        return $query;
+        $nama = trim($request->nama);
 
+        return $query->whereRaw('LOWER(bs.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
     }
 
     private function applyNegaraFilter(Builder $query, Request $request): Builder
@@ -58,7 +58,6 @@ class FilterCatatanAfektifService
         }
 
         return $query;
-
     }
 
     private function applyLembagaFilter(Builder $query, Request $request): Builder
@@ -78,7 +77,6 @@ class FilterCatatanAfektifService
         }
 
         return $query;
-
     }
 
     private function applywilayahFilter(Builder $query, Request $request): Builder
@@ -98,7 +96,6 @@ class FilterCatatanAfektifService
         }
 
         return $query;
-
     }
 
     private function applyJenisKelaminFilter(Builder $query, Request $request): Builder
@@ -114,7 +111,6 @@ class FilterCatatanAfektifService
         }
 
         return $query;
-
     }
 
     private function applyPhoneNumberFilter(Builder $query, Request $request): Builder
@@ -134,7 +130,6 @@ class FilterCatatanAfektifService
         }
 
         return $query;
-
     }
 
     private function applyPeriodeFilter(Builder $query, Request $request): Builder
