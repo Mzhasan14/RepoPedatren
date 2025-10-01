@@ -30,8 +30,6 @@ class KartuUpdateRequest extends FormRequest
             'uid_kartu' => "sometimes|string|max:50|unique:kartu,uid_kartu,{$id}",
             'pin' => 'required|string|min:4|max:6',
             'aktif' => 'boolean',
-            'tanggal_terbit' => 'sometimes|date',
-            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
         ];
     }
 

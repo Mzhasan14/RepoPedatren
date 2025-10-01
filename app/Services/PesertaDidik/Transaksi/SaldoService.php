@@ -64,13 +64,14 @@ class SaldoService
                 }
             }
 
+            $uidKartu = null; // default
+
             if ($metode === 'scan') {
                 // Cari kartu berdasarkan santri_id
                 $kartu = Kartu::where('santri_id', $santri_id)
                     ->select('uid_kartu', 'pin', 'aktif')
                     ->first();
 
-                // Jika kartu belum terdaftar
                 if (!$kartu) {
                     return [
                         'status'  => false,
@@ -78,7 +79,6 @@ class SaldoService
                     ];
                 }
 
-                // Jika kartu ada tapi tidak aktif
                 if (!$kartu->aktif) {
                     return [
                         'status'  => false,
@@ -93,8 +93,9 @@ class SaldoService
                         'message' => 'Pin yang Anda masukkan salah.'
                     ];
                 }
-            }
 
+                $uidKartu = $kartu->uid_kartu; // simpan uid_kartu
+            }
 
             // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(
@@ -112,7 +113,7 @@ class SaldoService
 
             $saldoLama = $saldo->saldo;
 
-            // 5. Update saldo awal
+            // 5. Update saldo
             if ($tipe === 'topup') {
                 $saldo->saldo += $jumlah;
             } elseif ($tipe === 'debit') {
@@ -125,6 +126,7 @@ class SaldoService
             // Insert transaksi utama
             $transaksi = TransaksiSaldo::create([
                 'santri_id'      => $santri_id,
+                'uid_kartu'      => $uidKartu,
                 'outlet_id'      => $outlet->id,
                 'kategori_id'    => $kategoriId,
                 'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
@@ -146,7 +148,6 @@ class SaldoService
                 foreach ($tagihans as $tagihan) {
                     if ($saldo->saldo <= 0) break;
 
-                    // hanya proses jika saldo cukup melunasi tagihan penuh
                     if ($saldo->saldo >= $tagihan->total_tagihan) {
                         $saldo->saldo -= $tagihan->total_tagihan;
                         $saldo->save();
@@ -158,6 +159,7 @@ class SaldoService
                         // Catat pembayaran otomatis
                         TransaksiSaldo::create([
                             'santri_id'      => $santri_id,
+                            'uid_kartu'      => $uidKartu,
                             'outlet_id'      => $outlet->id,
                             'kategori_id'    => $kategoriId,
                             'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
@@ -219,6 +221,7 @@ class SaldoService
             ];
         }
     }
+
 
     // public function requestTopUp(string $santriId, float $nominal, UploadedFile $buktiTransfer)
     // {

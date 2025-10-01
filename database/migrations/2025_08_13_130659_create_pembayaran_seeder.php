@@ -116,6 +116,7 @@ return new class extends Migration
         Schema::create('transaksi_saldo', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+            $table->string("uid_kartu")->nullable();
 
             $table->foreignId('outlet_id')->nullable()->constrained('outlets')->nullOnDelete();
             $table->foreignId('kategori_id')->nullable()->constrained('kategori')->nullOnDelete();

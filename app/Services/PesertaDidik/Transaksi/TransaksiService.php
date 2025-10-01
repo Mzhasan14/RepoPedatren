@@ -152,6 +152,7 @@ class TransaksiService
             // Rekap ke transaksi_saldo
             TransaksiSaldo::create([
                 'santri_id' => $santri->id,
+                'uid_kartu'      => $uid,
                 'outlet_id' => $outletId,
                 'kategori_id' => $kategoriId,
                 'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
@@ -205,7 +206,6 @@ class TransaksiService
             ];
         }
     }
-
 
     /**
      * List transaksi sesuai role user

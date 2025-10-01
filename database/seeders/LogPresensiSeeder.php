@@ -112,8 +112,8 @@ class LogPresensiSeeder extends Seeder
                 'uid_kartu' => $uidList[$index] ?? '0723000000' . $index,
                 'pin' => Hash::make('1234'),
                 'aktif' => true,
-                'tanggal_terbit' => now()->subMonths(1)->format('Y-m-d'),
-                'tanggal_expired' => now()->addYears(2)->format('Y-m-d'),
+                // 'tanggal_terbit' => now()->subMonths(1)->format('Y-m-d'),
+                // 'tanggal_expired' => now()->addYears(2)->format('Y-m-d'),
                 'created_by' => $adminId
             ]);
         }

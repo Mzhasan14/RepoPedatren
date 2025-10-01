@@ -152,111 +152,111 @@ class TagihanSantriService
         return max(0, $nominal - $potongan->nilai);
     }
 
-    public function generateManual(int $tagihanId, string $periode, array $santriIds): array
-    {
-        return DB::transaction(function () use ($tagihanId, $periode, $santriIds) {
-            $tagihan = Tagihan::findOrFail($tagihanId);
+    // public function generateManual(int $tagihanId, string $periode, array $santriIds): array
+    // {
+    //     return DB::transaction(function () use ($tagihanId, $periode, $santriIds) {
+    //         $tagihan = Tagihan::findOrFail($tagihanId);
 
-            // cek apakah ada santri yang sudah pernah mendapat tagihan ini untuk periode tsb
-            $sudahAda = TagihanSantri::where('tagihan_id', $tagihanId)
-                ->where('periode', $periode)
-                ->whereIn('santri_id', $santriIds)
-                ->pluck('santri_id')
-                ->toArray();
+    //         // cek apakah ada santri yang sudah pernah mendapat tagihan ini untuk periode tsb
+    //         $sudahAda = TagihanSantri::where('tagihan_id', $tagihanId)
+    //             ->where('periode', $periode)
+    //             ->whereIn('santri_id', $santriIds)
+    //             ->pluck('santri_id')
+    //             ->toArray();
 
-            if (!empty($sudahAda)) {
-                throw new \Exception("Beberapa santri sudah memiliki tagihan {$tagihan->nama_tagihan} untuk periode {$periode}: " . implode(',', $sudahAda));
-            }
+    //         if (!empty($sudahAda)) {
+    //             throw new \Exception("Beberapa santri sudah memiliki tagihan {$tagihan->nama_tagihan} untuk periode {$periode}: " . implode(',', $sudahAda));
+    //         }
 
-            // ambil data santri
-            $santriList = DB::table('santri as s')
-                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
-                ->leftJoin('khadam as kh', 'b.id', '=', 'kh.biodata_id')
-                ->leftJoin('anak_pegawai as ap', fn($join) => $join->on('b.id', '=', 'ap.biodata_id')->where('ap.status', true))
-                ->whereIn('s.id', $santriIds)
-                ->where('s.status', 'aktif')
-                ->select('s.id', 'b.jenis_kelamin', 's.biodata_id', 'k.no_kk', 'kh.status as khadam_status', 'ap.id as anak_pegawai_id')
-                ->get();
+    //         // ambil data santri
+    //         $santriList = DB::table('santri as s')
+    //             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+    //             ->leftJoin('keluarga as k', 'b.id', '=', 'k.id_biodata')
+    //             ->leftJoin('khadam as kh', 'b.id', '=', 'kh.biodata_id')
+    //             ->leftJoin('anak_pegawai as ap', fn($join) => $join->on('b.id', '=', 'ap.biodata_id')->where('ap.status', true))
+    //             ->whereIn('s.id', $santriIds)
+    //             ->where('s.status', 'aktif')
+    //             ->select('s.id', 'b.jenis_kelamin', 's.biodata_id', 'k.no_kk', 'kh.status as khadam_status', 'ap.id as anak_pegawai_id')
+    //             ->get();
 
-            if ($santriList->isEmpty()) {
-                throw new \Exception("Tidak ada santri valid untuk dibuatkan tagihan.");
-            }
+    //         if ($santriList->isEmpty()) {
+    //             throw new \Exception("Tidak ada santri valid untuk dibuatkan tagihan.");
+    //         }
 
-            // hitung jumlah santri per no_kk untuk cek bersaudara
-            $kkCounts = $santriList->groupBy('no_kk')->map(fn($group) => count($group));
+    //         // hitung jumlah santri per no_kk untuk cek bersaudara
+    //         $kkCounts = $santriList->groupBy('no_kk')->map(fn($group) => count($group));
 
-            // ambil potongan umum (relasi ke tagihan)
-            $potonganList = Potongan::query()
-                ->join('potongan_tagihan', 'potongan.id', '=', 'potongan_tagihan.potongan_id')
-                ->where('potongan_tagihan.tagihan_id', $tagihanId)
-                ->where('potongan.status', true)
-                ->get(['potongan.*']);
+    //         // ambil potongan umum (relasi ke tagihan)
+    //         $potonganList = Potongan::query()
+    //             ->join('potongan_tagihan', 'potongan.id', '=', 'potongan_tagihan.potongan_id')
+    //             ->where('potongan_tagihan.tagihan_id', $tagihanId)
+    //             ->where('potongan.status', true)
+    //             ->get(['potongan.*']);
 
-            // ambil potongan personal santri
-            $potonganSantriList = DB::table('santri_potongan as sp')
-                ->join('potongan as p', 'p.id', '=', 'sp.potongan_id')
-                ->where('sp.status', true)
-                ->where('p.status', true)
-                ->get([
-                    'sp.santri_id',
-                    'sp.berlaku_dari',
-                    'sp.berlaku_sampai',
-                    'p.id as potongan_id',
-                    'p.nama',
-                    'p.jenis',
-                    'p.nilai'
-                ]);
+    //         // ambil potongan personal santri
+    //         $potonganSantriList = DB::table('santri_potongan as sp')
+    //             ->join('potongan as p', 'p.id', '=', 'sp.potongan_id')
+    //             ->where('sp.status', true)
+    //             ->where('p.status', true)
+    //             ->get([
+    //                 'sp.santri_id',
+    //                 'sp.berlaku_dari',
+    //                 'sp.berlaku_sampai',
+    //                 'p.id as potongan_id',
+    //                 'p.nama',
+    //                 'p.jenis',
+    //                 'p.nilai'
+    //             ]);
 
-            $totalSantri = 0;
-            $insertData = [];
+    //         $totalSantri = 0;
+    //         $insertData = [];
 
-            foreach ($santriList as $santri) {
-                $nominalAkhir = $tagihan->nominal;
+    //         foreach ($santriList as $santri) {
+    //             $nominalAkhir = $tagihan->nominal;
 
-                // potongan umum
-                foreach ($potonganList as $potongan) {
-                    if ($this->cekKelayakanPotonganOptimized($santri, $potongan, $kkCounts)) {
-                        $nominalAkhir = $this->hitungPotongan($nominalAkhir, $potongan);
-                    }
-                }
+    //             // potongan umum
+    //             foreach ($potonganList as $potongan) {
+    //                 if ($this->cekKelayakanPotonganOptimized($santri, $potongan, $kkCounts)) {
+    //                     $nominalAkhir = $this->hitungPotongan($nominalAkhir, $potongan);
+    //                 }
+    //             }
 
-                // potongan personal
-                $personalPotongan = $potonganSantriList->where('santri_id', $santri->id);
-                foreach ($personalPotongan as $p) {
-                    $valid = true;
-                    if ($p->berlaku_dari && $periode < $p->berlaku_dari) {
-                        $valid = false;
-                    }
-                    if ($p->berlaku_sampai && $periode > $p->berlaku_sampai) {
-                        $valid = false;
-                    }
+    //             // potongan personal
+    //             $personalPotongan = $potonganSantriList->where('santri_id', $santri->id);
+    //             foreach ($personalPotongan as $p) {
+    //                 $valid = true;
+    //                 if ($p->berlaku_dari && $periode < $p->berlaku_dari) {
+    //                     $valid = false;
+    //                 }
+    //                 if ($p->berlaku_sampai && $periode > $p->berlaku_sampai) {
+    //                     $valid = false;
+    //                 }
 
-                    if ($valid) {
-                        $nominalAkhir = $this->hitungPotongan($nominalAkhir, $p);
-                    }
-                }
+    //                 if ($valid) {
+    //                     $nominalAkhir = $this->hitungPotongan($nominalAkhir, $p);
+    //                 }
+    //             }
 
-                $totalSantri++;
+    //             $totalSantri++;
 
-                $insertData[] = [
-                    'tagihan_id' => $tagihan->id,
-                    'santri_id'  => $santri->id,
-                    'periode'    => $periode,
-                    'nominal'    => $nominalAkhir,
-                    'sisa'       => $nominalAkhir,
-                    'tanggal_jatuh_tempo' => $tagihan->jatuh_tempo,
-                    'status'     => 'pending',
-                ];
-            }
+    //             $insertData[] = [
+    //                 'tagihan_id' => $tagihan->id,
+    //                 'santri_id'  => $santri->id,
+    //                 'periode'    => $periode,
+    //                 'nominal'    => $nominalAkhir,
+    //                 'sisa'       => $nominalAkhir,
+    //                 'tanggal_jatuh_tempo' => $tagihan->jatuh_tempo,
+    //                 'status'     => 'pending',
+    //             ];
+    //         }
 
-            // insert
-            TagihanSantri::insert($insertData);
+    //         // insert
+    //         TagihanSantri::insert($insertData);
 
-            return [
-                'success'      => true,
-                'total_santri' => $totalSantri,
-            ];
-        });
-    }
+    //         return [
+    //             'success'      => true,
+    //             'total_santri' => $totalSantri,
+    //         ];
+    //     });
+    // }
 }

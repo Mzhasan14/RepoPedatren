@@ -16,8 +16,6 @@ class Kartu extends Model
         'uid_kartu',
         'pin',
         'aktif',
-        'tanggal_terbit',
-        'tanggal_expired',
         'created_by',
         'updated_by',
         'deleted_by'

@@ -2,12 +2,13 @@
 
 namespace App\Services\PesertaDidik\Formulir;
 
-use App\Models\DomisiliSantri;
-use App\Models\RiwayatDomisili;
+use App\Models\Kartu;
 use App\Models\Santri;
+use App\Models\DomisiliSantri;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\RiwayatDomisili;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class StatusSantriService
 {
@@ -24,7 +25,7 @@ class StatusSantriService
             ];
         }
 
-        $data = $santri->map(fn (Santri $santri) => [
+        $data = $santri->map(fn(Santri $santri) => [
             'id' => $santri->id,
             'nis' => $santri->nis,
             'angkatan_id' => $santri->angkatan_id,
@@ -64,7 +65,7 @@ class StatusSantriService
             if ($riwayatTerakhir && $tanggalMasuk->lt(Carbon::parse($riwayatTerakhir->tanggal_masuk))) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir ('.Carbon::parse($riwayatTerakhir->tanggal_masuk)->format('Y-m-d').'). Harap periksa kembali tanggal yang Anda input.',
+                    'message' => 'Tanggal masuk tidak boleh lebih awal dari riwayat domisili terakhir (' . Carbon::parse($riwayatTerakhir->tanggal_masuk)->format('Y-m-d') . '). Harap periksa kembali tanggal yang Anda input.',
                 ];
             }
 
@@ -203,6 +204,15 @@ class StatusSantriService
                         'status' => 'keluar',
                         'created_by' => $user,
                     ]);
+                }
+
+                $kartu = Kartu::where('santri_id', $santri->id)
+                    ->where('aktif', true)
+                    ->first();
+
+                if ($kartu) {
+                    $kartu->aktif = false;
+                    $kartu->save();
                 }
             }
 

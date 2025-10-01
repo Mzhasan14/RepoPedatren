@@ -28,8 +28,6 @@ class KartuStoreRequest extends FormRequest
             'uid_kartu' => 'required|string|max:50|unique:kartu,uid_kartu',
             'pin' => 'required|string|min:4|max:6',
             'aktif' => 'boolean',
-            'tanggal_terbit' => 'required|date',
-            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
         ];
     }
 

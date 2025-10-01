@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use App\Models\Kartu;
 use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,7 @@ class ProsesLulusSantriService
             try {
                 DB::beginTransaction();
 
+                // Update status santri ke alumni
                 $santri->update([
                     'status' => 'alumni',
                     'tanggal_keluar' => $now,
@@ -50,10 +52,16 @@ class ProsesLulusSantriService
                     'updated_at' => $now,
                 ]);
 
+                // Nonaktifkan semua kartu aktif milik santri ini (jika ada)
+                Kartu::where('santri_id', $santri->id)
+                    ->where('aktif', true)
+                    ->update(['aktif' => false]);
+
                 DB::commit();
+
                 $dataBerhasil[] = [
                     'nama' => $nama,
-                    'message' => 'Berhasil di-set lulus (alumni).',
+                    'message' => 'Berhasil di-set lulus (alumni) & kartu dinonaktifkan.',
                 ];
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -71,7 +79,6 @@ class ProsesLulusSantriService
             'data_gagal' => $dataGagal,
         ];
     }
-
 
     public function batalLulusSantri(array $data)
     {

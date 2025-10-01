@@ -13,6 +13,7 @@ class TransaksiSaldo extends Model
 
     protected $fillable = [
         'santri_id',
+        'uid_kartu',
         'outlet_id',
         'kategori_id',
         'user_outlet_id',

@@ -43,8 +43,6 @@ return new class extends Migration
             $table->string('uid_kartu', 50)->unique();
             $table->string('pin');
             $table->boolean('aktif')->default(true);
-            $table->date('tanggal_terbit');
-            $table->date('tanggal_expired')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
