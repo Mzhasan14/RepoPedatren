@@ -132,7 +132,8 @@ class PotonganController extends Controller
 
             $potongan->load([
                 'tagihans:id,nama_tagihan,tipe,nominal',
-                'santris:id,nama_lengkap,nis'
+                'santris:id,biodata_id,nis',
+                'santris.biodata:id,nama'
             ]);
 
             return response()->json(['success' => true, 'data' => $potongan], 201);
@@ -171,7 +172,8 @@ class PotonganController extends Controller
 
             $potongan->load([
                 'tagihans:id,nama_tagihan,tipe,nominal',
-                'santris:id,nama_lengkap,nis'
+                'santris:id,biodata_id,nis',
+                'santris.biodata:id,nama'
             ]);
 
             return response()->json(['success' => true, 'data' => $potongan], 200);
