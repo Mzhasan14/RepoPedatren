@@ -23,6 +23,7 @@ class PotonganRequest extends FormRequest
     {
         return [
             'nama'       => 'required|string|max:100',
+            'kategori'      => 'required|in:anak_pegawai,bersaudara,khadam,umum',
             'jenis'      => 'required|in:persentase,nominal',
             'nilai'      => 'required|numeric|min:0',
             'status'     => 'boolean',

@@ -201,7 +201,6 @@ class OutletSeeder extends Seeder
                     'user_outlet_id' => $userOutletId,
                     'total_bayar' => $total,
                     'tanggal' => $tanggal,
-                    'created_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -214,8 +213,6 @@ class OutletSeeder extends Seeder
                     'user_outlet_id' => $userOutletId,
                     'tipe' => 'debit',
                     'jumlah' => $total,
-                    'created_by' => $adminId,
-                    'updated_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -238,8 +235,6 @@ class OutletSeeder extends Seeder
                     'user_outlet_id' => $userOutletId,
                     'tipe' => 'topup',
                     'jumlah' => 100000,
-                    'created_by' => $adminId,
-                    'updated_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -252,8 +247,6 @@ class OutletSeeder extends Seeder
                     'user_outlet_id' => $userOutletId,
                     'tipe' => 'debit',
                     'jumlah' => 50000,
-                    'created_by' => $adminId,
-                    'updated_by' => $adminId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

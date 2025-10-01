@@ -166,13 +166,16 @@ return new class extends Migration
         /**
          * MASTER TAGIHAN
          */
+        /**
+         * MASTER TAGIHAN
+         */
         Schema::create('tagihan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_tagihan', 150);
             $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
             $table->decimal('nominal', 15, 2)->default(0);
-            $table->date('jatuh_tempo')->nullable(); // default template, bukan wajib
-            $table->boolean('status')->default(true);
+            $table->date('jatuh_tempo')->nullable(); // default template, bisa di override di tagihan_santri
+            $table->boolean('status')->default(true); // aktif/nonaktif
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
@@ -187,9 +190,10 @@ return new class extends Migration
          */
         Schema::create('potongan', function (Blueprint $table) {
             $table->id();
-            $table->string('nama', 100); // Anak Pegawai, Beasiswa, Khadam
+            $table->string('nama', 100);
+            $table->enum('kategori', ['anak_pegawai', 'bersaudara', 'khadam', 'umum'])->default('umum');
             $table->enum('jenis', ['persentase', 'nominal'])->default('nominal');
-            $table->decimal('nilai', 15, 2); // persentase = 10 berarti 10%
+            $table->decimal('nilai', 15, 2);
             $table->boolean('status')->default(true);
             $table->text('keterangan')->nullable();
 
@@ -198,34 +202,30 @@ return new class extends Migration
         });
 
         /**
-         * RELASI POTONGAN ↔ TAGIHAN
-         * (optional, jika potongan hanya berlaku utk jenis tagihan tertentu)
+         * RELASI POTONGAN ↔ TAGIHAN (opsional)
          */
         Schema::create('potongan_tagihan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
-            $table->timestamps();
 
+            $table->timestamps();
             $table->unique(['potongan_id', 'tagihan_id']);
         });
 
         /**
-         * RELASI SANTRI ↔ POTONGAN
+         * RELASI SANTRI ↔ POTONGAN (personal discount)
          */
         Schema::create('santri_potongan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
             $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
-            $table->string('keterangan')->nullable();
-            $table->boolean('status')->default(true);
-            $table->date('berlaku_dari')->nullable();
-            $table->date('berlaku_sampai')->nullable();
+
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['santri_id', 'potongan_id']);
         });
-
 
         /**
          * TAGIHAN SANTRI (hasil generate per periode)
@@ -235,12 +235,15 @@ return new class extends Migration
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
 
-            $table->string('periode')->nullable(); // contoh: "2025-08"
-            $table->decimal('nominal', 15, 2);
-            $table->enum('status', ['pending', 'lunas'])->default('pending');
+            $table->string('periode', 20)->nullable(); // contoh: "2025-08"
+            $table->decimal('nominal', 15, 2); // nilai tagihan sebelum potongan
+            $table->decimal('total_potongan', 15, 2)->default(0); // total potongan yang diterapkan
+            $table->decimal('total_tagihan', 15, 2); // = nominal - total_potongan (harus dibayar penuh)
+
+            $table->enum('status', ['pending', 'lunas', 'terlambat'])->default('pending');
 
             $table->date('tanggal_jatuh_tempo')->nullable();
-            $table->dateTime('tanggal_bayar')->nullable(); // opsional (diisi dari transaksi terakhir)
+            $table->dateTime('tanggal_bayar')->nullable();
             $table->string('keterangan')->nullable();
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -254,6 +257,7 @@ return new class extends Migration
             $table->index('status');
             $table->index(['santri_id', 'periode']);
         });
+
 
         /**
          * PEMBAYARAN

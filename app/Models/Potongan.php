@@ -13,6 +13,7 @@ class Potongan extends Model
 
     protected $fillable = [
         'nama',
+        'kategori',
         'jenis',
         'nilai',
         'status',
@@ -22,5 +23,11 @@ class Potongan extends Model
     public function tagihans()
     {
         return $this->belongsToMany(Tagihan::class, 'potongan_tagihan');
+    }
+
+    public function santris()
+    {
+        return $this->belongsToMany(Santri::class, 'santri_potongan')
+            ->withTimestamps();
     }
 }

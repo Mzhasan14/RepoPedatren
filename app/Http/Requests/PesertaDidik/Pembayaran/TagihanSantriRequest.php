@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\PesertaDidik\Pembayaran;
 
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -19,9 +20,12 @@ class TagihanSantriRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tagihan_id'     => 'required|exists:tagihan,id',
-            'periode'        => 'nullable|string|max:20', 
-            'jenis_kelamin'  => 'nullable|in:l,p', 
+            'tagihan_id'    => ['required', 'exists:tagihan,id'],
+            'periode'       => ['required', 'string', 'max:20'], // contoh: 2025-08
+            'all'           => ['boolean'],                      // true = semua santri
+            'santri_ids'    => ['array'],                        // list ID santri
+            'santri_ids.*'  => ['integer', 'exists:santri,id'],
+            'jenis_kelamin' => ['nullable', 'in:l,p'],           // filter gender
         ];
     }
 

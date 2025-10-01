@@ -12,10 +12,6 @@ class SantriPotongan extends Model
     protected $fillable = [
         'santri_id',
         'potongan_id',
-        'keterangan',
-        'status',
-        'berlaku_dari',
-        'berlaku_sampai',
     ];
 
     public function santri(): BelongsTo

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\api\PesertaDidik\Pembayaran;
 
+use Exception;
+use App\Models\Santri;
 use App\Models\Tagihan;
 use App\Models\TagihanSantri;
-use App\Models\Santri;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Pembayaran\TagihanSantriService;
 use App\Http\Requests\PesertaDidik\Pembayaran\TagihanSantriRequest;
@@ -34,38 +36,61 @@ class TagihanSantriController extends Controller
         return response()->json($tagihan);
     }
 
-    // Generate tagihan santri
-    public function generate(TagihanSantriRequest $request)
+    public function generate(TagihanSantriRequest $request): JsonResponse
     {
-        $result = $this->service->generate(
-            $request->tagihan_id,
-            $request->periode,
-            $request->only('jenis_kelamin')
-        );
+        try {
+            $data = $this->service->generate(
+                $request->input('tagihan_id'),
+                $request->input('periode'),
+                $request->only(['all', 'santri_ids', 'jenis_kelamin'])
+            );
 
-        return response()->json([
-            'message'      => 'Tagihan santri berhasil digenerate.',
-            'total_santri' => $result['total_santri'],
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Tagihan santri berhasil digenerate.',
+                'data'    => $data,
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('Gagal generate tagihan santri', [
+                'tagihan_id' => $request->input('tagihan_id'),
+                'periode'    => $request->input('periode'),
+                'filter'     => $request->only(['all', 'santri_ids', 'jenis_kelamin']),
+                'exception'  => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan internal. Silakan coba beberapa saat lagi.',
+            ], 500);
+        }
     }
+
 
     public function generateManual(TagihanSantriManualRequest $request): JsonResponse
     {
         try {
+            $santriIds = $request->santri_ids ?? [];
+
             $result = $this->service->generateManual(
                 $request->tagihan_id,
                 $request->periode,
-                $request->santri_ids
+                $santriIds
             );
 
             return response()->json([
-                'message' => 'Tagihan manual berhasil dibuat.',
-                'data'    => $result
+                'success' => true,
+                'message' => 'Tagihan manual berhasil digenerate.',
+                'data'    => $result,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            Log::error('Gagal generate manual tagihan', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
             return response()->json([
-                'message' => 'Gagal membuat tagihan manual.',
-                'error'   => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 422);
         }
     }
