@@ -24,12 +24,21 @@ class Tagihan extends Model
 
     public function potongans()
     {
-        return $this->belongsToMany(Potongan::class, 'potongan_tagihan');
-    }   
+        return $this->belongsToMany(Potongan::class, 'potongan_tagihan')
+            ->select([
+                'potongan.id',     
+                'nama',
+                'kategori',
+                'jenis',
+                'nilai',
+                'status',
+                'keterangan'
+            ]);
+    }
+
 
     public function tagihanSantri()
-{
-    return $this->hasMany(\App\Models\TagihanSantri::class);
-}
-
+    {
+        return $this->hasMany(\App\Models\TagihanSantri::class);
+    }
 }
