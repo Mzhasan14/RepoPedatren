@@ -121,11 +121,7 @@ class PotonganController extends Controller
             }
 
             if ($potongan->kategori === 'umum' && !empty($data['santri_ids'])) {
-                $syncData = [];
-                foreach ($data['santri_ids'] as $santriId) {
-                    $syncData[$santriId] = ['status' => true];
-                }
-                $potongan->santris()->sync($syncData);
+                $potongan->santris()->sync($data['santri_ids']); // langsung sync array ID
             }
 
             DB::commit();
@@ -159,11 +155,7 @@ class PotonganController extends Controller
             }
 
             if ($potongan->kategori === 'umum') {
-                $syncData = [];
-                foreach ($data['santri_ids'] ?? [] as $santriId) {
-                    $syncData[$santriId] = ['status' => true];
-                }
-                $potongan->santris()->sync($syncData);
+                $potongan->santris()->sync($data['santri_ids'] ?? []);
             } else {
                 $potongan->santris()->detach();
             }
