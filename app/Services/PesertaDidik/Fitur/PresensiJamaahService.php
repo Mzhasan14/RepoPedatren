@@ -28,6 +28,24 @@ class PresensiJamaahService
             ->where('jenis_berkas_id', $pasFotoId)
             ->groupBy('biodata_id');
 
+        // Ambil data kartu dulu tanpa filter aktif
+        $kartu = DB::table('kartu')->where('uid_kartu', $uidKartu)->first();
+
+        if (! $kartu) {
+            return [
+                'status'  => false,
+                'message' => 'Kartu tidak ditemukan atau tidak terdaftar.',
+            ];
+        }
+
+        if (! $kartu->aktif) {
+            return [
+                'status'  => false,
+                'message' => 'Kartu tidak aktif.',
+            ];
+        }
+
+        // Kalau kartu valid (aktif), ambil detail santri
         $santri = DB::table('kartu as k')
             ->join('santri as s', 's.id', '=', 'k.santri_id')
             ->join('biodata as b', 'b.id', '=', 's.biodata_id')
@@ -44,21 +62,16 @@ class PresensiJamaahService
             )
             ->first();
 
-        if (! $santri) {
-            return [
-                'status' => false,
-                'message' => 'Kartu tidak ditemukan atau tidak terdaftar.',
-            ];
-        }
-
         return [
+            'status'     => true,
             'nama_santri' => $santri->nama_santri,
-            'santri_id'   => $santri->id,
-            'nis'         => $santri->nis,
-            'uid_kartu'   => $santri->uid_kartu,
+            'santri_id'  => $santri->id,
+            'nis'        => $santri->nis,
+            'uid_kartu'  => $santri->uid_kartu,
             'foto_profil' => url($santri->foto_profil)
         ];
     }
+
 
     public function scanByUid(string $uid, ?int $operatorUserId = null): array
     {

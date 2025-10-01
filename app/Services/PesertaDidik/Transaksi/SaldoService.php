@@ -65,17 +65,28 @@ class SaldoService
             }
 
             if ($metode === 'scan') {
+                // Cari kartu berdasarkan santri_id
                 $kartu = Kartu::where('santri_id', $santri_id)
-                    ->select('uid_kartu', 'pin')
-                    ->where('aktif', true)
+                    ->select('uid_kartu', 'pin', 'aktif')
                     ->first();
 
+                // Jika kartu belum terdaftar
                 if (!$kartu) {
                     return [
                         'status'  => false,
-                        'message' => 'Kartu tidak ditemukan atau tidak aktif.'
+                        'message' => 'Kartu tidak terdaftar.'
                     ];
                 }
+
+                // Jika kartu ada tapi tidak aktif
+                if (!$kartu->aktif) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Kartu tidak aktif.'
+                    ];
+                }
+
+                // Validasi PIN
                 if (!Hash::check($pin, $kartu->pin)) {
                     return [
                         'status'  => false,
@@ -83,6 +94,7 @@ class SaldoService
                     ];
                 }
             }
+
 
             // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(
@@ -135,8 +147,8 @@ class SaldoService
                     if ($saldo->saldo <= 0) break;
 
                     // hanya proses jika saldo cukup melunasi tagihan penuh
-                    if ($saldo->saldo >= $tagihan->nominal) {
-                        $saldo->saldo -= $tagihan->nominal;
+                    if ($saldo->saldo >= $tagihan->total_tagihan) {
+                        $saldo->saldo -= $tagihan->total_tagihan;
                         $saldo->save();
 
                         $tagihan->status        = 'lunas';
@@ -150,8 +162,8 @@ class SaldoService
                             'kategori_id'    => $kategoriId,
                             'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
                             'tipe'           => 'debit',
-                            'jumlah'         => $tagihan->nominal,
-                            'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->nominal} dari saldo topup",
+                            'jumlah'         => $tagihan->total_tagihan,
+                            'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo topup",
                         ]);
                     }
                 }

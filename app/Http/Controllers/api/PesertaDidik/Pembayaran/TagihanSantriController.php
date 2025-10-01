@@ -66,34 +66,34 @@ class TagihanSantriController extends Controller
     }
 
 
-    public function generateManual(TagihanSantriManualRequest $request): JsonResponse
-    {
-        try {
-            $santriIds = $request->santri_ids ?? [];
+    // public function generateManual(TagihanSantriManualRequest $request): JsonResponse
+    // {
+    //     try {
+    //         $santriIds = $request->santri_ids ?? [];
 
-            $result = $this->service->generateManual(
-                $request->tagihan_id,
-                $request->periode,
-                $santriIds
-            );
+    //         $result = $this->service->generateManual(
+    //             $request->tagihan_id,
+    //             $request->periode,
+    //             $santriIds
+    //         );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tagihan manual berhasil digenerate.',
-                'data'    => $result,
-            ]);
-        } catch (Exception $e) {
-            Log::error('Gagal generate manual tagihan', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-            ]);
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Tagihan manual berhasil digenerate.',
+    //             'data'    => $result,
+    //         ]);
+    //     } catch (Exception $e) {
+    //         Log::error('Gagal generate manual tagihan', [
+    //             'error' => $e->getMessage(),
+    //             'request' => $request->all(),
+    //         ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        }
-    }
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 422);
+    //     }
+    // }
 
     // List semua tagihan per santri (opsional tambahan)
     // public function listBySantri($santriId)
@@ -120,17 +120,18 @@ class TagihanSantriController extends Controller
             'updater:id,name'
         ])
             ->where('santri_id', $santriId)
-            ->orderBy('periode', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Hitung statistik
-        $totalTagihan = $tagihanSantri->count();
-        $totalNominal = $tagihanSantri->sum('nominal');
-        $totalSisa = $tagihanSantri->sum('sisa');
-        $totalLunas = $tagihanSantri->where('status', 'lunas')->count();
-        $totalPending = $tagihanSantri->where('status', 'pending')->count();
-        $totalSebagian = $tagihanSantri->where('status', 'sebagian')->count();
+        $totalTagihan   = $tagihanSantri->count();
+        $totalNominal   = $tagihanSantri->sum('nominal');
+        $totalPotongan  = $tagihanSantri->sum('total_potongan');
+        $totalTagihanNet = $tagihanSantri->sum('total_tagihan');
+
+        $totalLunas     = $tagihanSantri->where('status', 'lunas')->count();
+        $totalPending   = $tagihanSantri->where('status', 'pending')->count();
+        $totalTerlambat = $tagihanSantri->where('status', 'terlambat')->count();
 
         // Hitung total pembayaran
         $totalPembayaran = $tagihanSantri->sum(function ($tagihan) {
@@ -140,48 +141,50 @@ class TagihanSantriController extends Controller
         // Format response dengan data tambahan
         return response()->json([
             'santri' => [
-                'id' => $santri->id,
-                'nis' => $santri->nis,
-                'nama' => $santri->biodata->nama_lengkap ?? 'N/A',
-                'status' => $santri->status,
+                'id'       => $santri->id,
+                'nis'      => $santri->nis,
+                'nama'     => $santri->biodata->nama_lengkap ?? 'N/A',
+                'status'   => $santri->status,
                 'angkatan' => $santri->angkatan_id,
             ],
             'statistik' => [
-                'total_tagihan' => $totalTagihan,
-                'total_nominal' => number_format($totalNominal, 2, ',', '.'),
-                'total_sisa' => number_format($totalSisa, 2, ',', '.'),
-                'total_pembayaran' => number_format($totalPembayaran, 2, ',', '.'),
-                'persentase_lunas' => $totalTagihan > 0 ? round(($totalLunas / $totalTagihan) * 100, 2) : 0,
-                'status_breakdown' => [
-                    'lunas' => $totalLunas,
-                    'pending' => $totalPending,
-                    'sebagian' => $totalSebagian,
+                'total_tagihan'     => $totalTagihan,
+                'total_nominal'     => number_format($totalNominal, 2, ',', '.'),
+                'total_potongan'    => number_format($totalPotongan, 2, ',', '.'),
+                'total_tagihan_net' => number_format($totalTagihanNet, 2, ',', '.'),
+                'total_pembayaran'  => number_format($totalPembayaran, 2, ',', '.'),
+                'persentase_lunas'  => $totalTagihan > 0 ? round(($totalLunas / $totalTagihan) * 100, 2) : 0,
+                'status_breakdown'  => [
+                    'lunas'     => $totalLunas,
+                    'pending'   => $totalPending,
+                    'terlambat' => $totalTerlambat,
                 ]
             ],
             'data' => $tagihanSantri->map(function ($tagihan) {
                 return [
                     'id' => $tagihan->id,
                     'tagihan' => [
-                        'id' => $tagihan->tagihan->id,
+                        'id'           => $tagihan->tagihan->id,
                         'nama_tagihan' => $tagihan->tagihan->nama_tagihan,
-                        'tipe' => $tagihan->tagihan->tipe,
+                        'tipe'         => $tagihan->tagihan->tipe,
                     ],
-                    'periode' => $tagihan->periode,
-                    'nominal' => number_format($tagihan->nominal, 2, ',', '.'),
-                    'sisa' => number_format($tagihan->sisa, 2, ',', '.'),
-                    'status' => $tagihan->status,
+                    'periode'         => $tagihan->periode,
+                    'nominal'         => number_format($tagihan->nominal, 2, ',', '.'),
+                    'total_potongan'  => number_format($tagihan->total_potongan, 2, ',', '.'),
+                    'total_tagihan'   => number_format($tagihan->total_tagihan, 2, ',', '.'),
+                    'status'          => $tagihan->status,
                     'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo?->format('d/m/Y'),
-                    'tanggal_bayar' => $tagihan->tanggal_bayar?->format('d/m/Y H:i'),
-                    'keterangan' => $tagihan->keterangan,
+                    'tanggal_bayar'       => $tagihan->tanggal_bayar?->format('d/m/Y H:i'),
+                    'keterangan'      => $tagihan->keterangan,
                     'pembayaran_count' => $tagihan->pembayaran->count(),
                     'pembayaran_total' => number_format($tagihan->pembayaran->sum('jumlah_bayar'), 2, ',', '.'),
                     'pembayaran_terakhir' => $tagihan->pembayaran->first()?->tanggal_bayar?->format('d/m/Y H:i'),
-                    'created_at' => $tagihan->created_at->format('d/m/Y H:i'),
-                    'created_by' => $tagihan->creator?->name,
+                    'created_at'      => $tagihan->created_at->format('d/m/Y H:i'),
+                    'created_by'      => $tagihan->creator?->name,
                 ];
             }),
             'meta' => [
-                'generated_at' => now()->format('d/m/Y H:i:s'),
+                'generated_at'  => now()->format('d/m/Y H:i:s'),
                 'total_records' => $totalTagihan,
             ]
         ]);

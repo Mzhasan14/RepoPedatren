@@ -16,7 +16,8 @@ class TagihanSantri extends Model
         'santri_id',
         'periode',
         'nominal',
-        'sisa',
+        'total_potongan',
+        'total_tagihan',
         'status',
         'tanggal_jatuh_tempo',
         'tanggal_bayar',
@@ -27,10 +28,11 @@ class TagihanSantri extends Model
     ];
 
     protected $casts = [
-        'nominal' => 'decimal:2',
-        'sisa' => 'decimal:2',
+        'nominal'          => 'decimal:2',
+        'total_potongan'   => 'decimal:2',
+        'total_tagihan'    => 'decimal:2',
         'tanggal_jatuh_tempo' => 'date',
-        'tanggal_bayar' => 'datetime',
+        'tanggal_bayar'    => 'datetime',
     ];
 
     /* =======================

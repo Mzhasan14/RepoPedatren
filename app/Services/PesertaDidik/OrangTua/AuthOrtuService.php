@@ -149,8 +149,8 @@ class AuthOrtuService
                     foreach ($tagihans as $tagihan) {
                         if ($saldo->saldo <= 0) break;
 
-                        if ($saldo->saldo >= $tagihan->nominal) {
-                            $saldo->saldo -= $tagihan->nominal;
+                        if ($saldo->saldo >= $tagihan->total_tagihan) {
+                            $saldo->saldo -= $tagihan->total_tagihan;
                             $saldo->save();
 
                             $tagihan->status        = 'lunas';
@@ -164,8 +164,8 @@ class AuthOrtuService
                                 'kategori_id'    => null,
                                 'user_outlet_id' => null,
                                 'tipe'           => 'debit',
-                                'jumlah'         => $tagihan->nominal,
-                                'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->nominal} dari saldo saat login oleh orang tua",
+                                'jumlah'         => $tagihan->total_tagihan,
+                                'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo saat login oleh orang tua",
                             ]);
                         }
                     }

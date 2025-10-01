@@ -1165,8 +1165,8 @@ Route::prefix('tagihan-santri')->group(function () {
     Route::get('/', [TagihanSantriController::class, 'index']);        // list tagihan
     Route::get('/{id}', [TagihanSantriController::class, 'show']);     // detail tagihan
     Route::post('/generate', [TagihanSantriController::class, 'generate']); // generate tagihan santri
-    Route::post('/generate-manual', [TagihanSantriController::class, 'generateManual']); // generate tagihan manual santri
     Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']); // daftar tagihan santri
+    // Route::post('/generate-manual', [TagihanSantriController::class, 'generateManual']); // generate tagihan manual santri
 });
 
 // Banks

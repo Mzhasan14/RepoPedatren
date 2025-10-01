@@ -16,6 +16,7 @@ class TransaksiSaldo extends Model
         'outlet_id',
         'kategori_id',
         'user_outlet_id',
+        'keterangan',
         'tipe',
         'jumlah',
         'created_by',
