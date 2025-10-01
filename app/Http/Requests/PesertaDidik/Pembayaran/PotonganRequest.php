@@ -21,17 +21,60 @@ class PotonganRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'nama'       => 'required|string|max:100',
-            'kategori'      => 'required|in:anak_pegawai,bersaudara,khadam,umum',
+            'kategori'   => 'required|in:anak_pegawai,bersaudara,khadam,umum',
             'jenis'      => 'required|in:persentase,nominal',
             'nilai'      => 'required|numeric|min:0',
             'status'     => 'boolean',
             'keterangan' => 'nullable|string',
 
-            // Optional relasi ke tagihan
+            // Relasi ke tagihan
             'tagihan_ids'   => 'nullable|array',
             'tagihan_ids.*' => 'integer|exists:tagihan,id',
+        ];
+
+        // Hanya wajib jika kategori = umum
+        if ($this->kategori === 'umum') {
+            $rules['santri_ids'] = 'required|array|min:1';
+            $rules['santri_ids.*'] = 'integer|exists:santri,id';
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nama.required'       => 'Nama potongan wajib diisi.',
+            'nama.string'         => 'Nama potongan harus berupa teks.',
+            'nama.max'            => 'Nama potongan maksimal 100 karakter.',
+
+            'kategori.required'   => 'Kategori potongan wajib diisi.',
+            'kategori.in'         => 'Kategori harus salah satu dari: anak_pegawai, bersaudara, khadam, atau umum.',
+
+            'jenis.required'      => 'Jenis potongan wajib diisi.',
+            'jenis.in'            => 'Jenis potongan hanya boleh persentase atau nominal.',
+
+            'nilai.required'      => 'Nilai potongan wajib diisi.',
+            'nilai.numeric'       => 'Nilai potongan harus berupa angka.',
+            'nilai.min'           => 'Nilai potongan minimal 0.',
+
+            'status.boolean'      => 'Status potongan harus berupa true/false.',
+
+            'keterangan.string'   => 'Keterangan harus berupa teks.',
+
+            // Relasi tagihan
+            'tagihan_ids.array'   => 'Tagihan harus berupa array.',
+            'tagihan_ids.*.integer' => 'ID tagihan harus berupa angka.',
+            'tagihan_ids.*.exists'  => 'Tagihan yang dipilih tidak valid.',
+
+            // Relasi santri (khusus kategori umum)
+            'santri_ids.required' => 'Daftar santri wajib diisi untuk kategori umum.',
+            'santri_ids.array'    => 'Santri harus berupa array.',
+            'santri_ids.min'      => 'Minimal pilih 1 santri.',
+            'santri_ids.*.integer' => 'ID santri harus berupa angka.',
+            'santri_ids.*.exists' => 'Santri yang dipilih tidak valid.',
         ];
     }
 
