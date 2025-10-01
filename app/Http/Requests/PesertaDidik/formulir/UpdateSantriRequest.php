@@ -24,9 +24,16 @@ class UpdateSantriRequest extends FormRequest
      */
     public function rules(): array
     {
+        $santriId = $this->route('id'); // ambil dari route parameter 'id'
+
         return [
             'angkatan_id' => 'required|exists:angkatan,id',
-            'nis'       => 'required|string|max:20|unique:santri,nis,' . $this->route('santri'),
+            'nis' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('santri', 'nis')->ignore($santriId),
+            ],
             'tanggal_masuk' => 'required|date',
             'tanggal_keluar' => 'nullable|date',
             'status' => [

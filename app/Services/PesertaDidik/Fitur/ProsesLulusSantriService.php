@@ -119,7 +119,6 @@ class ProsesLulusSantriService
                 continue;
             }
 
-            // Cek tanggal_keluar maksimal 30 hari lalu
             if (!$santri->tanggal_keluar || $santri->tanggal_keluar->diffInDays($now) > 30) {
                 $dataGagal[] = [
                     'nama' => $nama,
@@ -131,6 +130,7 @@ class ProsesLulusSantriService
             try {
                 DB::beginTransaction();
 
+                // Update status santri kembali ke aktif
                 $santri->update([
                     'status' => 'aktif',
                     'tanggal_keluar' => null,
@@ -138,10 +138,21 @@ class ProsesLulusSantriService
                     'updated_at' => $now,
                 ]);
 
+                // Cek kartu terbaru yang status false dan aktifkan kembali
+                $kartuTerbaru = Kartu::where('santri_id', $santri->id)
+                    ->where('aktif', false)
+                    ->orderByDesc('created_at') 
+                    ->first();
+
+                if ($kartuTerbaru) {
+                    $kartuTerbaru->update(['aktif' => true]);
+                }
+
                 DB::commit();
+
                 $dataBerhasil[] = [
                     'nama' => $nama,
-                    'message' => 'Status lulus (alumni) berhasil dibatalkan.',
+                    'message' => 'Status lulus (alumni) berhasil dibatalkan & kartu terbaru diaktifkan kembali.',
                 ];
             } catch (\Exception $e) {
                 DB::rollBack();
