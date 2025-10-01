@@ -12,33 +12,25 @@ class NadhomanController extends Controller
 {
     private NadhomanService $service;
     private FilterPesertaDidikService $filter;
-    
+
     public function __construct(NadhomanService $service, FilterPesertaDidikService $filter)
     {
         $this->service = $service;
         $this->filter = $filter;
-
     }
 
     public function store(NadhomanRequest $request)
     {
-        try {
-            $validated = $request->validated();
-            $result = $this->service->setoranNadhoman($validated);
+        $validated = $request->validated();
+        $result = $this->service->setoranNadhoman($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Setoran nadhoman berhasil disimpan.',
-                'data'    => $result,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan setoran nadhoman.',
-                'error'   => $e->getMessage(),
-            ], 500);
+        if (!$result['success']) {
+            return response()->json($result, 422);
         }
+
+        return response()->json($result, 201); 
     }
+
 
     public function listSetoran(Request $request)
     {
@@ -85,7 +77,6 @@ class NadhomanController extends Controller
             $currentPage = (int) $request->input('page', 1);
 
             $results = $query->paginate($perPage, ['*'], 'page', $currentPage);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

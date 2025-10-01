@@ -1074,7 +1074,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// Outlet
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:superadmin|supervisor|admin')->group(function () {
         Route::get('outlet', [OutletController::class, 'index']);

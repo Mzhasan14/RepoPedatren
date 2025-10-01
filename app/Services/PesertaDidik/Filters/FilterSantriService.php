@@ -98,9 +98,12 @@ class FilterSantriService
             return $query;
         }
 
-        $nama = trim($request->nama);
+        $keyword = trim($request->nama);
 
-        return $query->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($nama) . '%']);
+        return $query->where(function ($q) use ($keyword) {
+            $q->whereRaw('LOWER(b.nama) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                ->orWhereRaw('s.nis LIKE ?', ['%' . $keyword . '%']);
+        });
     }
 
     public function applyKewaliasuhanFilter(Builder $query, Request $request): Builder

@@ -32,7 +32,6 @@ class NadhomanSeeder extends Seeder
                 ])->exists();
 
                 if (! $existing) {
-                    // Random bait mulai & selesai
                     $baitMulai = rand(1, max(1, $kitab->total_bait - 5));
                     $baitSelesai = min($kitab->total_bait, $baitMulai + rand(1, 5));
 
@@ -50,11 +49,8 @@ class NadhomanSeeder extends Seeder
                         'created_by'      => 1,
                     ]);
 
-                    // Rekap — tidak duplikat karena pakai updateOrCreate()
-                    $totalBaitSetoran = $baitSelesai;
-                    $persentase = $kitab->total_bait > 0
-                        ? ($totalBaitSetoran / $kitab->total_bait) * 100
-                        : 0;
+                    $totalBaitSetoran = max(1, round($kitab->total_bait * 0.1));
+                    $persentase = 10; 
 
                     RekapNadhoman::updateOrCreate(
                         [

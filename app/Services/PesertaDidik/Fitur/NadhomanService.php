@@ -2,6 +2,7 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use App\Models\Nadhoman;
 use Exception;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
@@ -31,7 +32,12 @@ class NadhomanService
                     ->exists();
 
                 if ($kitabSudahTuntas) {
-                    throw new Exception("Kitab ini sudah selesai dituntaskan, tidak bisa setor ulang.");
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'message' => "Kitab ini sudah selesai dituntaskan, tidak bisa setor ulang.",
+                        'data'    => null,
+                    ];
                 }
 
                 // 2. Cek apakah bait sudah pernah disetorkan (overlap)
@@ -50,7 +56,12 @@ class NadhomanService
                     ->exists();
 
                 if ($sudahAda) {
-                    throw new Exception("Bait {$data['bait_mulai']} - {$data['bait_selesai']} sudah pernah disetorkan, tidak bisa disetorkan lagi.");
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'message' => "Bait {$data['bait_mulai']} - {$data['bait_selesai']} sudah pernah disetorkan, tidak bisa disetorkan lagi.",
+                        'data'    => null,
+                    ];
                 }
             }
 
@@ -65,43 +76,49 @@ class NadhomanService
                 'bait_selesai'    => $data['bait_selesai'],
                 'nilai'           => $data['nilai'],
                 'catatan'         => $data['catatan'] ?? null,
-                'status'          => $data['status'],
+                'status'          => $data['status'], // sementara diinput user
                 'created_by'      => Auth::id(),
                 'created_at'      => now(),
                 'updated_at'      => now(),
             ]);
 
-            // --- UPDATE REKAP ---
-            if ($data['status'] === 'tuntas' && $data['jenis_setoran'] === 'baru') {
-                $totalBaitSelesai = DB::table('nadhoman')
-                    ->where('santri_id', $data['santri_id'])
-                    ->where('kitab_id', $data['kitab_id'])
-                    ->where('status', 'tuntas')
-                    ->where('jenis_setoran', 'baru')
-                    ->sum(DB::raw('(bait_selesai - bait_mulai + 1)'));
+            $totalBaitSelesai = DB::table('nadhoman')
+                ->where('santri_id', $data['santri_id'])
+                ->where('kitab_id', $data['kitab_id'])
+                ->where('jenis_setoran', 'baru')
+                ->sum(DB::raw('(bait_selesai - bait_mulai + 1)'));
 
-                $totalBaitKitab = DB::table('kitab')
-                    ->where('id', $data['kitab_id'])
-                    ->value('total_bait');
+            $totalBaitKitab = DB::table('kitab')
+                ->where('id', $data['kitab_id'])
+                ->value('total_bait');
 
-                $persentase = 0;
-                if ($totalBaitKitab > 0) {
-                    $persentase = ($totalBaitSelesai / $totalBaitKitab) * 100;
-                }
-
-                DB::table('rekap_nadhoman')->updateOrInsert(
-                    [
-                        'santri_id' => $data['santri_id'],
-                        'kitab_id'  => $data['kitab_id'],
-                    ],
-                    [
-                        'total_bait'         => $totalBaitSelesai,
-                        'persentase_selesai' => round($persentase, 2),
-                        'updated_at'         => now(),
-                        'created_by'         => Auth::id(),
-                    ]
-                );
+            $persentase = 0;
+            if ($totalBaitKitab > 0) {
+                $persentase = ($totalBaitSelesai / $totalBaitKitab) * 100;
             }
+
+            $statusSetoran = $data['status'];
+            if ($persentase >= 100) {
+                $statusSetoran = 'tuntas';
+            }
+
+            DB::table('rekap_nadhoman')->updateOrInsert(
+                [
+                    'santri_id' => $data['santri_id'],
+                    'kitab_id'  => $data['kitab_id'],
+                ],
+                [
+                    'total_bait'         => $totalBaitSelesai,
+                    'persentase_selesai' => round($persentase, 2),
+                    'updated_at'         => now(),
+                    'created_by'         => Auth::id(),
+                ]
+            );
+
+            DB::table('nadhoman')->where('id', $setoranId)->update([
+                'status' => $statusSetoran,
+                'updated_at' => now(),
+            ]);
 
             DB::commit();
 
@@ -114,7 +131,7 @@ class NadhomanService
 
             activity('nadhoman')
                 ->causedBy(Auth::user())
-                ->performedOn(new \App\Models\Nadhoman(['id' => $setoranId]))
+                ->performedOn(new Nadhoman(['id' => $setoranId]))
                 ->withProperties([
                     'santri_id'  => $data['santri_id'],
                     'nis'        => $santri->nis ?? null,
@@ -126,13 +143,22 @@ class NadhomanService
                 ->event('create')
                 ->log("Setoran nadhoman berhasil ditambahkan");
 
-            return $setoranId;
-        } catch (Exception $e) {
+            return [
+                'success' => true,
+                'message' => 'Setoran nadhoman berhasil disimpan.',
+                'data'    => ['id' => $setoranId, 'status' => $statusSetoran, 'persentase' => round($persentase, 2)],
+            ];
+        } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal simpan setoran nadhoman: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan pada server. Silakan coba lagi.',
+                'data'    => null,
+            ];
         }
     }
 
@@ -202,7 +228,7 @@ class NadhomanService
                     CONCAT(
                         n.bait_mulai,
                         CASE
-                            WHEN n.bait_selesai IS NOT NULL AND n.bait_selesai != n.bait_mulai 
+                            WHEN n.bait_selesai IS NOT NULL AND n.bait_selesai != n.bait_mulai
                             THEN CONCAT('-', n.bait_selesai)
                             ELSE ''
                         END
@@ -219,12 +245,9 @@ class NadhomanService
             ->orderBy('n.id', 'desc')
             ->get();
 
-        // Query rekap nadhoman
         $rekap = DB::table('rekap_nadhoman as rn')
             ->join('santri', 'rn.santri_id', '=', 'santri.id')
-            ->leftJoin('domisili_santri as ds', 'santri.id', '=', 'ds.santri_id')
             ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-            ->leftJoin('pendidikan as pd', 'santri.id', '=', 'pd.biodata_id')
             ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
             ->select(
                 'santri.nis',
@@ -234,6 +257,13 @@ class NadhomanService
                 'rn.persentase_selesai'
             )
             ->where('rn.santri_id', $id)
+            ->groupBy(
+                'santri.nis',
+                'biodata.nama',
+                'kitab.nama_kitab',
+                'rn.total_bait',
+                'rn.persentase_selesai'
+            )
             ->orderBy('rn.id', 'desc')
             ->get();
 
@@ -246,29 +276,23 @@ class NadhomanService
     public function getAllRekap(Request $request)
     {
         $query = DB::table('santri as s')
-            ->leftjoin('rekap_nadhoman as rn', 'rn.santri_id', '=', 's.id')
+            ->leftJoin('rekap_nadhoman as rn', 'rn.santri_id', '=', 's.id')
             ->leftJoin('domisili_santri as ds', 's.id', '=', 'ds.santri_id')
             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->leftJoin('pendidikan as pd', 's.id', '=', 'pd.biodata_id')
-            ->join('kitab', 'rn.kitab_id', '=', 'kitab.id')
+            ->leftJoin('kitab', 'rn.kitab_id', '=', 'kitab.id')
             ->select(
                 's.id',
                 's.nis',
                 'b.nama as s_nama',
-                'kitab.nama_kitab',
-                'rn.total_bait',
-                'rn.persentase_selesai'
+                DB::raw("GROUP_CONCAT(DISTINCT kitab.nama_kitab ORDER BY kitab.nama_kitab SEPARATOR ', ') as daftar_kitab")
             )
             ->groupBy(
                 's.id',
                 's.nis',
-                'b.nama',
-                'kitab.nama_kitab',
-                'rn.total_bait',
-                'rn.persentase_selesai',
-                'rn.id'
+                'b.nama'
             )
-            ->orderBy('rn.id', 'desc');
+            ->orderBy('s.id', 'desc');
 
         return $query;
     }
@@ -280,9 +304,7 @@ class NadhomanService
                 'santri_id'          => $item->id,
                 'nis'                => $item->nis,
                 'nama_santri'        => $item->s_nama,
-                'nama_kitab'         => $item->nama_kitab,
-                'total_bait'         => $item->total_bait,
-                'persentase_selesai' => $item->persentase_selesai,
+                'nama_kitab'         => $item->daftar_kitab,
             ];
         });
     }
