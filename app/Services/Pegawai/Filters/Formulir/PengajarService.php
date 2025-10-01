@@ -694,11 +694,11 @@ class PengajarService
                     'updated_by'   => Auth::id(),
                 ]);
 
-                // AnakPegawai::where('pegawai_id', $pegawaiId)->update([
-                //     'status' => false,
-                //     'updated_by'   => Auth::id(),
-                //     'updated_at'   => now(),
-                // ]);
+                AnakPegawai::where('pegawai_id', $pegawaiId)->update([
+                    'status' => false,
+                    'updated_by'   => Auth::id(),
+                    'updated_at'   => now(),
+                ]);
             }
 
             return [

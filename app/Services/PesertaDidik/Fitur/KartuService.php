@@ -26,6 +26,8 @@ class KartuService
             ->leftjoin('kabupaten AS kb', 'b.kabupaten_id', '=', 'kb.id')
             ->leftJoinSub($wpLast, 'wl', fn($j) => $j->on('b.id', '=', 'wl.biodata_id'))
             ->leftJoin('warga_pesantren AS wp', 'wp.id', '=', 'wl.last_id')
+            ->whereNull('k.deleted_by')
+            ->whereNull('k.deleted_at')
             ->select(
                 'k.*',
                 's.id as santri_id',
@@ -110,7 +112,7 @@ class KartuService
         return ['data' => $this->transform($kartu)];
     }
 
-    public function delete(int $id)
+    public function nonactive(int $id)
     {
         $kartu = Kartu::findOrFail($id);
 
@@ -134,6 +136,7 @@ class KartuService
 
         return ['message' => 'Kartu berhasil dinonaktifkan'];
     }
+
     public function activate(int $id)
     {
         $kartu = Kartu::findOrFail($id);
@@ -157,6 +160,36 @@ class KartuService
             ->log("Kartu berhasil diaktifkan kembali");
 
         return ['message' => 'Kartu berhasil diaktifkan kembali'];
+    }
+
+    public function destroy(int $id)
+    {
+        $kartu = Kartu::find($id);
+
+        if (! $kartu) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        $kartu->aktif      = false;
+        $kartu->deleted_by = Auth::id();
+        $kartu->save();
+
+        $kartu->delete();
+
+        activity('kartu')
+            ->causedBy(Auth::user())
+            ->performedOn($kartu)
+            ->withProperties([
+                'santri_id'  => $kartu->santri_id,
+                'nis'        => $kartu->santri->nis ?? null,
+                'nama'       => $kartu->santri->biodata->nama ?? null,
+                'ip'         => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->event('soft_delete')
+            ->log("Kartu berhasil dihapus (soft delete)");
+
+        return ['message' => 'Kartu berhasil dihapus'];
     }
 
     private function transform($kartu)

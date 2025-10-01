@@ -54,10 +54,15 @@ class KartuController extends Controller
         return response()->json($this->service->update($id, $request->validated()));
     }
 
+    public function nonactive($id): JsonResponse
+    {
+        $this->service->nonactive($id);
+        return response()->json(['message' => 'Kartu berhasil dinonaktifkan']);
+    }
     public function destroy($id): JsonResponse
     {
-        $this->service->delete($id);
-        return response()->json(['message' => 'Kartu berhasil dinonaktifkan']);
+        $this->service->destroy($id);
+        return response()->json(['message' => 'Kartu berhasil dihapus']);
     }
     public function activate($id): JsonResponse
     {

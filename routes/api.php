@@ -1045,7 +1045,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/kartu', [KartuController::class, 'store']);
         Route::put('/kartu/{id}', [KartuController::class, 'update']);
         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
-        Route::put('/kartu/{id}/activate', [KartuController::class, 'activate']);
+        Route::put('/kartu/{id}/nonactive', [KartuController::class, 'nonactive']);
+        Route::put('/kartu/{id}/active', [KartuController::class, 'activate']);
     });
 });
 
