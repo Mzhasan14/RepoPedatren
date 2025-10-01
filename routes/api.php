@@ -1146,6 +1146,7 @@ Route::prefix('potongan')->group(function () {
     Route::get('/{potongan}', [PotonganController::class, 'show']);
     Route::post('/', [PotonganController::class, 'store']);
     Route::put('/{potongan}', [PotonganController::class, 'update']);
+    Route::put('/change-status/{potongan}', [PotonganController::class, 'toggleStatus']);
     Route::delete('/{potongan}', [PotonganController::class, 'destroy']);
 });
 
