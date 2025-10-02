@@ -48,6 +48,11 @@ class TagihanSantri extends Model
         return $this->belongsTo(Santri::class);
     }
 
+    public function pembayaran()
+    {
+        return $this->hasMany(Pembayaran::class, 'tagihan_santri_id');
+    }
+
     // Relasi ke user pembuat   
     public function creator()
     {
@@ -64,8 +69,5 @@ class TagihanSantri extends Model
         return $this->belongsTo(User::class, 'deleted_by');
     }
 
-    public function pembayaran()
-    {
-        return $this->hasMany(Pembayaran::class, 'tagihan_santri_id');
-    }
+    
 }

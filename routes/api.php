@@ -1161,10 +1161,13 @@ Route::prefix('santri-potongan')->group(function () {
 
 // Tagihan Santri
 Route::prefix('tagihan-santri')->group(function () {
-    Route::get('/', [TagihanSantriController::class, 'index']);        // list tagihan
-    Route::get('/{id}', [TagihanSantriController::class, 'show']);     // detail tagihan
-    Route::post('/generate', [TagihanSantriController::class, 'generate']); // generate tagihan santri
+    Route::get('/', [TagihanSantriController::class, 'index']);        
+
+    Route::get('/{id}', [TagihanSantriController::class, 'tagihanSantriByTagihanId']);  // ini detail tagihannya
+    
+    Route::post('/generate', [TagihanSantriController::class, 'generate']); 
     Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']);
+
     Route::get('/pembayaran/filters', [TagihanSantriController::class, 'filters']);
     // Route::post('/generate-manual', [TagihanSantriController::class, 'generateManual']); // generate tagihan manual santri
 });

@@ -109,6 +109,73 @@ class TagihanSantriController extends Controller
         ]);
     }
 
+    public function tagihanSantriByTagihanId($id)
+    {
+        $query = TagihanSantri::select([
+            'id',
+            'tagihan_id',
+            'santri_id',
+            'total_potongan',
+            'total_tagihan',
+            'status',
+            'tanggal_jatuh_tempo',
+            'tanggal_bayar',
+            'keterangan',
+            'created_by',
+            'created_at',
+            'updated_at',
+        ])
+            ->with([
+                'santri:id,biodata_id,nis',
+                'santri.biodata:id,nama',
+            ])
+            ->where('tagihan_id', $id); 
+
+        // filter tambahan
+        // $query->when($request->periode, function ($q, $periode) {
+        //     $q->where('periode', $periode);
+        // });
+
+        // $query->when($request->status, function ($q, $status) {
+        //     $q->where('status', $status);
+        // });
+
+        // $query->when($request->search, function ($q, $search) {
+        //     $q->where(function ($subQ) use ($search) {
+        //         $subQ->whereHas('santri.biodata', function ($sub) use ($search) {
+        //             $sub->where('nama', 'like', "%{$search}%");
+        //         })->orWhereHas('santri', function ($sub) use ($search) {
+        //             $sub->where('nis', 'like', "%{$search}%");
+        //         });
+        //     });
+        // });
+
+        $data = $query->paginate(25)->through(function ($item) {
+            return [
+                'id' => $item->id,
+                // 'tagihan_id' => $item->tagihan_id,
+                // 'santri_id' => $item->santri_id,
+                // 'nama_tagihan' => $item->tagihan->nama_tagihan ?? null,
+                'nama_santri' => $item->santri->biodata->nama ?? null,
+                'nis' => $item->santri->nis ?? null,
+                // 'periode' => $item->tagihan->periode,
+                // 'nominal' => $item->tagihan->nominal,
+                'total_potongan' => $item->total_potongan,
+                'total_tagihan' => $item->total_tagihan,
+                'status' => $item->status,
+                // 'tanggal_jatuh_tempo' => $item->tanggal_jatuh_tempo,
+                'tanggal_bayar' => $item->tanggal_bayar,
+                'keterangan' => $item->keterangan,
+                'created_by' => $item->created_by,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+
 
     public function show($id)
     {

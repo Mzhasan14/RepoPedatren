@@ -52,10 +52,6 @@ class TagihanSantriService
                 ->select('potongan.*')
                 ->get();
 
-            // ============================
-            //  🔥 Preload Data Relasi
-            // ============================
-
             // anak_pegawai
             $anakPegawaiList = DB::table('anak_pegawai')
                 ->where('status', true)
