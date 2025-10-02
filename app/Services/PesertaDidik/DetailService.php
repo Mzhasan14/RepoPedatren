@@ -161,7 +161,7 @@ class DetailService
         //             'bio_anak.nama as nama_anak',
         //             'gw.nama_grup as group_kewaliasuhan',
         //             DB::raw("
-        //                 CASE 
+        //                 CASE
         //                     WHEN s_wali.id = $santriId THEN 'Wali Asuh'
         //                     WHEN s_anak.id = $santriId THEN 'Anak Asuh'
         //                     ELSE 'Tidak Diketahui'
@@ -460,6 +460,35 @@ class DetailService
                 'tanggal_mulai' => $kh->tanggal_mulai,
                 'tanggal_akhir' => $kh->tanggal_akhir ?? '-',
             ])
+            : [];
+
+        // riwayat transaksi
+        $riwayatTransaksi = DB::table('santri as s')
+            ->join('transaksi_saldo as t', 't.santri_id', '=', 's.id')
+            ->leftJoin('outlets as o', 'o.id', '=', 't.outlet_id')
+            ->leftJoin('kategori as kk', 'kk.id', '=', 't.kategori_id')
+            ->where('s.biodata_id', $biodataId)
+            ->select([
+                't.uid_kartu',
+                'o.nama_outlet',
+                'kk.nama_kategori',
+                't.tipe',
+                't.jumlah',
+                't.keterangan',
+                't.created_at'
+            ])
+            ->orderBy('t.created_at', 'desc')
+            ->get();
+
+        $data['RiwayatTransaksi'] = $riwayatTransaksi->isNotEmpty()
+            ? $riwayatTransaksi->map(fn($trx) => [
+                'uid_kartu' => $trx->uid_kartu ?? 'Non-Kartu',
+                'nama_outlet' => $trx->nama_outlet ?? 'Sistem/Lainnya',
+                'nama_kategori' => $trx->nama_kategori ?? '-',
+                'tipe' => $trx->tipe,
+                'jumlah' => $trx->jumlah,
+                'keterangan' => $trx->keterangan ?? '-',
+            ])->values()
             : [];
 
         // --- Riwayat Karyawan ---

@@ -31,7 +31,8 @@ class UserSeeder extends Seeder
             'wali_asuh',
             'biktren',
             'kamtib',
-            'orang_tua'
+            'orang_tua',
+            'keuangan'
         ];
 
         foreach ($roles as $role) {
@@ -148,7 +149,7 @@ class UserSeeder extends Seeder
             $pusdatren->assignRole('superadmin');
 
             // USER DUMMY untuk role lain (tanpa orang_tua)
-            foreach (['admin', 'ustadz', 'petugas', 'pengasuh', 'wali_asuh', 'biktren', 'kamtib'] as $role) {
+            foreach (['admin', 'ustadz', 'petugas', 'pengasuh', 'wali_asuh', 'biktren', 'kamtib','keuangan'] as $role) {
                 $user = User::updateOrCreate(
                     ['email' => $role . '@example.com'],
                     [

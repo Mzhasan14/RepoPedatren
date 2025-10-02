@@ -1039,6 +1039,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('role:petugas|ustadz|superadmin|supervisor|admin')->group(function () {
         Route::get('/kartu', [KartuController::class, 'index']);
         Route::get('/kartu/{id}', [KartuController::class, 'show']);
+        Route::get('/riwayatkartu/{id}', [KartuController::class, 'riwayatKartu']);
     });
 
     Route::middleware('role:ustadz|petugas|superadmin|admin')->group(function () {
@@ -1161,11 +1162,11 @@ Route::prefix('santri-potongan')->group(function () {
 
 // Tagihan Santri
 Route::prefix('tagihan-santri')->group(function () {
-    Route::get('/', [TagihanSantriController::class, 'index']);        
+    Route::get('/', [TagihanSantriController::class, 'index']);
 
     Route::get('/{id}', [TagihanSantriController::class, 'tagihanSantriByTagihanId']);  // ini detail tagihannya
-    
-    Route::post('/generate', [TagihanSantriController::class, 'generate']); 
+
+    Route::post('/generate', [TagihanSantriController::class, 'generate']);
     Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']);
 
     Route::get('/pembayaran/filters', [TagihanSantriController::class, 'filters']);
