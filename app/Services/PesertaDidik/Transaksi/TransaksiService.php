@@ -158,8 +158,6 @@ class TransaksiService
                 'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
                 'tipe' => 'debit',
                 'jumlah' => $totalBayar,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
             ]);
 
             activity('transaksi')

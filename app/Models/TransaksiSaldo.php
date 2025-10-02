@@ -20,8 +20,6 @@ class TransaksiSaldo extends Model
         'keterangan',
         'tipe',
         'jumlah',
-        'created_by',
-        'updated_by',
         'deleted_by'
     ];
 
