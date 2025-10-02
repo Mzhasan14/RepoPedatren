@@ -8,14 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Fitur\KartuService;
 use App\Http\Requests\PesertaDidik\KartuStoreRequest;
 use App\Http\Requests\PesertaDidik\KartuUpdateRequest;
-use App\Services\PesertaDidik\Filters\FilterPesertaDidikService;
+use App\Services\PesertaDidik\Filters\FilterKartuService;
 
 class KartuController extends Controller
 {
     protected $service;
     protected $filter;
 
-    public function __construct(KartuService $service, FilterPesertaDidikService $filter)
+    public function __construct(KartuService $service, FilterKartuService $filter)
     {
         $this->service = $service;
         $this->filter = $filter;
@@ -24,7 +24,7 @@ class KartuController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = $this->service->getAll($request);
-        $query = $this->filter->pesertaDidikFilters($query, $request);
+        $query = $this->filter->filterKartuRFID($query, $request);
 
         $perPage = (int) $request->input('limit', 25);
         $currentPage = (int) $request->input('page', 1);

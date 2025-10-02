@@ -806,7 +806,7 @@ class PesertaDidikService
                     break;
                 case 'status':
                     $select[] = DB::raw(
-                        "CASE 
+                        "CASE
                             WHEN s.status = 'aktif' AND pd.status = 'aktif' THEN 'santri-pelajar'
                             WHEN s.status = 'aktif' THEN 'santri'
                             WHEN pd.status = 'aktif' THEN 'pelajar'
