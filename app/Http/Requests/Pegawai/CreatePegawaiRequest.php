@@ -34,7 +34,7 @@ class CreatePegawaiRequest extends FormRequest
             'no_telepon' => [
                 'required',
                 'string',
-                'regex:/^\+[1-9][0-9]{7,14}$/',
+                'regex:/^(\+?[0-9]{8,15})$/',
             ],
             'no_telepon_2' => [
                 'nullable',

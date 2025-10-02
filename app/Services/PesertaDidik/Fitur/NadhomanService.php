@@ -258,6 +258,7 @@ class NadhomanService
             )
             ->where('rn.santri_id', $id)
             ->groupBy(
+                'rn.id',
                 'santri.nis',
                 'biodata.nama',
                 'kitab.nama_kitab',
