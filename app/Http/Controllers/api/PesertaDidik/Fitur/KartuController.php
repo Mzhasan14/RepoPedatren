@@ -69,4 +69,17 @@ class KartuController extends Controller
         $this->service->activate($id);
         return response()->json(['message' => 'Kartu berhasil diaktifkan kembali']);
     }
+
+    public function riwayatKartu($id): JsonResponse
+    {
+        $result = $this->service->RiwayatKartu($id);
+
+        $statusCode = $result['code'];
+
+        return response()->json([
+            'status' => $result['status'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null 
+        ], $statusCode);
+    }
 }

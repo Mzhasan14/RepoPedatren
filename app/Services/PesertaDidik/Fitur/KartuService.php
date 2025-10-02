@@ -6,6 +6,7 @@ use App\Models\Kartu;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class KartuService
 {
@@ -190,6 +191,55 @@ class KartuService
             ->log("Kartu berhasil dihapus (soft delete)");
 
         return ['message' => 'Kartu berhasil dihapus'];
+    }
+
+    public function RiwayatKartu(int $id): array
+    {
+        try {
+            $kartu = DB::table('kartu')->find($id);
+
+            if (!$kartu) {
+                return [
+                    'status' => false,
+                    'code' => 404,
+                    'message' => 'Data kartu dengan ID ' . $id . ' tidak ditemukan.',
+                    'data' => null
+                ];
+            }
+
+            $uid_kartu = $kartu->uid_kartu;
+
+
+            $riwayat = DB::table('transaksi_saldo as t')
+                ->join('santri as s', 's.id', '=', 't.santri_id')
+                ->leftJoin('outlets as o', 'o.id', '=', 't.outlet_id')
+                ->leftJoin('kategori as kk', 'kk.id', '=', 't.kategori_id')
+                ->where('t.uid_kartu', $uid_kartu)
+                ->select([
+                    't.id',
+                    'o.nama_outlet',
+                    'kk.nama_kategori',
+                    't.tipe',
+                    't.keterangan',
+                    't.jumlah'
+                ])
+                ->orderBy('t.created_at', 'desc')
+                ->get();
+
+            return [
+                'status' => true,
+                'code' => 200,
+                'message' => 'Data riwayat spesifik kartu berhasil ditampilkan.',
+                'data' => $riwayat
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Error di Service RiwayatKartu: ' . $e->getMessage());
+            return [
+                'status' => false,
+                'code' => 500,
+                'message' => 'Terjadi kesalahan pada server.',
+            ];
+        }
     }
 
     private function transform($kartu)
