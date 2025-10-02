@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PembayaranSeeder extends Seeder
 {
@@ -34,7 +33,6 @@ class PembayaranSeeder extends Seeder
 
         /**
          * VIRTUAL ACCOUNT
-         * contoh untuk santri id 1 & 2
          */
         DB::table('virtual_accounts')->insert([
             [
@@ -63,6 +61,7 @@ class PembayaranSeeder extends Seeder
         DB::table('tagihan')->insert([
             [
                 'nama_tagihan' => 'SPP Januari 2025',
+                'periode'      => '2025-01',
                 'tipe'         => 'bulanan',
                 'nominal'      => 350000,
                 'jatuh_tempo'  => '2025-01-10',
@@ -73,6 +72,7 @@ class PembayaranSeeder extends Seeder
             ],
             [
                 'nama_tagihan' => 'Daftar Ulang Santri 2025/2026',
+                'periode'      => '2025-07',
                 'tipe'         => 'tahunan',
                 'nominal'      => 1500000,
                 'jatuh_tempo'  => '2025-07-15',
@@ -83,6 +83,7 @@ class PembayaranSeeder extends Seeder
             ],
             [
                 'nama_tagihan' => 'Pembelian Kitab Tahun 2025',
+                'periode'      => '2025-08',
                 'tipe'         => 'sekali_bayar',
                 'nominal'      => 500000,
                 'jatuh_tempo'  => '2025-08-30',
@@ -93,12 +94,13 @@ class PembayaranSeeder extends Seeder
             ],
         ]);
 
+        /**
+         * TAGIHAN SANTRI
+         */
         DB::table('tagihan_santri')->insert([
             [
                 'tagihan_id'          => 1,
                 'santri_id'           => 1,
-                'periode'             => '2025-01',
-                'nominal'             => 350000,
                 'total_potongan'      => 0,
                 'total_tagihan'       => 350000,
                 'status'              => 'pending',
@@ -115,8 +117,6 @@ class PembayaranSeeder extends Seeder
             [
                 'tagihan_id'          => 1,
                 'santri_id'           => 2,
-                'periode'             => '2025-01',
-                'nominal'             => 350000,
                 'total_potongan'      => 0,
                 'total_tagihan'       => 350000,
                 'status'              => 'lunas',
@@ -133,8 +133,6 @@ class PembayaranSeeder extends Seeder
             [
                 'tagihan_id'          => 2,
                 'santri_id'           => 1,
-                'periode'             => '2025-07',
-                'nominal'             => 1500000,
                 'total_potongan'      => 0,
                 'total_tagihan'       => 1500000,
                 'status'              => 'pending',
@@ -151,34 +149,33 @@ class PembayaranSeeder extends Seeder
         ]);
 
 
-
         /**
          * PEMBAYARAN
          */
         DB::table('pembayaran')->insert([
             [
-                'tagihan_santri_id' => 1,
+                'tagihan_santri_id'  => 2, // sesuai dengan data "lunas"
                 'virtual_account_id' => 1,
-                'metode'            => 'VA',
-                'jumlah_bayar'      => 350000,
-                'tanggal_bayar'     => now(),
-                'status'            => 'berhasil',
-                'keterangan'        => 'Pembayaran SPP Januari via Bank Jatim',
-                'created_by'        => 1,
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'metode'             => 'VA',
+                'jumlah_bayar'       => 350000,
+                'tanggal_bayar'      => now(),
+                'status'             => 'berhasil',
+                'keterangan'         => 'Pembayaran SPP Januari via Bank Jatim',
+                'created_by'         => 1,
+                'created_at'         => now(),
+                'updated_at'         => now(),
             ],
             [
-                'tagihan_santri_id' => 3,
+                'tagihan_santri_id'  => 3, // daftar ulang (masih pending meski ada pembayaran)
                 'virtual_account_id' => 2,
-                'metode'            => 'CASH',
-                'jumlah_bayar'      => 500000,
-                'tanggal_bayar'     => now(),
-                'status'            => 'berhasil',
-                'keterangan'        => 'Pembayaran daftar ulang via kasir (belum lunas, status tetap pending)',
-                'created_by'        => 1,
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'metode'             => 'CASH',
+                'jumlah_bayar'       => 500000,
+                'tanggal_bayar'      => now(),
+                'status'             => 'berhasil',
+                'keterangan'         => 'Pembayaran daftar ulang via kasir (belum lunas)',
+                'created_by'         => 1,
+                'created_at'         => now(),
+                'updated_at'         => now(),
             ],
         ]);
     }

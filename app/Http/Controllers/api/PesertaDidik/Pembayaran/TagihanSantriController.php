@@ -5,8 +5,10 @@ namespace App\Http\Controllers\api\PesertaDidik\Pembayaran;
 use Exception;
 use App\Models\Santri;
 use App\Models\Tagihan;
+use Illuminate\Http\Request;
 use App\Models\TagihanSantri;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\PesertaDidik\Pembayaran\TagihanSantriService;
@@ -22,15 +24,12 @@ class TagihanSantriController extends Controller
         $this->service = $service;
     }
 
-    // List semua tagihan
-    public function index()
+    public function index(Request $request)
     {
-        $data = TagihanSantri::select([
+        $query = TagihanSantri::select([
             'id',
             'tagihan_id',
             'santri_id',
-            'periode',
-            'nominal',
             'total_potongan',
             'total_tagihan',
             'status',
@@ -42,21 +41,81 @@ class TagihanSantriController extends Controller
             'updated_at',
         ])
             ->with([
-                'tagihan:id,nama_tagihan,tipe,nominal,jatuh_tempo',
-            ])
-            ->get();
+                'tagihan:id,nama_tagihan,periode,nominal',
+                'santri:id,biodata_id,nis',
+                'santri.biodata:id,nama',
+            ]);
+
+        $query->when($request->periode, function ($q, $periode) {
+            $q->where('periode', $periode);
+        });
+
+        $query->when($request->status, function ($q, $status) {
+            $q->where('status', $status);
+        });
+
+        $query->when($request->tagihan_id, function ($q, $tagihanId) {
+            $q->where('tagihan_id', $tagihanId);
+        });
+
+        $query->when($request->search, function ($q, $search) {
+            $q->whereHas('santri.biodata', function ($sub) use ($search) {
+                $sub->where('nama', 'like', "%{$search}%");
+            })->orWhereHas('santri', function ($sub) use ($search) {
+                $sub->where('nis', 'like', "%{$search}%");
+            });
+        });
+
+        $data = $query->paginate(25)->through(function ($item) {
+            return [
+                'id' => $item->id,
+                'tagihan_id' => $item->tagihan_id,
+                'santri_id' => $item->santri_id,
+                'nama_tagihan' => $item->tagihan->nama_tagihan ?? null,
+                'nama_santri' => $item->santri->biodata->nama ?? null,
+                'nis' => $item->santri->nis ?? null,
+                'periode' => $item->tagihan->periode,
+                'nominal' => $item->tagihan->nominal,
+                'total_potongan' => $item->total_potongan,
+                'total_tagihan' => $item->total_tagihan,
+                'status' => $item->status,
+                'tanggal_jatuh_tempo' => $item->tanggal_jatuh_tempo,
+                'tanggal_bayar' => $item->tanggal_bayar,
+                'keterangan' => $item->keterangan,
+                'created_by' => $item->created_by,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
 
         return response()->json($data);
     }
 
+    public function filters()
+    {
+        $periodes = TagihanSantri::select('periode')
+            ->distinct()
+            ->orderBy('periode', 'desc')
+            ->pluck('periode');
+
+        $tagihans = DB::table('tagihan')
+            ->select('id', 'nama_tagihan')
+            ->orderBy('nama_tagihan')
+            ->get();
+
+        return response()->json([
+            'periodes' => $periodes,
+            'tagihans' => $tagihans,
+        ]);
+    }
+
+
     public function show($id)
     {
-        $tagihanSantri = TagihanSantri::select([
+        $item = TagihanSantri::select([
             'id',
             'tagihan_id',
             'santri_id',
-            'periode',
-            'nominal',
             'total_potongan',
             'total_tagihan',
             'status',
@@ -68,11 +127,33 @@ class TagihanSantriController extends Controller
             'updated_at',
         ])
             ->with([
-                'tagihan:id,nama_tagihan,tipe,nominal,jatuh_tempo',
+                'tagihan:id,nama_tagihan,nominal,periode',
+                'santri:id,biodata_id,nis',
+                'santri.biodata:id,nama',
             ])
             ->findOrFail($id);
 
-        return response()->json($tagihanSantri);
+        $data = [
+            'id' => $item->id,
+            'tagihan_id' => $item->tagihan_id,
+            'santri_id' => $item->santri_id,
+            'nama_tagihan' => $item->tagihan->nama_tagihan ?? null,
+            'nama_santri' => $item->santri->biodata->nama ?? null,
+            'nis' => $item->santri->nis ?? null,
+            'periode' => $item->tagihan->periode,
+            'nominal' => $item->tagihan->nominal,
+            'total_potongan' => $item->total_potongan,
+            'total_tagihan' => $item->total_tagihan,
+            'status' => $item->status,
+            'tanggal_jatuh_tempo' => $item->tanggal_jatuh_tempo,
+            'tanggal_bayar' => $item->tanggal_bayar,
+            'keterangan' => $item->keterangan,
+            'created_by' => $item->created_by,
+            'created_at' => $item->created_at,
+            'updated_at' => $item->updated_at,
+        ];
+
+        return response()->json($data);
     }
 
     public function generate(TagihanSantriRequest $request): JsonResponse
@@ -80,7 +161,6 @@ class TagihanSantriController extends Controller
         try {
             $data = $this->service->generate(
                 $request->input('tagihan_id'),
-                $request->input('periode'),
                 $request->only(['all', 'santri_ids', 'jenis_kelamin'])
             );
 

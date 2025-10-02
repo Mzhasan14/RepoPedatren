@@ -164,19 +164,14 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        /**
-         * MASTER TAGIHAN
-         */
-        /**
-         * MASTER TAGIHAN
-         */
         Schema::create('tagihan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_tagihan', 150);
+            $table->string('periode', 20)->nullable(); 
             $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
             $table->decimal('nominal', 15, 2)->default(0);
-            $table->date('jatuh_tempo')->nullable(); // default template, bisa di override di tagihan_santri
-            $table->boolean('status')->default(true); // aktif/nonaktif
+            $table->date('jatuh_tempo')->nullable(); 
+            $table->boolean('status')->default(true); 
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
@@ -186,9 +181,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        /**
-         * MASTER POTONGAN
-         */
         Schema::create('potongan', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 100);
@@ -202,9 +194,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        /**
-         * RELASI POTONGAN ↔ TAGIHAN (opsional)
-         */
         Schema::create('potongan_tagihan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('potongan_id')->constrained('potongan')->cascadeOnDelete();
@@ -214,9 +203,6 @@ return new class extends Migration
             $table->unique(['potongan_id', 'tagihan_id']);
         });
 
-        /**
-         * RELASI SANTRI ↔ POTONGAN (personal discount)
-         */
         Schema::create('santri_potongan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
@@ -228,20 +214,15 @@ return new class extends Migration
             $table->unique(['santri_id', 'potongan_id']);
         });
 
-        /**
-         * TAGIHAN SANTRI (hasil generate per periode)
-         */
         Schema::create('tagihan_santri', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
 
-            $table->string('periode', 20)->nullable(); // contoh: "2025-08"
-            $table->decimal('nominal', 15, 2); // nilai tagihan sebelum potongan
-            $table->decimal('total_potongan', 15, 2)->default(0); // total potongan yang diterapkan
-            $table->decimal('total_tagihan', 15, 2); // = nominal - total_potongan (harus dibayar penuh)
+            $table->decimal('total_potongan', 15, 2)->default(0); 
+            $table->decimal('total_tagihan', 15, 2); 
 
-            $table->enum('status', ['pending', 'lunas', 'terlambat'])->default('pending');
+            $table->enum('status', ['pending', 'lunas'])->default('pending');
 
             $table->date('tanggal_jatuh_tempo')->nullable();
             $table->dateTime('tanggal_bayar')->nullable();
@@ -254,9 +235,9 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['tagihan_id', 'santri_id', 'periode']);
+            $table->unique(['tagihan_id', 'santri_id']);
             $table->index('status');
-            $table->index(['santri_id', 'periode']);
+            $table->index(['santri_id']);
         });
 
 

@@ -21,7 +21,6 @@ class TagihanSantriRequest extends FormRequest
     {
         return [
             'tagihan_id'    => ['required', 'exists:tagihan,id'],
-            'periode'       => ['required', 'string', 'max:20'], // contoh: 2025-08
             'all'           => ['boolean'],                      // true = semua santri
             'santri_ids'    => ['array'],                        // list ID santri
             'santri_ids.*'  => ['integer', 'exists:santri,id'],

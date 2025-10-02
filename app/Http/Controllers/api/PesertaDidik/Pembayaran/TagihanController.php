@@ -44,7 +44,6 @@ class TagihanController extends Controller
         DB::beginTransaction();
         try {
             $data = Tagihan::create([
-                'kode_tagihan' => $request->kode_tagihan,
                 'tipe'         => $request->tipe,
                 'nama_tagihan' => $request->nama_tagihan,
                 'nominal'      => $request->nominal,

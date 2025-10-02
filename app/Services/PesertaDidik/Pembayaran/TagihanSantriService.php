@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Log;
 
 class TagihanSantriService
 {
-    public function generate(int $tagihanId, string $periode, array $filter = []): array
+    public function generate(int $tagihanId, array $filter = []): array
     {
-        return DB::transaction(function () use ($tagihanId, $periode, $filter) {
+        return DB::transaction(function () use ($tagihanId, $filter) {
             // 1. Ambil data tagihan
             $tagihan = DB::table('tagihan')->where('id', $tagihanId)->first();
             if (!$tagihan) {
@@ -133,8 +133,6 @@ class TagihanSantriService
                 $insertData[] = [
                     'tagihan_id'          => $tagihanId,
                     'santri_id'           => $santri->id,
-                    'periode'             => $periode,
-                    'nominal'             => $nominalAwal,
                     'total_potongan'      => $totalPotongan,
                     'total_tagihan'       => $totalTagihan,
                     'status'              => 'pending',
@@ -150,7 +148,6 @@ class TagihanSantriService
             if (!empty($insertData)) {
                 $existing = DB::table('tagihan_santri')
                     ->where('tagihan_id', $tagihanId)
-                    ->where('periode', $periode)
                     ->pluck('santri_id')
                     ->toArray();
 
@@ -167,7 +164,6 @@ class TagihanSantriService
                 'success' => true,
                 'message' => 'Tagihan santri berhasil digenerate.',
                 'tagihan_id' => $tagihanId,
-                'periode' => $periode,
                 'total_santri' => $totalSantri,
                 'total_tagihan_santri' => count($insertData),
             ];
