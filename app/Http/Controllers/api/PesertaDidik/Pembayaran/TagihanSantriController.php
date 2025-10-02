@@ -25,15 +25,54 @@ class TagihanSantriController extends Controller
     // List semua tagihan
     public function index()
     {
-        $data = Tagihan::withCount('tagihanSantri')->get();
+        $data = TagihanSantri::select([
+            'id',
+            'tagihan_id',
+            'santri_id',
+            'periode',
+            'nominal',
+            'total_potongan',
+            'total_tagihan',
+            'status',
+            'tanggal_jatuh_tempo',
+            'tanggal_bayar',
+            'keterangan',
+            'created_by',
+            'created_at',
+            'updated_at',
+        ])
+            ->with([
+                'tagihan:id,nama_tagihan,tipe,nominal,jatuh_tempo',
+            ])
+            ->get();
+
         return response()->json($data);
     }
 
-    // Detail satu tagihan + daftar santri yang kena tagihan
     public function show($id)
     {
-        $tagihan = Tagihan::with(['tagihanSantri.santri'])->findOrFail($id);
-        return response()->json($tagihan);
+        $tagihanSantri = TagihanSantri::select([
+            'id',
+            'tagihan_id',
+            'santri_id',
+            'periode',
+            'nominal',
+            'total_potongan',
+            'total_tagihan',
+            'status',
+            'tanggal_jatuh_tempo',
+            'tanggal_bayar',
+            'keterangan',
+            'created_by',
+            'created_at',
+            'updated_at',
+        ])
+            ->with([
+                'tagihan:id,nama_tagihan,tipe,nominal,jatuh_tempo',
+            ])
+            ->findOrFail($id);
+
+        return response()->json($tagihanSantri);
     }
 
     public function generate(TagihanSantriRequest $request): JsonResponse

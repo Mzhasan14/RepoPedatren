@@ -51,7 +51,7 @@ class TagihanSantri extends Model
         return $this->belongsTo(Santri::class);
     }
 
-    // Relasi ke user pembuat
+    // Relasi ke user pembuat   
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

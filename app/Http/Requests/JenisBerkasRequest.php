@@ -16,7 +16,7 @@ class JenisBerkasRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('jenis_berkas'); // ambil ID untuk update
+        $id = $this->route('jenis_berka'); // ambil ID untuk update
 
         return [
             'nama_jenis_berkas' => [

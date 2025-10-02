@@ -138,6 +138,8 @@ class SaldoService
             ]);
 
             // === 6. Jika topup, langsung potong tagihan santri ===
+            $tagihanDipotong = false;
+
             if ($tipe === 'topup' && $saldo->saldo > 0) {
                 $tagihans = TagihanSantri::where('santri_id', $santri_id)
                     ->where('status', 'pending')
@@ -167,10 +169,13 @@ class SaldoService
                             'jumlah'         => $tagihan->total_tagihan,
                             'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo topup",
                         ]);
+
+                        $tagihanDipotong = true;
                     }
                 }
             }
 
+            // Log aktivitas
             activity('transaksi_saldo')
                 ->causedBy(Auth::user())
                 ->performedOn($saldo)
@@ -191,11 +196,18 @@ class SaldoService
 
             DB::commit();
 
+            // Pesan response
+            if ($tipe === 'topup') {
+                $message = $tagihanDipotong
+                    ? 'Saldo berhasil ditambahkan dan otomatis dipakai untuk melunasi tagihan.'
+                    : 'Saldo berhasil ditambahkan.';
+            } else {
+                $message = 'Saldo berhasil ditarik.';
+            }
+
             return [
                 'status'    => true,
-                'message'   => $tipe === 'topup'
-                    ? 'Saldo berhasil ditambahkan dan otomatis dipakai untuk melunasi tagihan.'
-                    : 'Saldo berhasil ditarik.',
+                'message'   => $message,
                 'saldo'     => $saldo->saldo,
                 'transaksi' => $transaksi
             ];
@@ -221,6 +233,7 @@ class SaldoService
             ];
         }
     }
+
 
 
     // public function requestTopUp(string $santriId, float $nominal, UploadedFile $buktiTransfer)
