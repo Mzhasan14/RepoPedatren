@@ -130,27 +130,40 @@ class TransaksiService
 
             // Lock saldo
             $saldo = Saldo::where('santri_id', $santri->id)->lockForUpdate()->first();
-            if (!$saldo) return $this->fail('Saldo santri tidak ditemukan.', 404);
-            if (bccomp($saldo->saldo, $totalBayar, 2) < 0) return $this->fail('Saldo tidak cukup.', 402);
+
+            if (!$saldo) {
+                $saldo = Saldo::create([
+                    'santri_id'   => $santri->id,
+                    'saldo'       => 0,
+                    'status'      => true,
+                    'created_by'  => $user->id,
+                ]);
+            }
+
+            // Validasi saldo cukup
+            if (bccomp($saldo->saldo, $totalBayar, 2) < 0) {
+                return $this->fail('Saldo tidak cukup.', 402);
+            }
 
             // Update saldo
             $saldo->saldo = bcsub($saldo->saldo, $totalBayar, 2);
             $saldo->updated_by = $user->id;
             $saldo->save();
 
+
             // Buat transaksi utama
-            $transaksi = Transaksi::create([
-                'santri_id' => $santri->id,
-                'outlet_id' => $outletId,
-                'kategori_id' => $kategoriId,
-                'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
-                'total_bayar' => $totalBayar,
-                'tanggal' => Carbon::now(),
-                'created_by' => $user->id,
-            ]);
+            // $transaksi = Transaksi::create([
+            //     'santri_id' => $santri->id,
+            //     'outlet_id' => $outletId,
+            //     'kategori_id' => $kategoriId,
+            //     'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
+            //     'total_bayar' => $totalBayar,
+            //     'tanggal' => Carbon::now(),
+            //     'created_by' => $user->id,
+            // ]);
 
             // Rekap ke transaksi_saldo
-            TransaksiSaldo::create([
+            $transaksi = TransaksiSaldo::create([
                 'santri_id' => $santri->id,
                 'uid_kartu'      => $uid,
                 'outlet_id' => $outletId,
@@ -181,12 +194,12 @@ class TransaksiService
             return [
                 'success' => true,
                 'data' => [
-                    'transaksi_id' => $transaksi->id,
+                    // 'transaksi_id' => $transaksi->id,
                     'santri_id' => $santri->id,
                     'nama_santri' => $santri->biodata->nama ?? null,
                     'total_bayar' => (float)$totalBayar,
                     'sisa_saldo' => (float)$saldo->saldo,
-                    'tanggal' => $transaksi->tanggal,
+                    'tanggal' => $transaksi->created_at,
                 ]
             ];
         } catch (Exception $e) {
@@ -208,18 +221,101 @@ class TransaksiService
     /**
      * List transaksi sesuai role user
      */
+    // public function listTransactions(array $filters = [], int $perPage = 25)
+    // {
+    //     try {
+    //         $query = Transaksi::with([
+    //             'santri:id,nis,biodata_id',
+    //             'santri.biodata:id,nama',
+    //             'santri.kartu:id,santri_id,uid_kartu',
+    //             'outlet:id,nama_outlet',
+    //             'kategori:id,nama_kategori',
+    //             'userOutlet:id,user_id,outlet_id'
+    //         ])->orderByDesc('tanggal');
+
+    //         if (!empty($filters['santri_id'])) {
+    //             $query->where('santri_id', $filters['santri_id']);
+    //         }
+    //         if (!empty($filters['outlet_id'])) {
+    //             $query->where('outlet_id', $filters['outlet_id']);
+    //         }
+    //         if (!empty($filters['kategori_id'])) {
+    //             $query->where('kategori_id', $filters['kategori_id']);
+    //         }
+    //         if (!empty($filters['date_from'])) {
+    //             $query->whereDate('tanggal', '>=', $filters['date_from']);
+    //         }
+    //         if (!empty($filters['date_to'])) {
+    //             $query->whereDate('tanggal', '<=', $filters['date_to']);
+    //         }
+    //         if (!empty($filters['q'])) {
+    //             $q = $filters['q'];
+
+    //             $query->where(function ($sub) use ($q) {
+    //                 $sub->whereHas('santri.biodata', function ($qb) use ($q) {
+    //                     $qb->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$q]);
+    //                 });
+    //                 $sub->orWhereHas('santri', fn($qb) => $qb->where('nis', $q));
+    //             });
+    //         }
+
+    //         // 🔹 Hitung total pembayaran sebelum paginate
+    //         $totalPembayaran = (clone $query)->sum('total_bayar');
+
+    //         $results = $query->paginate($perPage);
+
+    //         $data = $results->getCollection()->map(function ($item) {
+    //             return [
+    //                 'id' => $item->id,
+    //                 'outlet' => $item->outlet,
+    //                 'kategori' => $item->kategori,
+    //                 'total_bayar' => (float)$item->total_bayar,
+    //                 'tanggal' => $item->tanggal,
+    //                 'santri' => $item->santri ? [
+    //                     'id' => $item->santri->id,
+    //                     'nis' => $item->santri->nis,
+    //                     'biodata' => $item->santri->biodata,
+    //                     'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
+    //                 ] : null,
+    //             ];
+    //         });
+
+    //         $results->setCollection($data);
+
+    //         return [
+    //             'success' => true,
+    //             'status' => 200,
+    //             'total_data' => $results->total(),
+    //             'current_page' => $results->currentPage(),
+    //             'per_page' => $results->perPage(),
+    //             'total_pages' => $results->lastPage(),
+    //             'total_pembayaran' => (float)$totalPembayaran,
+    //             'data' => $results->items(),
+    //         ];
+    //     } catch (Exception $e) {
+    //         Log::error('TransactionService@listTransactions error: ' . $e->getMessage(), [
+    //             'exception' => $e,
+    //             'filters' => $filters,
+    //             'user_id' => Auth::id()
+    //         ]);
+
+    //         return ['success' => false, 'message' => 'Terjadi kesalahan saat mengambil transaksi.', 'status' => 500];
+    //     }
+    // }
+
     public function listTransactions(array $filters = [], int $perPage = 25)
     {
         try {
-            $query = Transaksi::with([
+            $query = TransaksiSaldo::with([
                 'santri:id,nis,biodata_id',
                 'santri.biodata:id,nama',
                 'santri.kartu:id,santri_id,uid_kartu',
                 'outlet:id,nama_outlet',
                 'kategori:id,nama_kategori',
                 'userOutlet:id,user_id,outlet_id'
-            ])->orderByDesc('tanggal');
+            ])->orderByDesc('created_at');
 
+            // 🔹 Filter
             if (!empty($filters['santri_id'])) {
                 $query->where('santri_id', $filters['santri_id']);
             }
@@ -230,10 +326,10 @@ class TransaksiService
                 $query->where('kategori_id', $filters['kategori_id']);
             }
             if (!empty($filters['date_from'])) {
-                $query->whereDate('tanggal', '>=', $filters['date_from']);
+                $query->whereDate('created_at', '>=', $filters['date_from']);
             }
             if (!empty($filters['date_to'])) {
-                $query->whereDate('tanggal', '<=', $filters['date_to']);
+                $query->whereDate('created_at', '<=', $filters['date_to']);
             }
             if (!empty($filters['q'])) {
                 $q = $filters['q'];
@@ -246,8 +342,8 @@ class TransaksiService
                 });
             }
 
-            // 🔹 Hitung total pembayaran sebelum paginate
-            $totalPembayaran = (clone $query)->sum('total_bayar');
+            // 🔹 Hitung total jumlah (bukan total_bayar)
+            $totalPembayaran = (clone $query)->sum('jumlah');
 
             $results = $query->paginate($perPage);
 
@@ -256,13 +352,15 @@ class TransaksiService
                     'id' => $item->id,
                     'outlet' => $item->outlet,
                     'kategori' => $item->kategori,
-                    'total_bayar' => (float)$item->total_bayar,
-                    'tanggal' => $item->tanggal,
+                    'total_bayar' => (float) $item->jumlah,
+                    'tanggal' => $item->created_at,
                     'santri' => $item->santri ? [
                         'id' => $item->santri->id,
                         'nis' => $item->santri->nis,
                         'biodata' => $item->santri->biodata,
-                        'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
+                        'kartu' => $item->santri->kartu
+                            ? ['uid_kartu' => $item->santri->kartu->uid_kartu]
+                            : [],
                     ] : null,
                 ];
             });
@@ -276,7 +374,7 @@ class TransaksiService
                 'current_page' => $results->currentPage(),
                 'per_page' => $results->perPage(),
                 'total_pages' => $results->lastPage(),
-                'total_pembayaran' => (float)$totalPembayaran,
+                'total_pembayaran' => (float) $totalPembayaran,
                 'data' => $results->items(),
             ];
         } catch (Exception $e) {
@@ -286,14 +384,18 @@ class TransaksiService
                 'user_id' => Auth::id()
             ]);
 
-            return ['success' => false, 'message' => 'Terjadi kesalahan saat mengambil transaksi.', 'status' => 500];
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil transaksi.',
+                'status' => 500
+            ];
         }
     }
 
     public function transaksiToko(array $filters = [], int $perPage = 25)
     {
         try {
-            $query = Transaksi::with([
+            $query = TransaksiSaldo::with([
                 'santri:id,nis,biodata_id',
                 'santri.biodata:id,nama',
                 'santri.kartu:id,santri_id,uid_kartu',
@@ -301,9 +403,10 @@ class TransaksiService
                 'kategori:id,nama_kategori',
                 'userOutlet:id,user_id,outlet_id'
             ])
-                ->where('outlet_id', $filters['outlet_id'])
-                ->orderByDesc('tanggal');
+                ->where('outlet_id', $filters['outlet_id'] ?? null)
+                ->orderByDesc('created_at');
 
+            // 🔹 Filter tambahan
             if (!empty($filters['santri_id'])) {
                 $query->where('santri_id', $filters['santri_id']);
             }
@@ -311,10 +414,10 @@ class TransaksiService
                 $query->where('kategori_id', $filters['kategori_id']);
             }
             if (!empty($filters['date_from'])) {
-                $query->whereDate('tanggal', '>=', $filters['date_from']);
+                $query->whereDate('created_at', '>=', $filters['date_from']);
             }
             if (!empty($filters['date_to'])) {
-                $query->whereDate('tanggal', '<=', $filters['date_to']);
+                $query->whereDate('created_at', '<=', $filters['date_to']);
             }
             if (!empty($filters['q'])) {
                 $q = $filters['q'];
@@ -327,8 +430,8 @@ class TransaksiService
                 });
             }
 
-            // 🔹 Hitung total pembayaran sebelum paginate
-            $totalPembayaran = (clone $query)->sum('total_bayar');
+            // 🔹 Hitung total jumlah sebelum paginate
+            $totalPembayaran = (clone $query)->sum('jumlah');
 
             $results = $query->paginate($perPage);
 
@@ -337,13 +440,15 @@ class TransaksiService
                     'id' => $item->id,
                     'outlet' => $item->outlet,
                     'kategori' => $item->kategori,
-                    'total_bayar' => (float)$item->total_bayar,
-                    'tanggal' => $item->tanggal,
+                    'jumlah' => (float) $item->jumlah,
+                    'tanggal' => $item->created_at, // hanya ambil tanggal
                     'santri' => $item->santri ? [
                         'id' => $item->santri->id,
                         'nis' => $item->santri->nis,
                         'biodata' => $item->santri->biodata,
-                        'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
+                        'kartu' => $item->santri->kartu
+                            ? ['uid_kartu' => $item->santri->kartu->uid_kartu]
+                            : [],
                     ] : null,
                 ];
             });
@@ -357,19 +462,108 @@ class TransaksiService
                 'current_page' => $results->currentPage(),
                 'per_page' => $results->perPage(),
                 'total_pages' => $results->lastPage(),
-                'total_pembayaran' => (float)$totalPembayaran,
+                'total_pembayaran' => (float) $totalPembayaran,
                 'data' => $results->items(),
             ];
         } catch (Exception $e) {
-            Log::error('TransactionService@listTransactions error: ' . $e->getMessage(), [
+            Log::error('TransactionService@transaksiToko error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'filters' => $filters,
                 'user_id' => Auth::id()
             ]);
 
-            return ['success' => false, 'message' => 'Terjadi kesalahan saat mengambil transaksi.', 'status' => 500];
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil transaksi.',
+                'status' => 500
+            ];
         }
     }
+
+
+
+    // public function transaksiToko(array $filters = [], int $perPage = 25)
+    // {
+    //     try {
+    //         $query = Transaksi::with([
+    //             'santri:id,nis,biodata_id',
+    //             'santri.biodata:id,nama',
+    //             'santri.kartu:id,santri_id,uid_kartu',
+    //             'outlet:id,nama_outlet',
+    //             'kategori:id,nama_kategori',
+    //             'userOutlet:id,user_id,outlet_id'
+    //         ])
+    //             ->where('outlet_id', $filters['outlet_id'])
+    //             ->orderByDesc('tanggal');
+
+    //         if (!empty($filters['santri_id'])) {
+    //             $query->where('santri_id', $filters['santri_id']);
+    //         }
+    //         if (!empty($filters['kategori_id'])) {
+    //             $query->where('kategori_id', $filters['kategori_id']);
+    //         }
+    //         if (!empty($filters['date_from'])) {
+    //             $query->whereDate('tanggal', '>=', $filters['date_from']);
+    //         }
+    //         if (!empty($filters['date_to'])) {
+    //             $query->whereDate('tanggal', '<=', $filters['date_to']);
+    //         }
+    //         if (!empty($filters['q'])) {
+    //             $q = $filters['q'];
+
+    //             $query->where(function ($sub) use ($q) {
+    //                 $sub->whereHas('santri.biodata', function ($qb) use ($q) {
+    //                     $qb->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$q]);
+    //                 });
+    //                 $sub->orWhereHas('santri', fn($qb) => $qb->where('nis', $q));
+    //             });
+    //         }
+
+    //         // 🔹 Hitung total pembayaran sebelum paginate
+    //         $totalPembayaran = (clone $query)->sum('total_bayar');
+
+    //         $results = $query->paginate($perPage);
+
+    //         $data = $results->getCollection()->map(function ($item) {
+    //             return [
+    //                 'id' => $item->id,
+    //                 'outlet' => $item->outlet,
+    //                 'kategori' => $item->kategori,
+    //                 'total_bayar' => (float)$item->total_bayar,
+    //                 'tanggal' => $item->tanggal,
+    //                 'santri' => $item->santri ? [
+    //                     'id' => $item->santri->id,
+    //                     'nis' => $item->santri->nis,
+    //                     'biodata' => $item->santri->biodata,
+    //                     'kartu' => $item->santri->kartu ? ['uid_kartu' => $item->santri->kartu->uid_kartu] : [],
+    //                 ] : null,
+    //             ];
+    //         });
+
+    //         $results->setCollection($data);
+
+    //         return [
+    //             'success' => true,
+    //             'status' => 200,
+    //             'total_data' => $results->total(),
+    //             'current_page' => $results->currentPage(),
+    //             'per_page' => $results->perPage(),
+    //             'total_pages' => $results->lastPage(),
+    //             'total_pembayaran' => (float)$totalPembayaran,
+    //             'data' => $results->items(),
+    //         ];
+    //     } catch (Exception $e) {
+    //         Log::error('TransactionService@listTransactions error: ' . $e->getMessage(), [
+    //             'exception' => $e,
+    //             'filters' => $filters,
+    //             'user_id' => Auth::id()
+    //         ]);
+
+    //         return ['success' => false, 'message' => 'Terjadi kesalahan saat mengambil transaksi.', 'status' => 500];
+    //     }
+    // }
+
+
 
     private function fail(string $msg, int $status): array
     {

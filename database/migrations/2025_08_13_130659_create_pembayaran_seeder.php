@@ -90,25 +90,25 @@ return new class extends Migration
             $table->unique(['outlet_id', 'kategori_id']);
         });
 
-        /**
-         * TRANSAKSI
-         */
-        Schema::create('transaksi', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
-            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
-            $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
-            $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->cascadeOnDelete(); // siapa + outlet
-            $table->decimal('total_bayar', 15, 2);
-            $table->dateTime('tanggal');
+        // /**
+        //  * TRANSAKSI
+        //  */
+        // Schema::create('transaksi', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
+        //     $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+        //     $table->foreignId('kategori_id')->constrained('kategori')->cascadeOnDelete();
+        //     $table->foreignId('user_outlet_id')->nullable()->constrained('detail_user_outlet')->cascadeOnDelete(); // siapa + outlet
+        //     $table->decimal('total_bayar', 15, 2);
+        //     $table->dateTime('tanggal');
 
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+        //     $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
 
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        //     $table->timestamps();
+        //     $table->softDeletes();
+        // });
 
         /**
          * TRANSAKSI SALDO

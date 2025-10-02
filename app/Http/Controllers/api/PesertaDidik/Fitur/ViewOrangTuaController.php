@@ -396,7 +396,7 @@ class ViewOrangTuaController extends Controller
                 return [
                     'id'         => $item->id,
                     'tipe'       => $item->tipe,
-                    'jumlah'     => (float) $item->jumlah,
+                    'total_bayar'     => (float) $item->jumlah,
                     'keterangan' => $item->keterangan,
                     'tanggal'    => $item->created_at,
                     'outlet'     => $item->outlet,

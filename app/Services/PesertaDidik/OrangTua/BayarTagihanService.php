@@ -32,10 +32,19 @@ class BayarTagihanService
                 ];
             }
 
-            // Ambil saldo santri
+            // 🔹 Ambil / buat saldo santri
             $saldo = Saldo::where('santri_id', $tagihan->santri_id)
                 ->lockForUpdate()
                 ->first();
+
+            if (!$saldo) {
+                $saldo = Saldo::create([
+                    'santri_id'  => $tagihan->santri_id,
+                    'saldo'      => 0,
+                    'status'     => true,
+                    'created_by' => $user->id,
+                ]);
+            }
 
             if (!$saldo) {
                 return [
