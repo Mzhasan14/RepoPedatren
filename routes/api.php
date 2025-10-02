@@ -1204,6 +1204,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::prefix('view-ortu')->middleware('auth:sanctum', 'role:superadmin|orang_tua')->group(function () {
     Route::get('/transaksi', [ViewOrangTuaController::class, 'getTransaksiAnak']);
+    Route::get('/transaksi-saldo', [ViewOrangTuaController::class, 'transaksiSaldoAnak']);
 
     Route::get('/tahfidz', [ViewOrangTuaController::class, 'getTahfidzAnak']);
     Route::get('/nadhoman', [ViewOrangTuaController::class, 'getNadhomanAnak']);
