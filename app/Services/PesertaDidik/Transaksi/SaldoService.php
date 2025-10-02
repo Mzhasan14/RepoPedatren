@@ -137,12 +137,15 @@ class SaldoService
                     : "Tarik saldo sebesar Rp{$jumlah}",
             ]);
 
-            // === 6. Jika topup, langsung potong tagihan santri ===
+            // === 6. Jika topup, langsung potong tagihan santri yang sudah jatuh tempo === 
             $tagihanDipotong = false;
 
             if ($tipe === 'topup' && $saldo->saldo > 0) {
+                $today = Carbon::today();
+
                 $tagihans = TagihanSantri::where('santri_id', $santri_id)
                     ->where('status', 'pending')
+                    ->whereDate('tanggal_jatuh_tempo', '<=', $today) // hanya yang sudah jatuh tempo
                     ->orderBy('tanggal_jatuh_tempo', 'asc')
                     ->lockForUpdate()
                     ->get();
