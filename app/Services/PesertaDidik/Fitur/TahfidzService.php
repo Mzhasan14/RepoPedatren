@@ -13,6 +13,133 @@ use Illuminate\Support\Facades\Auth;
 class TahfidzService
 {
 
+    // public function setoranTahfidz(array $data)
+    // {
+    //     DB::beginTransaction();
+
+    //     try {
+    //         $tahunAjaranId = TahunAjaran::where('status', true)
+    //             ->orderByDesc('id')
+    //             ->value('id');
+
+    //         // --- CEK VALIDASI SETORAN BARU ---
+    //         if ($data['jenis_setoran'] === 'baru') {
+
+    //             // 1. Cek apakah surat sudah pernah tuntas
+    //             $sudahTuntas = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->where('surat', $data['surat'])
+    //                 ->where('status', 'tuntas')
+    //                 ->exists();
+
+    //             if ($sudahTuntas) {
+    //                 throw new Exception("Surat {$data['surat']} sudah tuntas, tidak bisa disetorkan lagi.");
+    //             }
+
+    //             // 2. Cek apakah ayat sudah pernah disetorkan sebelumnya (overlap)
+    //             $overlapAyat = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->where('surat', $data['surat'])
+    //                 ->where(function ($q) use ($data) {
+    //                     $q->whereBetween('ayat_mulai', [$data['ayat_mulai'], $data['ayat_selesai']])
+    //                         ->orWhereBetween('ayat_selesai', [$data['ayat_mulai'], $data['ayat_selesai']])
+    //                         ->orWhere(function ($sub) use ($data) {
+    //                             $sub->where('ayat_mulai', '<=', $data['ayat_mulai'])
+    //                                 ->where('ayat_selesai', '>=', $data['ayat_selesai']);
+    //                         });
+    //                 })
+    //                 ->exists();
+
+    //             if ($overlapAyat) {
+    //                 throw new Exception("Ayat {$data['ayat_mulai']} pada surat {$data['surat']} sudah pernah disetorkan, tidak boleh dobel.");
+    //             }
+
+    //         }
+
+    //         // --- INSERT SETORAN ---
+    //         $setoranId = DB::table('tahfidz')->insertGetId([
+    //             'santri_id'       => $data['santri_id'],
+    //             'tahun_ajaran_id' => $tahunAjaranId,
+    //             'tanggal'         => $data['tanggal'],
+    //             'jenis_setoran'   => $data['jenis_setoran'],
+    //             'surat'           => $data['jenis_setoran'] === 'baru' ? $data['surat'] : null,
+    //             'ayat_mulai'      => $data['jenis_setoran'] === 'baru' ? $data['ayat_mulai'] : null,
+    //             'ayat_selesai'    => $data['jenis_setoran'] === 'baru' ? $data['ayat_selesai'] : null,
+    //             'juz_mulai'       => $data['jenis_setoran'] === 'murojaah' ? $data['juz_mulai'] : null,
+    //             'juz_selesai'     => $data['jenis_setoran'] === 'murojaah' ? $data['juz_selesai'] : null,
+    //             'nilai'           => $data['nilai'],
+    //             'catatan'         => $data['catatan'] ?? null,
+    //             'status'          => $data['jenis_setoran'] === 'murojaah' ? null : $data['status'],
+    //             'created_by'      => Auth::id(),
+    //             'created_at'      => now(),
+    //             'updated_at'      => now(),
+    //         ]);
+
+    //         // --- UPDATE REKAP ---
+    //         if ($data['jenis_setoran'] === 'baru') {
+    //             $suratTuntas = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->where('status', 'tuntas')
+    //                 ->distinct()
+    //                 ->pluck('surat');
+
+    //             $totalSurat     = $suratTuntas->count();
+    //             $persentase     = ($totalSurat / 114) * 100;
+    //             $suratTersisa   = 114 - $totalSurat;
+    //             $sisaPersentase = 100 - $persentase;
+
+    //             $jumlahSetoran = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->count();
+
+    //             $rataRataNilai = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->whereIn('surat', $suratTuntas)
+    //                 ->avg('nilai');
+
+    //             $tanggalMulai = DB::table('tahfidz')
+    //                 ->where('santri_id', $data['santri_id'])
+    //                 ->where('jenis_setoran', 'baru')
+    //                 ->min('tanggal');
+
+    //             $tanggalSelesai = $totalSurat >= 114 ? now() : null;
+
+    //             DB::table('rekap_tahfidz')->updateOrInsert(
+    //                 [
+    //                     'santri_id' => $data['santri_id'],
+    //                 ],
+    //                 [
+    //                     'total_surat'       => $totalSurat,
+    //                     'persentase_khatam' => round($persentase, 2),
+    //                     'surat_tersisa'     => $suratTersisa,
+    //                     'sisa_persentase'   => round($sisaPersentase, 2),
+    //                     'jumlah_setoran'    => $jumlahSetoran,
+    //                     'rata_rata_nilai'   => round($rataRataNilai, 2),
+    //                     'tanggal_mulai'     => $tanggalMulai,
+    //                     'tanggal_selesai'   => $tanggalSelesai,
+    //                     'updated_at'        => now(),
+    //                     'created_by'        => Auth::id(),
+    //                     'updated_by'        => Auth::id(),
+    //                 ]
+    //             );
+    //         }
+
+    //         DB::commit();
+    //         return $setoranId;
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Gagal simpan setoran: ' . $e->getMessage(), [
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+    //         throw new Exception($e->getMessage());
+    //     }
+    // }
+
     public function setoranTahfidz(array $data)
     {
         DB::beginTransaction();
@@ -55,7 +182,6 @@ class TahfidzService
                 if ($overlapAyat) {
                     throw new Exception("Ayat {$data['ayat_mulai']} pada surat {$data['surat']} sudah pernah disetorkan, tidak boleh dobel.");
                 }
-
             }
 
             // --- INSERT SETORAN ---
@@ -64,11 +190,11 @@ class TahfidzService
                 'tahun_ajaran_id' => $tahunAjaranId,
                 'tanggal'         => $data['tanggal'],
                 'jenis_setoran'   => $data['jenis_setoran'],
-                'surat'           => $data['jenis_setoran'] === 'baru' ? $data['surat'] : null,
-                'ayat_mulai'      => $data['jenis_setoran'] === 'baru' ? $data['ayat_mulai'] : null,
-                'ayat_selesai'    => $data['jenis_setoran'] === 'baru' ? $data['ayat_selesai'] : null,
-                'juz_mulai'       => $data['jenis_setoran'] === 'murojaah' ? $data['juz_mulai'] : null,
-                'juz_selesai'     => $data['jenis_setoran'] === 'murojaah' ? $data['juz_selesai'] : null,
+                'surat'           => $data['surat'] ?? null,
+                'ayat_mulai'      => $data['ayat_mulai'] ?? null,
+                'ayat_selesai'    => $data['ayat_selesai'] ?? null,
+                'juz_mulai'       => null,
+                'juz_selesai'     => null,
                 'nilai'           => $data['nilai'],
                 'catatan'         => $data['catatan'] ?? null,
                 'status'          => $data['jenis_setoran'] === 'murojaah' ? null : $data['status'],
@@ -77,7 +203,6 @@ class TahfidzService
                 'updated_at'      => now(),
             ]);
 
-            // --- UPDATE REKAP ---
             if ($data['jenis_setoran'] === 'baru') {
                 $suratTuntas = DB::table('tahfidz')
                     ->where('santri_id', $data['santri_id'])
@@ -157,7 +282,7 @@ class TahfidzService
                 't.jenis_setoran',
                 'tahun_ajaran.tahun_ajaran',
                 DB::raw("
-                CASE 
+                CASE
                     WHEN t.jenis_setoran = 'baru' THEN
                         CONCAT(
                             t.surat,
@@ -169,7 +294,7 @@ class TahfidzService
                             END
                         )
                     WHEN t.jenis_setoran = 'murojaah' THEN
-                        CONCAT('Juz ', t.juz_mulai, 
+                        CONCAT('Juz ', t.juz_mulai,
                             CASE
                                 WHEN t.juz_selesai IS NOT NULL AND t.juz_selesai != t.juz_mulai THEN CONCAT('-', t.juz_selesai)
                                 ELSE ''
