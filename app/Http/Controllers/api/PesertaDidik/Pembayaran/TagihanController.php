@@ -17,9 +17,15 @@ class TagihanController extends Controller
         try {
             $data = Tagihan::with('potongans')->paginate(25);
 
-            // sembunyikan pivot
+            // Transformasi data
             $data->getCollection()->transform(function ($item) {
                 $item->potongans->makeHidden('pivot');
+
+                // Hitung total santri yang sudah ditagihkan
+                $item->total_santri_tagihan = DB::table('tagihan_santri')
+                    ->where('tagihan_id', $item->id)
+                    ->count();
+
                 return $item;
             });
 
@@ -38,6 +44,7 @@ class TagihanController extends Controller
             ], 500);
         }
     }
+
 
     public function store(TagihanRequest $request)
     {
@@ -71,6 +78,22 @@ class TagihanController extends Controller
             // sembunyikan pivot
             $data->potongans->makeHidden('pivot');
 
+            // Hitung total santri berdasarkan status tagihan_santri
+            $statusCounts = DB::table('tagihan_santri')
+                ->select('status', DB::raw('COUNT(*) as total'))
+                ->where('tagihan_id', $id)
+                ->groupBy('status')
+                ->pluck('total', 'status');
+
+            $totalSantriTagihan = $statusCounts->sum();
+            $totalLunas = $statusCounts['lunas'] ?? 0;
+            $totalPending = $statusCounts['pending'] ?? 0;
+
+            // Tambahkan ke data response
+            $data->total_santri_tagihan = $totalSantriTagihan;
+            $data->total_lunas = $totalLunas;
+            $data->total_pending = $totalPending;
+
             return response()->json([
                 'success' => true,
                 'data'    => $data
@@ -86,6 +109,31 @@ class TagihanController extends Controller
             ], 404);
         }
     }
+
+
+    // public function show($id)
+    // {
+    //     try {
+    //         $data = Tagihan::with('potongans')->findOrFail($id);
+
+    //         // sembunyikan pivot
+    //         $data->potongans->makeHidden('pivot');
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data'    => $data
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Tagihan Show Error: ' . $e->getMessage(), [
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Data tidak ditemukan'
+    //         ], 404);
+    //     }
+    // }
 
     public function update(TagihanRequest $request, $id)
     {

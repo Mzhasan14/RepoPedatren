@@ -21,7 +21,7 @@ class TagihanSantriService
                 throw new \Exception("Tagihan tidak ditemukan.");
             }
 
-            // 2. Ambil santri sesuai filter
+            // 2. Ambil daftar santri aktif sesuai filter
             $santriQuery = DB::table('santri as s')
                 ->join('biodata AS b', 's.biodata_id', '=', 'b.id')
                 ->where('s.status', 'aktif')
@@ -44,7 +44,13 @@ class TagihanSantriService
                 ];
             }
 
-            // 3. Ambil potongan terkait tagihan
+            // 3. Ambil daftar santri yang sudah punya tagihan ini (untuk validasi)
+            $existingSantriIds = DB::table('tagihan_santri')
+                ->where('tagihan_id', $tagihanId)
+                ->pluck('santri_id')
+                ->toArray();
+
+            // 4. Ambil data potongan
             $potonganList = DB::table('potongan')
                 ->join('potongan_tagihan', 'potongan_tagihan.potongan_id', '=', 'potongan.id')
                 ->where('potongan_tagihan.tagihan_id', $tagihanId)
@@ -52,24 +58,16 @@ class TagihanSantriService
                 ->select('potongan.*')
                 ->get();
 
-            // anak_pegawai
-            $anakPegawaiList = DB::table('anak_pegawai')
-                ->where('status', true)
-                ->pluck('biodata_id')
-                ->toArray();
+            // daftar tambahan
+            $anakPegawaiList = DB::table('anak_pegawai')->where('status', true)->pluck('biodata_id')->toArray();
+            $khadamList = DB::table('khadam')->pluck('biodata_id')->toArray();
 
-            // khadam
-            $khadamList = DB::table('khadam')
-                ->pluck('biodata_id')
-                ->toArray();
-
-            // santri_potongan
             $santriPotonganList = DB::table('santri_potongan')
                 ->select('santri_id', 'potongan_id')
                 ->get()
                 ->groupBy('santri_id');
 
-            // keluarga (kelompok berdasarkan no_kk)
+            // keluarga per KK
             $keluargaList = DB::table('keluarga as k')
                 ->join('santri as s', 's.biodata_id', '=', 'k.id_biodata')
                 ->where('s.status', 'aktif')
@@ -77,18 +75,23 @@ class TagihanSantriService
                 ->select('s.id as santri_id', 'k.no_kk')
                 ->get();
 
-            // cari santri yang punya saudara (lebih dari 1 santri per KK)
             $kelompokKK = $keluargaList->groupBy('no_kk')
                 ->filter(fn($group) => $group->count() > 1)
                 ->flatMap(fn($group) => $group->pluck('santri_id'))
                 ->toArray();
 
             // ============================
-
+            //  🔍 Proses generate tagihan
+            // ============================
             $insertData = [];
             $totalSantri = 0;
 
             foreach ($santriList as $santri) {
+                // 🚫 Skip jika santri sudah punya tagihan ini
+                if (in_array($santri->id, $existingSantriIds)) {
+                    continue;
+                }
+
                 $totalSantri++;
                 $nominalAwal = $tagihan->nominal;
                 $totalPotongan = 0;
@@ -100,7 +103,7 @@ class TagihanSantriService
                         case 'anak_pegawai':
                             $eligible = in_array($santri->biodata_id, $anakPegawaiList);
                             break;
-
+                            
                         case 'bersaudara':
                             $eligible = in_array($santri->id, $kelompokKK);
                             break;
@@ -110,8 +113,8 @@ class TagihanSantriService
                             break;
 
                         case 'umum':
-                            $eligible = $santriPotonganList->has($santri->id) &&
-                                $santriPotonganList[$santri->id]->contains('potongan_id', $potongan->id);
+                            $eligible = $santriPotonganList->has($santri->id)
+                                && $santriPotonganList[$santri->id]->contains('potongan_id', $potongan->id);
                             break;
                     }
 
@@ -138,22 +141,9 @@ class TagihanSantriService
                 ];
             }
 
-            // ============================
-            //  🚫 Cegah duplikat insert
-            // ============================
+            // Insert batch (jika ada data baru)
             if (!empty($insertData)) {
-                $existing = DB::table('tagihan_santri')
-                    ->where('tagihan_id', $tagihanId)
-                    ->pluck('santri_id')
-                    ->toArray();
-
-                $insertData = array_filter($insertData, function ($row) use ($existing) {
-                    return !in_array($row['santri_id'], $existing);
-                });
-
-                if (!empty($insertData)) {
-                    DB::table('tagihan_santri')->insert($insertData);
-                }
+                DB::table('tagihan_santri')->insert($insertData);
             }
 
             return [
@@ -165,6 +155,7 @@ class TagihanSantriService
             ];
         });
     }
+
 
 
 
