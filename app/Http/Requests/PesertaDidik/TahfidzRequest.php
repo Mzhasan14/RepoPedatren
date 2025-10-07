@@ -29,14 +29,19 @@ class TahfidzRequest extends FormRequest
             'tanggal'         => ['required', 'date'],
             'jenis_setoran'   => ['required', 'in:baru,murojaah'],
 
-            // 📖 Jika jenis_setoran = baru
-            'surat'        => ['required_if:jenis_setoran,baru', 'string', 'max:50'],
-            'ayat_mulai'   => ['required_if:jenis_setoran,baru', 'integer', 'min:1'],
-            'ayat_selesai' => ['required_if:jenis_setoran,baru', 'integer', 'gte:ayat_mulai'],
 
-            // 📖 Jika jenis_setoran = murojaah
-            'juz_mulai'   => ['required_if:jenis_setoran,murojaah', 'integer', 'min:1', 'max:30'],
-            'juz_selesai' => ['required_if:jenis_setoran,murojaah', 'integer', 'gte:juz_mulai', 'max:30'],
+            'surat'        => ['required', 'string', 'max:50'],
+            'ayat_mulai'   => ['required', 'integer', 'min:1'],
+            'ayat_selesai' => ['required', 'integer', 'gte:ayat_mulai'],
+            
+            // // 📖 Jika jenis_setoran = baru
+            // 'surat'        => ['required_if:jenis_setoran,baru', 'string', 'max:50'],
+            // 'ayat_mulai'   => ['required_if:jenis_setoran,baru', 'integer', 'min:1'],
+            // 'ayat_selesai' => ['required_if:jenis_setoran,baru', 'integer', 'gte:ayat_mulai'],
+
+            // // 📖 Jika jenis_setoran = murojaah
+            // 'juz_mulai'   => ['required_if:jenis_setoran,murojaah', 'integer', 'min:1', 'max:30'],
+            // 'juz_selesai' => ['required_if:jenis_setoran,murojaah', 'integer', 'gte:juz_mulai', 'max:30'],
 
             'nilai'   => ['required', 'in:lancar,cukup,kurang'],
             'catatan' => ['nullable', 'string', 'max:255'],

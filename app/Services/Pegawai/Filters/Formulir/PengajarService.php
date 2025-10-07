@@ -70,6 +70,7 @@ class PengajarService
                 'id' => $pengajar->id,
                 'lembaga_id' => $pengajar->lembaga_id,
                 'golongan_id' => $pengajar->golongan_id,
+                'keterangan_jabatan' => $pengajar->keterangan_jabatan,
                 'jabatan_kontrak' => $pengajar->jabatan,
                 'tanggal_masuk' => $pengajar->tahun_masuk,
                 'tanggal_keluar' => $pengajar->tahun_akhir,
