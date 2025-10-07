@@ -96,10 +96,10 @@ class BayarTagihanService
                 'updated_by' => $user->id,
             ]);
 
-            // 🔹 Ambil kartu aktif (jika sistem pakai UID kartu)
-            // $uidKartu = Kartu::where('santri_id', $tagihanSantri->santri_id)
-            //     ->where('aktif', true)
-            //     ->value('uid_kartu');
+            // 🔹 Ambil kartu aktif
+            $uidKartu = Kartu::where('santri_id', $tagihanSantri->santri_id)
+                ->where('aktif', true)
+                ->value('uid_kartu');
 
             // 🔹 Catat transaksi saldo
             $transaksi = TransaksiSaldo::create([
@@ -107,10 +107,10 @@ class BayarTagihanService
                 'outlet_id'      => null,
                 'kategori_id'    => null,
                 'user_outlet_id' => null,
-                'uid_kartu'      => null,
+                'uid_kartu'      => $uidKartu,
                 'tipe'           => 'debit',
                 'jumlah'         => $jumlahBayar,
-                'keterangan'     => 'Pembayaran tagihan ' . $tagihanSantri->tagihan->nama_tagihan . 'oleh orangtua',
+                'keterangan'     => 'Pembayaran tagihan ' . $tagihanSantri->tagihan->nama_tagihan . ' oleh Orangtua',
                 'created_by'     => $user->id,
             ]);
 

@@ -7,13 +7,9 @@ use Carbon\Carbon;
 use App\Models\Kartu;
 use App\Models\Saldo;
 use App\Models\Outlet;
-use App\Models\Keluarga;
-use App\Models\OrangTuaWali;
 use App\Models\TagihanSantri;
-use App\Models\SaldoTransaksi;
 use App\Models\TransaksiSaldo;
 use App\Models\DetailUserOutlet;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -64,38 +60,38 @@ class SaldoService
                 }
             }
 
-            $uidKartu = null; // default
+            // $uidKartu = null; // default
 
-            if ($metode === 'scan') {
-                // Cari kartu berdasarkan santri_id
-                $kartu = Kartu::where('santri_id', $santri_id)
-                    ->select('uid_kartu', 'pin', 'aktif')
-                    ->first();
+            // if ($metode === 'scan') {
+            // Cari kartu berdasarkan santri_id
+            $kartu = Kartu::where('santri_id', $santri_id)
+                ->select('uid_kartu', 'pin', 'aktif')
+                ->first();
 
-                if (!$kartu) {
-                    return [
-                        'status'  => false,
-                        'message' => 'Kartu tidak terdaftar.'
-                    ];
-                }
-
-                if (!$kartu->aktif) {
-                    return [
-                        'status'  => false,
-                        'message' => 'Kartu tidak aktif.'
-                    ];
-                }
-
-                // Validasi PIN
-                if (!Hash::check($pin, $kartu->pin)) {
-                    return [
-                        'status'  => false,
-                        'message' => 'Pin yang Anda masukkan salah.'
-                    ];
-                }
-
-                $uidKartu = $kartu->uid_kartu; // simpan uid_kartu
+            if (!$kartu) {
+                return [
+                    'status'  => false,
+                    'message' => 'Kartu tidak terdaftar.'
+                ];
             }
+
+            if (!$kartu->aktif) {
+                return [
+                    'status'  => false,
+                    'message' => 'Kartu tidak aktif.'
+                ];
+            }
+
+            // Validasi PIN
+            if (!Hash::check($pin, $kartu->pin)) {
+                return [
+                    'status'  => false,
+                    'message' => 'Pin yang Anda masukkan salah.'
+                ];
+            }
+
+            $uidKartu = $kartu->uid_kartu; // simpan uid_kartu
+            // }
 
             // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(

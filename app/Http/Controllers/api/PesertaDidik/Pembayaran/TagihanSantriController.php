@@ -112,7 +112,7 @@ class TagihanSantriController extends Controller
     public function tagihanSantriByTagihanId(Request $request, $id)
     {
         $perPage = $request->input('per_page', 25);
-        $page    = $request->input('page', 1);   
+        $page    = $request->input('page', 1);
 
         $query = TagihanSantri::select([
             'id',
@@ -209,22 +209,23 @@ class TagihanSantriController extends Controller
     public function generate(TagihanSantriRequest $request): JsonResponse
     {
         try {
-            $data = $this->service->generate(
+            $result = $this->service->generate(
                 $request->input('tagihan_id'),
                 $request->only(['all', 'santri_ids', 'jenis_kelamin'])
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tagihan santri berhasil digenerate.',
-                'data'    => $data,
-            ], 200);
+            // Pilih status code berdasarkan hasil
+            $statusCode = $result['success'] ? 200 : 400;
+
+            // ✅ Return langsung hasil dari service (tanpa nested "data")
+            return response()->json($result, $statusCode);
         } catch (\Throwable $e) {
             Log::error('Gagal generate tagihan santri', [
                 'tagihan_id' => $request->input('tagihan_id'),
                 'periode'    => $request->input('periode'),
                 'filter'     => $request->only(['all', 'santri_ids', 'jenis_kelamin']),
-                'exception'  => $e,
+                'exception'  => $e->getMessage(),
+                'trace'      => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -233,7 +234,6 @@ class TagihanSantriController extends Controller
             ], 500);
         }
     }
-
 
     // public function generateManual(TagihanSantriManualRequest $request): JsonResponse
     // {

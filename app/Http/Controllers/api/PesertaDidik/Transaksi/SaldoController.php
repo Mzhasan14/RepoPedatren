@@ -45,38 +45,4 @@ class SaldoController extends Controller
 
         return response()->json($result, $result['status'] ? 200 : 400);
     }
-
-    // public function requestTopUp(TopUpRequest $request, string $santriId): JsonResponse
-    // {
-    //     try {
-    //         $transaksi = $this->service->requestTopUp(
-    //             $santriId,
-    //             $request->nominal,
-    //             $request->file('bukti_transfer')
-    //         );
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Top-up berhasil diajukan, menunggu verifikasi admin.',
-    //             'data' => $transaksi
-    //         ]);
-    //     } catch (Exception $e) {
-    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-    //     }
-    // }
-
-    // public function approveTopUp(int $transaksiId): JsonResponse
-    // {
-    //     try {
-    //         $transaksi = $this->service->approveTopUp($transaksiId);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Top-up berhasil disetujui.',
-    //             'data' => $transaksi
-    //         ]);
-    //     } catch (Exception $e) {
-    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-    //     }
-    // }
 }
