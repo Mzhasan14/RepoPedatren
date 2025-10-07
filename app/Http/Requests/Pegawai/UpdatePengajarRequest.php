@@ -27,6 +27,7 @@ class UpdatePengajarRequest extends FormRequest
             'lembaga_id' => 'required|exists:lembaga,id',
             'golongan_id' => 'required|exists:golongan,id',
             'jabatan' => 'required|string|max:255',
+            'keterangan_jabatan' => 'required|string|max:255',
             'tahun_masuk' => 'nullable|date',
         ];
 

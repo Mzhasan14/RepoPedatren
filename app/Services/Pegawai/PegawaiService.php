@@ -478,6 +478,7 @@ class PegawaiService
                     'pegawai_id'   => $pegawai->id,
                     'golongan_id'  => $input['golongan_id_pengajar'] ?? null,
                     'lembaga_id'   => $input['lembaga_id_pengajar'] ?? null,
+                    'keterangan_jabatan' => $input['keterangan_jabatan_pengajar'] ?? null,
                     'jabatan'      => $input['jabatan_pengajar'] ?? null,
                     'tahun_masuk'  => $input['tanggal_mulai_pengajar'] ?? now(),
                     'status_aktif' => 'aktif',

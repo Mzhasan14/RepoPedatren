@@ -26,6 +26,7 @@ class PengajarResquest extends FormRequest
         return [
             'golongan_id' => 'bail|required|integer|exists:golongan,id',
             'lembaga_id'  => 'bail|required|integer|exists:lembaga,id',
+            'keterangan_jabatan'     => 'required|string|max:255',
             'jabatan'     => 'nullable|string|max:255',
             'tahun_masuk' => 'bail|required|date|after_or_equal:2000-01-01',
 

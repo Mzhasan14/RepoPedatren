@@ -74,6 +74,7 @@ class CreatePegawaiRequest extends FormRequest
             'pengajar'                 => 'nullable|in:1,0',
             'golongan_id_pengajar'    => 'nullable|required_if:pengajar,1|nullable|exists:golongan,id',
             'lembaga_id_pengajar'     => 'nullable|required_if:pengajar,1|nullable|exists:lembaga,id',
+            'keterangan_jabatan_pengajar' => 'nullable|required_if:pengajar,1|string|max:255',
             'jabatan_pengajar'        => 'nullable|required_if:pengajar,1|nullable|string|max:100',
             'tanggal_mulai_pengajar'  => 'nullable|required_if:pengajar,1|nullable|date',
 

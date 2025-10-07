@@ -102,6 +102,7 @@ class PengajarService
             $pengajar->update([
                 'golongan_id' => $input['golongan_id'],
                 'lembaga_id' => $newLembagaId,
+                'keterangan_jabatan'      => $input['keterangan_jabatan'] ?? $pengajar->keterangan_jabatan,
                 'jabatan' => $input['jabatan'] ?? $pengajar->jabatan,
                 'tahun_masuk' => Carbon::parse($input['tahun_masuk']) ?? now(),
                 'updated_by' => Auth::id(),
@@ -489,6 +490,7 @@ class PengajarService
                     'pegawai_id'   => $pegawai->id,
                     'golongan_id'  => $data['golongan_id'],
                     'lembaga_id'   => $data['lembaga_id'],
+                    'keterangan_jabatan'      => $data['keterangan_jabatan'],
                     'jabatan'      => $data['jabatan'],
                     'tahun_masuk'  => $data['tahun_masuk'] ?? now(),
                     'status_aktif' => 'aktif',
@@ -591,6 +593,7 @@ class PengajarService
                     'pegawai_id'   => $old->pegawai_id,
                     'golongan_id'  => $input['golongan_id'],
                     'lembaga_id'   => $input['lembaga_id'],
+                    'keterangan_jabatan'      => $input['keterangan_jabatan'] ?? $old->keterangan_jabatan,
                     'jabatan'      => $input['jabatan'] ?? $old->jabatan,
                     'tahun_masuk'  => $tahunMasukBaru,
                     'status_aktif' => 'aktif',

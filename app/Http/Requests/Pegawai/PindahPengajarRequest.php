@@ -28,6 +28,7 @@ class PindahPengajarRequest extends FormRequest
             'golongan_id' => ['required', 'integer', 'exists:golongan,id'],
             'lembaga_id'  => ['required', 'integer', 'exists:lembaga,id'],
             'jabatan'     => ['nullable', 'string', 'max:255'],
+            'keterangan_jabatan'     => ['required', 'string', 'max:255'],
             'tahun_masuk' => ['required', 'date'],
 
             // Mata pelajaran
@@ -60,12 +61,12 @@ class PindahPengajarRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();
-    
+
         $response = response()->json([
             'message' => 'Validasi gagal. Mohon periksa kembali input Anda.',
             'errors' => $errors,               // akan berisi detail per‐field
         ], 422);
-    
+
         throw new HttpResponseException($response);
     }
 }

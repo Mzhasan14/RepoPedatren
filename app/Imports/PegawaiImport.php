@@ -65,6 +65,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     (isset($row['pengajar_kategori_golongan']) && trim((string)$row['pengajar_kategori_golongan']) !== '') ||
                     (isset($row['pengajar_golongan']) && trim((string)$row['pengajar_golongan']) !== '') ||
                     (isset($row['pengajar_lembaga']) && trim((string)$row['pengajar_lembaga']) !== '') ||
+                    (isset($row['pengajar_keterangan_jabatan']) && trim((string)$row['pengajar_keterangan_jabatan']) !== '') ||
                     (isset($row['pengajar_jabatan']) && trim((string)$row['pengajar_jabatan']) !== '') ||
                     (isset($row['pengajar_tahun_masuk']) && trim((string)$row['pengajar_tahun_masuk']) !== '')
                 );
@@ -109,6 +110,17 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 // Tentukan kewarganegaraan (jika ada)
                 $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
 
+                // ==========================================================
+                // --- TAMBAHAN VALIDASI 1: NEGARA UNTUK WNA ---
+                // ==========================================================
+                $negaraNama = trim((string)($row['negara'] ?? ''));
+                if ($kewarganegaraan === 'WNA' && strtolower($negaraNama) === 'indonesia') {
+                    throw new \Exception("Untuk WNA, negara tidak boleh 'Indonesia' di baris {$excelRow}.");
+                }
+                // ==========================================================
+                // --- AKHIR TAMBAHAN 1 ---
+                // ==========================================================
+
                 // ===== VALIDASI BARU: NIK ↔ NO PASSPORT =====
                 if ($nikRaw !== '' && $noPassportRaw !== '') {
                     throw new \Exception("Kolom 'nik' dan 'no_passport' tidak boleh diisi bersamaan di baris {$excelRow}.");
@@ -149,29 +161,43 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     if ($noPassportRaw !== '') $noPassport = $noPassportRaw;
                 }
 
-                // ===== CEK DUPLIKASI NIK / NO PASSPORT DI DB =====
+                // ======================================================================
+                // --- TAMBAHAN VALIDASI 2: CEK STATUS AKTIF PEGAWAI & SANTRI DI DB ---
+                // (Ini menggantikan blok "CEK DUPLIKASI NIK / NO PASSPORT DI DB" Anda)
+                // ======================================================================
+                $existingBiodata = null;
                 if (!empty($nikRaw)) {
-                    $exists = DB::table('biodata')->where('nik', $nikRaw)->exists();
-                    if ($exists) {
-                        throw new \Exception("NIK '{$nikRaw}' sudah terdaftar di database (baris {$excelRow}).");
-                    }
+                    $existingBiodata = DB::table('biodata')->where('nik', $nikRaw)->first();
+                } elseif (!empty($noPassportRaw)) {
+                    $existingBiodata = DB::table('biodata')->where('no_passport', $noPassportRaw)->first();
                 }
 
-                if (!empty($noPassportRaw)) {
-                    $exists = DB::table('biodata')->where('no_passport', $noPassportRaw)->exists();
-                    if ($exists) {
-                        throw new \Exception("No Passport '{$noPassportRaw}' sudah terdaftar di database (baris {$excelRow}).");
-                    }
-                }
-                // ===== CEK DUPLIKASI NIUP DI DB & EXCEL =====
+                if ($existingBiodata) {
+                    $isPegawaiAktif = DB::table('pegawai')
+                        ->where('biodata_id', $existingBiodata->id)
+                        ->where('status_aktif', 'aktif')
+                        ->exists();
 
-                // Simpan semua NIUP yang sudah dibaca: key = NIUP, value = baris pertama muncul
+                    if ($isPegawaiAktif) {
+                        throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah terdaftar sebagai PEGAWAI AKTIF.");
+                    }
+
+                    $isSantriAktif = DB::table('santri')
+                        ->where('biodata_id', $existingBiodata->id)
+                        ->where('status', 'aktif')
+                        ->exists();
+
+                    if ($isSantriAktif) {
+                        throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} masih terdaftar sebagai SANTRI AKTIF.");
+                    }
+
+                    throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah ada di database. Proses import hanya untuk data baru.");
+                }
+
                 static $niupSeen = [];
-
                 $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : '';
 
                 if ($niupRaw !== '') {
-
                     // 1️⃣ Cek duplikasi di file Excel itu sendiri
                     if (isset($niupSeen[$niupRaw])) {
                         throw new \Exception("NIUP '{$niupRaw}' duplikat di file Excel: baris {$excelRow} sama dengan baris {$niupSeen[$niupRaw]}.");
@@ -264,6 +290,17 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                 // ===== Role: PENGAJAR =====
                 if ($willInsertPengajar) {
+                    if (!empty($row['pengajar_kode_mapel'])) {
+                        $kodeMapel = $row['pengajar_kode_mapel'];
+                        $mapelExists = DB::table('mata_pelajaran')
+                            ->where('kode_mapel', $kodeMapel)
+                            ->where('status', 1)
+                            ->exists();
+                        if ($mapelExists) {
+                            throw new \Exception("Kode Mata Pelajaran '{$kodeMapel}' sudah digunakan oleh mapel lain yang aktif (baris {$excelRow}).");
+                        }
+                    }
+
                     $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
                     $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
 
@@ -272,6 +309,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         'pegawai_id' => $pegawaiId,
                         'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
                         'golongan_id' => $golonganId,
+                        'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
                         'jabatan' => $row['pengajar_jabatan'] ?? null,
                         'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? null),
                         'status_aktif' => 'aktif',
@@ -317,34 +355,31 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 if ($willInsertWali) {
                     // Lembaga
                     $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
-
                     // Jurusan sesuai lembaga
                     $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, [
                         'lembaga_id' => $lembagaId
                     ]);
-
                     // Kelas sesuai jurusan
                     $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, [
                         'jurusan_id' => $jurusanId
                     ]);
-
                     // Rombel sesuai kelas
                     $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, [
                         'kelas_id' => $kelasId
                     ]);
 
                     DB::table('wali_kelas')->insert([
-                        'pegawai_id'     => $pegawaiId,
-                        'lembaga_id'     => $lembagaId,
-                        'jurusan_id'     => $jurusanId,
-                        'kelas_id'       => $kelasId,
-                        'rombel_id'      => $rombelId,
-                        'jumlah_murid'   => $row['wali_jumlah_murid'] ?? null,
-                        'periode_awal'   => $this->transformDate($row['wali_periode_awal'] ?? null),
-                        'status_aktif'   => 'aktif',
-                        'created_at'     => now(),
-                        'updated_at'     => now(),
-                        'created_by'     => $this->userId ?? 1
+                        'pegawai_id'      => $pegawaiId,
+                        'lembaga_id'      => $lembagaId,
+                        'jurusan_id'      => $jurusanId,
+                        'kelas_id'        => $kelasId,
+                        'rombel_id'       => $rombelId,
+                        // 'jumlah_murid'    => $row['wali_jumlah_murid'] ?? null,
+                        'periode_awal'    => $this->transformDate($row['wali_periode_awal'] ?? null),
+                        'status_aktif'    => 'aktif',
+                        'created_at'      => now(),
+                        'updated_at'      => now(),
+                        'created_by'      => $this->userId ?? 1
                     ]);
                 }
             }
@@ -389,25 +424,26 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             'nomor_telepon_2'              => 'no_telp_2',
             'lembaga_pengajar'             => 'pengajar_lembaga',
             'golongan_pengajar'            => 'pengajar_golongan',
+            'keterangan_jabatan_pengajar'  => 'pengajar_keterangan_jabatan',
             'jenis_jabatan_pengajar'       => 'pengajar_jabatan',
             'tanggal_masuk_pengajar'       => 'pengajar_tahun_masuk',
-            'kode_mapel_pengajar'          => 'pengajar_kode_mapel', 
+            'kode_mapel_pengajar'          => 'pengajar_kode_mapel',
             'nama_mapel_pengajar'          => 'pengajar_nama_mapel',
             'golongan_jabatan_karyawan'    => 'karyawan_golongan_jabatan',
             'lembaga_karyawan'             => 'karyawan_lembaga',
             'keterangan_jabatan_karyawan'  => 'karyawan_keterangan_jabatan',
-            'jabatanjenis_kontrak_karyawan'=> 'karyawan_jabatan',
+            'jabatanjenis_kontrak_karyawan' => 'karyawan_jabatan',
             'tanggal_mulai_karyawan'       => 'karyawan_tanggal_mulai',
             'golongan_jabatan_pengurus'    => 'pengurus_golongan_jabatan',
             'satuan_kerja_pengurus'        => 'pengurus_satuan_kerja',
             'keterangan_jabatan_pengurus'  => 'pengurus_keterangan_jabatan',
-            'jabatanjenis_kontrak_pengurus'=> 'pengurus_jabatan',
+            'jabatanjenis_kontrak_pengurus' => 'pengurus_jabatan',
             'tanggal_mulai_pengurus'       => 'pengurus_tanggal_mulai',
             'lembaga_wali_kelas'           => 'wali_lembaga',
             'jurusan_wali_kelas'           => 'wali_jurusan',
             'kelas_wali_kelas'             => 'wali_kelas',
             'rombel_wali_kelas'            => 'wali_rombel',
-            'jumlah_murid_wali_kelas'      => 'wali_jumlah_murid',
+            // 'jumlah_murid_wali_kelas'      => 'wali_jumlah_murid',
             'periode_awal_wali_kelas'      => 'wali_periode_awal'
         ];
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('mata_pelajaran', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('lembaga_id');
-            $table->string('kode_mapel');
+            $table->string('kode_mapel')->nullable();
             $table->string('nama_mapel');
             $table->unsignedBigInteger('pengajar_id');
             $table->boolean('status');
