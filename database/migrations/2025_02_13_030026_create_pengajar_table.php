@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('pegawai_id');
             $table->unsignedBigInteger('lembaga_id')->nullable();
             $table->unsignedBigInteger('golongan_id')->nullable();
+            $table->string('keterangan_jabatan')->nullable(); // contohnya : kepala sekolah, wakil kepala bag --- dll
             $table->string('jabatan');
             $table->date('tahun_masuk')->nullable();
             $table->date('tahun_akhir')->nullable();
