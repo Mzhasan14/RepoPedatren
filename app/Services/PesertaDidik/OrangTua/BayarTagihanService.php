@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\OrangTua;
 
 use Carbon\Carbon;
+use App\Models\Kartu;
 use App\Models\Saldo;
 use App\Models\Santri;
 use App\Models\TagihanSantri;
@@ -18,13 +19,14 @@ class BayarTagihanService
         return DB::transaction(function () use ($request) {
             $user = Auth::user();
 
-            // Ambil tagihan
-            $tagihan = TagihanSantri::where('id', $request['tagihan_santri_id'])
+            // 🔹 Ambil tagihan santri beserta relasi
+            $tagihanSantri = TagihanSantri::with('tagihan')
+                ->where('id', $request['tagihan_santri_id'])
                 ->where('status', '!=', 'lunas')
                 ->lockForUpdate()
                 ->first();
 
-            if (!$tagihan) {
+            if (!$tagihanSantri) {
                 return [
                     'success' => false,
                     'data' => null,
@@ -33,13 +35,13 @@ class BayarTagihanService
             }
 
             // 🔹 Ambil / buat saldo santri
-            $saldo = Saldo::where('santri_id', $tagihan->santri_id)
+            $saldo = Saldo::where('santri_id', $tagihanSantri->santri_id)
                 ->lockForUpdate()
                 ->first();
 
             if (!$saldo) {
                 $saldo = Saldo::create([
-                    'santri_id'  => $tagihan->santri_id,
+                    'santri_id'  => $tagihanSantri->santri_id,
                     'saldo'      => 0,
                     'status'     => true,
                     'created_by' => $user->id,
@@ -54,9 +56,9 @@ class BayarTagihanService
                 ];
             }
 
-            // Validasi user (selain superadmin harus valid)
+            // 🔹 Validasi user (non-superadmin harus valid)
             if (!$user->hasRole('superadmin')) {
-                $santri = Santri::find($tagihan->santri_id);
+                $santri = Santri::find($tagihanSantri->santri_id);
                 if (!$santri) {
                     return [
                         'success' => false,
@@ -66,10 +68,10 @@ class BayarTagihanService
                 }
             }
 
-            // Jumlah bayar = nominal tagihan
-            $jumlahBayar = $tagihan->nominal;
+            // 🔹 Jumlah bayar = total_tagihan - total_potongan (kalau mau pastikan bersih)
+            $jumlahBayar = $tagihanSantri->total_tagihan - $tagihanSantri->total_potongan;
 
-            // Cek saldo cukup
+            // 🔹 Cek saldo cukup
             if ($saldo->saldo < $jumlahBayar) {
                 return [
                     'success' => false,
@@ -78,60 +80,72 @@ class BayarTagihanService
                 ];
             }
 
-            // Update tagihan → langsung lunas
-            $tagihan->status = 'lunas';
-            $tagihan->tanggal_bayar = Carbon::now();
-            $tagihan->save();
-
-            // Simpan saldo lama (untuk log)
-            $saldoLama = $saldo->saldo;
-
-            // Update saldo
-            $saldo->saldo -= $jumlahBayar;
-            $saldo->save();
-
-            // Insert ke transaksi saldo (pakai struktur tabel kamu)
-            $transaksi = TransaksiSaldo::create([
-                'santri_id'     => $tagihan->santri_id,
-                'outlet_id'     => null,
-                'kategori_id'   => null,
-                'user_outlet_id' => null,
-                'tipe'          => 'debit',
-                'jumlah'        => $jumlahBayar,
-                'keterangan'    => 'Pembayaran tagihan #' . $tagihan->id . ' oleh orang tua'
+            // 🔹 Update tagihan santri → lunas
+            $tagihanSantri->update([
+                'status'         => 'lunas',
+                'tanggal_bayar'  => now(),
+                'updated_by'     => $user->id,
             ]);
 
-            // Activity log pakai Spatie
+            // 🔹 Simpan saldo lama (untuk log)
+            $saldoLama = $saldo->saldo;
+
+            // 🔹 Update saldo santri
+            $saldo->update([
+                'saldo' => $saldo->saldo - $jumlahBayar,
+                'updated_by' => $user->id,
+            ]);
+
+            // 🔹 Ambil kartu aktif (jika sistem pakai UID kartu)
+            // $uidKartu = Kartu::where('santri_id', $tagihanSantri->santri_id)
+            //     ->where('aktif', true)
+            //     ->value('uid_kartu');
+
+            // 🔹 Catat transaksi saldo
+            $transaksi = TransaksiSaldo::create([
+                'santri_id'      => $tagihanSantri->santri_id,
+                'outlet_id'      => null,
+                'kategori_id'    => null,
+                'user_outlet_id' => null,
+                'uid_kartu'      => null,
+                'tipe'           => 'debit',
+                'jumlah'         => $jumlahBayar,
+                'keterangan'     => 'Pembayaran tagihan ' . $tagihanSantri->tagihan->nama_tagihan . 'oleh orangtua',
+                'created_by'     => $user->id,
+            ]);
+
+            // 🔹 Log aktivitas (Spatie)
             activity('transaksi_saldo')
                 ->causedBy($user)
                 ->performedOn($saldo)
                 ->withProperties([
-                    'santri_id'     => $tagihan->santri_id,
+                    'santri_id'     => $tagihanSantri->santri_id,
                     'tipe'          => 'debit',
                     'jumlah'        => $jumlahBayar,
                     'saldo_sebelum' => $saldoLama,
                     'saldo_sesudah' => $saldo->saldo,
                     'transaksi_id'  => $transaksi->id,
-                    'tagihan_id'    => $tagihan->id,
+                    'tagihan_id'    => $tagihanSantri->tagihan_id,
                     'ip'            => request()->ip(),
                     'user_agent'    => request()->userAgent(),
                 ])
                 ->event('success')
-                ->log("Pembayaran tagihan #{$tagihan->id} sebesar Rp{$jumlahBayar} berhasil");
+                ->log("Pembayaran tagihan {$tagihanSantri->tagihan->nama_tagihan} sebesar Rp{$jumlahBayar} berhasil");
 
             return [
                 'success' => true,
                 'data' => [
-                    'tagihan_id'     => $tagihan->id,
-                    'santri_id'      => $tagihan->santri_id,
+                    'tagihan_id'     => $tagihanSantri->tagihan_id,
+                    'santri_id'      => $tagihanSantri->santri_id,
                     'dibayar'        => $jumlahBayar,
-                    'status_tagihan' => $tagihan->status,
+                    'status_tagihan' => $tagihanSantri->status,
                     'sisa_saldo'     => $saldo->saldo,
                 ],
                 'message' => 'Tagihan berhasil dilunasi.'
             ];
         });
     }
+
 
     /**
      * Proses pembayaran tagihan santri.

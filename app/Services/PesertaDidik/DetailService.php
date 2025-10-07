@@ -5,6 +5,7 @@ namespace App\Services\PesertaDidik;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DetailService
 {
@@ -20,16 +21,18 @@ class DetailService
         // --- Biodata Utama ---
         $biodata = DB::table('biodata as b')
             ->leftJoin('warga_pesantren as wp', function ($j) {
-                $j->on('b.id', 'wp.biodata_id')
-                    ->where('wp.status', true);
+                // PERBAIKAN 1: Gunakan 'AND' dalam 'on' agar tidak mengubah LEFT JOIN menjadi INNER JOIN
+                $j->on('b.id', '=', 'wp.biodata_id')
+                    ->where('wp.status', '=', true);
             })
             ->leftJoin('berkas as br', function ($j) {
-                $j->on('b.id', 'br.biodata_id')
+                // PERBAIKAN 1: Logika yang sama untuk join berkas
+                $j->on('b.id', '=', 'br.biodata_id')
                     ->whereIn('br.id', function ($sub) {
                         $sub->selectRaw('MAX(id)')
-                            ->from('berkas')
-                            ->whereColumn('biodata_id', 'b.id')
-                            ->where('jenis_berkas_id', function ($q) {
+                            ->from('berkas as sub_br')
+                            ->whereColumn('sub_br.biodata_id', 'b.id')
+                            ->where('sub_br.jenis_berkas_id', function ($q) {
                                 $q->select('id')->from('jenis_berkas')->where('nama_jenis_berkas', 'Pas foto');
                             });
                     });
@@ -53,33 +56,48 @@ class DetailService
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
                 'ng.nama_negara',
-                DB::raw("COALESCE(br.file_path,'default.jpg') as foto"),
+                DB::raw("COALESCE(br.file_path, 'default.jpg') as foto"),
             ])
             ->first();
 
-        if ($biodata) {
-            // --- Format tanggal lahir ke bahasa Indonesia ---
-            Carbon::setLocale('id'); // Pastikan locale di-set
-            $tanggal_lahir = Carbon::parse($biodata->tanggal_lahir)->translatedFormat('d F Y');
-            $ttl = "{$biodata->tempat_lahir}, $tanggal_lahir";
+        // PERBAIKAN 2: Fail-Fast. Jika biodata utama tidak ada, hentikan eksekusi.
+        if (!$biodata) {
+            // Opsi 1: Lemparkan Exception (direkomendasikan untuk API)
+            throw new ModelNotFoundException("Data biodata dengan ID '{$biodataId}' tidak ditemukan.");
 
-            $data['Biodata'] = [
-                'id' => $biodata->id,
-                'nokk' => $noKk ?? '-',
-                'nik_nopassport' => $biodata->identitas,
-                'niup' => $biodata->niup ?? '-',
-                'nama' => $biodata->nama,
-                'jenis_kelamin' => $biodata->jenis_kelamin,
-                'tempat_tanggal_lahir' => $ttl,
-                'anak_ke' => $biodata->anak_ke,
-                'umur' => $biodata->umur . ' tahun',
-                'kecamatan' => $biodata->nama_kecamatan ?? '-',
-                'kabupaten' => $biodata->nama_kabupaten ?? '-',
-                'provinsi' => $biodata->nama_provinsi ?? '-',
-                'warganegara' => $biodata->nama_negara ?? '-',
-                'foto_profil' => URL::to($biodata->foto),
-            ];
+            // Opsi 2: Kembalikan array kosong
+            // return [];
         }
+
+        $data = [];
+
+        // --- Format tanggal lahir & siapkan data utama ---
+        Carbon::setLocale('id');
+        $tanggal_lahir = Carbon::parse($biodata->tanggal_lahir)->translatedFormat('d F Y');
+        $ttl = "{$biodata->tempat_lahir}, {$tanggal_lahir}";
+
+        // Ambil No KK (dipindah ke sini agar hanya dieksekusi jika biodata ada)
+        $noKk = DB::table('keluarga')
+            ->where('id_biodata', $biodata->id)
+            ->value('no_kk');
+
+        $data['Biodata'] = [
+            'id' => $biodata->id,
+            'nokk' => $noKk ?? '-',
+            'nik_nopassport' => $biodata->identitas,
+            'niup' => $biodata->niup ?? '-',
+            'nama' => $biodata->nama,
+            'jenis_kelamin' => $biodata->jenis_kelamin,
+            'tempat_tanggal_lahir' => $ttl,
+            'anak_ke' => $biodata->anak_ke,
+            'umur' => $biodata->umur . ' tahun',
+            'kecamatan' => $biodata->nama_kecamatan ?? '-',
+            'kabupaten' => $biodata->nama_kabupaten ?? '-',
+            'provinsi' => $biodata->nama_provinsi ?? '-',
+            'warganegara' => $biodata->nama_negara ?? '-',
+            'foto_profil' => URL::to($biodata->foto),
+        ];
+
 
 
         // --- Keluarga (Ortu & Saudara) ---
@@ -135,51 +153,6 @@ class DetailService
             'Tanggal_Mulai' => $s->tanggal_masuk,
             'Tanggal_Akhir' => $s->tanggal_keluar ?? '-',
         ])->toArray();
-
-        // --- Kewaliasuhan (jika ada) ---
-        // $kew = null;
-
-        // if ($santriId) {
-        //     $kew = DB::table('kewaliasuhan as kw')
-        //         ->join('wali_asuh as wa', 'kw.id_wali_asuh', '=', 'wa.id')
-        //         ->join('anak_asuh as aa', 'kw.id_anak_asuh', '=', 'aa.id')
-        //         ->join('santri as s_wali', 'wa.id_santri', '=', 's_wali.id')
-        //         ->join('biodata as bio_wali', 's_wali.biodata_id', '=', 'bio_wali.id')
-        //         ->join('santri as s_anak', 'aa.id_santri', '=', 's_anak.id')
-        //         ->join('biodata as bio_anak', 's_anak.biodata_id', '=', 'bio_anak.id')
-        //         ->leftJoin('grup_wali_asuh as gw', 'gw.id', '=', 'wa.id_grup_wali_asuh')
-        //         ->where('kw.status', true)
-        //         ->where(function ($q) use ($santriId) {
-        //             $q->where('wa.id_santri', $santriId)
-        //                 ->orWhere('aa.id_santri', $santriId);
-        //         })
-        //         ->select(
-        //             'kw.tanggal_mulai',
-        //             'kw.tanggal_berakhir',
-        //             'kw.status',
-        //             'bio_wali.nama as nama_wali',
-        //             'bio_anak.nama as nama_anak',
-        //             'gw.nama_grup as group_kewaliasuhan',
-        //             DB::raw("
-        //                 CASE
-        //                     WHEN s_wali.id = $santriId THEN 'Wali Asuh'
-        //                     WHEN s_anak.id = $santriId THEN 'Anak Asuh'
-        //                     ELSE 'Tidak Diketahui'
-        //                 END as role
-        //             ")
-        //         )
-        //         ->first();
-        // }
-
-        // $data['Status_Santri']['Kewaliasuhan'] = $kew ? [[
-        //     'group_kewaliasuhan' => $kew->group_kewaliasuhan ?? '-',
-        //     'sebagai' => $kew->role,
-        //     $kew->role === 'Anak Asuh' ? 'Nama Wali Asuh' : 'Nama Anak Asuh' => $kew->role === 'Anak Asuh' ? ($kew->nama_wali ?? '-') : ($kew->nama_anak ?? '-'),
-        //     'tanggal_mulai' => $kew->tanggal_mulai,
-        //     'tanggal_berakhir' => $kew->tanggal_berakhir ?? '-',
-        //     'status' => $kew->status ? 'Aktif' : 'Tidak Aktif',
-        // ]] : [];
-        // Ambil status kewaliasuhan
 
         $kew = DB::table('santri as s')
             ->where('s.id', $santriId)
@@ -407,11 +380,12 @@ class DetailService
 
         // --- Catatan Kognitif ---
         $kg = DB::table('catatan_kognitif as ck')
+            ->join('santri as s', 'ck.id_santri', '=', 's.id') 
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id') 
             ->where('b.id', $biodataId)
-            ->join('santri as s', 'ck.id_santri', '=', 's.id')
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->latest('ck.created_at')
             ->first();
+
 
         $data['Catatan_Progress']['Kognitif'] = $kg
             ? [
