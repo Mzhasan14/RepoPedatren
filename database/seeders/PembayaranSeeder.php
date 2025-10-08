@@ -152,31 +152,31 @@ class PembayaranSeeder extends Seeder
         /**
          * PEMBAYARAN
          */
-        DB::table('pembayaran')->insert([
-            [
-                'tagihan_santri_id'  => 2, // sesuai dengan data "lunas"
-                'virtual_account_id' => 1,
-                'metode'             => 'VA',
-                'jumlah_bayar'       => 350000,
-                'tanggal_bayar'      => now(),
-                'status'             => 'berhasil',
-                'keterangan'         => 'Pembayaran SPP Januari via Bank Jatim',
-                'created_by'         => 1,
-                'created_at'         => now(),
-                'updated_at'         => now(),
-            ],
-            [
-                'tagihan_santri_id'  => 3, // daftar ulang (masih pending meski ada pembayaran)
-                'virtual_account_id' => 2,
-                'metode'             => 'CASH',
-                'jumlah_bayar'       => 500000,
-                'tanggal_bayar'      => now(),
-                'status'             => 'berhasil',
-                'keterangan'         => 'Pembayaran daftar ulang via kasir (belum lunas)',
-                'created_by'         => 1,
-                'created_at'         => now(),
-                'updated_at'         => now(),
-            ],
-        ]);
+        // DB::table('pembayaran')->insert([
+        //     [
+        //         'tagihan_santri_id'  => 2, // sesuai dengan data "lunas"
+        //         'virtual_account_id' => 1,
+        //         'metode'             => 'VA',
+        //         'jumlah_bayar'       => 350000,
+        //         'tanggal_bayar'      => now(),
+        //         'status'             => 'berhasil',
+        //         'keterangan'         => 'Pembayaran SPP Januari via Bank Jatim',
+        //         'created_by'         => 1,
+        //         'created_at'         => now(),
+        //         'updated_at'         => now(),
+        //     ],
+        //     [
+        //         'tagihan_santri_id'  => 3, // daftar ulang (masih pending meski ada pembayaran)
+        //         'virtual_account_id' => 2,
+        //         'metode'             => 'CASH',
+        //         'jumlah_bayar'       => 500000,
+        //         'tanggal_bayar'      => now(),
+        //         'status'             => 'berhasil',
+        //         'keterangan'         => 'Pembayaran daftar ulang via kasir (belum lunas)',
+        //         'created_by'         => 1,
+        //         'created_at'         => now(),
+        //         'updated_at'         => now(),
+        //     ],
+        // ]);
     }
 }

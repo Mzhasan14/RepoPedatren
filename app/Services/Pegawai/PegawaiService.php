@@ -535,6 +535,47 @@ class PegawaiService
                     'created_by' => Auth::id(),
                 ]);
             }
+
+            $noKkPegawai = DB::table('keluarga')->where('id_biodata', $biodata->id)->value('no_kk');
+
+            if ($noKkPegawai) {
+                $listSantriAktif = DB::table('keluarga as k')
+                    ->join('santri as s', 'k.id_biodata', '=', 's.biodata_id')
+                    ->where('k.no_kk', $noKkPegawai)
+                    ->where('s.status', 'aktif')
+                    ->where('k.id_biodata', '!=', $biodata->id)
+                    ->select('s.biodata_id')
+                    ->get();
+
+                if ($listSantriAktif->isNotEmpty()) {
+                    $hubungan = DB::table('orang_tua_wali as ow')
+                        ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+                        ->where('ow.id_biodata', $biodata->id)
+                        ->selectRaw("LOWER(hk.nama_status) as status_hubungan")
+                        ->first();
+
+                    if ($hubungan && (str_contains($hubungan->status_hubungan, 'ayah') || str_contains($hubungan->status_hubungan, 'ibu'))) {
+
+                        $statusUntukDisimpan = str_contains($hubungan->status_hubungan, 'ayah') ? 'ayah' : 'ibu';
+
+                        foreach ($listSantriAktif as $santri) {
+                            DB::table('anak_pegawai')->updateOrInsert(
+                                [
+                                    'biodata_id' => $santri->biodata_id,
+                                    'pegawai_id' => $pegawai->id,    
+                                ],
+                                [
+                                    'status_hubungan' => $statusUntukDisimpan,
+                                    'status'          => true,
+                                    'created_by'      => Auth::id(),
+                                    'created_at'      => now(),
+                                    'updated_at'      => now(),
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
             // --- 8. CATAT LOG AKTIVITAS (AUDIT TRAIL) ---
             activity('registrasi_pegawai')
                 ->causedBy(Auth::user())
