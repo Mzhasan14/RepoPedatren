@@ -60,8 +60,8 @@ class PembayaranSeeder extends Seeder
          */
         DB::table('tagihan')->insert([
             [
-                'nama_tagihan' => 'SPP Januari 2025',
-                'periode'      => '2025-01',
+                'nama_tagihan' => 'SPP',
+                'periode'      => 'DESEMBER 2025',
                 'tipe'         => 'bulanan',
                 'nominal'      => 350000,
                 'jatuh_tempo'  => '2025-01-10',
@@ -71,8 +71,8 @@ class PembayaranSeeder extends Seeder
                 'updated_at'   => now(),
             ],
             [
-                'nama_tagihan' => 'Daftar Ulang Santri 2025/2026',
-                'periode'      => '2025-07',
+                'nama_tagihan' => 'Daftar Ulang',
+                'periode'      => 'AGUSTUS 2025',
                 'tipe'         => 'tahunan',
                 'nominal'      => 1500000,
                 'jatuh_tempo'  => '2025-07-15',
@@ -82,8 +82,8 @@ class PembayaranSeeder extends Seeder
                 'updated_at'   => now(),
             ],
             [
-                'nama_tagihan' => 'Pembelian Kitab Tahun 2025',
-                'periode'      => '2025-08',
+                'nama_tagihan' => 'Pembelian Kitab',
+                'periode'      => 'SEPTEMBER 2025',
                 'tipe'         => 'sekali_bayar',
                 'nominal'      => 500000,
                 'jatuh_tempo'  => '2025-08-30',
