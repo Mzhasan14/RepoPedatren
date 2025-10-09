@@ -1167,6 +1167,7 @@ Route::prefix('tagihan-santri')->group(function () {
     Route::get('/{id}', [TagihanSantriController::class, 'tagihanSantriByTagihanId']);  // ini detail tagihannya
 
     Route::post('/generate', [TagihanSantriController::class, 'generate']);
+    Route::post('/batal', [TagihanSantriController::class, 'batalTagihan']);
     Route::get('/santri/{santriId}', [TagihanSantriController::class, 'listBySantri']);
 
     Route::get('/pembayaran/filters', [TagihanSantriController::class, 'filters']);

@@ -222,7 +222,7 @@ return new class extends Migration
             $table->decimal('total_potongan', 15, 2)->default(0); 
             $table->decimal('total_tagihan', 15, 2); 
 
-            $table->enum('status', ['pending', 'lunas'])->default('pending');
+            $table->enum('status', ['pending', 'lunas', 'batal'])->default('pending');
 
             $table->date('tanggal_jatuh_tempo')->nullable();
             $table->dateTime('tanggal_bayar')->nullable();
