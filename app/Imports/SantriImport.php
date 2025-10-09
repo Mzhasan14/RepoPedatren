@@ -23,6 +23,51 @@ class SantriImport implements ToCollection, WithHeadingRow
         $this->userId = $userId;
     }
 
+    protected function parseDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            // Jika berupa angka (format tanggal Excel, misal 40461)
+            if (is_numeric($value)) {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
+                    ->format('Y-m-d');
+            }
+
+            // Jika string (misalnya "20/09/2024" atau "2024-09-20")
+            $value = trim((string)$value);
+
+            // Coba parse ke tanggal menggunakan Carbon
+            $date = \Carbon\Carbon::parse($value);
+            return $date->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    protected function normalizeNumberString($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        // Hapus spasi dan karakter non-digit (kecuali kalau ada 'WNA' di depan)
+        $str = trim((string)$value);
+
+        // Kalau format numeric (misal 3.51544E+15), ubah ke string tanpa notasi ilmiah
+        if (is_numeric($str) && strpos($str, 'E') !== false) {
+            $str = number_format($str, 0, '', '');
+        }
+
+        // Hapus karakter non-digit
+        $str = preg_replace('/\D/', '', $str);
+
+        // Kembalikan string penuh tanpa pemotongan angka
+        return ltrim($str, '0') === '' ? '0' : $str;
+    }
+
     public function collection(Collection $rows)
     {
         if ($rows->isEmpty()) {
@@ -76,6 +121,8 @@ class SantriImport implements ToCollection, WithHeadingRow
                     throw new \Exception("Kolom 'Kewarganegaraan' wajib diisi di baris {$excelRow}");
                 }
 
+                $nik = $this->normalizeNumberString($row['nik'] ?? null);
+
                 $biodataId = Str::uuid()->toString();
 
                 $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
@@ -95,7 +142,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     'no_passport' => $noPassport,
                     'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtolower($row['jenis_kelamin']) : null,
                     'tempat_lahir' => $row['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $row['tanggal_lahir'] ?? null,
+                    'tanggal_lahir' =>  $this->parseDate($row['tanggal_lahir'] ?? null),
                     'anak_keberapa' => $row['anak_keberapa'] ?? null,
                     'dari_saudara' => $row['dari_berapa_saudara'] ?? null,
                     'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
@@ -122,10 +169,34 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $ayahBiodataId = $this->upsertOrangTuaBiodata($row, 'ayah', $excelRow);
                 $ibuBiodataId  = $this->upsertOrangTuaBiodata($row, 'ibu', $excelRow);
 
+
                 $this->insertOrangTuaRelation($biodataId, $ayahBiodataId, 'ayah', $row, $excelRow, false);
                 $this->insertOrangTuaRelation($biodataId, $ibuBiodataId, 'ibu', $row, $excelRow, false);
 
-                // ==== LOGIKA WALI ====
+                // === CEK WALi ===
+                // Jika wali kosong → otomatis set ayah atau ibu sebagai wali
+                if (empty($row['nik_wali']) && empty($row['nama_wali'])) {
+                    if (!empty($ayahBiodataId)) {
+                        // ✅ Ayah tersedia → jadikan wali
+                        $waliBiodataId = $ayahBiodataId;
+
+                        DB::table('orang_tua_wali')
+                            ->where('id_biodata', $ayahBiodataId)
+                            ->update(['wali' => true]);
+                    } elseif (!empty($ibuBiodataId)) {
+                        // ✅ Ayah tidak ada, ibu tersedia → jadikan wali
+                        $waliBiodataId = $ibuBiodataId;
+
+                        DB::table('orang_tua_wali')
+                            ->where('id_biodata', $ibuBiodataId)
+                            ->update(['wali' => true]);
+                    } else {
+                        // ❌ Ayah dan ibu dua-duanya tidak ada → biarkan kosong tanpa error
+                        $waliBiodataId = null;
+                    }
+                }
+
+
                 // ==== LOGIKA WALI ====
                 $waliBiodataId = null;
                 $namaAyah  = trim(strtolower($row['nama_ayah'] ?? ''));
@@ -183,13 +254,15 @@ class SantriImport implements ToCollection, WithHeadingRow
                     }
                 }
 
+                $noKk = $this->normalizeNumberString($row['no_kk'] ?? null);
+
 
                 // --- Insert keluarga ---
                 if ($kewarganegaraan === 'WNA') {
                     $angka13Digit = (string) random_int(1000000000000, 9999999999999);
                     $generatedNoKK = 'WNA' . $angka13Digit;
                 } else {
-                    $generatedNoKK = $row['no_kk'] ?? null;
+                    $generatedNoKK = $noKk ?? null;
                 }
 
                 // Santri
@@ -327,7 +400,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     // cari tahun dari tabel angkatan
                     $tahunAngkatan = null;
                     if ($angkatanId) {
-                        $tahunAngkatan = DB::table('angkatan')->where('id', $angkatanId)->value('angkatan');
+                        $tahunAngkatan = DB::table('angkatan')->where('kategori', 'santri')->where('id', $angkatanId)->value('angkatan');
                     }
 
                     // Tentukan tanggal masuk santri
@@ -338,7 +411,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                         $tanggalMasukSantri = $tahunAngkatan . '-07-01';
                     } else {
                         // fallback terakhir kalau angkatan tidak ditemukan
-                        $tanggalMasukSantri = null;
+                        $tanggalMasukSantri = now();
                     }
 
                     // 🔹 Ambil 2 digit terakhir tahun
@@ -355,7 +428,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     // 🔹 Generate NIS unik
                     do {
                         $random = str_pad(rand(0, 99), 2, '0', STR_PAD_LEFT); // 2 digit random
-                        $nis = $tahunMasuk2Digit . '01' . $random . $nextUrut;
+                        $nis = $tahunMasuk2Digit . '02' . $random . $nextUrut;
                     } while (
                         DB::table('santri')->where('nis', $nis)->exists()
                     );
@@ -372,36 +445,119 @@ class SantriImport implements ToCollection, WithHeadingRow
                         'created_by'    => $this->userId ?? 1
                     ]);
 
+                    // if (!empty(trim($row['wilayah'] ?? ''))) {
+                    //     DB::table('domisili_santri')->insert([
+                    //         'santri_id' => $santriId,
+                    //         'wilayah_id' => $this->findId('wilayah', $row['wilayah'], $excelRow, false),
+                    //         'blok_id' => $this->findId('blok', $row['blok'] ?? null, $excelRow, false),
+                    //         'kamar_id' => $this->findId('kamar', $row['kamar'] ?? null, $excelRow, false),
+                    //         'tanggal_masuk' => $row['tanggal_masuk_domisili'] ?? now(),
+                    //         'status' => 'aktif',
+                    //         'created_at' => now(),
+                    //         'updated_at' => now(),
+                    //         'created_by' => $this->userId ?? 1
+                    //     ]);
+                    // }
+
+                    // --- Insert Domisili Santri ---
                     if (!empty(trim($row['wilayah'] ?? ''))) {
-                        DB::table('domisili_santri')->insert([
-                            'santri_id' => $santriId,
-                            'wilayah_id' => $this->findId('wilayah', $row['wilayah'], $excelRow, false),
-                            'blok_id' => $this->findId('blok', $row['blok'] ?? null, $excelRow, false),
-                            'kamar_id' => $this->findId('kamar', $row['kamar'] ?? null, $excelRow, false),
-                            'tanggal_masuk' => $row['tanggal_masuk_domisili'] ?? null,
-                            'status' => 'aktif',
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                            'created_by' => $this->userId ?? 1
-                        ]);
+                        try {
+                            $wilayahId = $this->findId('wilayah', $row['wilayah'] ?? null, $excelRow, false);
+                            $blokId    = $this->findId('blok', $row['blok'] ?? null, $excelRow, false);
+                            $kamarId   = $this->findId('kamar', $row['kamar'] ?? null, $excelRow, false);
+
+                            // Jika wilayah wajib diisi tapi tidak ditemukan
+                            if (empty($wilayahId)) {
+                                throw new \Exception("Data 'wilayah' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['wilayah']}'. Pastikan nama wilayah valid.");
+                            }
+
+                            // Jika blok diisi tapi tidak ditemukan
+                            if (!empty($row['blok']) && empty($blokId)) {
+                                throw new \Exception("Data 'blok' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['blok']}'. Pastikan nama blok valid.");
+                            }
+
+                            // Jika kamar diisi tapi tidak ditemukan
+                            if (!empty($row['kamar']) && empty($kamarId)) {
+                                throw new \Exception("Data 'kamar' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['kamar']}'. Pastikan nama kamar valid.");
+                            }
+
+                            DB::table('domisili_santri')->insert([
+                                'santri_id'      => $santriId,
+                                'wilayah_id'     => $wilayahId,
+                                'blok_id'        => $blokId,
+                                'kamar_id'       => $kamarId,
+                                'tanggal_masuk'  => $this->parseDate($row['tanggal_masuk_domisili'] ?? now()),
+                                'status'         => 'aktif',
+                                'created_at'     => now(),
+                                'updated_at'     => now(),
+                                'created_by'     => $this->userId ?? 1,
+                            ]);
+                        } catch (\Exception $e) {
+                            throw new \Exception("Gagal menyimpan domisili santri di baris {$excelRow}: " . $e->getMessage());
+                        }
                     }
                 }
 
+                // if (!empty(trim($row['lembaga'] ?? ''))) {
+                //     DB::table('pendidikan')->insert([
+                //         'biodata_id' => $biodataId,
+                //         'no_induk' => $row['no_induk_pendidikan'] ?? null,
+                //         'lembaga_id' => $this->findId('lembaga', $row['lembaga'], $excelRow),
+                //         'jurusan_id' => $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false),
+                //         'kelas_id' => $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false),
+                //         'rombel_id' => $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false),
+                //         'angkatan_id' => $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false),
+                //         'tanggal_masuk' => $row['tanggal_masuk_pendidikan'] ?? now(),
+                //         'status' => 'aktif',
+                //         'created_at' => now(),
+                //         'updated_at' => now(),
+                //         'created_by' => $this->userId ?? 1
+                //     ]);
+                // }
+
+                // --- Insert Pendidikan Santri ---
                 if (!empty(trim($row['lembaga'] ?? ''))) {
-                    DB::table('pendidikan')->insert([
-                        'biodata_id' => $biodataId,
-                        'no_induk' => $row['no_induk_pendidikan'] ?? null,
-                        'lembaga_id' => $this->findId('lembaga', $row['lembaga'], $excelRow),
-                        'jurusan_id' => $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false),
-                        'kelas_id' => $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false),
-                        'rombel_id' => $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false),
-                        'angkatan_id' => $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false),
-                        'tanggal_masuk' => $row['tanggal_masuk_pendidikan'] ?? null,
-                        'status' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
+                    try {
+                        $lembagaId = $this->findId('lembaga', $row['lembaga'] ?? null, $excelRow, false);
+                        $jurusanId = $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false);
+                        $kelasId   = $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false);
+                        $rombelId  = $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false);
+                        $angkatanPelajarId = $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false);
+
+                        // Validasi ID tidak ditemukan
+                        if (empty($lembagaId)) {
+                            throw new \Exception("Data 'lembaga' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['lembaga']}'. Pastikan nama lembaga sesuai master data.");
+                        }
+
+                        if (!empty($row['jurusan']) && empty($jurusanId)) {
+                            throw new \Exception("Data 'jurusan' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['jurusan']}'.");
+                        }
+
+                        if (!empty($row['kelas']) && empty($kelasId)) {
+                            throw new \Exception("Data 'kelas' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['kelas']}'.");
+                        }
+
+                        if (!empty($row['rombel']) && empty($rombelId)) {
+                            throw new \Exception("Data 'rombel' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['rombel']}'.");
+                        }
+
+                        DB::table('pendidikan')->insert([
+                            'biodata_id'    => $biodataId,
+                            'no_induk'      => $row['no_induk_pendidikan'] ?? null,
+                            'lembaga_id'    => $lembagaId,
+                            'jurusan_id'    => $jurusanId,
+                            'kelas_id'      => $kelasId,
+                            'rombel_id'     => $rombelId,
+                            'angkatan_id'   => $angkatanPelajarId,
+                            'tanggal_masuk' => $this->parseDate($row['tanggal_masuk_pendidikan'] ?? now()),
+                            'status'        => 'aktif',
+                            'created_at'    => now(),
+                            'updated_at'    => now(),
+                            'created_by'    => $this->userId ?? 1,
+                        ]);
+                    } catch (\Exception $e) {
+                        throw new \Exception("Gagal menyimpan pendidikan di baris {$excelRow}: " . $e->getMessage());
+                    }
                 }
             }
 
@@ -466,7 +622,26 @@ class SantriImport implements ToCollection, WithHeadingRow
         $namaKey = "nama_{$tipeLower}";
 
         $nik = !empty($row[$nikKey]) ? trim($row[$nikKey]) : null;
+        $nama = !empty($row[$namaKey]) ? trim($row[$namaKey]) : null;
 
+        if (empty($nik) && empty($nama)) {
+            return null;
+        }
+
+        // ✅ Cegah ibu tertimpa ayah
+        $nikAyah = preg_replace('/\D/', '', (string)($row['nik_ayah'] ?? ''));
+        $nikIbu  = preg_replace('/\D/', '', (string)($row['nik_ibu'] ?? ''));
+        $namaAyah = mb_strtolower(trim($row['nama_ayah'] ?? ''));
+        $namaIbu  = mb_strtolower(trim($row['nama_ibu'] ?? ''));
+
+        if ($tipeLower === 'ibu') {
+            // Kalau NIK atau nama sama dengan ayah → buat baru, jangan gabung
+            if (($nik && $nik === $nikAyah) || ($nama && $namaIbu === $namaAyah)) {
+                $nik = $nik ? $nik . '_IBU' : null; // beri pembeda kecil
+            }
+        }
+
+        // Cek apakah sudah ada berdasarkan NIK (jika unik)
         if (!empty($nik)) {
             $existing = DB::table('biodata')->where('nik', $nik)->select('id')->first();
             if ($existing) {
@@ -474,13 +649,10 @@ class SantriImport implements ToCollection, WithHeadingRow
             }
         }
 
-        $nama = $row[$namaKey] ?? null;
-        if (empty($nama)) {
-            return null;
-        }
-
+        // Jika belum ada, buat baru
         return $this->createBiodataForParent($row, $tipeLower);
     }
+
 
     protected function createBiodataForParent(array $row, string $tipeLower)
     {
@@ -499,7 +671,7 @@ class SantriImport implements ToCollection, WithHeadingRow
             'nama' => $row[$namaKey] ?? null,
             'nik' => $row[$nikKey] ?? null,
             'tempat_lahir' => $row[$tempatKey] ?? null,
-            'tanggal_lahir' => $row[$tanggalKey] ?? null,
+            'tanggal_lahir' => $this->parseDate($row[$tanggalKey] ?? null),
             'no_telepon' => $row[$noTelpKey] ?? null,
             'no_telepon_2' => $row[$noTelp2Key] ?? null,
             'jenjang_pendidikan_terakhir' => $row[$pendidikanKey] ?? null,
@@ -591,7 +763,6 @@ class SantriImport implements ToCollection, WithHeadingRow
         ]);
     }
 
-
     protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
     {
         if (!isset($value) || trim((string)$value) === '') {
@@ -601,12 +772,13 @@ class SantriImport implements ToCollection, WithHeadingRow
             return null;
         }
 
+        $value = trim(mb_strtolower((string)$value));
+
         $columnMap = [
             'negara'    => 'nama_negara',
             'provinsi'  => 'nama_provinsi',
             'kabupaten' => 'nama_kabupaten',
             'kecamatan' => 'nama_kecamatan',
-            'angkatan'  => 'angkatan',
             'wilayah'   => 'nama_wilayah',
             'blok'      => 'nama_blok',
             'kamar'     => 'nama_kamar',
@@ -616,32 +788,75 @@ class SantriImport implements ToCollection, WithHeadingRow
             'rombel'    => 'nama_rombel',
         ];
 
-        $column = $columnName ?: ($columnMap[$table] ?? 'nama');
+        $column = $columnName ?? ($columnMap[$table] ?? 'nama');
 
-        $search = trim((string)$value);
-        $searchLower = mb_strtolower($search);
-
-        if (is_numeric($search)) {
-            $record = DB::table($table)->where('id', $search)->select('id')->first();
-            if ($record) {
-                return $record->id;
-            }
-        }
-
+        // 🔹 cari berdasarkan lowercase nama
         $record = DB::table($table)
-            ->whereRaw("LOWER(`{$column}`) = ?", [$searchLower])
-            ->select('id')
+            ->whereRaw("LOWER({$column}) = ?", [$value])
             ->first();
 
         if (!$record) {
             if ($required) {
-                throw new \Exception("Referensi untuk '{$table}' dengan nilai '{$search}' tidak ditemukan (kolom '{$column}') di baris {$excelRow}.");
+                throw new \Exception("Data '{$value}' tidak ditemukan pada tabel '{$table}' di baris {$excelRow}.");
             }
             return null;
         }
 
-        return $record->id;
+        return $record->id ?? null;
     }
+
+
+
+    // protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
+    // {
+    //     if (!isset($value) || trim((string)$value) === '') {
+    //         if ($required) {
+    //             throw new \Exception("Referensi untuk tabel '{$table}' kosong di baris {$excelRow}.");
+    //         }
+    //         return null;
+    //     }
+
+    //     $columnMap = [
+    //         'negara'    => 'nama_negara',
+    //         'provinsi'  => 'nama_provinsi',
+    //         'kabupaten' => 'nama_kabupaten',
+    //         'kecamatan' => 'nama_kecamatan',
+    //         'angkatan'  => 'angkatan',
+    //         'wilayah'   => 'nama_wilayah',
+    //         'blok'      => 'nama_blok',
+    //         'kamar'     => 'nama_kamar',
+    //         'lembaga'   => 'nama_lembaga',
+    //         'jurusan'   => 'nama_jurusan',
+    //         'kelas'     => 'nama_kelas',
+    //         'rombel'    => 'nama_rombel',
+    //     ];
+
+    //     $column = $columnName ?: ($columnMap[$table] ?? 'nama');
+
+    //     $search = trim((string)$value);
+    //     $searchLower = mb_strtolower($search);
+
+    //     if (is_numeric($search)) {
+    //         $record = DB::table($table)->where('id', $search)->select('id')->first();
+    //         if ($record) {
+    //             return $record->id;
+    //         }
+    //     }
+
+    //     $record = DB::table($table)
+    //         ->whereRaw("LOWER(`{$column}`) = ?", [$searchLower])
+    //         ->select('id')
+    //         ->first();
+
+    //     if (!$record) {
+    //         if ($required) {
+    //             throw new \Exception("Referensi untuk '{$table}' dengan nilai '{$search}' tidak ditemukan (kolom '{$column}') di baris {$excelRow}.");
+    //         }
+    //         return null;
+    //     }
+
+    //     return $record->id;
+    // }
 
     protected function findAngkatanId($value, $kategori, int $excelRow, bool $required = true)
     {
