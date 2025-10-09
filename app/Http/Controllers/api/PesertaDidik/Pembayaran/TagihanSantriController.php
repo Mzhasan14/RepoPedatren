@@ -113,6 +113,8 @@ class TagihanSantriController extends Controller
     {
         $perPage = $request->input('per_page', 25);
         $page    = $request->input('page', 1);
+        $search  = $request->input('search');
+        $status  = $request->input('status');
 
         $query = TagihanSantri::select([
             'id',
@@ -134,7 +136,22 @@ class TagihanSantriController extends Controller
             ])
             ->where('tagihan_id', $id);
 
-        // paginate sesuai request
+        if (!empty($search)) {
+            $query->whereHas('santri', function ($q) use ($search) {
+                $q->where('nis', 'like', "%{$search}%")
+                    ->orWhereHas('biodata', function ($qb) use ($search) {
+                        $qb->where('nama', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (!empty($status)) {
+            $allowedStatuses = ['lunas', 'pending', 'batal'];
+            if (in_array(strtolower($status), $allowedStatuses)) {
+                $query->where('status', strtolower($status));
+            }
+        }
+
         $data = $query->paginate(
             $perPage,
             ['*'],
@@ -158,6 +175,8 @@ class TagihanSantriController extends Controller
 
         return response()->json($data);
     }
+
+
 
 
     public function show($id)
