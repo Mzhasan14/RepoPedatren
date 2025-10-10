@@ -57,32 +57,6 @@ class AuthOrtuService
 
             $user->assignRole('orang_tua');
 
-            // if ($bioOrtu === null) {
-            //     return [
-            //         'success' => false,
-            //         'message' => 'Data orang tua/wali tidak ditemukan. Pastikan NIK atau nama sesuai dengan data santri.',
-            //         'status'  => 404
-            //     ];
-            // }
-
-            // $result = DB::transaction(function () use ($bioOrtu, $data) {
-            //     $biodata = Biodata::findOrFail($bioOrtu->biodata_id);
-
-            //     if (empty($biodata->nik)) {
-            //         $biodata->nik = $data['nik_ortu'];
-            //         $biodata->save();
-            //     }
-
-            //     $user = UserOrtu::create([
-            //         'biodata_id' => $biodata->id,
-            //         'password' => Hash::make($data['password']),
-            //     ]);
-
-            //     $user->assignRole('orang_tua');
-
-            //     return $user;
-            // });
-
             return [
                 'success' => true,
                 'message' => 'Registrasi berhasil. Silakan login.',

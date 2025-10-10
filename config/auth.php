@@ -45,6 +45,11 @@ return [
             'driver' => 'sanctum',
             'provider' => 'users',
         ],
+
+        'orangtua' => [
+            'driver' => 'sanctum',
+            'provider' => 'orangtua',
+        ],
     ],
 
     /*
@@ -68,6 +73,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        'orangtua' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\UserOrtu::class),
         ],
 
         // 'users' => [

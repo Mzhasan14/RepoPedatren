@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
 use Exception;
+use App\Models\Santri;
 use Illuminate\Http\Request;
+use App\Models\TagihanSantri;
 use App\Models\TransaksiSaldo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -68,40 +70,40 @@ class ViewOrangTuaController extends Controller
         $this->bayarService = $bayarService;
     }
 
-    public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
-    {
-        try {
-            $filters = array_filter($request->only([
-                'santri_id',
-                'outlet_id',
-                'kategori_id',
-                'date_from',
-                'date_to',
-                'q'
-            ]));
+    // public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
+    // {
+    //     try {
+    //         $filters = array_filter($request->only([
+    //             'santri_id',
+    //             'outlet_id',
+    //             'kategori_id',
+    //             'date_from',
+    //             'date_to',
+    //             'q'
+    //         ]));
 
-            $perPage = $request->get('per_page', 25);
+    //         $perPage = $request->get('per_page', 25);
 
-            $result = $this->viewOrangTuaService->getTransaksiAnak($filters, $perPage);
+    //         $result = $this->viewOrangTuaService->getTransaksiAnak($filters, $perPage);
 
-            $status = $result['status'] ?? 200;
+    //         $status = $result['status'] ?? 200;
 
-            return response()->json($result, $status);
-        } catch (\Throwable $e) {
-            Log::error('ViewOrangTuaController@getTransaksiAnak error: ' . $e->getMessage(), [
-                'exception' => $e,
-                'user_id'   => Auth::id(),
-                'filters'   => $request->all()
-            ]);
+    //         return response()->json($result, $status);
+    //     } catch (\Throwable $e) {
+    //         Log::error('ViewOrangTuaController@getTransaksiAnak error: ' . $e->getMessage(), [
+    //             'exception' => $e,
+    //             'user_id'   => Auth::id(),
+    //             'filters'   => $request->all()
+    //         ]);
 
-            return response()->json([
-                'success' => false,
-                'status'  => 500,
-                'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
-                'data'    => []
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'success' => false,
+    //             'status'  => 500,
+    //             'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
+    //             'data'    => []
+    //         ], 500);
+    //     }
+    // }
 
     public function getTahfidzAnak(ViewHafalanRequest $request)
     {
@@ -433,5 +435,39 @@ class ViewOrangTuaController extends Controller
                 'message' => 'Terjadi kesalahan saat mengambil transaksi saldo.',
             ], 500);
         }
+    }
+
+    public function getTagihanAnak($santriId)
+    {
+        // Validasi santri
+        $santri = Santri::with('biodata')->findOrFail($santriId);
+
+        // Ambil data tagihan santri dengan relasi yang ada
+        $tagihanSantri = TagihanSantri::with([
+            'tagihan',
+        ])
+            ->where('santri_id', $santriId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $tagihanSantri->map(function ($ts) {
+                return [
+                    'id' => $ts->id,
+                    'tagihan' => [
+                        'id'           => $ts->tagihan->id ?? null,
+                        'nama_tagihan' => $ts->tagihan->nama_tagihan ?? null,
+                    ],
+                    'periode'            => $ts->tagihan->periode ?? null,
+                    'nominal'            => number_format($ts->tagihan->nominal ?? 0, 2, ',', '.'),
+                    'total_potongan'     => number_format($ts->total_potongan ?? 0, 2, ',', '.'),
+                    'total_tagihan'      => number_format($ts->total_tagihan ?? 0, 2, ',', '.'),
+                    'status'             => $ts->status,
+                    'tanggal_jatuh_tempo' => $ts->tanggal_jatuh_tempo?->format('d/m/Y'),
+                    'tanggal_bayar'      => $ts->tanggal_bayar?->format('d/m/Y H:i'),
+                    'keterangan'         => $ts->keterangan,
+                ];
+            }),
+        ]);
     }
 }

@@ -179,7 +179,7 @@ class PresensiJamaahAnakService
                 'total_hadir'             => $total_hadir,
                 'total_tidak_hadir'       => $total_tidak_hadir,
                 'total_presensi_tercatat' => $total_presensi,
-                'total_santri'            => $total_santri,
+                // 'total_santri'            => $total_santri,
             ],
             'data' => $list,
         ];

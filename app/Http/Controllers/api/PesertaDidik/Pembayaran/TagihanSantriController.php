@@ -289,7 +289,7 @@ class TagihanSantriController extends Controller
                 DB::commit();
 
                 return response()->json([
-                    'message' => 'Tagihan lunas dibatalkan dan saldo telah dikembalikan.',
+                    'message' => 'Tagihan dibatalkan dan saldo telah dikembalikan.',
                     'data' => [
                         'tagihan_id' => $tagihan->id,
                         'saldo_akhir' => $saldo->saldo
@@ -300,14 +300,14 @@ class TagihanSantriController extends Controller
             if ($tagihan->status === 'pending') {
                 $tagihan->update([
                     'status' => 'batal',
-                    'keterangan' => 'Tagihan pending dibatalkan oleh ' . ($user->name ?? 'Sistem'),
+                    'keterangan' => 'Tagihan dibatalkan oleh ' . ($user->name ?? 'Sistem'),
                     'updated_by' => $user->id ?? null,
                 ]);
 
                 DB::commit();
 
                 return response()->json([
-                    'message' => 'Tagihan pending berhasil dibatalkan.',
+                    'message' => 'Tagihan berhasil dibatalkan.',
                     'data' => $tagihan
                 ]);
             }
@@ -456,37 +456,5 @@ class TagihanSantriController extends Controller
     //     ]);
     // }
 
-    public function listBySantri($santriId)
-    {
-        // Validasi santri
-        $santri = Santri::with('biodata')->findOrFail($santriId);
-
-        // Ambil data tagihan santri dengan relasi yang ada
-        $tagihanSantri = TagihanSantri::with([
-            'tagihan',
-        ])
-            ->where('santri_id', $santriId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json([
-            'data' => $tagihanSantri->map(function ($ts) {
-                return [
-                    'id' => $ts->id,
-                    'tagihan' => [
-                        'id'           => $ts->tagihan->id ?? null,
-                        'nama_tagihan' => $ts->tagihan->nama_tagihan ?? null,
-                    ],
-                    'periode'            => $ts->tagihan->periode ?? null,
-                    'nominal'            => number_format($ts->tagihan->nominal ?? 0, 2, ',', '.'),
-                    'total_potongan'     => number_format($ts->total_potongan ?? 0, 2, ',', '.'),
-                    'total_tagihan'      => number_format($ts->total_tagihan ?? 0, 2, ',', '.'),
-                    'status'             => $ts->status,
-                    'tanggal_jatuh_tempo' => $ts->tanggal_jatuh_tempo?->format('d/m/Y'),
-                    'tanggal_bayar'      => $ts->tanggal_bayar?->format('d/m/Y H:i'),
-                    'keterangan'         => $ts->keterangan,
-                ];
-            }),
-        ]);
-    }
+  
 }
