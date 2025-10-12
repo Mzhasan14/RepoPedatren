@@ -167,11 +167,10 @@ return new class extends Migration
         Schema::create('tagihan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_tagihan', 150);
-            $table->string('periode', 20)->nullable(); 
             $table->enum('tipe', ['bulanan', 'semester', 'tahunan', 'sekali_bayar']);
             $table->decimal('nominal', 15, 2)->default(0);
-            $table->date('jatuh_tempo')->nullable(); 
-            $table->boolean('status')->default(true); 
+            $table->date('jatuh_tempo')->nullable();
+            $table->boolean('status')->default(true);
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
@@ -219,8 +218,10 @@ return new class extends Migration
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->foreignId('santri_id')->constrained('santri')->cascadeOnDelete();
 
-            $table->decimal('total_potongan', 15, 2)->default(0); 
-            $table->decimal('total_tagihan', 15, 2); 
+            $table->string('periode', 20)->nullable();
+
+            $table->decimal('total_potongan', 15, 2)->default(0);
+            $table->decimal('total_tagihan', 15, 2);
 
             $table->enum('status', ['pending', 'lunas', 'batal'])->default('pending');
 
@@ -235,10 +236,13 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['tagihan_id', 'santri_id']);
+            // 🔄 Index dan unique baru
+            $table->unique(['tagihan_id', 'santri_id', 'periode']); // pastikan kombinasi unik per periode
+            $table->index(['tagihan_id', 'periode']); // percepat pencarian per periode
             $table->index('status');
-            $table->index(['santri_id']);
+            $table->index('santri_id');
         });
+
 
 
         /**

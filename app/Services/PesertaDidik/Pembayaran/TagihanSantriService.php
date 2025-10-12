@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
 
 class TagihanSantriService
 {
-    public function generate(int $tagihanId, array $filter = []): array
+    public function generate(int $tagihanId, string $periode, array $filter = []): array
     {
-        return DB::transaction(function () use ($tagihanId, $filter) {
-            // 1️⃣ Ambil data tagihan
+        return DB::transaction(function () use ($tagihanId, $periode, $filter) {
+            // 1️⃣ Ambil data tagihan utama
             $tagihan = DB::table('tagihan')->where('id', $tagihanId)->first();
             if (!$tagihan) {
                 return [
@@ -48,13 +48,14 @@ class TagihanSantriService
                 ];
             }
 
-            // 3️⃣ Ambil data tagihan santri sebelumnya dengan status-nya
+            // 3️⃣ Ambil data tagihan_santri berdasarkan tagihan_id dan periode
             $existingTagihanSantri = DB::table('tagihan_santri')
                 ->where('tagihan_id', $tagihanId)
+                ->where('periode', $periode)
                 ->select('santri_id', 'status')
                 ->get();
 
-            // Buat dua grup:
+            // Kelompokkan status
             $santriSudahAktif = $existingTagihanSantri
                 ->whereNotIn('status', ['batal'])
                 ->pluck('santri_id')
@@ -70,7 +71,7 @@ class TagihanSantriService
             $totalSantriAktif = count($santriIdsFiltered);
             $totalSudahTagih = count(array_intersect($santriSudahAktif, $santriIdsFiltered));
 
-            // Jika semua santri aktif dalam filter sudah punya tagihan non-batal
+            // Jika semua santri sudah punya tagihan aktif untuk periode ini
             if ($totalSudahTagih >= $totalSantriAktif) {
                 return [
                     'success' => false,
@@ -80,7 +81,7 @@ class TagihanSantriService
                 ];
             }
 
-            // 4️⃣ Ambil data potongan dan daftar khusus
+            // 4️⃣ Ambil data potongan
             $potonganList = DB::table('potongan')
                 ->join('potongan_tagihan', 'potongan_tagihan.potongan_id', '=', 'potongan.id')
                 ->where('potongan_tagihan.tagihan_id', $tagihanId)
@@ -109,17 +110,16 @@ class TagihanSantriService
                 ->flatMap(fn($group) => $group->pluck('santri_id'))
                 ->toArray();
 
-            // 5️⃣ Proses generate tagihan baru
+            // 5️⃣ Generate tagihan santri baru
             $insertData = [];
             $totalSantriBaru = 0;
 
             foreach ($santriList as $santri) {
-                // skip jika santri sudah punya tagihan non-batal
+                // skip jika santri sudah punya tagihan non-batal di periode ini
                 if (in_array($santri->id, $santriSudahAktif)) {
                     continue;
                 }
 
-                // jika santri punya tagihan 'batal', boleh buat baru
                 $totalSantriBaru++;
                 $nominalAwal = $tagihan->nominal;
                 $totalPotongan = 0;
@@ -157,6 +157,7 @@ class TagihanSantriService
                 $insertData[] = [
                     'tagihan_id'          => $tagihanId,
                     'santri_id'           => $santri->id,
+                    'periode'             => $periode,
                     'total_potongan'      => $totalPotongan,
                     'total_tagihan'       => $totalTagihan,
                     'status'              => 'pending',
@@ -173,8 +174,9 @@ class TagihanSantriService
 
             return [
                 'success' => true,
-                'message' => 'Tagihan santri berhasil dige  nerate.',
+                'message' => 'Tagihan santri berhasil digenerate untuk periode ' . $periode . '.',
                 'tagihan_id' => $tagihanId,
+                'periode' => $periode,
                 'total_santri_baru' => $totalSantriBaru,
                 'total_sudah_tagih' => $totalSudahTagih,
                 'total_santri' => $totalSantriAktif,
@@ -182,7 +184,7 @@ class TagihanSantriService
         });
     }
 
-    // public function generate(int $tagihanId, array $filter = []): array
+    // public function generate(int $tagihanId, string $periode,  array $filter = []): array
     // {
     //     return DB::transaction(function () use ($tagihanId, $filter) {
     //         // 1️⃣ Ambil data tagihan
@@ -218,22 +220,33 @@ class TagihanSantriService
     //             ];
     //         }
 
-    //         // 3️⃣ Ambil santri yang sudah punya tagihan ini
-    //         $existingSantriIds = DB::table('tagihan_santri')
+    //         // 3️⃣ Ambil data tagihan santri sebelumnya dengan status-nya
+    //         $existingTagihanSantri = DB::table('tagihan_santri')
     //             ->where('tagihan_id', $tagihanId)
+    //             ->select('santri_id', 'status')
+    //             ->get();
+
+    //         // Buat dua grup:
+    //         $santriSudahAktif = $existingTagihanSantri
+    //             ->whereNotIn('status', ['batal'])
+    //             ->pluck('santri_id')
+    //             ->toArray();
+
+    //         $santriBatal = $existingTagihanSantri
+    //             ->where('status', 'batal')
     //             ->pluck('santri_id')
     //             ->toArray();
 
     //         $santriIdsFiltered = $santriList->pluck('id')->toArray();
 
     //         $totalSantriAktif = count($santriIdsFiltered);
-    //         $totalSudahTagih = count(array_intersect($existingSantriIds, $santriIdsFiltered));
+    //         $totalSudahTagih = count(array_intersect($santriSudahAktif, $santriIdsFiltered));
 
-    //         // Jika semua santri dalam filter sudah punya tagihan ini
+    //         // Jika semua santri aktif dalam filter sudah punya tagihan non-batal
     //         if ($totalSudahTagih >= $totalSantriAktif) {
     //             return [
     //                 'success' => false,
-    //                 'message' => 'Semua santri sudah menerima tagihan ini.',
+    //                 'message' => 'Semua santri sudah memiliki tagihan aktif untuk periode ini.',
     //                 'total_santri' => $totalSantriAktif,
     //                 'total_sudah_tagih' => $totalSudahTagih,
     //             ];
@@ -273,10 +286,12 @@ class TagihanSantriService
     //         $totalSantriBaru = 0;
 
     //         foreach ($santriList as $santri) {
-    //             if (in_array($santri->id, $existingSantriIds)) {
-    //                 continue; // skip santri yang sudah ditagih
+    //             // skip jika santri sudah punya tagihan non-batal
+    //             if (in_array($santri->id, $santriSudahAktif)) {
+    //                 continue;
     //             }
 
+    //             // jika santri punya tagihan 'batal', boleh buat baru
     //             $totalSantriBaru++;
     //             $nominalAwal = $tagihan->nominal;
     //             $totalPotongan = 0;
@@ -330,7 +345,7 @@ class TagihanSantriService
 
     //         return [
     //             'success' => true,
-    //             'message' => 'Tagihan santri berhasil digenerate.',
+    //             'message' => 'Tagihan santri berhasil dige  nerate.',
     //             'tagihan_id' => $tagihanId,
     //             'total_santri_baru' => $totalSantriBaru,
     //             'total_sudah_tagih' => $totalSudahTagih,
@@ -338,6 +353,8 @@ class TagihanSantriService
     //         ];
     //     });
     // }
+
+
 
     // public function generateManual(int $tagihanId, string $periode, array $santriIds): array
     // {

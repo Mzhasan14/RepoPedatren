@@ -32,6 +32,7 @@ class TagihanSantriController extends Controller
             'id',
             'tagihan_id',
             'santri_id',
+            'periode',
             'total_potongan',
             'total_tagihan',
             'status',
@@ -43,7 +44,7 @@ class TagihanSantriController extends Controller
             'updated_at',
         ])
             ->with([
-                'tagihan:id,nama_tagihan,periode,nominal',
+                'tagihan:id,nama_tagihan,nominal',
                 'santri:id,biodata_id,nis',
                 'santri.biodata:id,nama',
             ]);
@@ -76,7 +77,7 @@ class TagihanSantriController extends Controller
                 'nama_tagihan' => $item->tagihan->nama_tagihan ?? null,
                 'nama_santri' => $item->santri->biodata->nama ?? null,
                 'nis' => $item->santri->nis ?? null,
-                'periode' => $item->tagihan->periode,
+                'periode' => $item->periode,
                 'nominal' => $item->tagihan->nominal,
                 'total_potongan' => $item->total_potongan,
                 'total_tagihan' => $item->total_tagihan,
@@ -122,6 +123,7 @@ class TagihanSantriController extends Controller
             'id',
             'tagihan_id',
             'santri_id',
+            'periode',
             'total_potongan',
             'total_tagihan',
             'status',
@@ -164,6 +166,7 @@ class TagihanSantriController extends Controller
                 'id'             => $item->id,
                 'nama_santri'    => $item->santri->biodata->nama ?? null,
                 'nis'            => $item->santri->nis ?? null,
+                'periode'        => $item->periode ?? null,
                 'total_potongan' => $item->total_potongan,
                 'total_tagihan'  => $item->total_tagihan,
                 'status'         => $item->status,
@@ -178,15 +181,13 @@ class TagihanSantriController extends Controller
         return response()->json($data);
     }
 
-
-
-
     public function show($id)
     {
         $item = TagihanSantri::select([
             'id',
             'tagihan_id',
             'santri_id',
+            'periode',
             'total_potongan',
             'total_tagihan',
             'status',
@@ -198,7 +199,7 @@ class TagihanSantriController extends Controller
             'updated_at',
         ])
             ->with([
-                'tagihan:id,nama_tagihan,nominal,periode',
+                'tagihan:id,nama_tagihan,nominal',
                 'santri:id,biodata_id,nis',
                 'santri.biodata:id,nama',
             ])
@@ -211,7 +212,7 @@ class TagihanSantriController extends Controller
             'nama_tagihan' => $item->tagihan->nama_tagihan ?? null,
             'nama_santri' => $item->santri->biodata->nama ?? null,
             'nis' => $item->santri->nis ?? null,
-            'periode' => $item->tagihan->periode,
+            'periode' => $item->periode,
             'nominal' => $item->tagihan->nominal,
             'total_potongan' => $item->total_potongan,
             'total_tagihan' => $item->total_tagihan,
@@ -232,6 +233,7 @@ class TagihanSantriController extends Controller
         try {
             $result = $this->service->generate(
                 $request->input('tagihan_id'),
+                $request->input('periode'),
                 $request->only(['all', 'santri_ids', 'jenis_kelamin'])
             );
 

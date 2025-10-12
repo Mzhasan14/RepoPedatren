@@ -15,7 +15,6 @@ class Tagihan extends Model
         'nama_tagihan',
         'tipe',
         'nominal',
-        'periode',
         'jatuh_tempo',
         'status',
         'created_by',

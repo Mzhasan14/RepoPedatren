@@ -25,6 +25,7 @@ class TagihanSantriManualRequest extends FormRequest
     {
         return [
             'tagihan_id'  => 'required|exists:tagihan,id',
+            'periode'         => ['required', 'string'],
             'santri_ids'  => 'required|array|min:1',
             'santri_ids.*' => 'required|exists:santri,id',
         ];

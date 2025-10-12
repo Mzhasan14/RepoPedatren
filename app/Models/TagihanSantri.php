@@ -14,6 +14,7 @@ class TagihanSantri extends Model
     protected $fillable = [
         'tagihan_id',
         'santri_id',
+        'periode',
         'total_potongan',
         'total_tagihan',
         'status',
