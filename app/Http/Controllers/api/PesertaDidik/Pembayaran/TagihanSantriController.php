@@ -118,6 +118,7 @@ class TagihanSantriController extends Controller
         $page    = $request->input('page', 1);
         $search  = $request->input('search');
         $status  = $request->input('status');
+        $periode = $request->input('periode');
 
         $query = TagihanSantri::select([
             'id',
@@ -156,6 +157,10 @@ class TagihanSantriController extends Controller
             }
         }
 
+        if (!empty($periode)) {
+            $query->where('periode', $periode);
+        }
+
         $data = $query->paginate(
             $perPage,
             ['*'],
@@ -180,6 +185,7 @@ class TagihanSantriController extends Controller
 
         return response()->json($data);
     }
+
 
     public function show($id)
     {
@@ -458,5 +464,5 @@ class TagihanSantriController extends Controller
     //     ]);
     // }
 
-  
+
 }
