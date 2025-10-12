@@ -93,11 +93,13 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                 // ====== NIK DUPLIKAT FILE CHECK ======
                 $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
+
                 if ($nikRaw !== '') {
-                    if (in_array($nikRaw, $processedNiks)) {
-                        throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow}).");
+                    if (isset($processedNiks[$nikRaw])) {
+                        $firstRow = $processedNiks[$nikRaw];
+                        throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow} dan baris {$firstRow}).");
                     }
-                    $processedNiks[] = $nikRaw;
+                    $processedNiks[$nikRaw] = $excelRow; // simpan baris pertama kali muncul
                 }
 
                 // ===== Insert Biodata =====
@@ -210,15 +212,27 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         throw new \Exception("NIUP '{$niupRaw}' sudah terdaftar di database (baris {$excelRow}).");
                     }
                 }
+                // ===== Konversi Jenis Kelamin (lebih toleran) =====
+                $jkRaw = strtolower(trim((string)($row['jenis_kelamin'] ?? '')));
+                $jkRaw = str_replace(['.', ',', '-', '_', ' '], '', $jkRaw); // hapus simbol
+
+                if (in_array($jkRaw, ['l', 'lk', 'lelaki', 'laki', 'lakilaki', 'cowok'])) {
+                    $jenisKelamin = 'l';
+                } elseif (in_array($jkRaw, ['p', 'pr', 'perempuan', 'wanita', 'cewek'])) {
+                    $jenisKelamin = 'p';
+                } else {
+                    throw new \Exception("Kolom 'jenis_kelamin' tidak dikenali di baris {$excelRow} (isi: '{$row['jenis_kelamin']}'). Harus diisi 'Laki-laki' atau 'Perempuan'.");
+                }
+
 
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
                     'nama' => $row['nama_lengkap'] ?? null,
                     'nik' => $nik,
                     'no_passport' => $noPassport,
-                    'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtolower($row['jenis_kelamin']) : null,
+                    'jenis_kelamin' => $jenisKelamin,
                     'tempat_lahir' => $row['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $row['tanggal_lahir'] ?? null,
+                    'tanggal_lahir' => $this->transformDate($row['tanggal_lahir'] ?? null),
                     'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
                     'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
                     'email' => $row['email'] ?? null,
@@ -311,7 +325,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         'golongan_id' => $golonganId,
                         'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
                         'jabatan' => $row['pengajar_jabatan'] ?? null,
-                        'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? null),
+                        'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? now()),
                         'status_aktif' => 'aktif',
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -409,7 +423,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
             $key = (string)$k;
             $key = trim($key);
             $key = mb_strtolower($key);
-            $key = str_replace(['*', '.', ' '], ['', '_', '_'], $key);
+            $key = str_replace(['*', '.', ' ', '-'], ['', '_', '_'], $key);
             $key = preg_replace('/[^a-z0-9_]/u', '', $key);
             $key = preg_replace('/_+/', '_', $key);
             $key = trim($key, '_');

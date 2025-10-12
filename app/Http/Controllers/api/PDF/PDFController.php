@@ -137,28 +137,28 @@ class PDFController extends Controller
     public function downloadIdCardKanzus(Request $request)
     {
         // try {
-            $query = $this->SantriService->getAllSantri($request);
+        $query = $this->SantriService->getAllSantri($request);
 
-            if ($request->filled('santri_ids')) {
-                $santriIds = $request->input('santri_ids');
-                $query->whereIn('s.id', $santriIds);
-            }
+        if ($request->filled('santri_ids')) {
+            $santriIds = $request->input('santri_ids');
+            $query->whereIn('s.id', $santriIds);
+        }
 
-            $santri = $query->get();
+        $santri = $query->get();
 
-            if ($santri->isEmpty()) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Data santri tidak ditemukan.'
-                ], 404);
-            }
+        if ($santri->isEmpty()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data santri tidak ditemukan.'
+            ], 404);
+        }
 
-            $pdf = Pdf::loadView('pdf.kanzus', compact('santri'))
-                ->setPaper([0, 0, 638, 1004], 'portrait')
-                ->setOption('dpi', 300)
-                ->setOption('isRemoteEnabled', true);
+        $pdf = Pdf::loadView('pdf.kanzus', compact('santri'))
+            ->setPaper([0, 0, 638, 1004], 'portrait')
+            ->setOption('dpi', 300)
+            ->setOption('isRemoteEnabled', true);
 
-            return $pdf->download("id_card_kanzus.pdf");
+        return $pdf->download("id_card_kanzus.pdf");
         // } catch (\Throwable $e) {
         //     Log::error("Download ID Card Kanzus Error: " . $e->getMessage(), [
         //         'trace' => $e->getTraceAsString()
@@ -169,5 +169,30 @@ class PDFController extends Controller
         //         'message' => 'Terjadi kesalahan saat membuat ID Card Kanzus.'
         //     ], 500);
         // }
+    }
+    public function downloadIdCardNurulQuran(Request $request)
+    {
+        $query = $this->SantriService->getAllSantri($request);
+
+        if ($request->filled('santri_ids')) {
+            $santriIds = $request->input('santri_ids');
+            $query->whereIn('s.id', $santriIds);
+        }
+
+        $santri = $query->get();
+
+        if ($santri->isEmpty()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data santri tidak ditemukan.'
+            ], 404);
+        }
+
+        $pdf = Pdf::loadView('pdf.nurulquran', compact('santri'))
+            ->setPaper([0, 0, 628, 980], 'portrait');
+            // ->setOption('dpi', 300)
+            // ->setOption('isRemoteEnabled', true);
+
+        return $pdf->download("id_card_nurulquran.pdf");
     }
 }

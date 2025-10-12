@@ -233,6 +233,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle
     Route::prefix('id-card')->group(function () {
         Route::get('/Arrofiah', [PDFController::class, 'downloadIdCardArrofiah']);
         Route::get('/kanzus', [PDFController::class, 'downloadIdCardKanzus']);
+        Route::get('/nurul-quran', [PDFController::class, 'downloadIdCardNurulQuran']);
     });
 });
 
