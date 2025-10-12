@@ -30,8 +30,10 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\LimitSaldoRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
+use App\Services\PesertaDidik\OrangTua\LimitSaldoService;
 
 class ViewOrangTuaController extends Controller
 {
@@ -45,6 +47,7 @@ class ViewOrangTuaController extends Controller
     protected $ProfileSantriService;
     protected $saldoService;
     protected $bayarService;
+    protected  $limitSaldo;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
@@ -56,7 +59,8 @@ class ViewOrangTuaController extends Controller
         CatatanKognitifService $CatatanKognitifService,
         ProfileSantriService $ProfileSantriService,
         SaldoService $saldoService,
-        BayarTagihanService $bayarService
+        BayarTagihanService $bayarService,
+        LimitSaldoService $limitSaldo
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
@@ -68,6 +72,7 @@ class ViewOrangTuaController extends Controller
         $this->ProfileSantriService = $ProfileSantriService;
         $this->saldoService = $saldoService;
         $this->bayarService = $bayarService;
+        $this->limitSaldo = $limitSaldo;
     }
 
     // public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -469,5 +474,19 @@ class ViewOrangTuaController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Set limit saldo santri (oleh orang tua)
+     */
+    public function setLimitSaldo(LimitSaldoRequest $request)
+    {
+        $result = $this->limitSaldo->setLimitSaldo(
+            santriId: $request->santri_id,
+            limitSaldo: $request->limit_saldo,
+            takTerbatas: $request->tak_terbatas
+        );
+
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
 }

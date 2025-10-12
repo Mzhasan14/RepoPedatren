@@ -16,6 +16,7 @@ class Kartu extends Model
         'uid_kartu',
         'pin',
         'aktif',
+        'limit_saldo',
         'created_by',
         'updated_by',
         'deleted_by'

@@ -1036,18 +1036,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::middleware('role:petugas|ustadz|superadmin|supervisor|admin')->group(function () {
+    Route::middleware('role:petugas|superadmin|supervisor|admin')->group(function () {
         Route::get('/kartu', [KartuController::class, 'index']);
         Route::get('/kartu/{id}', [KartuController::class, 'show']);
         Route::get('/riwayatkartu/{id}', [KartuController::class, 'riwayatKartu']);
     });
 
-    Route::middleware('role:ustadz|petugas|superadmin|admin')->group(function () {
+    Route::middleware('role:petugas|superadmin|admin')->group(function () {
         Route::post('/kartu', [KartuController::class, 'store']);
         Route::put('/kartu/{id}', [KartuController::class, 'update']);
         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
         Route::put('/kartu/{id}/nonactive', [KartuController::class, 'nonactive']);
         Route::put('/kartu/{id}/active', [KartuController::class, 'activate']);
+
+        Route::post('/kartu/set-limit-saldo', [KartuController::class, 'setLimitSaldo']);
     });
 });
 
@@ -1221,6 +1223,8 @@ Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_
     Route::post('/bayar', [ViewOrangTuaController::class, 'bayar']);
 
     Route::get('/tagihan/{santriId}', [ViewOrangTuaController::class, 'getTagihanAnak']);
+
+    Route::post('/set-limit-saldo', [ViewOrangTuaController::class, 'setLimitSaldo']);
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);

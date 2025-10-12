@@ -2,11 +2,13 @@
 
 namespace App\Services\PesertaDidik\Fitur;
 
+use Exception;
 use App\Models\Kartu;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class KartuService
 {
@@ -53,6 +55,19 @@ class KartuService
 
     public function create(array $data)
     {
+        // 🔒 Cek apakah santri masih punya kartu aktif
+        if (!empty($data['santri_id']) && !empty($data['aktif']) && $data['aktif']) {
+            $sudahAktif = Kartu::where('santri_id', $data['santri_id'])
+                ->where('aktif', true)
+                ->exists();
+
+            if ($sudahAktif) {
+                throw ValidationException::withMessages([
+                    'santri_id' => 'Santri ini sudah memiliki kartu aktif. Nonaktifkan kartu sebelumnya terlebih dahulu.'
+                ]);
+            }
+        }
+
         if (!empty($data['pin'])) {
             $data['pin'] = Hash::make($data['pin']);
         }
@@ -60,18 +75,16 @@ class KartuService
         $data['created_by'] = Auth::id();
 
         $kartu = Kartu::create($data);
-        $kartu->load([
-            'santri:id,nis,biodata_id',
-            'santri.biodata:id,nama'
-        ]);
+        $kartu->load(['santri:id,nis,biodata_id', 'santri.biodata:id,nama']);
 
+        // 🧾 Log aktivitas
         activity('kartu')
             ->causedBy(Auth::user())
-            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->performedOn($kartu)
             ->withProperties([
                 'santri_id'  => $kartu->santri_id,
                 'nis'        => $kartu->santri->nis ?? null,
-                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'nama'       => $kartu->santri->biodata->nama ?? null,
                 'ip'         => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
@@ -85,6 +98,20 @@ class KartuService
     {
         $kartu = Kartu::findOrFail($id);
 
+        // 🔒 Jika akan mengubah jadi aktif, pastikan tidak ada kartu aktif lain untuk santri ini
+        if (!empty($data['aktif']) && $data['aktif'] && $kartu->santri_id) {
+            $sudahAktif = Kartu::where('santri_id', $kartu->santri_id)
+                ->where('id', '!=', $id)
+                ->where('aktif', true)
+                ->exists();
+
+            if ($sudahAktif) {
+                throw ValidationException::withMessages([
+                    'aktif' => 'Santri ini sudah memiliki kartu aktif lain. Nonaktifkan kartu sebelumnya terlebih dahulu.'
+                ]);
+            }
+        }
+
         if (!empty($data['pin'])) {
             $data['pin'] = Hash::make($data['pin']);
         }
@@ -92,18 +119,15 @@ class KartuService
         $data['updated_by'] = Auth::id();
         $kartu->update($data);
 
-        $kartu->load([
-            'santri:id,nis,biodata_id',
-            'santri.biodata:id,nama'
-        ]);
+        $kartu->load(['santri:id,nis,biodata_id', 'santri.biodata:id,nama']);
 
         activity('kartu')
             ->causedBy(Auth::user())
-            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->performedOn($kartu)
             ->withProperties([
                 'santri_id'  => $kartu->santri_id,
                 'nis'        => $kartu->santri->nis ?? null,
-                'nama'    => $kartu->santri->biodata->nama ?? null,
+                'nama'       => $kartu->santri->biodata->nama ?? null,
                 'ip'         => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ])
@@ -118,13 +142,13 @@ class KartuService
         $kartu = Kartu::findOrFail($id);
 
         $kartu->aktif = false;
-        $kartu->updated_by   = Auth::id();
-        $kartu->updated_at   = now();
+        $kartu->updated_by = Auth::id();
+        $kartu->updated_at = now();
         $kartu->save();
 
         activity('kartu')
             ->causedBy(Auth::user())
-            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->performedOn($kartu)
             ->withProperties([
                 'santri_id'  => $kartu->santri_id,
                 'nis'        => $kartu->santri->nis ?? null,
@@ -142,14 +166,26 @@ class KartuService
     {
         $kartu = Kartu::findOrFail($id);
 
+        // 🔒 Pastikan tidak ada kartu aktif lain untuk santri ini
+        $sudahAktif = Kartu::where('santri_id', $kartu->santri_id)
+            ->where('id', '!=', $id)
+            ->where('aktif', true)
+            ->exists();
+
+        if ($sudahAktif) {
+            throw ValidationException::withMessages([
+                'aktif' => 'Santri ini sudah memiliki kartu aktif lain. Nonaktifkan kartu sebelumnya terlebih dahulu.'
+            ]);
+        }
+
         $kartu->aktif = true;
-        $kartu->updated_by   = Auth::id();
-        $kartu->updated_at   = now();
+        $kartu->updated_by = Auth::id();
+        $kartu->updated_at = now();
         $kartu->save();
 
         activity('kartu')
             ->causedBy(Auth::user())
-            ->performedOn(new Kartu(['id' => $kartu->id]))
+            ->performedOn($kartu)
             ->withProperties([
                 'santri_id'  => $kartu->santri_id,
                 'nis'        => $kartu->santri->nis ?? null,
@@ -162,6 +198,7 @@ class KartuService
 
         return ['message' => 'Kartu berhasil diaktifkan kembali'];
     }
+
 
     public function destroy(int $id)
     {
@@ -238,6 +275,48 @@ class KartuService
                 'status' => false,
                 'code' => 500,
                 'message' => 'Terjadi kesalahan pada server.',
+            ];
+        }
+    }
+
+    public function setLimitSaldo(int $santriId, ?float $limitSaldo, bool $takTerbatas): array
+    {
+        try {
+            return DB::transaction(function () use ($santriId, $limitSaldo, $takTerbatas) {
+
+                // Ambil kartu santri
+                $kartu = DB::table('kartu')->where('santri_id', $santriId)->where('aktif', true)->first();
+                if (!$kartu) {
+                    throw new Exception('Kartu aktif santri tidak ditemukan.');
+                }
+
+                // Tentukan nilai limit
+                $limitFinal = $takTerbatas ? null : $limitSaldo;
+
+                // Update kartu
+                DB::table('kartu')->where('santri_id', $santriId)->update([
+                    'limit_saldo' => $limitFinal,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => $takTerbatas
+                        ? 'Limit saldo diatur menjadi tak terbatas.'
+                        : 'Limit saldo berhasil diperbarui.',
+                    'limit_saldo' => $limitFinal,
+                ];
+            });
+        } catch (Exception $e) {
+            Log::error('Gagal memperbarui limit saldo.', [
+                'santri_id' => $santriId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui limit saldo: ' . $e->getMessage(),
             ];
         }
     }

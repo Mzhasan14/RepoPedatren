@@ -43,7 +43,7 @@ return new class extends Migration
             $table->string('uid_kartu', 50)->unique();
             $table->string('pin');
             $table->boolean('aktif')->default(true);
-             $table->decimal('limit_harian', 15, 2)->nullable();
+             $table->decimal('limit_saldo', 15, 2)->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();

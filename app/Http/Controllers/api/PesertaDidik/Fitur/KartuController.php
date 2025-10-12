@@ -9,6 +9,7 @@ use App\Services\PesertaDidik\Fitur\KartuService;
 use App\Http\Requests\PesertaDidik\KartuStoreRequest;
 use App\Http\Requests\PesertaDidik\KartuUpdateRequest;
 use App\Services\PesertaDidik\Filters\FilterKartuService;
+use App\Http\Requests\PesertaDidik\OrangTua\LimitSaldoRequest;
 
 class KartuController extends Controller
 {
@@ -79,7 +80,18 @@ class KartuController extends Controller
         return response()->json([
             'status' => $result['status'],
             'message' => $result['message'],
-            'data' => $result['data'] ?? null 
+            'data' => $result['data'] ?? null
         ], $statusCode);
+    }
+
+    public function setLimitSaldo(LimitSaldoRequest $request)
+    {
+        $result = $this->service->setLimitSaldo(
+            santriId: $request->santri_id,
+            limitSaldo: $request->limit_saldo,
+            takTerbatas: $request->tak_terbatas
+        );
+
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
 }

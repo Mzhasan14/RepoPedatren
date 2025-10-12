@@ -97,7 +97,7 @@ class TransaksiService
                         'nis' => $santri->nis ?? null,
                     ],
                     'saldo' => $saldo ? (float)$saldo->saldo : 0.00,
-                    'transaksi' => $transaksi, 
+                    'transaksi' => $transaksi,
                 ]
             ];
         } catch (Exception $e) {
@@ -173,6 +173,26 @@ class TransaksiService
                 ]);
             }
 
+            // 🔹 Cek limit saldo harian
+            if ($kartu->limit_saldo) {
+                $totalDebitHariIni = TransaksiSaldo::where('uid_kartu', $uid)
+                    ->where('tipe', 'debit')
+                    ->whereDate('created_at', Carbon::today())
+                    ->sum('jumlah');
+
+                $sisaLimit = bcsub($kartu->limit_saldo, $totalDebitHariIni, 2);
+
+                if (bccomp($totalBayar, $sisaLimit, 2) > 0) {
+                    DB::rollBack();
+                    return $this->fail(sprintf(
+                        'Transaksi ditolak. Limit harian Rp%s telah terpakai Rp%s, sisa limit Rp%s.',
+                        number_format($kartu->limit_saldo, 0, ',', '.'),
+                        number_format($totalDebitHariIni, 0, ',', '.'),
+                        number_format($sisaLimit, 0, ',', '.')
+                    ), 403);
+                }
+            }
+
             // Validasi saldo cukup
             if (bccomp($saldo->saldo, $totalBayar, 2) < 0) {
                 return $this->fail('Saldo tidak cukup.', 402);
@@ -200,7 +220,7 @@ class TransaksiService
                 'user_outlet_id'  => $user->hasRole('superadmin') ? null : $userOutlet->id,
                 'tipe'            => 'debit',
                 'jumlah'          => $totalBayar,
-                'keterangan'      => $keterangan, // ✅ tambahkan ini
+                'keterangan'      => $keterangan,
             ]);
 
             activity('transaksi')
@@ -229,7 +249,7 @@ class TransaksiService
                     'total_bayar'  => (float)$totalBayar,
                     'sisa_saldo'   => (float)$saldo->saldo,
                     'tanggal'      => $transaksi->created_at,
-                    'keterangan'   => $keterangan, // ditampilkan juga di response
+                    'keterangan'   => $keterangan,
                 ]
             ];
         } catch (Exception $e) {
@@ -247,6 +267,7 @@ class TransaksiService
             ];
         }
     }
+
 
     public function listTransactions(array $filters = [], int $perPage = 25)
     {
