@@ -5,6 +5,9 @@ namespace App\Services\PesertaDidik\Fitur;
 use App\Models\Kartu;
 use App\Models\Santri;
 use Illuminate\Http\Request;
+use App\Models\TagihanSantri;
+use App\Models\DomisiliSantri;
+use App\Models\RiwayatDomisili;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,8 +19,25 @@ class ProsesLulusSantriService
         $userId = Auth::id();
         $santriIds = $data['santri_id'];
 
-        // Ambil data santri + nama dari relasi biodata
-        $santriList = Santri::with('biodata')->whereIn('id', $santriIds)->get()->keyBy('id');
+        // Ambil data lengkap dengan relasi biodata (tanpa N+1)
+        $santriList = Santri::with(['biodata:id,nama'])
+            ->whereIn('id', $santriIds)
+            ->get()
+            ->keyBy('id');
+
+        // Ambil semua tagihan pending milik santri
+        $tagihanPending = TagihanSantri::whereIn('santri_id', $santriIds)
+            ->where('status', 'pending')
+            ->select('santri_id')
+            ->get()
+            ->groupBy('santri_id');
+
+        // Ambil domisili aktif semua santri
+        $domisiliAktif = DomisiliSantri::whereIn('santri_id', $santriIds)
+            ->where('status', 'aktif')
+            ->get()
+            ->groupBy('santri_id');
+
         $dataBerhasil = [];
         $dataGagal = [];
 
@@ -25,7 +45,8 @@ class ProsesLulusSantriService
             $santri = $santriList->get($santriId);
             $nama = $santri?->biodata?->nama ?? 'Tidak diketahui';
 
-            if (is_null($santri)) {
+            // Validasi data dasar
+            if (!$santri) {
                 $dataGagal[] = [
                     'nama' => $nama,
                     'message' => 'Data santri tidak ditemukan.',
@@ -41,40 +62,78 @@ class ProsesLulusSantriService
                 continue;
             }
 
+            // Cek apakah masih ada tagihan pending
+            if (isset($tagihanPending[$santriId])) {
+                $dataGagal[] = [
+                    'nama' => $nama,
+                    'message' => 'Masih memiliki tagihan yang belum lunas.',
+                ];
+                continue;
+            }
+
             try {
                 DB::beginTransaction();
 
-                // Update status santri ke alumni
+                // Cek apakah masih punya domisili aktif
+                if (isset($domisiliAktif[$santriId])) {
+                    foreach ($domisiliAktif[$santriId] as $dom) {
+                        // Rekap ke riwayat domisili
+                        RiwayatDomisili::create([
+                            'santri_id'      => $dom->santri_id,
+                            'wilayah_id'     => $dom->wilayah_id,
+                            'blok_id'        => $dom->blok_id,
+                            'kamar_id'       => $dom->kamar_id,
+                            'tanggal_masuk'  => $dom->tanggal_masuk,
+                            'tanggal_keluar' => $now,
+                            'status'         => 'keluar',
+                            'created_by'     => $userId,
+                            'updated_by'     => $userId,
+                        ]);
+
+                        // Update domisili aktif jadi keluar
+                        $dom->update([
+                            'tanggal_keluar' => $now,
+                            'status'         => 'keluar',
+                            'updated_by'     => $userId,
+                        ]);
+                    }
+                }
+
+                // Update status santri menjadi alumni
                 $santri->update([
-                    'status' => 'alumni',
+                    'status'         => 'alumni',
                     'tanggal_keluar' => $now,
-                    'updated_by' => $userId,
-                    'updated_at' => $now,
+                    'updated_by'     => $userId,
+                    'updated_at'     => $now,
                 ]);
 
-                // Nonaktifkan semua kartu aktif milik santri ini (jika ada)
-                Kartu::where('santri_id', $santri->id)
+                // Nonaktifkan semua kartu aktif
+                Kartu::where('santri_id', $santriId)
                     ->where('aktif', true)
-                    ->update(['aktif' => false]);
+                    ->update([
+                        'aktif' => false,
+                        'updated_by' => $userId,
+                        'updated_at' => $now,
+                    ]);
 
                 DB::commit();
 
                 $dataBerhasil[] = [
                     'nama' => $nama,
-                    'message' => 'Berhasil di-set lulus (alumni) & kartu dinonaktifkan.',
+                    'message' => 'Berhasil diluluskan, kartu dinonaktifkan & domisili ditutup.',
                 ];
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 DB::rollBack();
                 $dataGagal[] = [
                     'nama' => $nama,
-                    'message' => 'Gagal memproses lulus: ' . $e->getMessage(),
+                    'message' => 'Gagal meluluskan: ' . $e->getMessage(),
                 ];
             }
         }
 
         return [
             'success' => true,
-            'message' => 'Proses set lulus selesai.',
+            'message' => 'Proses kelulusan selesai.',
             'data_berhasil' => $dataBerhasil,
             'data_gagal' => $dataGagal,
         ];
@@ -141,7 +200,7 @@ class ProsesLulusSantriService
                 // Cek kartu terbaru yang status false dan aktifkan kembali
                 $kartuTerbaru = Kartu::where('santri_id', $santri->id)
                     ->where('aktif', false)
-                    ->orderByDesc('created_at') 
+                    ->orderByDesc('created_at')
                     ->first();
 
                 if ($kartuTerbaru) {

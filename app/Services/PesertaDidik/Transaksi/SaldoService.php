@@ -166,7 +166,7 @@ class SaldoService
                             'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
                             'tipe'           => 'debit',
                             'jumlah'         => $tagihan->total_tagihan,
-                            'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo topup",
+                            'keterangan'     => "Pembayaran otomatis tagihan {$tagihan->nama_tagihan} sebesar Rp{$tagihan->total_tagihan} dari saldo topup",
                         ]);
 
                         $tagihanDipotong = true;

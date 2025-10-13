@@ -4,6 +4,7 @@ namespace App\Services\PesertaDidik\Formulir;
 
 use App\Models\Kartu;
 use App\Models\Santri;
+use App\Models\TagihanSantri;
 use App\Models\DomisiliSantri;
 use Illuminate\Support\Carbon;
 use App\Models\RiwayatDomisili;
@@ -120,11 +121,14 @@ class StatusSantriService
             if (! $santri) {
                 return [
                     'status' => false,
-                    'message' => 'Data tidak ditemukan',
+                    'message' => 'Data santri tidak ditemukan.',
                 ];
             }
 
-            // Ambil tanggal masuk dan keluar dari input atau fallback ke nilai lama
+            $userId = Auth::id();
+            $now = Carbon::now();
+
+            // Ambil tanggal masuk & keluar (fallback ke data lama)
             $tanggalMasuk = isset($input['tanggal_masuk'])
                 ? Carbon::parse($input['tanggal_masuk'])
                 : $santri->tanggal_masuk;
@@ -133,18 +137,18 @@ class StatusSantriService
                 ? Carbon::parse($input['tanggal_keluar'])
                 : $santri->tanggal_keluar;
 
-            // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
+            // Validasi tanggal keluar tidak boleh sebelum tanggal masuk
             if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
                 return [
                     'status' => false,
-                    'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
+                    'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk.',
                 ];
             }
 
-            // Ambil status dari input atau dari database
+            // Tentukan status yang akan dipakai
             $status = $input['status'] ?? $santri->status;
 
-            // Validasi: jika status 'aktif', tanggal_keluar tidak boleh diisi
+            // Validasi logika status & tanggal keluar
             if (strtolower($status) === 'aktif' && isset($input['tanggal_keluar'])) {
                 return [
                     'status' => false,
@@ -152,76 +156,206 @@ class StatusSantriService
                 ];
             }
 
-            // Validasi: jika status termasuk salah satu status non-aktif, tanggal_keluar wajib diisi
             $statusNonAktif = ['alumni', 'do', 'berhenti', 'nonaktif'];
-            if (in_array($status, $statusNonAktif) && empty($input['tanggal_keluar'])) {
+            if (in_array($status, $statusNonAktif) && empty($tanggalKeluar)) {
                 return [
                     'status' => false,
-                    'message' => 'Mohon mengisi tanggal keluar karena status santri telah berubah menjadi tidak aktif.',
+                    'message' => 'Tanggal keluar wajib diisi karena status santri telah berubah menjadi tidak aktif.',
                 ];
             }
 
-            // Lakukan update nilai-nilai
-            $santri->tanggal_masuk = $tanggalMasuk;
-            $santri->nis = $input['nis'] ?? $santri->nis;
-            $santri->tanggal_keluar = $tanggalKeluar;
-            $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
-            $santri->status = $status;
-            $santri->updated_at = Carbon::now();
-            $santri->updated_by = Auth::id();
+            // Jika status diubah menjadi alumni → cek tagihan pending
+            if (strtolower($status) === 'alumni') {
+                $tagihanPending = TagihanSantri::where('santri_id', $santri->id)
+                    ->where('status', 'pending')
+                    ->exists();
 
-            // Check if any change
+                if ($tagihanPending) {
+                    return [
+                        'status' => false,
+                        'message' => 'Santri masih memiliki tagihan yang belum lunas. Proses tidak dapat dilanjutkan.',
+                    ];
+                }
+            }
+
+            // Update nilai-nilai utama
+            $santri->fill([
+                'tanggal_masuk' => $tanggalMasuk,
+                'tanggal_keluar' => $tanggalKeluar,
+                'nis' => $input['nis'] ?? $santri->nis,
+                'angkatan_id' => $input['angkatan_id'] ?? $santri->angkatan_id,
+                'status' => $status,
+                'updated_by' => $userId,
+                'updated_at' => $now,
+            ]);
+
+            // Jika tidak ada perubahan, kembalikan
             if (! $santri->isDirty()) {
                 return [
                     'status' => false,
-                    'message' => 'Tidak ada perubahan data',
+                    'message' => 'Tidak ada perubahan data.',
                 ];
             }
 
             $santri->save();
 
-            // Jika tanggal_keluar baru diisi atau diperbarui
-            if (! is_null($input['tanggal_keluar']) && ($santri->wasChanged('tanggal_keluar'))) {
-                $dom = DomisiliSantri::where('santri_id', $santri->id)->where('status', 'aktif')->first();
-
-                if ($dom) {
-                    $now = Carbon::now();
-                    $user = Auth::id();
-
-                    $dom->status = 'keluar';
-                    $dom->tanggal_keluar = $now;
-                    $dom->updated_at = $now;
-                    $dom->updated_by = $user;
-                    $dom->save();
-
-                    RiwayatDomisili::create([
-                        'santri_id' => $dom->santri_id,
-                        'wilayah_id' => $dom->wilayah_id,
-                        'blok_id' => $dom->blok_id,
-                        'kamar_id' => $dom->kamar_id,
-                        'tanggal_masuk' => $dom->tanggal_masuk,
-                        'tanggal_keluar' => $now,
-                        'status' => 'keluar',
-                        'created_by' => $user,
-                    ]);
-                }
-
-                $kartu = Kartu::where('santri_id', $santri->id)
+            // Jika tanggal keluar baru diisi → nonaktifkan kartu & set domisili keluar
+            if (! is_null($tanggalKeluar) && $santri->wasChanged('tanggal_keluar')) {
+                // Nonaktifkan kartu aktif
+                Kartu::where('santri_id', $santri->id)
                     ->where('aktif', true)
+                    ->update([
+                        'aktif' => false,
+                        'updated_by' => $userId,
+                        'updated_at' => $now,
+                    ]);
+
+                // Cek domisili aktif & rekap ke riwayat
+                $domisiliAktif = DomisiliSantri::where('santri_id', $santri->id)
+                    ->where('status', 'aktif')
                     ->first();
 
-                if ($kartu) {
-                    $kartu->aktif = false;
-                    $kartu->save();
+                if ($domisiliAktif) {
+                    // Update status keluar
+                    $domisiliAktif->update([
+                        'status' => 'keluar',
+                        'tanggal_keluar' => $now,
+                        'updated_by' => $userId,
+                        'updated_at' => $now,
+                    ]);
+
+                    // Tambah riwayat domisili
+                    RiwayatDomisili::create([
+                        'santri_id'      => $domisiliAktif->santri_id,
+                        'wilayah_id'     => $domisiliAktif->wilayah_id,
+                        'blok_id'        => $domisiliAktif->blok_id,
+                        'kamar_id'       => $domisiliAktif->kamar_id,
+                        'tanggal_masuk'  => $domisiliAktif->tanggal_masuk,
+                        'tanggal_keluar' => $now,
+                        'status'         => 'keluar',
+                        'created_by'     => $userId,
+                    ]);
                 }
             }
 
             return [
                 'status' => true,
+                'message' => 'Data santri berhasil diperbarui.',
                 'data' => $santri,
             ];
         });
     }
+
+    // public function update(array $input, int $id): array
+    // {
+    //     return DB::transaction(function () use ($input, $id) {
+    //         $santri = Santri::find($id);
+
+    //         if (! $santri) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Data tidak ditemukan',
+    //             ];
+    //         }
+
+    //         // Ambil tanggal masuk dan keluar dari input atau fallback ke nilai lama
+    //         $tanggalMasuk = isset($input['tanggal_masuk'])
+    //             ? Carbon::parse($input['tanggal_masuk'])
+    //             : $santri->tanggal_masuk;
+
+    //         $tanggalKeluar = isset($input['tanggal_keluar'])
+    //             ? Carbon::parse($input['tanggal_keluar'])
+    //             : $santri->tanggal_keluar;
+
+    //         // Validasi: tanggal_keluar tidak boleh kurang dari tanggal_masuk
+    //         if ($tanggalKeluar && $tanggalKeluar->lt($tanggalMasuk)) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk',
+    //             ];
+    //         }
+
+    //         // Ambil status dari input atau dari database
+    //         $status = $input['status'] ?? $santri->status;
+
+    //         // Validasi: jika status 'aktif', tanggal_keluar tidak boleh diisi
+    //         if (strtolower($status) === 'aktif' && isset($input['tanggal_keluar'])) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tanggal keluar tidak boleh diisi jika status santri masih aktif.',
+    //             ];
+    //         }
+
+    //         // Validasi: jika status termasuk salah satu status non-aktif, tanggal_keluar wajib diisi
+    //         $statusNonAktif = ['alumni', 'do', 'berhenti', 'nonaktif'];
+    //         if (in_array($status, $statusNonAktif) && empty($input['tanggal_keluar'])) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Mohon mengisi tanggal keluar karena status santri telah berubah menjadi tidak aktif.',
+    //             ];
+    //         }
+
+    //         // Lakukan update nilai-nilai
+    //         $santri->tanggal_masuk = $tanggalMasuk;
+    //         $santri->nis = $input['nis'] ?? $santri->nis;
+    //         $santri->tanggal_keluar = $tanggalKeluar;
+    //         $santri->angkatan_id = $input['angkatan_id'] ?? $santri->angkatan_id;
+    //         $santri->status = $status;
+    //         $santri->updated_at = Carbon::now();
+    //         $santri->updated_by = Auth::id();
+
+    //         // Check if any change
+    //         if (! $santri->isDirty()) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'Tidak ada perubahan data',
+    //             ];
+    //         }
+
+    //         $santri->save();
+
+    //         // Jika tanggal_keluar baru diisi atau diperbarui
+    //         if (! is_null($input['tanggal_keluar']) && ($santri->wasChanged('tanggal_keluar'))) {
+    //             $dom = DomisiliSantri::where('santri_id', $santri->id)->where('status', 'aktif')->first();
+
+    //             if ($dom) {
+    //                 $now = Carbon::now();
+    //                 $user = Auth::id();
+
+    //                 $dom->status = 'keluar';
+    //                 $dom->tanggal_keluar = $now;
+    //                 $dom->updated_at = $now;
+    //                 $dom->updated_by = $user;
+    //                 $dom->save();
+
+    //                 RiwayatDomisili::create([
+    //                     'santri_id' => $dom->santri_id,
+    //                     'wilayah_id' => $dom->wilayah_id,
+    //                     'blok_id' => $dom->blok_id,
+    //                     'kamar_id' => $dom->kamar_id,
+    //                     'tanggal_masuk' => $dom->tanggal_masuk,
+    //                     'tanggal_keluar' => $now,
+    //                     'status' => 'keluar',
+    //                     'created_by' => $user,
+    //                 ]);
+    //             }
+
+    //             $kartu = Kartu::where('santri_id', $santri->id)
+    //                 ->where('aktif', true)
+    //                 ->first();
+
+    //             if ($kartu) {
+    //                 $kartu->aktif = false;
+    //                 $kartu->save();
+    //             }
+    //         }
+
+    //         return [
+    //             'status' => true,
+    //             'data' => $santri,
+    //         ];
+    //     });
+    // }
 
     public function delete(int $id): array
     {

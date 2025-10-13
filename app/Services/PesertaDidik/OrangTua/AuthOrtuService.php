@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\OrangTua;
 
 use App\Models\User;
+use App\Models\Kartu;
 use App\Models\Saldo;
 use App\Models\Biodata;
 use App\Models\UserOrtu;
@@ -28,6 +29,7 @@ class AuthOrtuService
             $cekHubungan = DB::table('santri as s')
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
+                ->where('s.status', 'aktif')
                 ->where('k.no_kk', $data['no_kk'])
                 ->where('s.nis', $data['nis_anak'])
                 ->exists();
@@ -102,6 +104,9 @@ class AuthOrtuService
                 ->join('biodata as b', 's.biodata_id', '=', 'b.id')
                 ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
                 ->where('k.no_kk', $user->no_kk)
+                ->where('s.status', 'aktif')
+                ->where(fn($q) => $q->whereNull('b.deleted_at')
+                    ->whereNull('s.deleted_at'))
                 ->select('s.id', 's.nis', 'b.nama')
                 ->get();
 
@@ -131,12 +136,17 @@ class AuthOrtuService
                             $tagihan->tanggal_bayar = now();
                             $tagihan->save();
 
+                            $uidKartu = Kartu::where('santri_id',$a->id)
+                                ->where('aktif', true)
+                                ->value('uid_kartu');
+
                             // Catat transaksi pembayaran otomatis
                             TransaksiSaldo::create([
                                 'santri_id'      => $a->id,
-                                'outlet_id'      => null, 
+                                'outlet_id'      => null,
                                 'kategori_id'    => null,
                                 'user_outlet_id' => null,
+                                'uid_kartu'      => $uidKartu,
                                 'tipe'           => 'debit',
                                 'jumlah'         => $tagihan->total_tagihan,
                                 'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo saat login oleh orang tua",
