@@ -322,7 +322,7 @@ class DataKeluargaSeeder extends Seeder
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $childId,
                     'angkatan_id' => $angkatanId,
-                    'nis' => $faker->unique()->numerify('###########'),
+                    'nis' => $faker->unique()->numerify('##########'),
                     'tanggal_masuk' => $tanggalMasukSantri,
                     'tanggal_keluar' => $tanggalKeluarSantri,
                     'status' => $stSantri,
@@ -538,7 +538,7 @@ class DataKeluargaSeeder extends Seeder
                     $santriId = DB::table('santri')->insertGetId([
                         'biodata_id' => $childId,
                         'angkatan_id' => $angkatanId,
-                        'nis' => $faker->unique()->numerify('###########'),
+                        'nis' => $faker->unique()->numerify('##########'),
                         'tanggal_masuk' => $tanggalMasuk,
                         'tanggal_keluar' => null,
                         'status' => 'aktif',
@@ -756,7 +756,7 @@ class DataKeluargaSeeder extends Seeder
                 $santriId = DB::table('santri')->insertGetId([
                     'biodata_id' => $childId,
                     'angkatan_id' => $angkatanId,
-                    'nis' => $faker->unique()->numerify('###########'),
+                    'nis' => $faker->unique()->numerify('##########'),
                     'tanggal_masuk' => $tanggalMasuk,
                     'tanggal_keluar' => null,
                     'status' => 'aktif',

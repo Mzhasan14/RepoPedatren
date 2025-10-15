@@ -39,7 +39,7 @@ class SantriSeeder extends Seeder
     //         DB::table('santri')->insertGetId([
     //             'id' => $santriUuid,
     //             'biodata_id' => $bioSantri,
-    //             'nis' => $faker->unique()->numerify('###########'),
+    //             'nis' => $faker->unique()->numerify('##########'),
     //             'tanggal_masuk' => $faker->date(),
     //             // Set tanggal_keluar hanya jika status alumni
     //             'tanggal_keluar' => $statusSantri === 'alumni' ? $faker->date() : null,
@@ -134,7 +134,7 @@ class SantriSeeder extends Seeder
                 DB::table('santri')->insert([
                     'id' => $newUuid,
                     'biodata_id' => $bioId,
-                    'nis' => $faker->unique()->numerify('###########'),
+                    'nis' => $faker->unique()->numerify('##########'),
                     'tanggal_masuk' => $faker->date(),
                     'tanggal_keluar' => $santriStatus === 'alumni' ? $faker->date() : null,
                     'status' => $santriStatus,
@@ -254,7 +254,7 @@ class SantriSeeder extends Seeder
 //             DB::table('santri')->insertGetId([
 //                 'id' => $santriUuid,
 //                 'id_peserta_didik' => $pesertaDidikId,
-//                 'nis' => $faker->unique()->numerify('###########'),
+//                 'nis' => $faker->unique()->numerify('##########'),
 //                 'tanggal_masuk' => $faker->date(),
 //                 // Set tanggal_keluar hanya jika status alumni
 //                 'tanggal_keluar' => $statusSantri === 'alumni' ? $faker->date() : null,

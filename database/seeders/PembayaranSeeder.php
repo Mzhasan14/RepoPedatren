@@ -34,26 +34,26 @@ class PembayaranSeeder extends Seeder
         /**
          * VIRTUAL ACCOUNT
          */
-        DB::table('virtual_accounts')->insert([
-            [
-                'santri_id'  => 1,
-                'bank_id'    => 1,
-                'va_number'  => '9001234567891',
-                'status'     => true,
-                'created_by' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'santri_id'  => 2,
-                'bank_id'    => 2,
-                'va_number'  => '9881234567892',
-                'status'     => true,
-                'created_by' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // DB::table('virtual_accounts')->insert([
+        //     [
+        //         'santri_id'  => 1,
+        //         // 'bank_id'    => 1,
+        //         'va_number'  => '9001234567891',
+        //         'status'     => true,
+        //         'created_by' => 1,
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ],
+        //     [
+        //         'santri_id'  => 2,
+        //         // 'bank_id'    => 2,
+        //         'va_number'  => '9881234567892',
+        //         'status'     => true,
+        //         'created_by' => 1,
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ],
+        // ]);
 
         /**
          * TAGIHAN

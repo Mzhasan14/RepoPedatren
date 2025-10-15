@@ -25,7 +25,7 @@ class AuthService
             throw new AuthorizationException('Anda tidak memiliki akses untuk mendaftarkan pengguna.');
         }
 
-        $role = $data['role'] ?? 'santri';
+        $role = $data['role'];
         if (! Role::where('name', $role)->exists()) {
             throw new \InvalidArgumentException("Role '{$role}' tidak ditemukan.");
         }
@@ -72,47 +72,47 @@ class AuthService
             ];
         }
 
-        if ($user->hasRole('orang_tua')) {
-            $biodataId = $user->biodata->id;
-            $noKk = DB::table('keluarga as k')
-                ->where('k.id_biodata', $biodataId)
-                ->value('no_kk');
+        // if ($user->hasRole('orang_tua')) {
+        //     $biodataId = $user->biodata->id;
+        //     $noKk = DB::table('keluarga as k')
+        //         ->where('k.id_biodata', $biodataId)
+        //         ->value('no_kk');
 
-            if (!$noKk) {
-                return [
-                    'success' => false,
-                    'message' => 'Data keluarga tidak ditemukan.',
-                    'data' => null,
-                    'status' => 404,
-                ];
-            }
+        //     if (!$noKk) {
+        //         return [
+        //             'success' => false,
+        //             'message' => 'Data keluarga tidak ditemukan.',
+        //             'data' => null,
+        //             'status' => 404,
+        //         ];
+        //     }
 
-            $anak = DB::table('keluarga as k')
-                ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
-                ->join('santri as s', 'b.id', '=', 's.biodata_id')
-                ->leftjoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
-                ->select('b.id as biodata_id', 's.id as santri_id', 'b.nama')
-                ->whereNull('otw.id_biodata')
-                ->where('k.no_kk', $noKk)
-                ->where('k.id_biodata', '!=', $biodataId)->get();
+        //     $anak = DB::table('keluarga as k')
+        //         ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+        //         ->join('santri as s', 'b.id', '=', 's.biodata_id')
+        //         ->leftjoin('orang_tua_wali as otw', 'b.id', '=', 'otw.id_biodata')
+        //         ->select('b.id as biodata_id', 's.id as santri_id', 'b.nama')
+        //         ->whereNull('otw.id_biodata')
+        //         ->where('k.no_kk', $noKk)
+        //         ->where('k.id_biodata', '!=', $biodataId)->get();
 
-            if ($anak->isEmpty()) {
-                return [
-                    'success' => false,
-                    'message' => 'Tidak ada data anak yang ditemukan.',
-                    'data' => null,
-                    'status' => 404,
-                ];
-            }
+        //     if ($anak->isEmpty()) {
+        //         return [
+        //             'success' => false,
+        //             'message' => 'Tidak ada data anak yang ditemukan.',
+        //             'data' => null,
+        //             'status' => 404,
+        //         ];
+        //     }
 
-            $anakData = $anak->map(function ($item) {
-                return [
-                    'biodata_id' => $item->biodata_id,
-                    'santri_id' => $item->santri_id,
-                    'nama' => $item->nama,
-                ];
-            });
-        }
+        //     $anakData = $anak->map(function ($item) {
+        //         return [
+        //             'biodata_id' => $item->biodata_id,
+        //             'santri_id' => $item->santri_id,
+        //             'nama' => $item->nama,
+        //         ];
+        //     });
+        // }
 
         activity('auth')
             ->event('login')
@@ -132,7 +132,7 @@ class AuthService
             'data' => $user,
             'status' => 200,
             'outlet_id' => $user->detail_user_outlet?->outlet_id, // null jika tidak ada
-            'anak' => $anakData ?? null,
+            // 'anak' => $anakData ?? null,
         ];
     }
 

@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'check.role' => \App\Http\Middleware\CheckRole::class,
             'log.activity' => \App\Http\Middleware\LogApiActivity::class,
+            'pos.auth' => \App\Http\Middleware\BasicPosMiddleware::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Bepsvpt\SecureHeaders\SecureHeadersMiddleware::class,
         ]);

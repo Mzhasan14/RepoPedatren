@@ -13,6 +13,7 @@ use App\Http\Controllers\api\JenisBerkasController;
 use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\Auth\AuthOrtuController;
 use App\Http\Controllers\api\keluarga\WaliController;
+use App\Http\Controllers\api\Pospay\PosPayController;
 use App\Http\Controllers\api\wilayah\KamarController;
 use App\Http\Controllers\api\Auth\PermissionController;
 use App\Http\Controllers\api\Pegawai\PegawaiController;
@@ -1237,3 +1238,8 @@ Route::middleware('auth:sanctum', 'role:superadmin')->group(function () {
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('roles', RoleController::class);
 });
+
+Route::post('universalbiller/payment', [PosPayController::class, 'payment'])
+    ->middleware('pos.auth');
+Route::post('universalbiller/inquiry', [PosPayController::class, 'inquiry'])
+    ->middleware('pos.auth');

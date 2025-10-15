@@ -2,74 +2,104 @@
 
 namespace App\Services\PesertaDidik\OrangTua;
 
+use Throwable;
 use App\Models\User;
 use App\Models\Kartu;
 use App\Models\Saldo;
+use App\Models\Santri;
 use App\Models\Biodata;
 use App\Models\UserOrtu;
 use App\Models\TagihanSantri;
 use App\Models\TransaksiSaldo;
+use App\Models\VirtualAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 
 class AuthOrtuService
 {
-    public function register($data)
+    public function register(array $data): array
     {
         try {
-            if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
+            return DB::transaction(function () use ($data) {
+
+                if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
+                    return [
+                        'success' => false,
+                        'message' => 'Nomor KK sudah terdaftar. Silakan login.',
+                        'status'  => 422
+                    ];
+                }
+
+                $validHubungan = DB::table('santri as s')
+                    ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+                    ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
+                    ->where('s.status', 'aktif')
+                    ->where('k.no_kk', $data['no_kk'])
+                    ->where('s.nis', $data['nis_anak'])
+                    ->exists();
+
+                if (! $validHubungan) {
+                    return [
+                        'success' => false,
+                        'message' => 'NIS anak tidak sesuai dengan nomor KK.',
+                        'status'  => 422
+                    ];
+                }
+
+                $user = UserOrtu::create([
+                    'no_kk'    => $data['no_kk'],
+                    'no_hp'    => $data['no_hp'] ?? null,
+                    'email'    => $data['email'] ?? null,
+                    'password' => Hash::make($data['password']),
+                ]);
+
+                $user->assignRole('orang_tua');
+
+                $santriList = Santri::query()
+                    ->select('santri.id', 'santri.nis')
+                    ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                    ->join('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
+                    ->where('keluarga.no_kk', $data['no_kk'])
+                    ->where('santri.status', 'aktif')
+                    ->get();
+
+                foreach ($santriList as $santri) {
+                    $nis = $santri->nis;
+
+                    // Lewati jika format NIS tidak sesuai
+                    if (strlen($nis) !== 10) {
+                        continue;
+                    }
+
+                    // Buang digit ke-5 dan ke-6 dari NIS
+                    $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
+
+                    VirtualAccount::updateOrCreate(
+                        ['santri_id' => $santri->id],
+                        [
+                            'va_number' => $vaNumber,
+                            'status'    => true,
+                        ]
+                    );
+                }
+
                 return [
-                    'success' => false,
-                    'message' => 'Nomor KK sudah terdaftar. silakan login.',
-                    'status'  => 422
+                    'success' => true,
+                    'message' => 'Registrasi berhasil. Data virtual account anak juga dibuat.',
+                    'data'    => [
+                        'user'   => $user,
+                        'santri' => $santriList,
+                    ],
+                    'status'  => 201
                 ];
-            }
+            }, 3); // otomatis retry 3x jika deadlock
 
-            $cekHubungan = DB::table('santri as s')
-                ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-                ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
-                ->where('s.status', 'aktif')
-                ->where('k.no_kk', $data['no_kk'])
-                ->where('s.nis', $data['nis_anak'])
-                ->exists();
-
-            if (!$cekHubungan) {
-                return [
-                    'success' => false,
-                    'message' => 'NIS anak tidak sesuai dengan nomor KK.',
-                    'status'  => 422
-                ];
-            }
-
-            if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
-                return [
-                    'success' => false,
-                    'message' => 'Nomor KK sudah terdaftar. silakan login.',
-                    'status'  => 422
-                ];
-            }
-
-            $user = UserOrtu::create([
-                'no_kk' => $data['no_kk'],
-                'no_hp' => $data['no_hp'] ?? null,
-                'email' => $data['email'] ?? null,
-                'password' => Hash::make($data['password']),
-            ]);
-
-            $user->assignRole('orang_tua');
-
-            return [
-                'success' => true,
-                'message' => 'Registrasi berhasil. Silakan login.',
-                'data'    => $user,
-                'status'  => 201
-            ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Error register orang tua', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'input' => $data
+                'input' => $data,
             ]);
 
             return [
@@ -79,6 +109,71 @@ class AuthOrtuService
             ];
         }
     }
+
+    // public function register($data)
+    // {
+    //     try {
+    //         if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => 'Nomor KK sudah terdaftar. silakan login.',
+    //                 'status'  => 422
+    //             ];
+    //         }
+
+    //         $cekHubungan = DB::table('santri as s')
+    //             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
+    //             ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
+    //             ->where('s.status', 'aktif')
+    //             ->where('k.no_kk', $data['no_kk'])
+    //             ->where('s.nis', $data['nis_anak'])
+    //             ->exists();
+
+    //         if (!$cekHubungan) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => 'NIS anak tidak sesuai dengan nomor KK.',
+    //                 'status'  => 422
+    //             ];
+    //         }
+
+    //         if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
+    //             return [
+    //                 'success' => false,
+    //                 'message' => 'Nomor KK sudah terdaftar. silakan login.',
+    //                 'status'  => 422
+    //             ];
+    //         }
+
+    //         $user = UserOrtu::create([
+    //             'no_kk' => $data['no_kk'],
+    //             'no_hp' => $data['no_hp'] ?? null,
+    //             'email' => $data['email'] ?? null,
+    //             'password' => Hash::make($data['password']),
+    //         ]);
+
+    //         $user->assignRole('orang_tua');
+
+    //         return [
+    //             'success' => true,
+    //             'message' => 'Registrasi berhasil. Silakan login.',
+    //             'data'    => $user,
+    //             'status'  => 201
+    //         ];
+    //     } catch (\Throwable $e) {
+    //         Log::error('Error register orang tua', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString(),
+    //             'input' => $data
+    //         ]);
+
+    //         return [
+    //             'success' => false,
+    //             'message' => 'Terjadi kesalahan saat registrasi. Silakan coba lagi.',
+    //             'status'  => 500
+    //         ];
+    //     }
+    // }
 
     public function login(string $no_hp, string $password)
     {
@@ -136,7 +231,7 @@ class AuthOrtuService
                             $tagihan->tanggal_bayar = now();
                             $tagihan->save();
 
-                            $uidKartu = Kartu::where('santri_id',$a->id)
+                            $uidKartu = Kartu::where('santri_id', $a->id)
                                 ->where('aktif', true)
                                 ->value('uid_kartu');
 

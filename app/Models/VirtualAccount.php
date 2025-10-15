@@ -13,7 +13,6 @@ class VirtualAccount extends Model
 
     protected $fillable = [
         'santri_id',
-        'bank_id',
         'va_number',
         'status',
         'created_by',

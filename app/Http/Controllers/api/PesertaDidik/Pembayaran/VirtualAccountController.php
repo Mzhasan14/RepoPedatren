@@ -16,12 +16,12 @@ class VirtualAccountController extends Controller
     {
         try {
             $data = DB::table('virtual_accounts as va')
-                ->join('banks as ba', 'ba.id', 'va.bank_id')
+                // ->join('banks as ba', 'ba.id', 'va.bank_id')
                 ->join('santri as s', 's.id', '=', 'va.santri_id')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
                 ->select(
                     'va.id',
-                    'ba.nama_bank',
+                    // 'ba.nama_bank',
                     'va.va_number',
                     'b.nama',
                     's.nis',
@@ -43,7 +43,7 @@ class VirtualAccountController extends Controller
         try {
             $data = VirtualAccount::create([
                 'santri_id'  => $request->santri_id,
-                'bank_id'  => $request->bank_id,
+                // 'bank_id'  => $request->bank_id,
                 'va_number'  => $request->va_number,
                 'status'     => $request->status ?? true,
                 'created_by' => Auth::id(),
@@ -62,13 +62,13 @@ class VirtualAccountController extends Controller
     {
         try {
             $data = DB::table('virtual_accounts as va')
-                ->join('banks as ba', 'ba.id', 'va.bank_id')
+                // ->join('banks as ba', 'ba.id', 'va.bank_id')
                 ->join('santri as s', 's.id', '=', 'va.santri_id')
                 ->join('biodata as b', 'b.id', '=', 's.biodata_id')
                 ->select(
                     'va.id',
-                    'ba.nama_bank',
-                    'ba.kode_bank',
+                    // 'ba.nama_bank',
+                    // 'ba.kode_bank',
                     'va.va_number',
                     'b.nama',
                     's.nis',
@@ -90,7 +90,7 @@ class VirtualAccountController extends Controller
             $data = VirtualAccount::findOrFail($id);
             $data->update([
                 'santri_id'  => $request->santri_id,
-                'bank_id'  => $request->bank_id,
+                // 'bank_id'  => $request->bank_id,
                 'va_number'  => $request->va_number,
                 'status'     => $request->status ?? $data->status,
                 'updated_by' => Auth::id(),
