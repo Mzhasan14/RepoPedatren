@@ -331,7 +331,7 @@ class ViewOrangTuaController extends Controller
                 'userOutlet:id,user_id,outlet_id'
             ])
                 ->where('santri_id', $santriId)
-                ->orderByDesc('created_at');
+                ->orderByDesc('id');
 
             // Filter tambahan
             if ($request->filled('outlet_id')) {
@@ -451,7 +451,7 @@ class ViewOrangTuaController extends Controller
             'tagihan',
         ])
             ->where('santri_id', $santriId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->get();
 
         return response()->json([

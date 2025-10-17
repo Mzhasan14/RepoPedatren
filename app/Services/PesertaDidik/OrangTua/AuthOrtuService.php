@@ -115,71 +115,6 @@ class AuthOrtuService
         }
     }
 
-    // public function register($data)
-    // {
-    //     try {
-    //         if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
-    //             return [
-    //                 'success' => false,
-    //                 'message' => 'Nomor KK sudah terdaftar. silakan login.',
-    //                 'status'  => 422
-    //             ];
-    //         }
-
-    //         $cekHubungan = DB::table('santri as s')
-    //             ->join('biodata as b', 's.biodata_id', '=', 'b.id')
-    //             ->join('keluarga as k', 'b.id', '=', 'k.id_biodata')
-    //             ->where('s.status', 'aktif')
-    //             ->where('k.no_kk', $data['no_kk'])
-    //             ->where('s.nis', $data['nis_anak'])
-    //             ->exists();
-
-    //         if (!$cekHubungan) {
-    //             return [
-    //                 'success' => false,
-    //                 'message' => 'NIS anak tidak sesuai dengan nomor KK.',
-    //                 'status'  => 422
-    //             ];
-    //         }
-
-    //         if (UserOrtu::where('no_kk', $data['no_kk'])->exists()) {
-    //             return [
-    //                 'success' => false,
-    //                 'message' => 'Nomor KK sudah terdaftar. silakan login.',
-    //                 'status'  => 422
-    //             ];
-    //         }
-
-    //         $user = UserOrtu::create([
-    //             'no_kk' => $data['no_kk'],
-    //             'no_hp' => $data['no_hp'] ?? null,
-    //             'email' => $data['email'] ?? null,
-    //             'password' => Hash::make($data['password']),
-    //         ]);
-
-    //         $user->assignRole('orang_tua');
-
-    //         return [
-    //             'success' => true,
-    //             'message' => 'Registrasi berhasil. Silakan login.',
-    //             'data'    => $user,
-    //             'status'  => 201
-    //         ];
-    //     } catch (\Throwable $e) {
-    //         Log::error('Error register orang tua', [
-    //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString(),
-    //             'input' => $data
-    //         ]);
-
-    //         return [
-    //             'success' => false,
-    //             'message' => 'Terjadi kesalahan saat registrasi. Silakan coba lagi.',
-    //             'status'  => 500
-    //         ];
-    //     }
-    // }
-
     public function login(string $no_hp, string $password)
     {
         try {
@@ -240,6 +175,7 @@ class AuthOrtuService
                                 ->where('aktif', true)
                                 ->value('uid_kartu');
 
+                            $keteranganTotal = number_format($tagihan->total_tagihan, 0, ',', '.');
                             // Catat transaksi pembayaran otomatis
                             TransaksiSaldo::create([
                                 'santri_id'      => $a->id,
@@ -249,7 +185,7 @@ class AuthOrtuService
                                 'uid_kartu'      => $uidKartu,
                                 'tipe'           => 'debit',
                                 'jumlah'         => $tagihan->total_tagihan,
-                                'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp{$tagihan->total_tagihan} dari saldo saat login oleh orang tua",
+                                'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp {$keteranganTotal} dari saldo saat login oleh orang tua",
                             ]);
                         }
                     }

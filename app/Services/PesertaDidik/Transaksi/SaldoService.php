@@ -119,6 +119,7 @@ class SaldoService
             $saldo->updated_by = $userId;
             $saldo->save();
 
+            $keteranganJumlah =  number_format($jumlah, 0, ',', '.');
             // Insert transaksi utama
             $transaksi = TransaksiSaldo::create([
                 'santri_id'      => $santri_id,
@@ -129,8 +130,8 @@ class SaldoService
                 'tipe'           => $tipe,
                 'jumlah'         => $jumlah,
                 'keterangan'     => $tipe === 'topup'
-                    ? "Topup saldo sebesar Rp{$jumlah}"
-                    : "Tarik saldo sebesar Rp{$jumlah}",
+                    ? "Topup saldo sebesar Rp {$keteranganJumlah}"
+                    : "Tarik saldo sebesar Rp {$keteranganJumlah}",
             ]);
 
             // === 6. Jika topup, langsung potong tagihan santri yang sudah jatuh tempo === 
@@ -157,6 +158,7 @@ class SaldoService
                         $tagihan->tanggal_bayar = Carbon::now();
                         $tagihan->save();
 
+                        $keteranganTotal = number_format($tagihan->total_tagihan, 0, ',', '.');
                         // Catat pembayaran otomatis
                         TransaksiSaldo::create([
                             'santri_id'      => $santri_id,
@@ -166,7 +168,7 @@ class SaldoService
                             'user_outlet_id' => $user->hasRole('superadmin') ? null : $userOutlet->id,
                             'tipe'           => 'debit',
                             'jumlah'         => $tagihan->total_tagihan,
-                            'keterangan'     => "Pembayaran otomatis tagihan {$tagihan->nama_tagihan} sebesar Rp{$tagihan->total_tagihan} dari saldo topup",
+                            'keterangan'     => "Pembayaran otomatis tagihan {$tagihan->nama_tagihan} sebesar Rp {$keteranganTotal} dari saldo topup",
                         ]);
 
                         $tagihanDipotong = true;

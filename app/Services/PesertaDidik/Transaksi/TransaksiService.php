@@ -205,7 +205,7 @@ class TransaksiService
 
             // 🔹 Tambahkan keterangan transaksi
             $keterangan = sprintf(
-                'Pembelian di %s - kategori %s sebesar Rp%s',
+                'Pembelian di %s - kategori %s sebesar Rp %s',
                 $outlet->nama_outlet ?? 'Outlet',
                 $kategori->nama_kategori ?? 'Umum',
                 number_format($totalBayar, 0, ',', '.')
