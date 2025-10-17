@@ -1227,6 +1227,10 @@ Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_
     Route::get('/tagihan/{santriId}', [ViewOrangTuaController::class, 'getTagihanAnak']);
 
     Route::post('/set-limit-saldo', [ViewOrangTuaController::class, 'setLimitSaldo']);
+
+    Route::post('/SendMessage', [ViewOrangTuaController::class, 'SendMessage']);
+
+    Route::get('/ReadMessage', [ViewOrangTuaController::class, 'ReadMessageOrtu']);
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);

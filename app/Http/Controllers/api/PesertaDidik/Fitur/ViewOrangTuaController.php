@@ -30,9 +30,11 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\KirimPesanRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\LimitSaldoRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
+use App\Services\PesertaDidik\OrangTua\KirimPesanService;
 use App\Services\PesertaDidik\OrangTua\LimitSaldoService;
 
 class ViewOrangTuaController extends Controller
@@ -48,6 +50,7 @@ class ViewOrangTuaController extends Controller
     protected $saldoService;
     protected $bayarService;
     protected  $limitSaldo;
+    protected $KirimPesanService;
 
     public function __construct(
         TransaksiAnakService $viewOrangTuaService,
@@ -60,7 +63,8 @@ class ViewOrangTuaController extends Controller
         ProfileSantriService $ProfileSantriService,
         SaldoService $saldoService,
         BayarTagihanService $bayarService,
-        LimitSaldoService $limitSaldo
+        LimitSaldoService $limitSaldo,
+        KirimPesanService $KirimPesanService
     ) {
         $this->viewOrangTuaService = $viewOrangTuaService;
         $this->viewHafalanService = $viewHafalanService;
@@ -73,6 +77,7 @@ class ViewOrangTuaController extends Controller
         $this->saldoService = $saldoService;
         $this->bayarService = $bayarService;
         $this->limitSaldo = $limitSaldo;
+        $this->KirimPesanService = $KirimPesanService;
     }
 
     // public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
@@ -483,5 +488,35 @@ class ViewOrangTuaController extends Controller
         );
 
         return response()->json($result, $result['success'] ? 200 : 422);
+    }
+    public function SendMessage(KirimPesanRequest $request)
+    {
+        try {
+            $result = $this->KirimPesanService->SendMessage($request->validated());
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@saldo error : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengirim data Pesan Ortu.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
+    }
+    public function ReadMessageOrtu(CatatanKognitifRequest $request)
+    {
+        try {
+            $result = $this->KirimPesanService->ReadMessageOrtu($request->validated());
+            return response()->json($result, 200);
+        } catch (Exception $e) {
+            Log::error('ViewOrangTuaController@saldo error : ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data Pesan Ortu.',
+                'status'  => 500,
+                'data'    => []
+            ], 500);
+        }
     }
 }
