@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('no_kk')->unique();
             $table->string('no_hp')->unique()->nullable();
             $table->string('email')->unique()->nullable();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->rememberToken();
             $table->boolean('status')->default(true);
             $table->softDeletes();
             $table->timestamps();

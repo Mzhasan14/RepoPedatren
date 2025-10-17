@@ -15,6 +15,8 @@ use App\Models\VirtualAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthOrtuService
 {
@@ -332,7 +334,7 @@ class AuthOrtuService
     //         return [
     //             'success' => true,
     //             'message' => 'Login berhasil.',
-    //             'data'   => $user,  
+    //             'data'   => $user,
     //             'anak'    => $anak ?? null,
     //             'status'  => 200
     //         ];
@@ -448,7 +450,7 @@ class AuthOrtuService
     //             $biodata = Biodata::with(['user' => function ($q) {
     //                 $q->whereHas('roles', function ($r) {
     //                     $r->where('name', 'orang_tua');
-    //                 })->with('roles'); 
+    //                 })->with('roles');
     //             }])->find($ortu->biodata_id);
     //             if (!$biodata || $biodata->user->isEmpty()) {
     //                 continue;
@@ -488,4 +490,53 @@ class AuthOrtuService
     //         ];
     //     }
     // }
+    public function sendResetLink(string $email): string
+    {
+        return Password::broker('ortu')->sendResetLink(['email' => $email]);
+    }
+
+    public function resetPassword(array $data): string
+    {
+        return Password::broker('ortu')->reset($data, function (UserOrtu $user, string $password) {
+            $user->password = Hash::make($password);
+            $user->setRememberToken(Str::random(60));
+            $user->save();
+        });
+    }
+    public function updatePassword($user, array $data): array
+    {
+        try {
+            if (!Hash::check($data['current_password'], $user->password)) {
+                return [
+                    'success' => false,
+                    'message' => 'Password lama tidak sesuai.',
+                    'status'  => 422
+                ];
+            }
+
+            $user->update([
+                'password' => Hash::make($data['new_password']),
+            ]);
+
+            $user->tokens()->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Password berhasil diperbarui. Silakan login kembali.',
+                'status'  => 200
+            ];
+        } catch (Throwable $e) {
+            Log::error('Error update password orang tua', [
+                'user_id' => $user->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui password.',
+                'status'  => 500
+            ];
+        }
+    }
 }

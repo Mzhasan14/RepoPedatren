@@ -112,6 +112,12 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        'ortu' => [ 
+            'provider' => 'orangtua',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*
