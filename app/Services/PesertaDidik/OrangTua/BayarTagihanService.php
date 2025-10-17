@@ -10,6 +10,7 @@ use App\Models\TagihanSantri;
 use App\Models\TransaksiSaldo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class BayarTagihanService
 {
@@ -18,6 +19,14 @@ class BayarTagihanService
     {
         return DB::transaction(function () use ($request) {
             $user = Auth::user();
+
+            if (!isset($request['password']) || !Hash::check($request['password'], $user->password)) {
+                return [
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'Password tidak valid. Silakan coba lagi.'
+                ];
+            }
 
             // Ambil tagihan santri beserta relasi
             $tagihanSantri = TagihanSantri::with('tagihan')

@@ -22,8 +22,21 @@ class BayarTagihanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "tagihan_santri_id" => 'required|integer|exists:tagihan_santri,id',
-            "jumlah_bayar" => 'nullable'
+            "password" => 'required|string|min:8',
+            "tagihan_santri_id" => 'required|integer|exists:tagihan_santri,id'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.required'          => 'Password wajib diisi untuk melakukan pembayaran.',
+            'password.string'            => 'Format password tidak valid.',
+            'password.min'               => 'Password minimal harus terdiri dari :min karakter.',
+
+            'tagihan_santri_id.required' => 'Tagihan santri wajib diisi.',
+            'tagihan_santri_id.integer'  => 'ID tagihan santri harus berupa angka.',
+            'tagihan_santri_id.exists'   => 'Tagihan santri tidak ditemukan dalam sistem.',
         ];
     }
 
