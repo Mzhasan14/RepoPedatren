@@ -7,6 +7,7 @@ use App\Models\Santri;
 use Illuminate\Http\Request;
 use App\Models\TagihanSantri;
 use App\Models\TransaksiSaldo;
+use App\Models\VirtualAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\PesertaDidik\OrangTua\SaldoService;
 use App\Services\PesertaDidik\OrangTua\PerizinanService;
 use App\Http\Requests\PesertaDidik\OrangTua\SaldoRequest;
+use App\Services\PesertaDidik\OrangTua\KirimPesanService;
+use App\Services\PesertaDidik\OrangTua\LimitSaldoService;
 use App\Services\PesertaDidik\OrangTua\HafalanAnakService;
 use App\Services\PesertaDidik\OrangTua\PelanggaranService;
 use App\Services\PesertaDidik\OrangTua\BayarTagihanService;
@@ -22,6 +25,8 @@ use App\Services\PesertaDidik\OrangTua\ProfileSantriService;
 use App\Services\PesertaDidik\OrangTua\TransaksiAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\PerizinanRequest;
 use App\Services\PesertaDidik\OrangTua\CatatanAfektifService;
+use App\Http\Requests\PesertaDidik\OrangTua\KirimPesanRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\LimitSaldoRequest;
 use App\Services\PesertaDidik\OrangTua\CatatanKognitifService;
 use App\Http\Requests\PesertaDidik\OrangTua\PelanggaranRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\ViewHafalanRequest;
@@ -30,12 +35,9 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
-use App\Http\Requests\PesertaDidik\OrangTua\KirimPesanRequest;
-use App\Http\Requests\PesertaDidik\OrangTua\LimitSaldoRequest;
+use App\Http\Requests\PesertaDidik\Pembayaran\VirtualAccountRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
-use App\Services\PesertaDidik\OrangTua\KirimPesanService;
-use App\Services\PesertaDidik\OrangTua\LimitSaldoService;
 
 class ViewOrangTuaController extends Controller
 {
@@ -79,41 +81,6 @@ class ViewOrangTuaController extends Controller
         $this->limitSaldo = $limitSaldo;
         $this->KirimPesanService = $KirimPesanService;
     }
-
-    // public function getTransaksiAnak(ViewTransaksiRequest $request): JsonResponse
-    // {
-    //     try {
-    //         $filters = array_filter($request->only([
-    //             'santri_id',
-    //             'outlet_id',
-    //             'kategori_id',
-    //             'date_from',
-    //             'date_to',
-    //             'q'
-    //         ]));
-
-    //         $perPage = $request->get('per_page', 25);
-
-    //         $result = $this->viewOrangTuaService->getTransaksiAnak($filters, $perPage);
-
-    //         $status = $result['status'] ?? 200;
-
-    //         return response()->json($result, $status);
-    //     } catch (\Throwable $e) {
-    //         Log::error('ViewOrangTuaController@getTransaksiAnak error: ' . $e->getMessage(), [
-    //             'exception' => $e,
-    //             'user_id'   => Auth::id(),
-    //             'filters'   => $request->all()
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'status'  => 500,
-    //             'message' => 'Terjadi kesalahan saat mengambil daftar transaksi.',
-    //             'data'    => []
-    //         ], 500);
-    //     }
-    // }
 
     public function getTahfidzAnak(ViewHafalanRequest $request)
     {
@@ -449,6 +416,35 @@ class ViewOrangTuaController extends Controller
 
     public function getTagihanAnak($santriId)
     {
+        $user = Auth::user();
+        $noKk = $user->no_kk;
+
+        // Ambil semua anak dari KK
+        $anak = DB::table('keluarga as k')
+            ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+            ->join('santri as s', 'b.id', '=', 's.biodata_id')
+            ->select('s.id as santri_id')
+            ->where('k.no_kk', $noKk)
+            ->get();
+
+        if ($anak->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data anak yang ditemukan.',
+                'data'    => null,
+            ], 404);
+        }
+
+        // Validasi santri_id request
+        $dataAnak = $anak->firstWhere('santri_id', $santriId);
+
+        if (!$dataAnak) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Santri tidak valid untuk user ini.',
+                'data'    => null,
+            ], 403);
+        }
         $santri = Santri::with('biodata')->findOrFail($santriId);
 
         $tagihanSantri = TagihanSantri::with([
@@ -516,6 +512,75 @@ class ViewOrangTuaController extends Controller
                 'message' => 'Terjadi kesalahan saat mengambil data Pesan Ortu.',
                 'status'  => 500,
                 'data'    => []
+            ], 500);
+        }
+    }
+
+    public function VirtualAccountAnak(VirtualAccountRequest $request)
+    {
+        try {
+
+            $user = Auth::user();
+            $noKk = $user->no_kk;
+
+            // Ambil semua anak dari KK
+            $anak = DB::table('keluarga as k')
+                ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+                ->join('santri as s', 'b.id', '=', 's.biodata_id')
+                ->select('s.id as santri_id')
+                ->where('k.no_kk', $noKk)
+                ->get();
+
+            if ($anak->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data anak yang ditemukan.',
+                    'data'    => null,
+                ], 404);
+            }
+
+            // Validasi santri_id request
+            $dataAnak = $anak->firstWhere('santri_id', $request->santri_id);
+
+            if (!$dataAnak) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Santri tidak valid untuk user ini.',
+                    'data'    => null,
+                ], 403);
+            }
+            $va = VirtualAccount::where('santri_id', $request->santri_id)
+                ->where('status', true)
+                ->first();
+
+            if ($va) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Virtual account ditemukan.',
+                    'data' => [
+                        'id' => $va->id,
+                        'santri_id' => $va->santri_id,
+                        'va_number' => $va->va_number,
+                        'status' => $va->status,
+                    ],
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Virtual account belum tersedia untuk santri ini.',
+                'data' => null,
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Gagal mengambil Virtual Account Anak', [
+                'santri_id' => $request->santri_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data virtual account.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

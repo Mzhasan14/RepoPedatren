@@ -1231,6 +1231,8 @@ Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_
     Route::post('/SendMessage', [ViewOrangTuaController::class, 'SendMessage']);
 
     Route::get('/ReadMessage', [ViewOrangTuaController::class, 'ReadMessageOrtu']);
+
+    Route::get('/virtual-account', [ViewOrangTuaController::class, 'VirtualAccountAnak']);
 });
 
 // Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);

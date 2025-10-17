@@ -41,6 +41,7 @@ class ProfileSantriService
                 'status'  => 403,
             ];
         }
+        
         // 🔹 Ambil ID jenis berkas "Pas foto"
         $pasFotoId = DB::table('jenis_berkas')
             ->where('nama_jenis_berkas', 'Pas foto')

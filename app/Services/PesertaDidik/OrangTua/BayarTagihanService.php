@@ -43,6 +43,37 @@ class BayarTagihanService
                 ];
             }
 
+            $noKk = $user->no_kk;
+
+            // 🔹 Ambil semua anak dari KK yang sama, exclude ortu
+            $anak = DB::table('keluarga as k')
+                ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
+                ->join('santri as s', 'b.id', '=', 's.biodata_id')
+                ->select('s.id as santri_id')
+                ->where('k.no_kk', $noKk)
+                ->get();
+
+            if ($anak->isEmpty()) {
+                return [
+                    'success' => false,
+                    'message' => 'Tidak ada data anak yang ditemukan.',
+                    'data' => null,
+                    'status' => 404,
+                ];
+            }
+
+            // 🔹 Cek apakah santri_id request valid
+            $dataAnak = $anak->firstWhere('santri_id', $tagihanSantri->santri_id ?? null);
+
+            if (!$dataAnak) {
+                return [
+                    'success' => false,
+                    'message' => 'Santri tidak valid untuk user ini.',
+                    'data'    => null,
+                    'status'  => 403,
+                ];
+            }
+
             // Ambil / buat saldo santri
             $saldo = Saldo::where('santri_id', $tagihanSantri->santri_id)
                 ->lockForUpdate()
