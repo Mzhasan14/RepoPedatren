@@ -519,7 +519,6 @@ class ViewOrangTuaController extends Controller
     public function VirtualAccountAnak(VirtualAccountAnakRequest $request)
     {
         try {
-
             $user = Auth::user();
             $noKk = $user->no_kk;
 
@@ -550,32 +549,65 @@ class ViewOrangTuaController extends Controller
                 ], 403);
             }
 
+            // Ambil santri
             $santri = Santri::query()
                 ->select('santri.id', 'santri.nis')
                 ->where('santri.status', 'aktif')
+                ->where('santri.id', $request->santri_id)
                 ->first();
+
+            if (!$santri) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data santri tidak ditemukan atau tidak aktif.',
+                    'data'    => null,
+                ], 404);
+            }
 
             $nis = $santri->nis;
 
             // Lewati jika format NIS tidak sesuai
             if (strlen($nis) !== 10) {
-                return response()->json();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format NIS tidak valid.',
+                    'data' => null,
+                ], 422);
             }
 
             // Buang digit ke-5 dan ke-6 dari NIS
             $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
 
             // Cek apakah VA sudah ada
-            $exists = VirtualAccount::where('santri_id', $santri->id)->where('status', true)->exists();
+            $exists = VirtualAccount::where('santri_id', $santri->id)
+                ->where('status', true)
+                ->exists();
 
+            // Jika belum ada, buat baru
             if (!$exists) {
-                VirtualAccount::create([
+                $va = VirtualAccount::create([
                     'santri_id' => $santri->id,
                     'va_number' => $vaNumber,
                     'status'    => true,
                 ]);
+
+                // ✅ Catat aktivitas pembuatan VA (Spatie Activity Log)
+                activity('virtual_account')
+                    ->causedBy($user)
+                    ->performedOn($va)
+                    ->withProperties([
+                        'santri_id'  => $santri->id,
+                        'va_number'  => $vaNumber,
+                        'no_kk'      => $noKk,
+                        'created_by' => $user->id,
+                        'ip'         => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ])
+                    ->event('created')
+                    ->log("Virtual Account {$vaNumber} berhasil dibuat untuk santri ID {$santri->id}");
             }
 
+            // Ambil VA aktif
             $va = VirtualAccount::where('santri_id', $request->santri_id)
                 ->where('status', true)
                 ->first();
@@ -599,14 +631,27 @@ class ViewOrangTuaController extends Controller
                 'data' => null,
             ], 404);
         } catch (\Exception $e) {
-            Log::error('Gagal mengambil Virtual Account Anak', [
+            Log::error('Gagal membuat/mengambil Virtual Account Anak', [
+                'user_id'   => Auth::id(),
                 'santri_id' => $request->santri_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
             ]);
+
+            activity('virtual_account')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'santri_id' => $request->santri_id,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'error' => $e->getMessage(),
+                ])
+                ->event('failed')
+                ->log("Gagal memproses Virtual Account untuk santri ID {$request->santri_id}");
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data virtual account.',
+                'message' => 'Terjadi kesalahan saat memproses virtual account.',
                 'error' => $e->getMessage(),
             ], 500);
         }
