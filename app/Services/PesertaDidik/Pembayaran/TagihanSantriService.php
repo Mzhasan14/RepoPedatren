@@ -9,12 +9,15 @@ use App\Models\TagihanSantri;
 use App\Models\SantriPotongan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class TagihanSantriService
 {
     public function generate(int $tagihanId, string $periode, array $filter = []): array
     {
         return DB::transaction(function () use ($tagihanId, $periode, $filter) {
+            $user = Auth::user();
+
             // 1️⃣ Ambil data tagihan utama
             $tagihan = DB::table('tagihan')->where('id', $tagihanId)->first();
             if (!$tagihan) {
@@ -171,6 +174,21 @@ class TagihanSantriService
             if (!empty($insertData)) {
                 DB::table('tagihan_santri')->insert($insertData);
             }
+
+            activity('tagihan_santri')
+                ->causedBy($user)
+                ->withProperties([
+                    'tagihan_id'         => $tagihanId,
+                    'periode'            => $periode,
+                    'total_santri_baru'  => $totalSantriBaru,
+                    'total_sudah_tagih'  => $totalSudahTagih,
+                    'total_santri'       => $totalSantriAktif,
+                    'filter'             => $filter,
+                    'ip'                 => request()->ip(),
+                    'user_agent'         => request()->userAgent(),
+                ])
+                ->event('generate_tagihan')
+                ->log("Generate tagihan '{$tagihan->nama_tagihan}' periode {$periode} untuk {$totalSantriBaru} santri.");
 
             return [
                 'success' => true,

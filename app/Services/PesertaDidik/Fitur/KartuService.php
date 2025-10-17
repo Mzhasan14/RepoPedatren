@@ -285,21 +285,46 @@ class KartuService
         try {
             return DB::transaction(function () use ($santriId, $limitSaldo, $takTerbatas) {
 
-                // Ambil kartu santri
-                $kartu = DB::table('kartu')->where('santri_id', $santriId)->where('aktif', true)->first();
+                $user = Auth::user();
+
+                // 🔹 Ambil kartu santri dengan Eloquent
+                $kartu = Kartu::where('santri_id', $santriId)->where('aktif', true)->first();
                 if (!$kartu) {
                     throw new Exception('Kartu aktif santri tidak ditemukan.');
                 }
 
-                // Tentukan nilai limit
+                // 🔹 Simpan limit lama untuk log
+                $limitLama = $kartu->limit_saldo;
+
+                // 🔹 Tentukan nilai limit baru
                 $limitFinal = $takTerbatas ? null : $limitSaldo;
 
-                // Update kartu
-                DB::table('kartu')->where('santri_id', $santriId)->update([
+                // 🔹 Update kartu
+                $kartu->update([
                     'limit_saldo' => $limitFinal,
-                    'updated_by' => Auth::id(),
-                    'updated_at' => now(),
+                    'updated_by'  => $user->id,
+                    'updated_at'  => now(),
                 ]);
+
+                activity('kartu')
+                    ->causedBy($user)
+                    ->performedOn($kartu)
+                    ->withProperties([
+                        'santri_id'     => $santriId,
+                        'tipe'          => 'limit_update',
+                        'limit_sebelum' => $limitLama,
+                        'limit_sesudah' => $limitFinal,
+                        'tak_terbatas'  => $takTerbatas,
+                        'ip'            => request()->ip(),
+                        'user_agent'    => request()->userAgent(),
+                    ])
+                    ->event('update_limit')
+                    ->log(
+                        $takTerbatas
+                            ? "Limit saldo santri ID {$santriId} diatur menjadi tak terbatas."
+                            : "Limit saldo santri ID {$santriId} diperbarui dari " .
+                            ($limitLama ?? '∞') . " ke {$limitFinal}."
+                    );
 
                 return [
                     'success' => true,
@@ -312,7 +337,7 @@ class KartuService
         } catch (Exception $e) {
             Log::error('Gagal memperbarui limit saldo.', [
                 'santri_id' => $santriId,
-                'error' => $e->getMessage(),
+                'error'     => $e->getMessage(),
             ]);
 
             return [
