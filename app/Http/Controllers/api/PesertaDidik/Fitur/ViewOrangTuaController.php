@@ -322,7 +322,7 @@ class ViewOrangTuaController extends Controller
             $user = Auth::user();
             $noKk = $user->no_kk;
 
-            // 🔹 Ambil semua anak dari KK
+            // Ambil semua anak dari KK
             $anak = DB::table('keluarga as k')
                 ->join('biodata as b', 'k.id_biodata', '=', 'b.id')
                 ->join('santri as s', 'b.id', '=', 's.biodata_id')
@@ -338,7 +338,7 @@ class ViewOrangTuaController extends Controller
                 ], 404);
             }
 
-            // 🔹 Validasi santri_id request
+            // Validasi santri_id request
             $santriId = $request->input('santri_id');
             $dataAnak = $anak->firstWhere('santri_id', $santriId);
 
@@ -361,7 +361,7 @@ class ViewOrangTuaController extends Controller
                 ->where('santri_id', $santriId)
                 ->orderByDesc('created_at');
 
-            // 🔹 Filter tambahan
+            // Filter tambahan
             if ($request->filled('outlet_id')) {
                 $query->where('outlet_id', $request->outlet_id);
             }
@@ -387,13 +387,13 @@ class ViewOrangTuaController extends Controller
                 });
             }
 
-            // 🔹 Hitung total tiap tipe
+            // Hitung total tiap tipe
             $totalTopup  = (clone $query)->where('tipe', 'topup')->sum('jumlah');
             $totalDebit  = (clone $query)->where('tipe', 'debit')->sum('jumlah');
             $totalKredit = (clone $query)->where('tipe', 'kredit')->sum('jumlah');
             $totalRefund = (clone $query)->where('tipe', 'refund')->sum('jumlah');
 
-            // 🔹 Ambil pagination dari request
+            // Ambil pagination dari request
             $perPage = (int) $request->input('per_page', 25);
             $page    = (int) $request->input('page', 1);
 
@@ -444,10 +444,8 @@ class ViewOrangTuaController extends Controller
 
     public function getTagihanAnak($santriId)
     {
-        // Validasi santri
         $santri = Santri::with('biodata')->findOrFail($santriId);
 
-        // Ambil data tagihan santri dengan relasi yang ada
         $tagihanSantri = TagihanSantri::with([
             'tagihan',
         ])
@@ -463,7 +461,7 @@ class ViewOrangTuaController extends Controller
                         'id'           => $ts->tagihan->id ?? null,
                         'nama_tagihan' => $ts->tagihan->nama_tagihan ?? null,
                     ],
-                    'periode'            => $ts->tagihan->periode ?? null,
+                    'periode'            => $ts->periode ?? null,
                     'nominal'            => number_format($ts->tagihan->nominal ?? 0, 2, ',', '.'),
                     'total_potongan'     => number_format($ts->total_potongan ?? 0, 2, ',', '.'),
                     'total_tagihan'      => number_format($ts->total_tagihan ?? 0, 2, ',', '.'),
@@ -476,9 +474,6 @@ class ViewOrangTuaController extends Controller
         ]);
     }
 
-    /**
-     * Set limit saldo santri (oleh orang tua)
-     */
     public function setLimitSaldo(LimitSaldoRequest $request)
     {
         $result = $this->limitSaldo->setLimitSaldo(
