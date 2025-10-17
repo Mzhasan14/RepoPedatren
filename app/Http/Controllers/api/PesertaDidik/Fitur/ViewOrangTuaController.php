@@ -35,7 +35,7 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
-use App\Http\Requests\PesertaDidik\Pembayaran\VirtualAccountRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\VirtualAccountAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
 
@@ -516,7 +516,7 @@ class ViewOrangTuaController extends Controller
         }
     }
 
-    public function VirtualAccountAnak(VirtualAccountRequest $request)
+    public function VirtualAccountAnak(VirtualAccountAnakRequest $request)
     {
         try {
 
@@ -550,35 +550,30 @@ class ViewOrangTuaController extends Controller
                 ], 403);
             }
 
-            $santriList = Santri::query()
+            $santri = Santri::query()
                 ->select('santri.id', 'santri.nis')
-                ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-                ->join('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
-                ->where('keluarga.no_kk', $user->no_kk)
                 ->where('santri.status', 'aktif')
-                ->get();
+                ->first();
 
-            foreach ($santriList as $santri) {
-                $nis = $santri->nis;
+            $nis = $santri->nis;
 
-                // Lewati jika format NIS tidak sesuai
-                if (strlen($nis) !== 10) {
-                    continue;
-                }
+            // Lewati jika format NIS tidak sesuai
+            if (strlen($nis) !== 10) {
+                return response()->json();
+            }
 
-                // Buang digit ke-5 dan ke-6 dari NIS
-                $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
+            // Buang digit ke-5 dan ke-6 dari NIS
+            $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
 
-                // Cek apakah VA sudah ada
-                $exists = VirtualAccount::where('santri_id', $santri->id)->exists();
+            // Cek apakah VA sudah ada
+            $exists = VirtualAccount::where('santri_id', $santri->id)->where('status', true)->exists();
 
-                if (!$exists) {
-                    VirtualAccount::create([
-                        'santri_id' => $santri->id,
-                        'va_number' => $vaNumber,
-                        'status'    => true,
-                    ]);
-                }
+            if (!$exists) {
+                VirtualAccount::create([
+                    'santri_id' => $santri->id,
+                    'va_number' => $vaNumber,
+                    'status'    => true,
+                ]);
             }
 
             $va = VirtualAccount::where('santri_id', $request->santri_id)

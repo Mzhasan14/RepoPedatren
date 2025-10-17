@@ -58,43 +58,43 @@ class AuthOrtuService
 
                 $user->assignRole('orang_tua');
 
-                $santriList = Santri::query()
-                    ->select('santri.id', 'santri.nis')
-                    ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
-                    ->join('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
-                    ->where('keluarga.no_kk', $data['no_kk'])
-                    ->where('santri.status', 'aktif')
-                    ->get();
+                // $santriList = Santri::query()
+                //     ->select('santri.id', 'santri.nis')
+                //     ->join('biodata', 'santri.biodata_id', '=', 'biodata.id')
+                //     ->join('keluarga', 'biodata.id', '=', 'keluarga.id_biodata')
+                //     ->where('keluarga.no_kk', $data['no_kk'])
+                //     ->where('santri.status', 'aktif')
+                //     ->get();
 
-                foreach ($santriList as $santri) {
-                    $nis = $santri->nis;
+                // foreach ($santriList as $santri) {
+                //     $nis = $santri->nis;
 
-                    // Lewati jika format NIS tidak sesuai
-                    if (strlen($nis) !== 10) {
-                        continue;
-                    }
+                //     // Lewati jika format NIS tidak sesuai
+                //     if (strlen($nis) !== 10) {
+                //         continue;
+                //     }
 
-                    // Buang digit ke-5 dan ke-6 dari NIS
-                    $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
+                //     // Buang digit ke-5 dan ke-6 dari NIS
+                //     $vaNumber = substr($nis, 0, 4) . substr($nis, 6);
 
-                    // Cek apakah VA sudah ada
-                    $exists = VirtualAccount::where('santri_id', $santri->id)->exists();
+                //     // Cek apakah VA sudah ada
+                //     $exists = VirtualAccount::where('santri_id', $santri->id)->exists();
 
-                    if (!$exists) {
-                        VirtualAccount::create([
-                            'santri_id' => $santri->id,
-                            'va_number' => $vaNumber,
-                            'status'    => true,
-                        ]);
-                    }
-                }
+                //     if (!$exists) {
+                //         VirtualAccount::create([
+                //             'santri_id' => $santri->id,
+                //             'va_number' => $vaNumber,
+                //             'status'    => true,
+                //         ]);
+                //     }
+                // }
 
                 return [
                     'success' => true,
                     'message' => 'Registrasi berhasil. Data virtual account anak juga dibuat.',
                     'data'    => [
                         'user'   => $user,
-                        'santri' => $santriList,
+                        // 'santri' => $santriList,
                     ],
                     'status'  => 201
                 ];
