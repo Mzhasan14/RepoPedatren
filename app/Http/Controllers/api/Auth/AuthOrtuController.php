@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ForgotPassOrtuRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\LoginRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\RegisterRequest;
+use App\Http\Requests\ResetPassOrtuRequest;
+use App\Http\Requests\UpdatePassOrtuRequest;
 use App\Services\PesertaDidik\OrangTua\AuthOrtuService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 
 class AuthOrtuController extends Controller
 {
@@ -51,5 +56,30 @@ class AuthOrtuController extends Controller
             'message' => $result['message']
         ], $result['status']);
     }
-}
+    public function forgotPassword(ForgotPassOrtuRequest $req): JsonResponse
+    {
+        $status = $this->service->sendResetLink($req->email);
 
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Link reset password telah dikirim ke email.'])
+            : response()->json(['message' => __($status)], 500);
+    }
+
+    public function resetPassword(ResetPassOrtuRequest $req): JsonResponse
+    {
+        $status = $this->service->resetPassword($req->validated());
+
+        return $status === Password::PASSWORD_RESET
+            ? response()->json(['message' => 'Password berhasil direset.'])
+            : response()->json(['message' => __($status)], 500);
+    }
+    public function updatePassword(UpdatePassOrtuRequest $req): JsonResponse
+    {
+        $result = $this->service->updatePassword($req->user(), $req->validated());
+
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ], $result['status']);
+    }
+}

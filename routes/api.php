@@ -1240,6 +1240,15 @@ Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_
 Route::post('/login-ortu', [AuthOrtuController::class, 'login']);
 Route::post('/register-ortu', [AuthOrtuController::class, 'register']);
 
+Route::post('forgot-passortu', [AuthOrtuController::class, 'forgotPassword'])
+    ->middleware('throttle:5,1');
+
+Route::post('reset-passortu', [AuthOrtuController::class, 'resetPassword']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('ortu/update-password', [AuthOrtuController::class, 'updatePassword']);
+});
+
 Route::middleware('auth:sanctum', 'role:superadmin')->group(function () {
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('roles', RoleController::class);
