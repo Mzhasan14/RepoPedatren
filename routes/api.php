@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\KitabController;
 use App\Http\Controllers\api\PDF\PDFController;
@@ -54,7 +53,6 @@ use App\Http\Controllers\api\kewaliasuhan\GrupWaliAsuhController;
 use App\Http\Controllers\api\kewaliasuhan\KewaliasuhanController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\SholatController;
 use App\Http\Controllers\api\PesertaDidik\PesertaDidikController;
-use App\Http\Controllers\api\Biometric\BiometricProfileController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\TahfidzController;
 use App\Http\Controllers\api\PesertaDidik\Fitur\NadhomanController;
 use App\Http\Controllers\api\Administrasi\CatatanKognitifController;
@@ -81,11 +79,9 @@ use App\Http\Controllers\api\PesertaDidik\Fitur\PresensiJamaahController;
 use App\Http\Controllers\api\PesertaDidik\formulir\StatusSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\PembayaranController;
 use App\Http\Controllers\api\PesertaDidik\formulir\WargaPesantrenController;
-use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanKhususController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\TagihanSantriController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\SantriPotonganController;
 use App\Http\Controllers\api\PesertaDidik\Pembayaran\VirtualAccountController;
-use App\Http\Controllers\api\PesertaDidik\Pembayaran\PotonganTagihanController;
 use App\Http\Controllers\api\PesertaDidik\Transaksi\DetailUserOutletController;
 use App\Http\Controllers\api\Administrasi\CatatanAfektifController as AdministrasiCatatanAfektifController;
 
@@ -93,7 +89,28 @@ use App\Http\Controllers\api\Administrasi\CatatanAfektifController as Administra
 Route::post('register', [UserController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:superadmin', 'throttle:5,1']);
 
-Route::apiResource('users', UserController::class)->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+// Route::apiResource('users', UserController::class)->middleware(['auth:sanctum', 'role:superadmin', 'throttle:200,1']);
+Route::middleware(['auth:sanctum', 'role:superadmin'])->group(function () {
+
+    Route::get('users', [UserController::class, 'index'])
+        ->middleware('throttle:200,1')
+        ->name('users.index');
+
+    Route::get('users/{user}', [UserController::class, 'show'])
+        ->middleware('throttle:150,1')
+        ->name('users.show');
+    Route::post('users', [UserController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('users.store');
+
+    Route::put('users/{user}', [UserController::class, 'update'])
+        ->middleware('throttle:30,1')
+        ->name('users.update');
+
+    Route::delete('users/{user}', [UserController::class, 'destroy'])
+        ->middleware('throttle:10,1')
+        ->name('users.destroy');
+});
 
 Route::post('login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1')
@@ -193,11 +210,12 @@ Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|superv
     Route::get('/walikelas/{id}', [DetailController::class, 'getDetail']);
 });
 
-Route::prefix('data-pokok')->middleware('auth:sanctum', 'role:superadmin|supervisor|admin|kamtib|biktren')->group(function () {
+Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|kamtib|biktren', 'throttle:200,1'])->group(function () {
     // 🚨 Administrasi
     Route::get('/perizinan', [PerizinanController::class, 'getAllPerizinan']);
     Route::get('/perizinan/{id}', [DetailPerizinanController::class, 'getDetailPerizinan']);
 });
+
 Route::prefix('data-pokok')->middleware(['auth:sanctum', 'role:superadmin|supervisor|admin|wali_asuh', 'throttle:200,1'])->group(function () {
     Route::get('/catatan-kognitif/{id}', [DetailController::class, 'getDetail']);
     Route::get('/catatan-afektif/{id}', [DetailController::class, 'getDetail']);
@@ -237,150 +255,6 @@ Route::middleware(['auth:sanctum', 'role:superadmin|supervisor|admin', 'throttle
         Route::get('/nurul-quran', [PDFController::class, 'downloadIdCardNurulQuran']);
     });
 });
-
-// Formulir Peserta Didik
-// Route::prefix('formulir')->middleware([
-//     'auth:sanctum',
-//     'role:superadmin',
-//     'throttle:200,1'
-// ])->group(function () {
-
-//     // Biodata
-//     Route::get('/{id}/biodata/show', [BiodataController::class, 'show']);
-//     Route::put('/{id}/biodata', [BiodataController::class, 'update']);
-//     // Santri
-//     Route::get('/{bioId}/santri', [StatusSantriController::class, 'index']);
-//     Route::get('{id}/santri/show', [StatusSantriController::class, 'show']);
-//     Route::post('/{id}/santri', [StatusSantriController::class, 'store']);
-//     Route::put('/{id}/santri', [StatusSantriController::class, 'update']);
-
-//     // Domisili
-//     Route::get('/{bioId}/domisili', [DomisiliController::class, 'index']);
-//     Route::get('{id}/domisili/show', [DomisiliController::class, 'show']);
-//     Route::post('/{id}/domisili', [DomisiliController::class, 'store']);
-//     Route::put('/{id}/domisili', [DomisiliController::class, 'update'])->middleware('role:superadmin|admin');
-
-//     Route::put('/{id}/domisili/pindah', [DomisiliController::class, 'pindahDomisili']);
-//     Route::put('/{id}/domisili/keluar', [DomisiliController::class, 'keluarDomisili']);
-
-//     // Pendidikan
-//     Route::get('/{bioId}/pendidikan', [PendidikanController::class, 'index']);
-//     Route::get('{id}/pendidikan/show', [PendidikanController::class, 'show']);
-//     Route::post('/{id}/pendidikan', [PendidikanController::class, 'store']);
-//     Route::put('/{id}/pendidikan', [PendidikanController::class, 'update'])->middleware('role:superadmin|admin');
-
-//     Route::put('/{id}/pendidikan/pindah', [PendidikanController::class, 'pindahPendidikan']);
-//     Route::put('/{id}/pendidikan/keluar', [PendidikanController::class, 'keluarPendidikan']);
-
-//     // Kewaliasuhan
-//     Route::get('{bioId}/waliasuh', [WaliasuhController::class, 'index']);
-//     Route::get('{id}/waliasuh/show', [WaliasuhController::class, 'show']);
-//     Route::post('{id}/waliasuh', [WaliasuhController::class, 'store']);
-//     Route::put('{id}/waliasuh', [WaliasuhController::class, 'update'])->middleware('role:superadmin|admin');
-
-//     Route::put('{id}/waliasuh/keluar', [WaliasuhController::class, 'keluarWaliasuh']);
-
-//     Route::get('{bioId}/anakasuh', [AnakasuhController::class, 'index']);
-//     Route::get('{id}/anakasuh/show', [AnakasuhController::class, 'show']);
-//     Route::post('{id}/anakasuh', [AnakAsuhController::class, 'formStore']);
-//     Route::put('{id}/anakasuh', [AnakAsuhController::class, 'update'])->middleware('role:superadmin|admin');;
-
-//     Route::put('{id}/anakasuh/pindah', [AnakasuhController::class, 'pindahAnakasuh']);
-//     Route::put('{id}/anakasuh/keluar', [AnakasuhController::class, 'keluarAnakasuh']);
-
-//     // Khadam
-//     Route::get('/{bioId}/khadam', [KhadamFormController::class, 'index']);
-//     Route::get('{id}/khadam/show', [KhadamFormController::class, 'show']);
-//     Route::post('/{id}/khadam', [KhadamFormController::class, 'store']);
-//     Route::put('/{id}/khadam', [KhadamFormController::class, 'update'])->middleware('role:superadmin|admin');
-
-//     Route::put('/{id}/khadam/pindah', [KhadamFormController::class, 'pindahKhadam']);
-//     Route::put('/{id}/khadam/keluar', [KhadamFormController::class, 'keluarKhadam']);
-
-//     // Warga Pesantren
-//     Route::get('/{id}/wargapesantren', [WargaPesantrenController::class, 'index']);
-//     Route::get('/{id}/wargapesantren/show', [WargaPesantrenController::class, 'show']);
-//     Route::post('/{id}/wargapesantren', [WargaPesantrenController::class, 'store']);
-//     Route::put('/{id}/wargapesantren', [WargaPesantrenController::class, 'update']);
-
-//     // Berkas
-//     Route::get('/{bioId}/berkas', [BerkasController::class, 'index']);
-//     Route::get('/{id}/berkas/show', [BerkasController::class, 'show']);
-//     Route::post('/{id}/berkas', [BerkasController::class, 'store']);
-//     Route::put('/{id}/berkas', [BerkasController::class, 'update']);
-
-//     // Kepegawaian
-//     Route::get('{id}/karyawan', [KaryawanController::class, 'index']);
-//     Route::get('/{id}/karyawan/show', [KaryawanController::class, 'edit']);
-//     Route::put('/{id}/karyawan', [KaryawanController::class, 'update']);
-//     Route::post('/{id}/karyawan', [KaryawanController::class, 'store']);
-
-//     Route::get('/{id}/pengajar', [PengajarController::class, 'index']);
-//     Route::get('/{id}/pengajar/show', [PengajarController::class, 'edit']);
-//     Route::put('/{id}/pengajar', [PengajarController::class, 'update']);
-//     Route::post('/{id}/pengajar', [PengajarController::class, 'store']);
-//     Route::delete('/{pengajarId}/pengajar/materi/{materiId}/nonaktifkan', [PengajarController::class, 'nonaktifkan']);
-//     Route::post('/{pengajarId}/pengajar/materi', [PengajarController::class, 'tambahMateri']);
-//     Route::get('/{materiId}/show', [PengajarController::class, 'showMateri']);
-//     Route::put('/{materiId}/update', [PengajarController::class, 'updateMateri']);
-
-//     Route::get('/mata-pelajaran', [MataPelajaranController::class, 'getAllMapel']);
-//     Route::post('/mata-pelajaran', [MataPelajaranController::class, 'createMataPelajaran']);
-//     Route::delete('/{materiId}/mata-pelajaran', [MataPelajaranController::class, 'DestroyMapel']);
-//     Route::get('/{materiId}/jadwal-pelajaran', [PengajarController::class, 'showByMateriId']);
-//     Route::post('/{materiId}/jadwal-pelajaran/simpan', [PengajarController::class, 'simpan']);
-//     Route::delete('/{jadwalId}/jadwal-pelajaran/hapus', [PengajarController::class, 'hapus']);
-//     Route::put('/{jadwalId}/jadwal-pelajaran/update', [PengajarController::class, 'updateJadwal']);
-
-//     Route::get('/{id}/pengurus', [PengurusController::class, 'index']);
-//     Route::get('/{id}/pengurus/show', [PengurusController::class, 'edit']);
-//     Route::put('/{id}/pengurus', [PengurusController::class, 'update']);
-//     Route::post('/{id}/pengurus', [PengurusController::class, 'store']);
-
-//     Route::get('/{id}/walikelas', [WalikelasController::class, 'index']);
-//     Route::get('/{id}/walikelas/show', [WalikelasController::class, 'edit']);
-//     Route::put('/{id}/walikelas', [WalikelasController::class, 'update']);
-//     Route::post('/{id}/walikelas', [WalikelasController::class, 'store']);
-
-//     Route::put('/{id}/karyawan/pindah', [KaryawanController::class, 'pindahKaryawan']);
-//     Route::put('/{id}/karyawan/keluar', [KaryawanController::class, 'keluarKaryawan']);
-
-//     Route::put('/{id}/pengajar/pindah', [PengajarController::class, 'pindahPengajar']);
-//     Route::put('/{id}/pengajar/keluar', [PengajarController::class, 'keluarPengajar']);
-
-//     Route::put('/{id}/pengurus/pindah', [PengurusController::class, 'pindahPengurus']);
-//     Route::put('/{id}/pengurus/keluar', [PengurusController::class, 'keluarPengurus']);
-
-//     Route::put('/{id}/catatan-afektif/keluar', [AdministrasiCatatanAfektifController::class, 'keluarAfektif']);
-//     Route::put('/{id}/catatan-kognitif/keluar', [CatatanKognitifController::class, 'keluarKognitif']);
-
-//     Route::put('/{id}/walikelas/pindah', [WalikelasController::class, 'pindahWalikelas']);
-//     Route::put('/{id}/walikelas/keluar', [WalikelasController::class, 'keluarWalikelas']);
-
-//     // Keluarga
-//     Route::get('{bioId}/keluarga', [KeluargaController::class, 'index']);
-//     Route::get('{id}/keluarga/show', [KeluargaController::class, 'show']);
-//     Route::put('{id}/keluarga', [KeluargaController::class, 'update']); // update hanya 1 data keluarga saja
-//     Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']); // jika ingin memindahkan seluruh anggota keluarga ke nomor kk baru
-
-//     Route::get('/{bioId}/orangtua', [OrangTuaWaliController::class, 'index']);
-//     Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);
-//     Route::get('/{id}/orangtua/show', [OrangTuaWaliController::class, 'show']);
-//     Route::get('/{id}/orangtua', [OrangTuaWaliController::class, 'edit']);
-//     Route::put('{id}/orangtua', [OrangTuaWaliController::class, 'update'])->middleware('role:superadmin|admin');
-//     Route::delete('/orangtua/{id}', [OrangTuaWaliController::class, 'destroy'])->middleware('role:superadmin|admin');
-
-//     // Catatan Santri
-//     Route::get('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'index']);
-//     Route::get('/{id}/catatan-afektif/show', [AdministrasiCatatanAfektifController::class, 'edit']);
-//     Route::put('/{id}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'update']);
-//     Route::post('/{BioId}/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'store']);
-
-//     Route::get('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'index']);
-//     Route::get('/{id}/catatan-kognitif/show', [CatatanKognitifController::class, 'edit']);
-//     Route::put('/{id}/catatan-kognitif', [CatatanKognitifController::class, 'update']);
-//     Route::post('/{BioId}/catatan-kognitif', [CatatanKognitifController::class, 'store']);
-// });
 
 Route::prefix('formulir')
     ->middleware(['auth:sanctum', 'throttle:200,1'])
@@ -552,140 +426,6 @@ Route::prefix('formulir')
         });
     });
 
-
-// Route::prefix('crud')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
-//     Route::post('/pesertadidik', [PesertaDidikController::class, 'store']);
-//     Route::delete('/pesertadidik/{id}', [PesertaDidikController::class, 'destroy']);
-
-//     // Create Anak Pegawai
-//     Route::post('/anakpegawai', [AnakPegawaiController::class, 'store']);
-
-//     // Create Khadam
-//     Route::post('/khadam', [KhadamController::class, 'store']);
-
-//     Route::post('/set-alumni-santri', [AlumniController::class, 'setAlumniSantri']);
-//     Route::post('/set-alumni-pelajar', [AlumniController::class, 'setAlumniPelajar']);
-
-//     // tahun ajaran
-//     Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
-//     Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
-//     Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
-
-//     // angkatan
-//     Route::post('/angkatan', [AngkatanController::class, 'store']);
-//     Route::put('/angkatan/{id}', [AngkatanController::class, 'update']);
-//     Route::delete('/angkatan/{id}', [AngkatanController::class, 'destroy']);
-
-//     // semester
-//     Route::post('/semester', [SemesterController::class, 'store']);
-//     Route::put('/semester/{id}', [SemesterController::class, 'update']);
-//     Route::delete('/semester/{id}', [SemesterController::class, 'destroy']);
-
-//     // perizinan
-//     Route::get('/{id}/perizinan', [PerizinanController::class, 'index']);
-//     Route::get('/{id}/perizinan/show', [PerizinanController::class, 'show']);
-//     Route::post('/{id}/perizinan', [PerizinanController::class, 'store']);
-//     Route::put('/{id}/perizinan', [PerizinanController::class, 'update']);
-
-//     Route::put('/{id}/perizinan/set-keluar', [PerizinanController::class, 'setKeluar']);
-//     Route::put('/{id}/perizinan/set-kembali', [PerizinanController::class, 'setKembali']);
-
-//     Route::post('/{id}/berkas-perizinan', [PerizinanController::class, 'addBerkasPerizinan']);
-
-//     // pelanggaran
-//     Route::get('/{id}/pelanggaran', [PelanggaranController::class, 'index']);
-//     Route::get('/{id}/pelanggaran/show', [PelanggaranController::class, 'show']);
-//     Route::post('/{id}/pelanggaran', [PelanggaranController::class, 'store']);
-//     Route::put('/{id}/pelanggaran', [PelanggaranController::class, 'update']);
-
-//     Route::post('/{id}/berkas-pelanggaran', [PelanggaranController::class, 'addBerkasPelanggaran']);
-
-//     // //pengunjung mahrom
-//     // Route::get('/{id}/pengunjung', [PengunjungMahromController::class, 'index']);
-//     Route::get('/{id}/pengunjung/show', [PengunjungMahromController::class, 'show']);
-//     Route::post('/pengunjung', [PengunjungMahromController::class, 'store']);
-//     Route::put('/pengunjung/{id}', [PengunjungMahromController::class, 'update']);
-
-//     // Keluarga
-//     Route::get('/hubungan', [HubunganKeluargaController::class, 'index']);
-//     Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
-//     Route::get('{id}/hubungan/show', [HubunganKeluargaController::class, 'show']);
-//     Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
-//     Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
-
-//     // Kewaliasuhan
-//     Route::get('/grupwaliasuh', [GrupWaliAsuhController::class, 'index']);
-//     Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);
-//     Route::get('{id}/grupwaliasuh/show', [GrupWaliAsuhController::class, 'show']);
-//     Route::put('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'update']);
-//     Route::delete('/grupwaliasuh/{id}', [GrupWaliAsuhController::class, 'destroy']);
-//     Route::put('/grupwaliasuh/{id}/activate', [GrupWaliAsuhController::class, 'activate']);
-
-//     // lembaga
-//     Route::get('lembaga', [LembagaController::class, 'index']);
-//     Route::post('lembaga', [LembagaController::class, 'store']);
-//     Route::get('{id}/lembaga/edit', [LembagaController::class, 'edit']);
-//     Route::put('{id}/lembaga', [LembagaController::class, 'update']);
-//     Route::delete('{id}/lembaga', [LembagaController::class, 'destroy']);
-
-//     // 🏠 Wilayah (Blok, Kamar, Domisili)
-//     Route::apiResource('/wilayah', WilayahController::class);
-//     Route::put('/wilayah/{id}/activate', [WilayahController::class, 'activate']);
-//     Route::apiResource('/blok', BlokController::class);
-//     Route::put('/blok/{id}/activate', [BlokController::class, 'activate']);
-//     Route::apiResource('/kamar', KamarController::class);
-//     Route::put('/kamar/{id}/activate', [KamarController::class, 'activate']);
-
-//     // 🎓 Pendidikan
-//     Route::apiResource('/lembaga', LembagaController::class);
-//     Route::put('/lembaga/{id}/activate', [LembagaController::class, 'activate']);
-//     Route::apiResource('/jurusan', JurusanController::class);
-//     Route::put('/jurusan/{id}/activate', [JurusanController::class, 'activate']);
-//     Route::apiResource('/kelas', KelasController::class);
-//     Route::put('/kelas/{id}/activate', [KelasController::class, 'activate']);
-//     Route::apiResource('/rombel', RombelController::class);
-//     Route::put('/rombel/{id}/activate', [RombelController::class, 'activate']);
-
-//     // golongan
-//     Route::get('golongan', [GolonganController::class, 'index']);
-//     Route::post('golongan', [GolonganController::class, 'store']);
-//     Route::get('{id}/golongan/edit', [GolonganController::class, 'edit']);
-//     Route::put('{id}/golongan', [GolonganController::class, 'update']);
-//     Route::delete('{id}/golongan', [GolonganController::class, 'destroy']);
-
-//     // kategori golongan
-//     Route::get('kategori-golongan', [KategoriGolonganController::class, 'index']);
-//     Route::post('kategori-golongan', [KategoriGolonganController::class, 'store']);
-//     Route::get('{id}/kategori-golongan/edit', [KategoriGolonganController::class, 'edit']);
-//     Route::put('{id}/kategori-golongan', [KategoriGolonganController::class, 'update']);
-//     Route::delete('{id}/kategori-golongan', [KategoriGolonganController::class, 'destroy']);
-
-//     // golongan Jabatan
-//     Route::get('golongan-jabatan', [GolonganJabatanController::class, 'index']);
-//     Route::post('golongan-jabatan', [GolonganJabatanController::class, 'store']);
-//     Route::get('{id}/golongan-jabatan/edit', [GolonganJabatanController::class, 'edit']);
-//     Route::put('{id}/golongan-jabatan', [GolonganJabatanController::class, 'update']);
-//     Route::delete('{id}/golongan-jabatan', [GolonganJabatanController::class, 'destroy']);
-
-//     // Kepegawaian
-//     Route::post('/pegawai', [PegawaiController::class, 'store']);
-//     Route::post('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'CreateStore']);
-//     Route::post('/catatan-kognitif', [CatatanKognitifController::class, 'storeCatatanKognitif']);
-
-//     // Jam Pelajaran
-//     Route::get('/jam-pelajaran', [MataPelajaranController::class, 'index']);
-//     Route::post('/jam-pelajaran', [MataPelajaranController::class, 'store']);
-//     Route::get('/jam-pelajaran/{id}', [MataPelajaranController::class, 'show']);
-//     Route::put('/jam-pelajaran/{id}', [MataPelajaranController::class, 'update']);
-//     Route::delete('/jam-pelajaran/{id}', [MataPelajaranController::class, 'destroy']);
-
-//     // Jadwal Pelajaran
-//     Route::get('/jadwal-pelajaran', [MataPelajaranController::class, 'getAllJadwal']);
-//     Route::post('/jadwal-pelajaran', [MataPelajaranController::class, 'storeJadwal']);
-//     Route::get('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'showJadwal']);
-//     Route::put('/jadwal-pelajaran/{id}', [MataPelajaranController::class, 'updateJadwal']);
-//     Route::delete('jadwal-pelajaran/{id}', [MataPelajaranController::class, 'delete']);
-// });
 Route::get('/catatan-afektif', [AdministrasiCatatanAfektifController::class, 'getCatatanAfektif'])
     ->middleware(['auth:sanctum', 'role:wali_asuh|superadmin|supervisor', 'throttle:200,1']);
 Route::get('/catatan-kognitif', [CatatanKognitifController::class, 'getCatatanKognitif'])
@@ -1024,7 +764,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::middleware('role:superadmin|ustadz|petugas|supervisor|admin')->group(function () {
         Route::get('sholat', [SholatController::class, 'index']);
         Route::get('sholat/{sholat}', [SholatController::class, 'show']);
@@ -1037,7 +777,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::middleware('role:petugas|superadmin|supervisor|admin')->group(function () {
         Route::get('/kartu', [KartuController::class, 'index']);
         Route::get('/kartu/{id}', [KartuController::class, 'show']);
@@ -1050,7 +790,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
         Route::put('/kartu/{id}/nonactive', [KartuController::class, 'nonactive']);
         Route::put('/kartu/{id}/active', [KartuController::class, 'activate']);
-
         Route::post('/kartu/set-limit-saldo', [KartuController::class, 'setLimitSaldo']);
     });
 });
@@ -1065,7 +804,7 @@ Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group
     });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/kitab', [KitabController::class, 'indexAll'])
         ->middleware('role:superadmin|supervisor|admin');
     Route::get('/kitab/{id}', [KitabController::class, 'show'])
@@ -1079,7 +818,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::middleware('role:superadmin|supervisor|admin')->group(function () {
         Route::get('outlet', [OutletController::class, 'index']);
         Route::get('outlet/{outlet}', [OutletController::class, 'show']);
@@ -1091,7 +830,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
     });
 
-    Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])->middleware('role:superadmin|admin|supervisor|petugas');
+    Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])
+        ->middleware('role:superadmin|admin|supervisor|petugas');
 
     Route::middleware('role:superadmin|admin')->group(function () {
         Route::post('outlet', [OutletController::class, 'store']);
@@ -1109,14 +849,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Transaksi
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::middleware('role:superadmin|supervisor|admin|petugas')->group(function () {
         Route::post('scan-kartu', [TransaksiController::class, 'scan']);
-
-        // untuk superadmin
         Route::get('transaksi', [TransaksiController::class, 'index']);
-
-        // toko
         Route::get('transaksi-toko', [TransaksiController::class, 'transaksiToko']);
     });
 
@@ -1126,7 +862,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 // Virtual Accounts
-Route::middleware(['auth:sanctum'])->prefix('virtual-accounts')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('virtual-accounts')->group(function () {
     Route::get('/', [VirtualAccountController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [VirtualAccountController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -1135,8 +871,8 @@ Route::middleware(['auth:sanctum'])->prefix('virtual-accounts')->group(function 
     Route::delete('/{id}', [VirtualAccountController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-
-Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
+// Tagihan
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('tagihan')->group(function () {
     Route::get('/', [TagihanController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [TagihanController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -1145,7 +881,8 @@ Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
     Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-Route::middleware(['auth:sanctum'])->prefix('potongan')->group(function () {
+// Potongan
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('potongan')->group(function () {
     Route::get('/', [PotonganController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{potongan}', [PotonganController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -1155,7 +892,8 @@ Route::middleware(['auth:sanctum'])->prefix('potongan')->group(function () {
     Route::delete('/{potongan}', [PotonganController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-Route::middleware(['auth:sanctum'])->prefix('santri-potongan')->group(function () {
+// Santri Potongan
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('santri-potongan')->group(function () {
     Route::get('/', [SantriPotonganController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [SantriPotonganController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -1164,17 +902,17 @@ Route::middleware(['auth:sanctum'])->prefix('santri-potongan')->group(function (
     Route::delete('/{id}', [SantriPotonganController::class, 'destroy'])->middleware('role:superadmin|admin');
 });
 
-Route::middleware(['auth:sanctum'])->prefix('tagihan-santri')->group(function () {
+// Tagihan Santri
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('tagihan-santri')->group(function () {
     Route::get('/', [TagihanSantriController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [TagihanSantriController::class, 'tagihanSantriByTagihanId'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/pembayaran/filters', [TagihanSantriController::class, 'filters'])->middleware('role:superadmin|admin|supervisor');
-
     Route::post('/generate', [TagihanSantriController::class, 'generate'])->middleware('role:superadmin|admin');
     Route::post('/batal', [TagihanSantriController::class, 'batalTagihan'])->middleware('role:superadmin|admin');
 });
 
 // Banks
-Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('banks')->group(function () {
     Route::get('/', [BankController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [BankController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -1184,68 +922,275 @@ Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
 });
 
 // Top up
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::post('/saldo/topup', [SaldoController::class, 'topup']);
     Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
 });
 
-Route::get('dashboard', [DashboardController::class, 'total']);
-
-// Route::prefix('tagihan-santri')->group(function () {
-//     Route::post('/', [TagihanSantriController::class, 'assign']);
-// })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+Route::get('dashboard', [DashboardController::class, 'total'])->middleware('throttle:30,1');
 
 Route::prefix('pembayaran')->group(function () {
     Route::post('/', [PembayaranController::class, 'bayar']);
-})->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+})->middleware(['auth:sanctum', 'role:superadmin|petugas|admin', 'throttle:200,1']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::apiResource('jenis-berkas', JenisBerkasController::class);
 });
 
-Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_tua')->group(function () {
+Route::prefix('view-ortu')->middleware(['auth:orangtua', 'role:|superadmin|orang_tua', 'throttle:200,1'])->group(function () {
     Route::get('/transaksi', [ViewOrangTuaController::class, 'transaksiSaldoAnak']);
-
     Route::get('/tahfidz', [ViewOrangTuaController::class, 'getTahfidzAnak']);
     Route::get('/nadhoman', [ViewOrangTuaController::class, 'getNadhomanAnak']);
-
     Route::get('/presensi', [ViewOrangTuaController::class, 'getPresensiJamaahAnak']);
     Route::get('/presensi-today', [ViewOrangTuaController::class, 'getPresensiToday']);
-
     Route::get('/perizinan', [ViewOrangTuaController::class, 'perizinan']);
     Route::get('/pelanggaran', [ViewOrangTuaController::class, 'pelanggaran']);
-
     Route::get('/catatanAfektif', [ViewOrangTuaController::class, 'catatanAfektif']);
     Route::get('/catatanKognitif', [ViewOrangTuaController::class, 'catatanKognitif']);
-
     Route::get('/ProfileSantri', [ViewOrangTuaController::class, 'ProfileSantri']);
-
     Route::get('/saldo', [ViewOrangTuaController::class, 'saldo']);
-
     Route::post('/bayar', [ViewOrangTuaController::class, 'bayar']);
-
     Route::get('/tagihan/{santriId}', [ViewOrangTuaController::class, 'getTagihanAnak']);
-
     Route::post('/set-limit-saldo', [ViewOrangTuaController::class, 'setLimitSaldo']);
-
     Route::post('/SendMessage', [ViewOrangTuaController::class, 'SendMessage']);
-
     Route::get('/ReadMessage', [ViewOrangTuaController::class, 'ReadMessageOrtu']);
-
     Route::get('/virtual-account', [ViewOrangTuaController::class, 'VirtualAccountAnak']);
 });
 
-// Route::post('/login-ortu', [AuthController::class, 'loginOrtu']);
-// Route::post('/register-ortu', [AuthController::class, 'registerOrtu']);
-Route::post('/login-ortu', [AuthOrtuController::class, 'login']);
-Route::post('/register-ortu', [AuthOrtuController::class, 'register']);
+Route::post('/login-ortu', [AuthOrtuController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/register-ortu', [AuthOrtuController::class, 'register'])->middleware('throttle:10,1');
 
-Route::middleware('auth:sanctum', 'role:superadmin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:superadmin', 'throttle:60,1'])->group(function () {
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('roles', RoleController::class);
 });
 
 Route::post('universalbiller/payment', [PosPayController::class, 'payment'])
-    ->middleware('pos.auth');
+    ->middleware(['pos.auth', 'throttle:100,1']);
 Route::post('universalbiller/inquiry', [PosPayController::class, 'inquiry'])
-    ->middleware('pos.auth');
+    ->middleware(['pos.auth', 'throttle:100,1']);
+
+    
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::middleware('role:superadmin|ustadz|petugas|supervisor|admin')->group(function () {
+//         Route::get('sholat', [SholatController::class, 'index']);
+//         Route::get('sholat/{sholat}', [SholatController::class, 'show']);
+//         Route::get('jadwal-sholat', [JadwalSholatController::class, 'index']);
+//         Route::get('jadwal-sholat/{jadwal_sholat}', [JadwalSholatController::class, 'show']);
+//     });
+//     Route::middleware('role:superadmin|ustadz|petugas|admin')->group(function () {
+//         Route::apiResource('sholat', SholatController::class)->except(['index', 'show']);
+//         Route::apiResource('jadwal-sholat', JadwalSholatController::class)->except(['index', 'show']);
+//     });
+// });
+
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::middleware('role:petugas|superadmin|supervisor|admin')->group(function () {
+//         Route::get('/kartu', [KartuController::class, 'index']);
+//         Route::get('/kartu/{id}', [KartuController::class, 'show']);
+//         Route::get('/riwayatkartu/{id}', [KartuController::class, 'riwayatKartu']);
+//     });
+
+//     Route::middleware('role:petugas|superadmin|admin')->group(function () {
+//         Route::post('/kartu', [KartuController::class, 'store']);
+//         Route::put('/kartu/{id}', [KartuController::class, 'update']);
+//         Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
+//         Route::put('/kartu/{id}/nonactive', [KartuController::class, 'nonactive']);
+//         Route::put('/kartu/{id}/active', [KartuController::class, 'activate']);
+
+//         Route::post('/kartu/set-limit-saldo', [KartuController::class, 'setLimitSaldo']);
+//     });
+// });
+
+// Route::prefix('presensi')->middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
+//     Route::get('/', [PresensiJamaahController::class, 'index'])
+//         ->middleware('role:superadmin|ustadz|petugas|supervisor|admin');
+//     Route::middleware('role:superadmin|ustadz|petugas|admin')->group(function () {
+//         Route::post('cari-santri', [PresensiJamaahController::class, 'cariSantriByUid']);
+//         Route::post('scan', [PresensiJamaahController::class, 'scan']);
+//         Route::post('manual', [PresensiJamaahController::class, 'manualPresensi']);
+//     });
+// });
+
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::get('/kitab', [KitabController::class, 'indexAll'])
+//         ->middleware('role:superadmin|supervisor|admin');
+//     Route::get('/kitab/{id}', [KitabController::class, 'show'])
+//         ->middleware('role:superadmin|supervisor|admin');
+
+//     Route::middleware('role:superadmin|admin')->group(function () {
+//         Route::post('/kitab', [KitabController::class, 'store']);
+//         Route::put('/kitab/{id}', [KitabController::class, 'update']);
+//         Route::delete('/non-aktiv/{id}', [KitabController::class, 'destroy']);
+//         Route::post('/aktiv/{id}', [KitabController::class, 'activate']);
+//     });
+// });
+
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::middleware('role:superadmin|supervisor|admin')->group(function () {
+//         Route::get('outlet', [OutletController::class, 'index']);
+//         Route::get('outlet/{outlet}', [OutletController::class, 'show']);
+
+//         Route::get('kategori', [KategoriController::class, 'index']);
+//         Route::get('kategori/{kategori}', [KategoriController::class, 'show']);
+
+//         Route::get('detail-user-outlet', [DetailUserOutletController::class, 'index']);
+//         Route::get('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'show']);
+//     });
+
+//     Route::get('dropdown-kategori', [KategoriController::class, 'kategoriById'])->middleware('role:superadmin|admin|supervisor|petugas');
+
+//     Route::middleware('role:superadmin|admin')->group(function () {
+//         Route::post('outlet', [OutletController::class, 'store']);
+//         Route::put('outlet/{outlet}', [OutletController::class, 'update']);
+//         Route::delete('outlet/{outlet}', [OutletController::class, 'destroy']);
+
+//         Route::post('kategori', [KategoriController::class, 'store']);
+//         Route::put('kategori/{kategori}', [KategoriController::class, 'update']);
+//         Route::delete('kategori/{kategori}', [KategoriController::class, 'destroy']);
+
+//         Route::post('detail-user-outlet', [DetailUserOutletController::class, 'store']);
+//         Route::put('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'update']);
+//         Route::delete('detail-user-outlet/{detail_user_outlet}', [DetailUserOutletController::class, 'destroy']);
+//     });
+// });
+
+// // Transaksi
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::middleware('role:superadmin|supervisor|admin|petugas')->group(function () {
+//         Route::post('scan-kartu', [TransaksiController::class, 'scan']);
+
+//         // untuk superadmin
+//         Route::get('transaksi', [TransaksiController::class, 'index']);
+
+//         // toko
+//         Route::get('transaksi-toko', [TransaksiController::class, 'transaksiToko']);
+//     });
+
+//     Route::middleware('role:superadmin|petugas')->group(function () {
+//         Route::post('transaksi', [TransaksiController::class, 'store']);
+//     });
+// });
+
+// // Virtual Accounts
+// Route::middleware(['auth:sanctum'])->prefix('virtual-accounts')->group(function () {
+//     Route::get('/', [VirtualAccountController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{id}', [VirtualAccountController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/', [VirtualAccountController::class, 'store'])->middleware('role:superadmin|admin');
+//     Route::put('/{id}', [VirtualAccountController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::delete('/{id}', [VirtualAccountController::class, 'destroy'])->middleware('role:superadmin|admin');
+// });
+
+
+// Route::middleware(['auth:sanctum'])->prefix('tagihan')->group(function () {
+//     Route::get('/', [TagihanController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{id}', [TagihanController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/', [TagihanController::class, 'store'])->middleware('role:superadmin|admin');
+//     Route::put('/{id}', [TagihanController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::delete('/{id}', [TagihanController::class, 'destroy'])->middleware('role:superadmin|admin');
+// });
+
+// Route::middleware(['auth:sanctum'])->prefix('potongan')->group(function () {
+//     Route::get('/', [PotonganController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{potongan}', [PotonganController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/', [PotonganController::class, 'store'])->middleware('role:superadmin|admin');
+//     Route::put('/{potongan}', [PotonganController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::put('/change-status/{potongan}', [PotonganController::class, 'toggleStatus'])->middleware('role:superadmin|admin');
+//     Route::delete('/{potongan}', [PotonganController::class, 'destroy'])->middleware('role:superadmin|admin');
+// });
+
+// Route::middleware(['auth:sanctum'])->prefix('santri-potongan')->group(function () {
+//     Route::get('/', [SantriPotonganController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{id}', [SantriPotonganController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/', [SantriPotonganController::class, 'store'])->middleware('role:superadmin|admin');
+//     Route::put('/{id}', [SantriPotonganController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::delete('/{id}', [SantriPotonganController::class, 'destroy'])->middleware('role:superadmin|admin');
+// });
+
+// Route::middleware(['auth:sanctum'])->prefix('tagihan-santri')->group(function () {
+//     Route::get('/', [TagihanSantriController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{id}', [TagihanSantriController::class, 'tagihanSantriByTagihanId'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/pembayaran/filters', [TagihanSantriController::class, 'filters'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/generate', [TagihanSantriController::class, 'generate'])->middleware('role:superadmin|admin');
+//     Route::post('/batal', [TagihanSantriController::class, 'batalTagihan'])->middleware('role:superadmin|admin');
+// });
+
+// // Banks
+// Route::middleware(['auth:sanctum'])->prefix('banks')->group(function () {
+//     Route::get('/', [BankController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
+//     Route::get('/{id}', [BankController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
+
+//     Route::post('/', [BankController::class, 'store'])->middleware('role:superadmin|admin');
+//     Route::put('/{id}', [BankController::class, 'update'])->middleware('role:superadmin|admin');
+//     Route::delete('/{id}', [BankController::class, 'destroy'])->middleware('role:superadmin|admin');
+// });
+
+// // Top up
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::post('/saldo/topup', [SaldoController::class, 'topup']);
+//     Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
+// });
+
+// Route::get('dashboard', [DashboardController::class, 'total']);
+
+// // Route::prefix('tagihan-santri')->group(function () {
+// //     Route::post('/', [TagihanSantriController::class, 'assign']);
+// // })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+
+// Route::prefix('pembayaran')->group(function () {
+//     Route::post('/', [PembayaranController::class, 'bayar']);
+// })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin']);
+
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::apiResource('jenis-berkas', JenisBerkasController::class);
+// });
+
+// Route::prefix('view-ortu')->middleware('auth:orangtua', 'role:|superadmin|orang_tua')->group(function () {
+//     Route::get('/transaksi', [ViewOrangTuaController::class, 'transaksiSaldoAnak']);
+
+//     Route::get('/tahfidz', [ViewOrangTuaController::class, 'getTahfidzAnak']);
+//     Route::get('/nadhoman', [ViewOrangTuaController::class, 'getNadhomanAnak']);
+
+//     Route::get('/presensi', [ViewOrangTuaController::class, 'getPresensiJamaahAnak']);
+//     Route::get('/presensi-today', [ViewOrangTuaController::class, 'getPresensiToday']);
+
+//     Route::get('/perizinan', [ViewOrangTuaController::class, 'perizinan']);
+//     Route::get('/pelanggaran', [ViewOrangTuaController::class, 'pelanggaran']);
+
+//     Route::get('/catatanAfektif', [ViewOrangTuaController::class, 'catatanAfektif']);
+//     Route::get('/catatanKognitif', [ViewOrangTuaController::class, 'catatanKognitif']);
+
+//     Route::get('/ProfileSantri', [ViewOrangTuaController::class, 'ProfileSantri']);
+
+//     Route::get('/saldo', [ViewOrangTuaController::class, 'saldo']);
+
+//     Route::post('/bayar', [ViewOrangTuaController::class, 'bayar']);
+
+//     Route::get('/tagihan/{santriId}', [ViewOrangTuaController::class, 'getTagihanAnak']);
+
+//     Route::post('/set-limit-saldo', [ViewOrangTuaController::class, 'setLimitSaldo']);
+
+//     Route::post('/SendMessage', [ViewOrangTuaController::class, 'SendMessage']);
+
+//     Route::get('/ReadMessage', [ViewOrangTuaController::class, 'ReadMessageOrtu']);
+
+//     Route::get('/virtual-account', [ViewOrangTuaController::class, 'VirtualAccountAnak']);
+// });
+
+// Route::post('/login-ortu', [AuthOrtuController::class, 'login']);
+// Route::post('/register-ortu', [AuthOrtuController::class, 'register']);
+
+// Route::middleware('auth:sanctum', 'role:superadmin')->group(function () {
+//     Route::apiResource('permissions', PermissionController::class);
+//     Route::apiResource('roles', RoleController::class);
+// });
+
+// Route::post('universalbiller/payment', [PosPayController::class, 'payment'])
+//     ->middleware('pos.auth');
+// Route::post('universalbiller/inquiry', [PosPayController::class, 'inquiry'])
+//     ->middleware('pos.auth');

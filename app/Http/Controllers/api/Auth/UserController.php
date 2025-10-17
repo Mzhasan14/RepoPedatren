@@ -128,10 +128,16 @@ class UserController extends Controller
             return response()->json(['message' => 'Tidak berhak mengubah role'], 403);
         }
 
+        // Cegah user mengubah role dirinya sendiri
+        if (!empty($payload['role']) && $actor->id === $user->id) {
+            return response()->json(['message' => 'Tidak boleh mengubah role akun sendiri.'], 403);
+        }
+
         // Cegah user menonaktifkan akun sendiri
         if (isset($payload['status']) && (bool)$user->status && !(bool)$payload['status'] && $actor->id === $user->id) {
             return response()->json(['message' => 'Aksi ini tidak dapat dilakukan pada akun yang sedang digunakan.'], 403);
         }
+
 
         DB::beginTransaction();
         try {
