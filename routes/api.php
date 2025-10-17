@@ -11,6 +11,7 @@ use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\JenisBerkasController;
 use App\Http\Controllers\api\wilayah\BlokController;
 use App\Http\Controllers\api\Auth\AuthOrtuController;
+use App\Http\Controllers\api\Auth\UserOrtuController;
 use App\Http\Controllers\api\keluarga\WaliController;
 use App\Http\Controllers\api\Pospay\PosPayController;
 use App\Http\Controllers\api\wilayah\KamarController;
@@ -111,6 +112,31 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->group(function () {
         ->middleware('throttle:10,1')
         ->name('users.destroy');
 });
+
+//user ortu 
+Route::middleware(['auth:sanctum', 'role:superadmin'])->group(function () {
+
+    Route::get('user-ortu', [UserOrtuController::class, 'index'])
+        ->middleware('throttle:200,1')
+        ->name('user-ortu.index');
+
+    Route::get('user-ortu/{id}', [UserOrtuController::class, 'show'])
+        ->middleware('throttle:150,1')
+        ->name('user-ortu.show');
+
+    Route::post('user-ortu', [UserOrtuController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('user-ortu.store');
+
+    Route::put('user-ortu/{id}', [UserOrtuController::class, 'update'])
+        ->middleware('throttle:30,1')
+        ->name('user-ortu.update');
+
+    Route::delete('user-ortu/{id}', [UserOrtuController::class, 'destroy'])
+        ->middleware('throttle:10,1')
+        ->name('user-ortu.destroy');
+});
+
 
 Route::post('login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1')
