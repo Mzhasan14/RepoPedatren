@@ -253,6 +253,7 @@ class KartuService
                 ->leftJoin('kategori as kk', 'kk.id', '=', 't.kategori_id')
                 ->where('t.uid_kartu', $uid_kartu)
                 ->select([
+                    's.biodata_id',
                     't.id',
                     'o.nama_outlet',
                     'kk.nama_kategori',
@@ -325,6 +326,7 @@ class KartuService
     {
         return [
             'id'              => $kartu->id,
+            'biodata_id'      => $kartu->santri->biodata_id,
             'santri_id'       => $kartu->santri->id ?? null,
             'nis'             => $kartu->santri->nis ?? null,
             'nama'            => $kartu->santri->biodata->nama ?? null,
