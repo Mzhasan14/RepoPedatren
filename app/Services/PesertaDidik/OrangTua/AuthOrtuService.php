@@ -437,6 +437,19 @@ class AuthOrtuService
             $user->password = Hash::make($password);
             $user->setRememberToken(Str::random(60));
             $user->save();
+
+            $user->tokens()->delete();
+
+            activity('reset_password')
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties([
+                    'ip'         => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'status'     => 'success',
+                ])
+                ->event('success')
+                ->log("User {$user->name} berhasil mereset password.");
         });
     }
     public function updatePassword($user, array $data): array
@@ -455,6 +468,16 @@ class AuthOrtuService
             ]);
 
             $user->tokens()->delete();
+            activity('update_password_ortu')
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties([
+                    'ip'             => request()->ip(),
+                    'user_agent'     => request()->userAgent(),
+                    'status'         => 'success',
+                ])
+                ->event('success')
+                ->log("User {$user->name} berhasil memperbarui password dan seluruh sesi login direset.");
 
             return [
                 'success' => true,
