@@ -113,7 +113,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->group(function () {
         ->name('users.destroy');
 });
 
-//user ortu 
+//user ortu
 Route::middleware(['auth:sanctum', 'role:superadmin'])->group(function () {
 
     Route::get('user-ortu', [UserOrtuController::class, 'index'])
@@ -986,6 +986,15 @@ Route::prefix('view-ortu')->middleware(['auth:orangtua', 'role:|superadmin|orang
 Route::post('/login-ortu', [AuthOrtuController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/register-ortu', [AuthOrtuController::class, 'register'])->middleware('throttle:10,1');
 
+Route::post('forgot-passortu', [AuthOrtuController::class, 'forgotPassword'])
+    ->middleware('throttle:5,1');
+
+    Route::post('reset-passortu', [AuthOrtuController::class, 'resetPassword'])
+    ->middleware('throttle:5,1');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('ortu/update-password', [AuthOrtuController::class, 'updatePassword']);
+});
 Route::middleware(['auth:sanctum', 'role:superadmin', 'throttle:60,1'])->group(function () {
     Route::apiResource('permissions', PermissionController::class);
     Route::apiResource('roles', RoleController::class);
@@ -996,7 +1005,7 @@ Route::post('universalbiller/payment', [PosPayController::class, 'payment'])
 Route::post('universalbiller/inquiry', [PosPayController::class, 'inquiry'])
     ->middleware(['pos.auth', 'throttle:100,1']);
 
-    
+
 // Route::middleware(['auth:sanctum'])->group(function () {
 //     Route::middleware('role:superadmin|ustadz|petugas|supervisor|admin')->group(function () {
 //         Route::get('sholat', [SholatController::class, 'index']);
