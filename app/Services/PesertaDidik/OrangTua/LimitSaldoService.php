@@ -3,6 +3,7 @@
 namespace App\Services\PesertaDidik\OrangTua;
 
 use Exception;
+use App\Models\Kartu;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -66,7 +67,7 @@ class LimitSaldoService
                 ]);
 
                 // 🔹 Ambil ulang kartu setelah update
-                $kartuBaru = DB::table('kartu')->where('santri_id', $santriId)->first();
+                $kartuBaru = Kartu::where('santri_id', $santriId)->first();
 
                 activity('kartu')
                     ->causedBy($user)

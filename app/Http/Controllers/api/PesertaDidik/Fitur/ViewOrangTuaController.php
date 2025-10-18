@@ -325,10 +325,10 @@ class ViewOrangTuaController extends Controller
             $query = TransaksiSaldo::with([
                 'santri:id,nis,biodata_id',
                 'santri.biodata:id,nama',
-                'santri.kartu:id,santri_id,uid_kartu',
+                'santri.kartu:id,santri_id,uid_kartu,limit_saldo',
                 'outlet:id,nama_outlet',
                 'kategori:id,nama_kategori',
-                'userOutlet:id,user_id,outlet_id'
+                'userOutlet:id,user_id,outlet_id',
             ])
                 ->where('santri_id', $santriId)
                 ->orderByDesc('id');
@@ -381,6 +381,7 @@ class ViewOrangTuaController extends Controller
                     'outlet'     => $item->outlet,
                     'kategori'   => $item->kategori,
                     'uid_kartu'  => optional($item->santri->kartu)->uid_kartu,
+                    'limit_saldo'   => number_format($item->santri->kartu->limit_saldo, 0, ',', '.') ?? null,
                 ];
             });
 

@@ -29,8 +29,8 @@ class RegisterRequest extends FormRequest
             // 'nis_anak' => 'required|string|max:20|exists:santri,nis',
             'no_kk' => 'required|string|max:16|exists:keluarga,no_kk',
             'nis_anak' => 'required|string|max:20|exists:santri,nis',
-            'no_hp' => 'nullable|string|max:15|unique:user_ortu,no_hp',
-            'email' => 'nullable|email|max:100|unique:user_ortu,email',
+            'no_hp' => 'required|string|max:15|unique:user_ortu,no_hp',
+            'email' => 'required|email|max:100|unique:user_ortu,email',
             'password' => 'required|string|min:8|confirmed',
         ];
     }
