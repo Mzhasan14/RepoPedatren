@@ -71,7 +71,7 @@ class SaldoService
             if (!$kartu) {
                 return [
                     'status'  => false,
-                    'message' => 'Kartu tidak terdaftar.'
+                    'message' => 'Kartu santri belum terdaftar dalam sistem.'
                 ];
             }
 
@@ -91,7 +91,6 @@ class SaldoService
             }
 
             $uidKartu = $kartu->uid_kartu; // simpan uid_kartu
-            // }
 
             // 3. Ambil atau buat saldo santri
             $saldo = Saldo::firstOrCreate(

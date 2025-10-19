@@ -185,7 +185,7 @@ class AuthOrtuService
                                 'uid_kartu'      => $uidKartu,
                                 'tipe'           => 'debit',
                                 'jumlah'         => $tagihan->total_tagihan,
-                                'keterangan'     => "Pembayaran otomatis tagihan #{$tagihan->id} sebesar Rp {$keteranganTotal} dari saldo saat login oleh orang tua",
+                                'keterangan'     => "Pembayaran otomatis tagihan {$tagihan->nama_tagihan} sebesar Rp {$keteranganTotal} dari saldo saat login oleh orang tua",
                             ]);
                         }
                     }

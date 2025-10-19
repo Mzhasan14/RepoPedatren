@@ -15,22 +15,94 @@ class DataKeluargaSeeder extends Seeder
         $faker = Factory::create('id_ID');
 
         $pekerjaanList = [
-            'Belum/Tidak Bekerja', 'Mengurus Rumah Tangga', 'Pelajar/Mahasiswa', 'Pensiunan',
-            'Pegawai Negeri Sipil (PNS)', 'Tentara Nasional Indonesia (TNI)', 'Kepolisian RI (POLRI)',
-            'Perdagangan', 'Petani/Pekebun', 'Peternak', 'Nelayan/Perikanan', 'Industri', 'Konstruksi',
-            'Transportasi', 'Karyawan Swasta', 'Karyawan BUMN', 'Karyawan BUMD', 'Karyawan Honorer',
-            'Buruh Harian Lepas', 'Buruh Tani/Perkebunan', 'Buruh Nelayan/Perikanan', 'Buruh Peternakan',
-            'Pembantu Rumah Tangga', 'Tukang Cukur', 'Tukang Listrik', 'Tukang Batu', 'Tukang Kayu',
-            'Tukang Sol Sepatu', 'Tukang Las/Pandai Besi', 'Tukang Jahit', 'Tukang Gigi', 'Penata Rias',
-            'Penata Busana', 'Penata Rambut', 'Mekanik', 'Seniman', 'Tabib', 'Paraji', 'Perancang Busana',
-            'Penterjemah', 'Imam Masjid', 'Pendeta', 'Pastor', 'Wartawan', 'Ustadz/Mubaligh', 'Juru Masak',
-            'Promotor Acara', 'Anggota DPR-RI', 'Anggota DPD', 'Anggota BPK', 'Presiden', 'Wakil Presiden',
-            'Anggota Mahkamah Konstitusi', 'Anggota Kabinet/Kementerian', 'Duta Besar', 'Gubernur', 'Wakil Gubernur',
-            'Bupati', 'Wakil Bupati', 'Walikota', 'Wakil Walikota', 'Anggota DPRD Propinsi',
-            'Anggota DPRD Kabupaten/Kota', 'Dosen', 'Guru', 'Pilot', 'Pengacara', 'Notaris', 'Arsitek',
-            'Akuntan', 'Konsultan', 'Dokter', 'Bidan', 'Perawat', 'Apoteker', 'Psikiater/Psikolog',
-            'Penyiar Televisi', 'Penyiar Radio', 'Pelaut', 'Peneliti', 'Sopir', 'Pialang', 'Paranormal',
-            'Pedagang', 'Perangkat Desa', 'Kepala Desa', 'Biarawati', 'Wiraswasta'
+            'Belum/Tidak Bekerja',
+            'Mengurus Rumah Tangga',
+            'Pelajar/Mahasiswa',
+            'Pensiunan',
+            'Pegawai Negeri Sipil (PNS)',
+            'Tentara Nasional Indonesia (TNI)',
+            'Kepolisian RI (POLRI)',
+            'Perdagangan',
+            'Petani/Pekebun',
+            'Peternak',
+            'Nelayan/Perikanan',
+            'Industri',
+            'Konstruksi',
+            'Transportasi',
+            'Karyawan Swasta',
+            'Karyawan BUMN',
+            'Karyawan BUMD',
+            'Karyawan Honorer',
+            'Buruh Harian Lepas',
+            'Buruh Tani/Perkebunan',
+            'Buruh Nelayan/Perikanan',
+            'Buruh Peternakan',
+            'Pembantu Rumah Tangga',
+            'Tukang Cukur',
+            'Tukang Listrik',
+            'Tukang Batu',
+            'Tukang Kayu',
+            'Tukang Sol Sepatu',
+            'Tukang Las/Pandai Besi',
+            'Tukang Jahit',
+            'Tukang Gigi',
+            'Penata Rias',
+            'Penata Busana',
+            'Penata Rambut',
+            'Mekanik',
+            'Seniman',
+            'Tabib',
+            'Paraji',
+            'Perancang Busana',
+            'Penterjemah',
+            'Imam Masjid',
+            'Pendeta',
+            'Pastor',
+            'Wartawan',
+            'Ustadz/Mubaligh',
+            'Juru Masak',
+            'Promotor Acara',
+            'Anggota DPR-RI',
+            'Anggota DPD',
+            'Anggota BPK',
+            'Presiden',
+            'Wakil Presiden',
+            'Anggota Mahkamah Konstitusi',
+            'Anggota Kabinet/Kementerian',
+            'Duta Besar',
+            'Gubernur',
+            'Wakil Gubernur',
+            'Bupati',
+            'Wakil Bupati',
+            'Walikota',
+            'Wakil Walikota',
+            'Anggota DPRD Propinsi',
+            'Anggota DPRD Kabupaten/Kota',
+            'Dosen',
+            'Guru',
+            'Pilot',
+            'Pengacara',
+            'Notaris',
+            'Arsitek',
+            'Akuntan',
+            'Konsultan',
+            'Dokter',
+            'Bidan',
+            'Perawat',
+            'Apoteker',
+            'Psikiater/Psikolog',
+            'Penyiar Televisi',
+            'Penyiar Radio',
+            'Pelaut',
+            'Peneliti',
+            'Sopir',
+            'Pialang',
+            'Paranormal',
+            'Pedagang',
+            'Perangkat Desa',
+            'Kepala Desa',
+            'Biarawati',
+            'Wiraswasta'
         ];
 
         // ==== HELPER FUNCTION ====
@@ -56,11 +128,20 @@ class DataKeluargaSeeder extends Seeder
             $num .= str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             return $num;
         };
-        $generateEmail = function ($name, $faker) {
+        // $generateEmail = function ($name, $faker) {
+        //     $clear = strtolower(preg_replace('/[^a-z]/', '.', $name));
+        //     $clear = preg_replace('/\.+/', '.', $clear);
+        //     return $clear . '@' . $faker->freeEmailDomain;
+        // };
+
+        $generateEmail = function ($name) {
             $clear = strtolower(preg_replace('/[^a-z]/', '.', $name));
-            $clear = preg_replace('/\.+/', '.', $clear);
-            return $clear . '@' . $faker->freeEmailDomain;
+            $clear = preg_replace('/\.+/', '.', $clear); // ubah titik berurutan jadi satu titik
+            $clear = trim($clear, '.'); // hapus titik di awal/akhir
+            return $clear . '@gmail.com';
         };
+
+
         // ==== END HELPER FUNCTION ====
 
         // Ambil data referensi
@@ -130,9 +211,11 @@ class DataKeluargaSeeder extends Seeder
                 $kecamatanId = $ayahBiodata->kecamatan_id;
                 $kodeWilayah = str_pad(
                     (is_numeric($provinsiId) ? $provinsiId : '11') .
-                    (is_numeric($kabupatenId) ? $kabupatenId : '01') .
-                    (is_numeric($kecamatanId) ? $kecamatanId : '01'),
-                    6, '0', STR_PAD_RIGHT
+                        (is_numeric($kabupatenId) ? $kabupatenId : '01') .
+                        (is_numeric($kecamatanId) ? $kecamatanId : '01'),
+                    6,
+                    '0',
+                    STR_PAD_RIGHT
                 );
             } else {
                 $negara = $faker->randomElement($negaraList);
@@ -154,9 +237,11 @@ class DataKeluargaSeeder extends Seeder
 
                 $kodeWilayah = str_pad(
                     (is_numeric($provinsiId) ? $provinsiId : '11') .
-                    (is_numeric($kabupatenId) ? $kabupatenId : '01') .
-                    (is_numeric($kecamatanId) ? $kecamatanId : '01'),
-                    6, '0', STR_PAD_RIGHT
+                        (is_numeric($kabupatenId) ? $kabupatenId : '01') .
+                        (is_numeric($kecamatanId) ? $kecamatanId : '01'),
+                    6,
+                    '0',
+                    STR_PAD_RIGHT
                 );
 
                 $currentNoKK = $faker->regexify('[1-9]{1}[0-9]{15}');
@@ -604,9 +689,11 @@ class DataKeluargaSeeder extends Seeder
             $kecamatanId = $ayahBiodata->kecamatan_id;
             $kodeWilayah = str_pad(
                 (is_numeric($provinsiId) ? $provinsiId : '11') .
-                (is_numeric($kabupatenId) ? $kabupatenId : '01') .
-                (is_numeric($kecamatanId) ? $kecamatanId : '01'),
-                6, '0', STR_PAD_RIGHT
+                    (is_numeric($kabupatenId) ? $kabupatenId : '01') .
+                    (is_numeric($kecamatanId) ? $kecamatanId : '01'),
+                6,
+                '0',
+                STR_PAD_RIGHT
             );
             $newNoKK = $faker->regexify('[1-9]{1}[0-9]{15}');
 
