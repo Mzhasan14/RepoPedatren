@@ -135,6 +135,29 @@ class SantriImport implements ToCollection, WithHeadingRow
                     $noPassport = $row['no_passport'] ?? null;
                 }
 
+                // Sebelum insert, bersihkan dan validasi nomor telepon
+                $noTelp1 = $row['no_telp_1'] ?? null;
+                $noTelp2 = $row['no_telp_2'] ?? null;
+
+                // Fungsi helper sederhana
+                $formatNomor = function ($nomor) {
+                    if (!$nomor) return null;
+
+                    // Hapus spasi dan karakter non-digit kecuali '+'
+                    $nomor = preg_replace('/[^0-9+]/', '', trim($nomor));
+
+                    // Jika karakter pertama bukan +, 0, atau 6 maka tambahkan 0 di depan
+                    if (!preg_match('/^[+06]/', $nomor)) {
+                        $nomor = '0' . $nomor;
+                    }
+
+                    return $nomor;
+                };
+
+                $noTelp1 = $formatNomor($noTelp1);
+                $noTelp2 = $formatNomor($noTelp2);
+
+                // Baru lakukan insert
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
                     'nama' => $row['nama_lengkap'] ?? null,
@@ -142,28 +165,55 @@ class SantriImport implements ToCollection, WithHeadingRow
                     'no_passport' => $noPassport,
                     'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtolower($row['jenis_kelamin']) : null,
                     'tempat_lahir' => $row['tempat_lahir'] ?? null,
-                    'tanggal_lahir' =>  $this->parseDate($row['tanggal_lahir'] ?? null),
+                    'tanggal_lahir' => $this->parseDate($row['tanggal_lahir'] ?? null),
                     'anak_keberapa' => $row['anak_keberapa'] ?? null,
                     'dari_saudara' => $row['dari_berapa_saudara'] ?? null,
                     'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
                     'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
                     'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
                     'email' => $row['email'] ?? null,
-                    'no_telepon' => $row['no_telp_1'] ?? null,
-                    'no_telepon_2' => $row['no_telp_2'] ?? null,
+                    'no_telepon' => $noTelp1,
+                    'no_telepon_2' => $noTelp2,
                     'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, true),
                     'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, true),
                     'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, true),
                     'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, true),
                     'jalan' => $row['jalan'] ?? null,
                     'kode_pos' => $row['kode_pos'] ?? null,
-                    // 'smartcard' => $row['smartcard'] ?? null,
                     'status' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                     'created_by' => $this->userId ?? 1
                 ]);
-                // ... bagian atas class tetap sama
+
+                // DB::table('biodata')->insert([
+                //     'id' => $biodataId,
+                //     'nama' => $row['nama_lengkap'] ?? null,
+                //     'nik' => $nik,
+                //     'no_passport' => $noPassport,
+                //     'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtolower($row['jenis_kelamin']) : null,
+                //     'tempat_lahir' => $row['tempat_lahir'] ?? null,
+                //     'tanggal_lahir' =>  $this->parseDate($row['tanggal_lahir'] ?? null),
+                //     'anak_keberapa' => $row['anak_keberapa'] ?? null,
+                //     'dari_saudara' => $row['dari_berapa_saudara'] ?? null,
+                //     'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
+                //     'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
+                //     'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
+                //     'email' => $row['email'] ?? null,
+                //     'no_telepon' => $row['no_telp_1'] ?? null,
+                //     'no_telepon_2' => $row['no_telp_2'] ?? null,
+                //     'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, true),
+                //     'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, true),
+                //     'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, true),
+                //     'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, true),
+                //     'jalan' => $row['jalan'] ?? null,
+                //     'kode_pos' => $row['kode_pos'] ?? null,
+                //     // 'smartcard' => $row['smartcard'] ?? null,
+                //     'status' => true,
+                //     'created_at' => now(),
+                //     'updated_at' => now(),
+                //     'created_by' => $this->userId ?? 1
+                // ]);
 
                 // --- di dalam foreach($rows as $index => $rawRow) setelah insert ayah & ibu ---
                 $ayahBiodataId = $this->upsertOrangTuaBiodata($row, 'ayah', $excelRow);
@@ -428,7 +478,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     // 🔹 Generate NIS unik
                     do {
                         $random = str_pad(rand(0, 99), 2, '0', STR_PAD_LEFT); // 2 digit random
-                        $nis = $tahunMasuk2Digit . '02' . $random . $nextUrut;
+                        $nis = $tahunMasuk2Digit . '03' . $random . $nextUrut;
                     } while (
                         DB::table('santri')->where('nis', $nis)->exists()
                     );
@@ -518,13 +568,14 @@ class SantriImport implements ToCollection, WithHeadingRow
                 // --- Insert Pendidikan Santri ---
                 if (!empty(trim($row['lembaga'] ?? ''))) {
                     try {
+                        // 🔹 Ambil ID dari master data
                         $lembagaId = $this->findId('lembaga', $row['lembaga'] ?? null, $excelRow, false);
                         $jurusanId = $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false);
                         $kelasId   = $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false);
                         $rombelId  = $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false);
                         $angkatanPelajarId = $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false);
 
-                        // Validasi ID tidak ditemukan
+                        // 🔹 Validasi ID tidak ditemukan
                         if (empty($lembagaId)) {
                             throw new \Exception("Data 'lembaga' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['lembaga']}'. Pastikan nama lembaga sesuai master data.");
                         }
@@ -541,6 +592,29 @@ class SantriImport implements ToCollection, WithHeadingRow
                             throw new \Exception("Data 'rombel' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['rombel']}'.");
                         }
 
+                        // 🔹 Validasi hubungan antar entitas
+                        if (!empty($jurusanId)) {
+                            $jurusan = DB::table('jurusan')->where('id', $jurusanId)->first();
+                            if ($jurusan && $jurusan->lembaga_id != $lembagaId) {
+                                throw new \Exception("Jurusan '{$row['jurusan']}' tidak termasuk dalam lembaga '{$row['lembaga']}' di baris {$excelRow}.");
+                            }
+                        }
+
+                        if (!empty($kelasId)) {
+                            $kelas = DB::table('kelas')->where('id', $kelasId)->first();
+                            if ($kelas && $kelas->jurusan_id != $jurusanId) {
+                                throw new \Exception("Kelas '{$row['kelas']}' tidak termasuk dalam jurusan '{$row['jurusan']}' di baris {$excelRow}.");
+                            }
+                        }
+
+                        if (!empty($rombelId)) {
+                            $rombel = DB::table('rombel')->where('id', $rombelId)->first();
+                            if ($rombel && $rombel->kelas_id != $kelasId) {
+                                throw new \Exception("Rombel '{$row['rombel']}' tidak termasuk dalam kelas '{$row['kelas']}' di baris {$excelRow}.");
+                            }
+                        }
+
+                        // 🔹 Simpan data pendidikan
                         DB::table('pendidikan')->insert([
                             'biodata_id'    => $biodataId,
                             'no_induk'      => $row['no_induk_pendidikan'] ?? null,

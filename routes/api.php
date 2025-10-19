@@ -953,13 +953,13 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::post('/saldo/tarik', [SaldoController::class, 'tarik']);
 });
 
-Route::get('dashboard', [DashboardController::class, 'total'])->middleware('throttle:30,1');
+Route::get('dashboard', [DashboardController::class, 'total'])->middleware('throttle:200,1');
 
 Route::prefix('pembayaran')->group(function () {
     Route::post('/', [PembayaranController::class, 'bayar']);
 })->middleware(['auth:sanctum', 'role:superadmin|petugas|admin', 'throttle:200,1']);
 
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:200,1'])->group(function () {
     Route::apiResource('jenis-berkas', JenisBerkasController::class);
 });
 
