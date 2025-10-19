@@ -157,13 +157,23 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $noTelp1 = $formatNomor($noTelp1);
                 $noTelp2 = $formatNomor($noTelp2);
 
+                $jenisKelaminInput = strtolower(trim($row['jenis_kelamin'] ?? ''));
+
+                if (in_array($jenisKelaminInput, ['l', 'laki-laki', 'laki laki'])) {
+                    $jenisKelamin = 'l';
+                } elseif (in_array($jenisKelaminInput, ['p', 'perempuan'])) {
+                    $jenisKelamin = 'p';
+                } else {
+                    $jenisKelamin = null; // jika tidak dikenali, biarkan null
+                }
+
                 // Baru lakukan insert
                 DB::table('biodata')->insert([
                     'id' => $biodataId,
                     'nama' => $row['nama_lengkap'] ?? null,
                     'nik' => $nik,
                     'no_passport' => $noPassport,
-                    'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtolower($row['jenis_kelamin']) : null,
+                    'jenis_kelamin' => $jenisKelamin,
                     'tempat_lahir' => $row['tempat_lahir'] ?? null,
                     'tanggal_lahir' => $this->parseDate($row['tanggal_lahir'] ?? null),
                     'anak_keberapa' => $row['anak_keberapa'] ?? null,
@@ -175,9 +185,12 @@ class SantriImport implements ToCollection, WithHeadingRow
                     'no_telepon' => $noTelp1,
                     'no_telepon_2' => $noTelp2,
                     'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, true),
-                    'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, true),
-                    'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, true),
-                    'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, true),
+                    'provinsi_id' => null,
+                    'kabupaten_id' => null,
+                    'kecamatan_id' => null,
+                    // 'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, true),
+                    // 'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, true),
+                    // 'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, true),
                     'jalan' => $row['jalan'] ?? null,
                     'kode_pos' => $row['kode_pos'] ?? null,
                     'status' => true,
@@ -564,15 +577,23 @@ class SantriImport implements ToCollection, WithHeadingRow
                 //         'created_by' => $this->userId ?? 1
                 //     ]);
                 // }
-
-                // --- Insert Pendidikan Santri ---
                 if (!empty(trim($row['lembaga'] ?? ''))) {
                     try {
-                        // 🔹 Ambil ID dari master data
+                        // 🔹 Ambil ID dari master data dengan hierarki yang benar
                         $lembagaId = $this->findId('lembaga', $row['lembaga'] ?? null, $excelRow, false);
-                        $jurusanId = $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false);
-                        $kelasId   = $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false);
-                        $rombelId  = $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false);
+
+                        $jurusanId = $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false, null, [
+                            'lembaga_id' => $lembagaId,
+                        ]);
+
+                        $kelasId = $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false, null, [
+                            'jurusan_id' => $jurusanId,
+                        ]);
+
+                        $rombelId = $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false, null, [
+                            'kelas_id' => $kelasId,
+                        ]);
+
                         $angkatanPelajarId = $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false);
 
                         // 🔹 Validasi ID tidak ditemukan
@@ -581,15 +602,15 @@ class SantriImport implements ToCollection, WithHeadingRow
                         }
 
                         if (!empty($row['jurusan']) && empty($jurusanId)) {
-                            throw new \Exception("Data 'jurusan' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['jurusan']}'.");
+                            throw new \Exception("Data 'jurusan' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['jurusan']}' (mungkin tidak terdaftar di lembaga '{$row['lembaga']}').");
                         }
 
                         if (!empty($row['kelas']) && empty($kelasId)) {
-                            throw new \Exception("Data 'kelas' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['kelas']}'.");
+                            throw new \Exception("Data 'kelas' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['kelas']}' (mungkin tidak terdaftar di jurusan '{$row['jurusan']}').");
                         }
 
                         if (!empty($row['rombel']) && empty($rombelId)) {
-                            throw new \Exception("Data 'rombel' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['rombel']}'.");
+                            throw new \Exception("Data 'rombel' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['rombel']}' (mungkin tidak terdaftar di kelas '{$row['kelas']}').");
                         }
 
                         // 🔹 Validasi hubungan antar entitas
@@ -633,6 +654,74 @@ class SantriImport implements ToCollection, WithHeadingRow
                         throw new \Exception("Gagal menyimpan pendidikan di baris {$excelRow}: " . $e->getMessage());
                     }
                 }
+
+                // if (!empty(trim($row['lembaga'] ?? ''))) {
+                //     try {
+                //         // 🔹 Ambil ID dari master data
+                //         $lembagaId = $this->findId('lembaga', $row['lembaga'] ?? null, $excelRow, false);
+                //         $jurusanId = $this->findId('jurusan', $row['jurusan'] ?? null, $excelRow, false);
+                //         $kelasId   = $this->findId('kelas', $row['kelas'] ?? null, $excelRow, false);
+                //         $rombelId  = $this->findId('rombel', $row['rombel'] ?? null, $excelRow, false);
+                //         $angkatanPelajarId = $this->findAngkatanId($row['angkatan_pelajar'] ?? null, 'pelajar', $excelRow, false);
+
+                //         // 🔹 Validasi ID tidak ditemukan
+                //         if (empty($lembagaId)) {
+                //             throw new \Exception("Data 'lembaga' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['lembaga']}'. Pastikan nama lembaga sesuai master data.");
+                //         }
+
+                //         if (!empty($row['jurusan']) && empty($jurusanId)) {
+                //             throw new \Exception("Data 'jurusan' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['jurusan']}'.");
+                //         }
+
+                //         if (!empty($row['kelas']) && empty($kelasId)) {
+                //             throw new \Exception("Data 'kelas' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['kelas']}'.");
+                //         }
+
+                //         if (!empty($row['rombel']) && empty($rombelId)) {
+                //             throw new \Exception("Data 'rombel' tidak ditemukan di baris {$excelRow}. Nilai dari Excel: '{$row['rombel']}'.");
+                //         }
+
+                //         // 🔹 Validasi hubungan antar entitas
+                //         if (!empty($jurusanId)) {
+                //             $jurusan = DB::table('jurusan')->where('id', $jurusanId)->first();
+                //             if ($jurusan && $jurusan->lembaga_id != $lembagaId) {
+                //                 throw new \Exception("Jurusan '{$row['jurusan']}' tidak termasuk dalam lembaga '{$row['lembaga']}' di baris {$excelRow}.");
+                //             }
+                //         }
+
+                //         if (!empty($kelasId)) {
+                //             $kelas = DB::table('kelas')->where('id', $kelasId)->first();
+                //             if ($kelas && $kelas->jurusan_id != $jurusanId) {
+                //                 throw new \Exception("Kelas '{$row['kelas']}' tidak termasuk dalam jurusan '{$row['jurusan']}' di baris {$excelRow}.");
+                //             }
+                //         }
+
+                //         if (!empty($rombelId)) {
+                //             $rombel = DB::table('rombel')->where('id', $rombelId)->first();
+                //             if ($rombel && $rombel->kelas_id != $kelasId) {
+                //                 throw new \Exception("Rombel '{$row['rombel']}' tidak termasuk dalam kelas '{$row['kelas']}' di baris {$excelRow}.");
+                //             }
+                //         }
+
+                //         // 🔹 Simpan data pendidikan
+                //         DB::table('pendidikan')->insert([
+                //             'biodata_id'    => $biodataId,
+                //             'no_induk'      => $row['no_induk_pendidikan'] ?? null,
+                //             'lembaga_id'    => $lembagaId,
+                //             'jurusan_id'    => $jurusanId,
+                //             'kelas_id'      => $kelasId,
+                //             'rombel_id'     => $rombelId,
+                //             'angkatan_id'   => $angkatanPelajarId,
+                //             'tanggal_masuk' => $this->parseDate($row['tanggal_masuk_pendidikan'] ?? now()),
+                //             'status'        => 'aktif',
+                //             'created_at'    => now(),
+                //             'updated_at'    => now(),
+                //             'created_by'    => $this->userId ?? 1,
+                //         ]);
+                //     } catch (\Exception $e) {
+                //         throw new \Exception("Gagal menyimpan pendidikan di baris {$excelRow}: " . $e->getMessage());
+                //     }
+                // }
             }
 
             DB::commit();
@@ -837,8 +926,55 @@ class SantriImport implements ToCollection, WithHeadingRow
         ]);
     }
 
-    protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
-    {
+    // protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
+    // {
+    //     if (!isset($value) || trim((string)$value) === '') {
+    //         if ($required) {
+    //             throw new \Exception("Referensi untuk tabel '{$table}' kosong di baris {$excelRow}.");
+    //         }
+    //         return null;
+    //     }
+
+    //     $value = trim(mb_strtolower((string)$value));
+
+    //     $columnMap = [
+    //         'negara'    => 'nama_negara',
+    //         'provinsi'  => 'nama_provinsi',
+    //         'kabupaten' => 'nama_kabupaten',
+    //         'kecamatan' => 'nama_kecamatan',
+    //         'wilayah'   => 'nama_wilayah',
+    //         'blok'      => 'nama_blok',
+    //         'kamar'     => 'nama_kamar',
+    //         'lembaga'   => 'nama_lembaga',
+    //         'jurusan'   => 'nama_jurusan',
+    //         'kelas'     => 'nama_kelas',
+    //         'rombel'    => 'nama_rombel',
+    //     ];
+
+    //     $column = $columnName ?? ($columnMap[$table] ?? 'nama');
+
+    //     // 🔹 cari berdasarkan lowercase nama
+    //     $record = DB::table($table)
+    //         ->whereRaw("LOWER({$column}) = ?", [$value])
+    //         ->first();
+
+    //     if (!$record) {
+    //         if ($required) {
+    //             throw new \Exception("Data '{$value}' tidak ditemukan pada tabel '{$table}' di baris {$excelRow}.");
+    //         }
+    //         return null;
+    //     }
+
+    //     return $record->id ?? null;
+    // }
+    protected function findId(
+        string $table,
+        $value,
+        int $excelRow,
+        bool $required = true,
+        string $columnName = null,
+        array $extraWhere = []
+    ) {
         if (!isset($value) || trim((string)$value) === '') {
             if ($required) {
                 throw new \Exception("Referensi untuk tabel '{$table}' kosong di baris {$excelRow}.");
@@ -864,14 +1000,25 @@ class SantriImport implements ToCollection, WithHeadingRow
 
         $column = $columnName ?? ($columnMap[$table] ?? 'nama');
 
-        // 🔹 cari berdasarkan lowercase nama
-        $record = DB::table($table)
-            ->whereRaw("LOWER({$column}) = ?", [$value])
-            ->first();
+        // 🔹 Bangun query dasar
+        $query = DB::table($table)->whereRaw("LOWER({$column}) = ?", [$value]);
+
+        // 🔹 Tambahkan filter tambahan (misal: lembaga_id, jurusan_id, kelas_id)
+        foreach ($extraWhere as $key => $val) {
+            if (!is_null($val)) {
+                $query->where($key, $val);
+            }
+        }
+
+        $record = $query->first();
 
         if (!$record) {
             if ($required) {
-                throw new \Exception("Data '{$value}' tidak ditemukan pada tabel '{$table}' di baris {$excelRow}.");
+                $context = collect($extraWhere)
+                    ->map(fn($v, $k) => "{$k}={$v}")
+                    ->implode(', ');
+                $contextInfo = $context ? " (konteks: {$context})" : '';
+                throw new \Exception("Data '{$value}' tidak ditemukan pada tabel '{$table}' di baris {$excelRow}{$contextInfo}.");
             }
             return null;
         }
@@ -879,58 +1026,6 @@ class SantriImport implements ToCollection, WithHeadingRow
         return $record->id ?? null;
     }
 
-
-
-    // protected function findId(string $table, $value, int $excelRow, bool $required = true, string $columnName = null)
-    // {
-    //     if (!isset($value) || trim((string)$value) === '') {
-    //         if ($required) {
-    //             throw new \Exception("Referensi untuk tabel '{$table}' kosong di baris {$excelRow}.");
-    //         }
-    //         return null;
-    //     }
-
-    //     $columnMap = [
-    //         'negara'    => 'nama_negara',
-    //         'provinsi'  => 'nama_provinsi',
-    //         'kabupaten' => 'nama_kabupaten',
-    //         'kecamatan' => 'nama_kecamatan',
-    //         'angkatan'  => 'angkatan',
-    //         'wilayah'   => 'nama_wilayah',
-    //         'blok'      => 'nama_blok',
-    //         'kamar'     => 'nama_kamar',
-    //         'lembaga'   => 'nama_lembaga',
-    //         'jurusan'   => 'nama_jurusan',
-    //         'kelas'     => 'nama_kelas',
-    //         'rombel'    => 'nama_rombel',
-    //     ];
-
-    //     $column = $columnName ?: ($columnMap[$table] ?? 'nama');
-
-    //     $search = trim((string)$value);
-    //     $searchLower = mb_strtolower($search);
-
-    //     if (is_numeric($search)) {
-    //         $record = DB::table($table)->where('id', $search)->select('id')->first();
-    //         if ($record) {
-    //             return $record->id;
-    //         }
-    //     }
-
-    //     $record = DB::table($table)
-    //         ->whereRaw("LOWER(`{$column}`) = ?", [$searchLower])
-    //         ->select('id')
-    //         ->first();
-
-    //     if (!$record) {
-    //         if ($required) {
-    //             throw new \Exception("Referensi untuk '{$table}' dengan nilai '{$search}' tidak ditemukan (kolom '{$column}') di baris {$excelRow}.");
-    //         }
-    //         return null;
-    //     }
-
-    //     return $record->id;
-    // }
 
     protected function findAngkatanId($value, $kategori, int $excelRow, bool $required = true)
     {
