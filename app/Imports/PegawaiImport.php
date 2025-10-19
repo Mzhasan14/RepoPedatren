@@ -332,17 +332,17 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                         'created_by' => $this->userId ?? 1
                     ]);
 
-                    // Insert ke tabel mata_pelajaran (jika ada data di Excel)
-                    if (!empty($row['pengajar_kode_mapel']) && !empty($row['pengajar_nama_mapel'])) {
+                    if (!empty($row['pengajar_nama_mapel']) || !empty($row['nama_mapel_pengajar'])) {
+                        $namaMapel = $row['pengajar_nama_mapel'] ?? $row['nama_mapel_pengajar'] ?? null;
+                        $kodeMapel = $row['pengajar_kode_mapel'] ?? null;
+
                         DB::table('mata_pelajaran')->insert([
                             'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
-                            'kode_mapel' => $row['pengajar_kode_mapel'],
-                            'nama_mapel' => $row['pengajar_nama_mapel'],
+                            'kode_mapel' => $kodeMapel, 
+                            'nama_mapel' => $namaMapel,
                             'pengajar_id' => $pengajarId,
-                            'status' => 1, // default aktif
+                            'status' => 1,
                             'created_by' => $this->userId ?? 1,
-                            'updated_by' => null,
-                            'deleted_by' => null,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
