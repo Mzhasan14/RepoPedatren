@@ -437,6 +437,7 @@ Route::prefix('formulir')
             // Keluarga
             Route::put('{id}/keluarga', [KeluargaController::class, 'update']);
             Route::put('{id}/keluarga/pindah', [KeluargaController::class, 'pindahkanSeluruhKk']);
+            Route::put('{id}/semua-keluarga', [KeluargaController::class, 'changeFamilyCard']);
 
             // Orang Tua Wali
             Route::post('/orangtua', [OrangTuaWaliController::class, 'store']);

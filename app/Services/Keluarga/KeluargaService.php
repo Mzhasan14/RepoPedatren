@@ -109,4 +109,82 @@ class KeluargaService
             'data' => $new,
         ];
     }
+
+    public function changeFamilyCard($biodataId, array $validated)
+    {
+        $noKkBaru = trim($validated['no_kk_baru'] ?? '');
+
+        if (!$biodataId || !$noKkBaru) {
+            return [
+                'success' => false,
+                'message' => 'No KK baru wajib diisi.',
+                'status'  => 400,
+            ];
+        }
+
+        $noKkLama = DB::table('keluarga')
+            ->where('id_biodata', $biodataId)
+            ->value('no_kk');
+
+        if (!$noKkLama) {
+            return [
+                'success' => false,
+                'message' => 'Nomor KK lama tidak ditemukan untuk biodata tersebut.',
+                'status'  => 404,
+            ];
+        }
+
+        if ($noKkLama === $noKkBaru) {
+            return [
+                'success' => false,
+                'message' => 'Nomor KK baru tidak boleh sama dengan nomor KK lama.',
+                'status'  => 400,
+            ];
+        }
+
+        $kkExist = DB::table('keluarga')
+            ->where('no_kk', $noKkBaru)
+            ->exists();
+
+        if ($kkExist) {
+            return [
+                'success' => false,
+                'message' => 'Nomor KK baru sudah digunakan oleh keluarga lain.',
+                'status'  => 409,
+            ];
+        }
+
+        $anggota = DB::table('keluarga')
+            ->where('no_kk', $noKkLama)
+            ->pluck('id_biodata');
+
+        if ($anggota->isEmpty()) {
+            return [
+                'success' => false,
+                'message' => 'Tidak ada anggota keluarga dengan No KK lama tersebut.',
+                'status'  => 404,
+            ];
+        }
+// dd($anggota);
+        DB::transaction(function () use ($anggota, $noKkBaru) {
+            DB::table('keluarga')
+                ->whereIn('id_biodata', $anggota)
+                ->update([
+                    'no_kk' => $noKkBaru,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        return [
+            'success' => true,
+            'message' => 'Nomor KK berhasil diperbarui untuk seluruh anggota keluarga.',
+            'data' => [
+                'no_kk_lama' => $noKkLama,
+                'no_kk_baru' => $noKkBaru,
+                'jumlah_anggota_terupdate' => $anggota->count(),
+            ],
+            'status' => 200,
+        ];
+    }
 }

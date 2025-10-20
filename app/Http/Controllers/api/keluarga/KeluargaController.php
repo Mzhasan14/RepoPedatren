@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\api\keluarga;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Keluarga\ChangeFamilyCardRequest;
 use App\Http\Requests\Keluarga\KeluargaRequest;
 use App\Http\Resources\PdResource;
 use App\Models\Biodata;
@@ -157,7 +158,7 @@ class KeluargaController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal ambil detail khadam: '.$e->getMessage());
+            Log::error('Gagal ambil detail khadam: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menampilkan data.',
@@ -186,7 +187,7 @@ class KeluargaController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal update Keluarga: '.$e->getMessage());
+            Log::error('Gagal update Keluarga: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -212,7 +213,7 @@ class KeluargaController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah KK: '.$e->getMessage());
+            Log::error('Gagal pindah KK: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
@@ -238,11 +239,38 @@ class KeluargaController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal pindah KK: '.$e->getMessage());
+            Log::error('Gagal pindah KK: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function changeFamilyCard(ChangeFamilyCardRequest $request, $biodataId): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+
+            $result = $this->service->changeFamilyCard($biodataId, $validated);
+
+            if (!isset($result['success']) || $result['success'] === false) {
+                return response()->json([
+                    'message' => $result['message'] ?? 'Terjadi kesalahan.',
+                ], $result['status'] ?? 400);
+            }
+
+            return response()->json([
+                'message' => $result['message'] ?? 'KK baru berhasil dibuat.',
+                'data'    => $result['data'] ?? null,
+            ], $result['status'] ?? 200);
+        } catch (\Exception $e) {
+            Log::error('Gagal pindah KK: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses data',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -331,7 +359,7 @@ class KeluargaController extends Controller
 
                 return [
                     'no_kk' => $noKk,
-                    'relasi_keluarga' => $anggota->map(fn ($i) => [
+                    'relasi_keluarga' => $anggota->map(fn($i) => [
                         'id_keluarga' => $i->id,
                         'nik' => $i->nik,
                         'nama' => $i->nama,
@@ -346,7 +374,7 @@ class KeluargaController extends Controller
                 'data' => $data,
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal mendapatkan data keluarga: '.$e->getMessage());
+            Log::error('Gagal mendapatkan data keluarga: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses data.',
