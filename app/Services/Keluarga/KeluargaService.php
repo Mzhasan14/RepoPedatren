@@ -2,6 +2,7 @@
 
 namespace App\Services\Keluarga;
 
+use App\Models\Biodata;
 use App\Models\Keluarga;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -165,8 +166,8 @@ class KeluargaService
                 'status'  => 404,
             ];
         }
-// dd($anggota);
-        DB::transaction(function () use ($anggota, $noKkBaru) {
+
+        DB::transaction(function () use ($anggota, $noKkBaru, $noKkLama, $biodataId) {
             DB::table('keluarga')
                 ->whereIn('id_biodata', $anggota)
                 ->update([
@@ -174,6 +175,26 @@ class KeluargaService
                     'updated_by' => Auth::id(),
                     'updated_at' => now(),
                 ]);
+
+            activity('perubahan_kartu_keluarga')
+                ->causedBy(Auth::user())
+                ->performedOn(Biodata::find($biodataId))
+                ->withProperties([
+                    'biodata_id' => $biodataId,
+                    'no_kk_lama' => $noKkLama,
+                    'no_kk_baru' => $noKkBaru,
+                    'jumlah_anggota_terupdate' => $anggota->count(),
+                    'daftar_anggota' => $anggota,
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('update_no_kk')
+                ->log(sprintf(
+                    'Perubahan Nomor KK dari %s ke %s untuk %d anggota keluarga.',
+                    $noKkLama,
+                    $noKkBaru,
+                    $anggota->count()
+                ));
         });
 
         return [
