@@ -22,45 +22,59 @@ class UserRequest extends FormRequest
         $userId = optional($this->route('user'))->id;
 
         return [
-            // User core
+            // === USER CORE ===
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users')->ignore($userId), // abaikan email milik user sendiri kalau update
+                Rule::unique('users')->ignore($userId),
             ],
-            'password' => $this->isMethod('post') ? ['required', 'string', 'min:8'] : ['nullable', 'string', 'min:8'],
-            'role' => ['required', 'string'], // bisa ditambah exists jika perlu
+            'password' => $this->isMethod('post')
+                ? ['required', 'string', 'min:8']
+                : ['nullable', 'string', 'min:8'],
+            'role' => ['required', 'string'],
             'status' => ['required', 'boolean'],
 
-            // Biodata
-            'biodata_id' => ['nullable', 'uuid', 'exists:biodata,id'],
-            'biodata' => ['required', 'array'],
-            'biodata.negara_id' => ['required', 'integer', 'exists:negara,id'],
-            'biodata.provinsi_id' => ['required', 'integer', 'exists:provinsi,id'],
-            'biodata.kabupaten_id' => ['required', 'integer', 'exists:kabupaten,id'],
-            'biodata.kecamatan_id' => ['required', 'integer', 'exists:kecamatan,id'],
-            'biodata.jalan' => ['required', 'string', 'max:255'],
-            'biodata.kode_pos' => ['required', 'string', 'max:10'],
-            'biodata.nama' => ['required', 'string', 'max:100'],
-            'biodata.nik' => ['nullable', 'required_without_all:biodata.passport', 'digits:16'],
-            'biodata.no_kk' => ['nullable', 'required_without_all:biodata.passport', 'digits:16'],
-            'biodata.passport' => ['nullable', 'required_without_all:biodata.nik,biodata.no_kk', 'string', 'max:20'],
-            'biodata.jenis_kelamin' => ['required', 'in:l,p'],
-            'biodata.tanggal_lahir' => ['required', 'date'],
-            'biodata.tempat_lahir' => ['required', 'string', 'max:50'],
-            'biodata.no_telepon' => ['required', 'string', 'max:20'],
-            'biodata.no_telepon_2' => ['nullable', 'string', 'max:20'],
-            'biodata.email' => ['nullable', 'email', 'max:100', Rule::unique('biodata', 'email')->ignore($userId)],
+            // === BIODATA ===
+            'biodata_id' => ['nullable', 'uuid', 'exists:biodata,id', 'required_without:biodata'],
+            'biodata' => ['required_without:biodata_id', 'array'],
 
-            'biodata.jenjang_pendidikan_terakhir' => ['nullable', Rule::in(['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2'])],
-            'biodata.nama_pendidikan_terakhir' => ['nullable', 'string', 'max:100'],
-            'biodata.anak_keberapa' => ['nullable', 'integer', 'min:1'],
-            'biodata.dari_saudara' => ['nullable', 'integer', 'min:1'],
-            'biodata.tinggal_bersama' => ['nullable', 'string', 'max:40'],
+            // Field biodata hanya divalidasi jika ada (gunakan sometimes)
+            'biodata.negara_id' => ['sometimes', 'required', 'integer', 'exists:negara,id'],
+            'biodata.provinsi_id' => ['sometimes', 'required', 'integer', 'exists:provinsi,id'],
+            'biodata.kabupaten_id' => ['sometimes', 'required', 'integer', 'exists:kabupaten,id'],
+            'biodata.kecamatan_id' => ['sometimes', 'required', 'integer', 'exists:kecamatan,id'],
+            'biodata.jalan' => ['sometimes', 'required', 'string', 'max:255'],
+            'biodata.kode_pos' => ['sometimes', 'required', 'string', 'max:10'],
+            'biodata.nama' => ['sometimes', 'required', 'string', 'max:100'],
+            'biodata.nik' => ['sometimes', 'nullable', 'required_without_all:biodata.passport', 'digits:16'],
+            'biodata.no_kk' => ['sometimes', 'nullable', 'required_without_all:biodata.passport', 'digits:16'],
+            'biodata.passport' => ['sometimes', 'nullable', 'required_without_all:biodata.nik,biodata.no_kk', 'string', 'max:20'],
+            'biodata.jenis_kelamin' => ['sometimes', 'required', 'in:l,p'],
+            'biodata.tanggal_lahir' => ['sometimes', 'required', 'date'],
+            'biodata.tempat_lahir' => ['sometimes', 'required', 'string', 'max:50'],
+            'biodata.no_telepon' => ['sometimes', 'required', 'string', 'max:20'],
+            'biodata.no_telepon_2' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'biodata.email' => [
+                'sometimes',
+                'nullable',
+                'email',
+                'max:100',
+                Rule::unique('biodata', 'email')->ignore($userId),
+            ],
+            'biodata.jenjang_pendidikan_terakhir' => [
+                'sometimes',
+                'nullable',
+                Rule::in(['paud', 'sd/mi', 'smp/mts', 'sma/smk/ma', 'd3', 'd4', 's1', 's2']),
+            ],
+            'biodata.nama_pendidikan_terakhir' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'biodata.anak_keberapa' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'biodata.dari_saudara' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'biodata.tinggal_bersama' => ['sometimes', 'nullable', 'string', 'max:40'],
         ];
     }
+
 
     public function messages(): array
     {
