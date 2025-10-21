@@ -81,13 +81,15 @@ class DetailService
             $ttl = "{$biodata->tempat_lahir}, {$tanggal_lahir}";
         } else {
             $tanggal_lahir = null;
-            $ttl = $biodata->tempat_lahir; 
+            $ttl = $biodata->tempat_lahir;
         }
 
         // Ambil No KK (dipindah ke sini agar hanya dieksekusi jika biodata ada)
         $noKk = DB::table('keluarga')
             ->where('id_biodata', $biodata->id)
             ->value('no_kk');
+
+        $umur = $biodata->umur !== null ? $biodata->umur . ' tahun' : null;
 
         $data['Biodata'] = [
             'id' => $biodata->id,
@@ -98,15 +100,13 @@ class DetailService
             'jenis_kelamin' => $biodata->jenis_kelamin,
             'tempat_tanggal_lahir' => $ttl,
             'anak_ke' => $biodata->anak_ke,
-            'umur' => $biodata->umur . ' tahun',
+            'umur' => $umur,
             'kecamatan' => $biodata->nama_kecamatan ?? '-',
             'kabupaten' => $biodata->nama_kabupaten ?? '-',
             'provinsi' => $biodata->nama_provinsi ?? '-',
             'warganegara' => $biodata->nama_negara ?? '-',
             'foto_profil' => URL::to($biodata->foto),
         ];
-
-
 
         // --- Keluarga (Ortu & Saudara) ---
         $ortu = collect();
