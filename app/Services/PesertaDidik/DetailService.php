@@ -51,7 +51,8 @@ class DetailService
                 'b.tempat_lahir',
                 'b.tanggal_lahir',
                 DB::raw("CONCAT(b.anak_keberapa, ' dari ', b.dari_saudara, ' bersaudara') as anak_ke"),
-                DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) as umur"),
+                DB::raw("CASE WHEN b.tanggal_lahir IS NULL THEN NULL ELSE TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) END as umur"),
+                // DB::raw("TIMESTAMPDIFF(YEAR, b.tanggal_lahir, CURDATE()) as umur"),
                 'kc.nama_kecamatan',
                 'kb.nama_kabupaten',
                 'pv.nama_provinsi',
@@ -73,8 +74,15 @@ class DetailService
 
         // --- Format tanggal lahir & siapkan data utama ---
         Carbon::setLocale('id');
-        $tanggal_lahir = Carbon::parse($biodata->tanggal_lahir)->translatedFormat('d F Y');
-        $ttl = "{$biodata->tempat_lahir}, {$tanggal_lahir}";
+
+        // ✅ Jangan parse tanggal jika null, biarkan null
+        if ($biodata->tanggal_lahir) {
+            $tanggal_lahir = Carbon::parse($biodata->tanggal_lahir)->translatedFormat('d F Y');
+            $ttl = "{$biodata->tempat_lahir}, {$tanggal_lahir}";
+        } else {
+            $tanggal_lahir = null;
+            $ttl = $biodata->tempat_lahir; 
+        }
 
         // Ambil No KK (dipindah ke sini agar hanya dieksekusi jika biodata ada)
         $noKk = DB::table('keluarga')

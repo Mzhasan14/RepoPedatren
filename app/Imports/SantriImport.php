@@ -25,27 +25,32 @@ class SantriImport implements ToCollection, WithHeadingRow
 
     protected function parseDate($value)
     {
-        if (empty($value)) {
+        // 🔹 Jika kosong, null, atau hanya berisi spasi
+        if (empty($value) || trim($value) === '') {
             return null;
         }
 
         try {
-            // Jika berupa angka (format tanggal Excel, misal 40461)
+            // 🔹 Jika berupa angka (format tanggal Excel, misal 40461)
             if (is_numeric($value)) {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
                     ->format('Y-m-d');
             }
 
-            // Jika string (misalnya "20/09/2024" atau "2024-09-20")
+            // 🔹 Jika string (misalnya "20/09/2024" atau "2024-09-20")
             $value = trim((string)$value);
 
-            // Coba parse ke tanggal menggunakan Carbon
+            // 🔹 Coba parse ke tanggal menggunakan Carbon
             $date = \Carbon\Carbon::parse($value);
+
+            // Validasi hasil — pastikan bukan tanggal default Carbon
             return $date->format('Y-m-d');
         } catch (\Exception $e) {
+            // 🔹 Kalau gagal parse (format aneh, teks, dll) -> null
             return null;
         }
     }
+
 
     protected function normalizeNumberString($value)
     {
@@ -95,6 +100,19 @@ class SantriImport implements ToCollection, WithHeadingRow
             foreach ($rows as $index => $rawRow) {
                 $excelRow = $index + 3; // data mulai dari baris 3 (baris 1 kosong, baris 2 header)
                 $row = $this->normalizeRow($rawRow->toArray());
+
+                $excelRow = $index + 3; // data mulai dari baris 3 (baris 1 kosong, baris 2 header)
+                $row = $this->normalizeRow($rawRow->toArray());
+
+                // --- CEK KEWARGANEGARAAN ---
+                $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
+                if (empty($kewarganegaraan)) {
+                    throw new \Exception("Kolom 'Kewarganegaraan' wajib diisi di baris {$excelRow}");
+                }
+
+                if (!in_array($kewarganegaraan, ['WNI', 'WNA'])) {
+                    throw new \Exception("Kolom 'Kewarganegaraan' hanya boleh berisi 'WNI' atau 'WNA' di baris {$excelRow}");
+                }
 
                 // --- CEK NIK SANTRI PALING AWAL ---
                 $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
