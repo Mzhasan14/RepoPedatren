@@ -32,7 +32,7 @@ class PengajarService
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,
-                'nama_lembaga' => optional($p->lembaga)->nama_lembaga,
+                'nama_lembaga' => trim(($p->keterangan_jabatan ?? '') . ' - ' . (optional($p->lembaga)->nama_lembaga ?? '')),
                 'nama_golongan' => optional($p->golongan)->nama_golongan,
                 'jabatan_kontrak' => $p->jabatan,
                 'tanggal_masuk' => $p->tahun_masuk,
@@ -45,6 +45,7 @@ class PengajarService
             'data' => $pengajar,
         ];
     }
+
 
     public function show($id): array
     {

@@ -380,8 +380,8 @@ class DetailService
 
         // --- Catatan Kognitif ---
         $kg = DB::table('catatan_kognitif as ck')
-            ->join('santri as s', 'ck.id_santri', '=', 's.id') 
-            ->join('biodata as b', 's.biodata_id', '=', 'b.id') 
+            ->join('santri as s', 'ck.id_santri', '=', 's.id')
+            ->join('biodata as b', 's.biodata_id', '=', 'b.id')
             ->where('b.id', $biodataId)
             ->latest('ck.created_at')
             ->first();
@@ -508,7 +508,8 @@ class DetailService
             ->where('pegawai.biodata_id', $biodataId)
             ->select(
                 // Pangkalan
-                'lembaga.nama_lembaga',
+                // 'lembaga.nama_lembaga',
+                DB::raw("CONCAT(pengajar.keterangan_jabatan, ' - ', lembaga.nama_lembaga) as nama_lembaga"),
                 'pengajar.jabatan as pekerjaan_kontrak',
                 'kategori_golongan.nama_kategori_golongan',
                 'golongan.nama_golongan',
