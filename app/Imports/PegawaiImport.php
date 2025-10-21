@@ -111,6 +111,10 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                 // Tentukan kewarganegaraan (jika ada)
                 $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
+                
+                if (!in_array($kewarganegaraan, ['WNI', 'WNA'])) {
+                    throw new \Exception("Kolom 'kewarganegaraan' hanya boleh berisi 'WNI' atau 'WNA' di baris {$excelRow} (isi: '{$row['kewarganegaraan']}').");
+                }
 
                 // ==========================================================
                 // --- TAMBAHAN VALIDASI 1: NEGARA UNTUK WNA ---
@@ -338,7 +342,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
 
                         DB::table('mata_pelajaran')->insert([
                             'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
-                            'kode_mapel' => $kodeMapel, 
+                            'kode_mapel' => $kodeMapel,
                             'nama_mapel' => $namaMapel,
                             'pengajar_id' => $pengajarId,
                             'status' => 1,
