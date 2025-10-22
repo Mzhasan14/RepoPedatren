@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -21,10 +22,8 @@ class PegawaiImport implements ToCollection, WithHeadingRow
     {
         $this->userId = $userId;
     }
-
     public function collection(Collection $rows)
     {
-        // Pastikan ada baris (HeadingRow akan otomatis dipakai oleh paket)
         if ($rows->isEmpty()) {
             return;
         }
@@ -32,102 +31,85 @@ class PegawaiImport implements ToCollection, WithHeadingRow
         DB::beginTransaction();
         try {
             $processedNiks = [];
+            $newCount = 0;
+            $updatedCount = 0;
+            $updatedList = [];
             foreach ($rows as $index => $rawRow) {
                 $excelRow = $index + $this->headingRow() + 1;
-                // Cek kalau semua kolom kosong (anggap 0 di kolom tanggal juga kosong)
+
+                // Lewati baris kosong
                 $isEmptyRow = collect($rawRow)->filter(function ($val) {
-                    // Anggap kosong kalau null, '', whitespace, atau 0 yang berasal dari cell tanggal
-                    if (is_numeric($val) && (int)$val === 0) {
-                        return false;
-                    }
+                    if (is_numeric($val) && (int)$val === 0) return false;
                     return trim((string)$val) !== '';
                 })->isEmpty();
+                if ($isEmptyRow) continue;
 
-                if ($isEmptyRow) {
-                    continue; // lewati baris kosong
-                }
-                // Normalisasi keys header → jadi array biasa dengan key terstandard
                 $row = $this->normalizeRow($rawRow->toArray());
+                $jkRaw = strtolower(trim((string)($row['jenis_kelamin'] ?? '')));
+                $jkRaw = str_replace(['.', ',', '-', '_', ' '], '', $jkRaw); // hapus simbol
 
-                // =========================
-                // Deteksi otomatis role berdasarkan keberadaan data kolom entitas
-                // (TIDAK lagi memeriksa kolom status_karyawan/status_pengajar/...)
-                // =========================
-                $willInsertKaryawan = (
-                    (isset($row['karyawan_golongan_jabatan']) && trim((string)$row['karyawan_golongan_jabatan']) !== '') ||
-                    (isset($row['karyawan_lembaga']) && trim((string)$row['karyawan_lembaga']) !== '') ||
-                    (isset($row['karyawan_jabatan']) && trim((string)$row['karyawan_jabatan']) !== '') ||
-                    (isset($row['karyawan_keterangan_jabatan']) && trim((string)$row['karyawan_keterangan_jabatan']) !== '') ||
-                    (isset($row['karyawan_tanggal_mulai']) && trim((string)$row['karyawan_tanggal_mulai']) !== '')
-                );
+                if (in_array($jkRaw, ['l', 'lk', 'lelaki', 'laki', 'lakilaki', 'cowok'])) {
+                    $jenisKelamin = 'l';
+                } elseif (in_array($jkRaw, ['p', 'pr', 'perempuan', 'wanita', 'cewek'])) {
+                    $jenisKelamin = 'p';
+                } else {
+                    throw new \Exception("Kolom 'jenis_kelamin' tidak dikenali di baris {$excelRow} (isi: '{$row['jenis_kelamin']}'). Harus diisi 'Laki-laki' atau 'Perempuan'.");
+                }
+                // Deteksi role
+                $willInsertKaryawan = !empty(array_filter([
+                    $row['karyawan_golongan_jabatan'] ?? null,
+                    $row['karyawan_lembaga'] ?? null,
+                    $row['karyawan_jabatan'] ?? null,
+                    $row['karyawan_keterangan_jabatan'] ?? null,
+                    $row['karyawan_tanggal_mulai'] ?? null,
+                ]));
 
-                $willInsertPengajar = (
-                    (isset($row['pengajar_kategori_golongan']) && trim((string)$row['pengajar_kategori_golongan']) !== '') ||
-                    (isset($row['pengajar_golongan']) && trim((string)$row['pengajar_golongan']) !== '') ||
-                    (isset($row['pengajar_lembaga']) && trim((string)$row['pengajar_lembaga']) !== '') ||
-                    (isset($row['pengajar_keterangan_jabatan']) && trim((string)$row['pengajar_keterangan_jabatan']) !== '') ||
-                    (isset($row['pengajar_jabatan']) && trim((string)$row['pengajar_jabatan']) !== '') ||
-                    (isset($row['pengajar_tahun_masuk']) && trim((string)$row['pengajar_tahun_masuk']) !== '')
-                );
+                $willInsertPengajar = !empty(array_filter([
+                    $row['pengajar_kategori_golongan'] ?? null,
+                    $row['pengajar_golongan'] ?? null,
+                    $row['pengajar_lembaga'] ?? null,
+                    $row['pengajar_keterangan_jabatan'] ?? null,
+                    $row['pengajar_jabatan'] ?? null,
+                    $row['pengajar_tahun_masuk'] ?? null,
+                ]));
 
-                $willInsertPengurus = (
-                    (isset($row['pengurus_golongan_jabatan']) && trim((string)$row['pengurus_golongan_jabatan']) !== '') ||
-                    (isset($row['pengurus_satuan_kerja']) && trim((string)$row['pengurus_satuan_kerja']) !== '') ||
-                    (isset($row['pengurus_jabatan']) && trim((string)$row['pengurus_jabatan']) !== '') ||
-                    (isset($row['pengurus_keterangan_jabatan']) && trim((string)$row['pengurus_keterangan_jabatan']) !== '') ||
-                    (isset($row['pengurus_tanggal_mulai']) && trim((string)$row['pengurus_tanggal_mulai']) !== '')
-                );
+                $willInsertPengurus = !empty(array_filter([
+                    $row['pengurus_golongan_jabatan'] ?? null,
+                    $row['pengurus_satuan_kerja'] ?? null,
+                    $row['pengurus_jabatan'] ?? null,
+                    $row['pengurus_keterangan_jabatan'] ?? null,
+                    $row['pengurus_tanggal_mulai'] ?? null,
+                ]));
 
-                $willInsertWali = (
-                    (isset($row['wali_lembaga']) && trim((string)$row['wali_lembaga']) !== '') ||
-                    (isset($row['wali_jurusan']) && trim((string)$row['wali_jurusan']) !== '') ||
-                    (isset($row['wali_kelas']) && trim((string)$row['wali_kelas']) !== '') ||
-                    (isset($row['wali_rombel']) && trim((string)$row['wali_rombel']) !== '') ||
-                    (isset($row['wali_periode_awal']) && trim((string)$row['wali_periode_awal']) !== '')
-                );
+                $willInsertWali = !empty(array_filter([
+                    $row['wali_lembaga'] ?? null,
+                    $row['wali_jurusan'] ?? null,
+                    $row['wali_kelas'] ?? null,
+                    $row['wali_rombel'] ?? null,
+                    $row['wali_periode_awal'] ?? null,
+                ]));
 
-                // Validasi: minimal satu role harus ada datanya (berdasarkan kolom entitas)
                 if (!($willInsertKaryawan || $willInsertPengajar || $willInsertPengurus || $willInsertWali)) {
-                    throw new \Exception("Minimal satu role (karyawan, pengajar, pengurus, atau wali kelas) harus memiliki data di baris {$excelRow}.");
+                    throw new \Exception("Minimal satu role harus memiliki data di baris {$excelRow}.");
                 }
 
-                // ====== NIK DUPLIKAT FILE CHECK ======
+                // Cek duplikat di file Excel
                 $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
-
                 if ($nikRaw !== '') {
                     if (isset($processedNiks[$nikRaw])) {
                         $firstRow = $processedNiks[$nikRaw];
                         throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow} dan baris {$firstRow}).");
                     }
-                    $processedNiks[$nikRaw] = $excelRow; // simpan baris pertama kali muncul
+                    $processedNiks[$nikRaw] = $excelRow;
                 }
 
-                // ===== Insert Biodata =====
-                $biodataId = Str::uuid()->toString();
-
-                // Ambil nilai NIK & No Passport (bersih)
-                $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
                 $noPassportRaw = isset($row['no_passport']) ? trim((string)$row['no_passport']) : '';
+                $kewarganegaraan = strtoupper(trim($row['kewarganegaraan'] ?? ''));
 
-                // Tentukan kewarganegaraan (jika ada)
-                $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
-                
+                // Validasi dasar
                 if (!in_array($kewarganegaraan, ['WNI', 'WNA'])) {
-                    throw new \Exception("Kolom 'kewarganegaraan' hanya boleh berisi 'WNI' atau 'WNA' di baris {$excelRow} (isi: '{$row['kewarganegaraan']}').");
+                    throw new \Exception("Kolom 'kewarganegaraan' hanya boleh 'WNI' atau 'WNA' di baris {$excelRow}.");
                 }
-
-                // ==========================================================
-                // --- TAMBAHAN VALIDASI 1: NEGARA UNTUK WNA ---
-                // ==========================================================
-                $negaraNama = trim((string)($row['negara'] ?? ''));
-                if ($kewarganegaraan === 'WNA' && strtolower($negaraNama) === 'indonesia') {
-                    throw new \Exception("Untuk WNA, negara tidak boleh 'Indonesia' di baris {$excelRow}.");
-                }
-                // ==========================================================
-                // --- AKHIR TAMBAHAN 1 ---
-                // ==========================================================
-
-                // ===== VALIDASI BARU: NIK ↔ NO PASSPORT =====
                 if ($nikRaw !== '' && $noPassportRaw !== '') {
                     throw new \Exception("Kolom 'nik' dan 'no_passport' tidak boleh diisi bersamaan di baris {$excelRow}.");
                 }
@@ -141,36 +123,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     throw new \Exception("Minimal kolom 'nik' atau 'no_passport' harus diisi di baris {$excelRow}.");
                 }
 
-                // ===== No KK berdasarkan kewarganegaraan =====
-                $noKkRaw = null;
-                if ($kewarganegaraan === 'WNA') {
-                    $angka13Digit = (string) random_int(1000000000000, 9999999999999);
-                    $noKkRaw = 'WNA' . $angka13Digit;
-                } elseif ($kewarganegaraan === 'WNI') {
-                    $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : '';
-                    if ($noKkRaw === '') {
-                        throw new \Exception("Kolom 'no_kk' harus diisi untuk kewarganegaraan WNI di baris {$excelRow}.");
-                    }
-                } else {
-                    $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : null;
-                }
-
-                // Tetapkan nilai final untuk insert
-                $nik = null;
-                $noPassport = null;
-                if ($kewarganegaraan === 'WNI') {
-                    $nik = $nikRaw ?: null;
-                } elseif ($kewarganegaraan === 'WNA') {
-                    $noPassport = $noPassportRaw ?: null;
-                } else {
-                    if ($nikRaw !== '') $nik = $nikRaw;
-                    if ($noPassportRaw !== '') $noPassport = $noPassportRaw;
-                }
-
-                // ======================================================================
-                // --- TAMBAHAN VALIDASI 2: CEK STATUS AKTIF PEGAWAI & SANTRI DI DB ---
-                // (Ini menggantikan blok "CEK DUPLIKASI NIK / NO PASSPORT DI DB" Anda)
-                // ======================================================================
+                // Cek biodata yang sudah ada
                 $existingBiodata = null;
                 if (!empty($nikRaw)) {
                     $existingBiodata = DB::table('biodata')->where('nik', $nikRaw)->first();
@@ -178,238 +131,849 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                     $existingBiodata = DB::table('biodata')->where('no_passport', $noPassportRaw)->first();
                 }
 
+                $biodataId = $existingBiodata->id ?? Str::uuid()->toString();
+
                 if ($existingBiodata) {
-                    $isPegawaiAktif = DB::table('pegawai')
-                        ->where('biodata_id', $existingBiodata->id)
-                        ->where('status_aktif', 'aktif')
-                        ->exists();
-
-                    if ($isPegawaiAktif) {
-                        throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah terdaftar sebagai PEGAWAI AKTIF.");
-                    }
-
-                    $isSantriAktif = DB::table('santri')
+                    $updatedCount++;
+                    $updatedList[] = [
+                        'nama' => $row['nama_lengkap'] ?? '-',
+                        'nik'  => $row['nik'] ?? '-',
+                    ];
+                    // Cek santri aktif
+                    $santriAktif = DB::table('santri')
                         ->where('biodata_id', $existingBiodata->id)
                         ->where('status', 'aktif')
                         ->exists();
-
-                    if ($isSantriAktif) {
+                    if ($santriAktif) {
                         throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} masih terdaftar sebagai SANTRI AKTIF.");
                     }
 
-                    throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah ada di database. Proses import hanya untuk data baru.");
-                }
+                    // Update biodata dari Excel
+                    DB::table('biodata')->where('id', $existingBiodata->id)->update([
+                        'nama' => $row['nama_lengkap'] ?? $existingBiodata->nama,
+                        'jenis_kelamin' => $jenisKelamin,
+                        'tempat_lahir' => $row['tempat_lahir'] ?? $existingBiodata->tempat_lahir,
+                        'tanggal_lahir' => $this->transformDate($row['tanggal_lahir'] ?? $existingBiodata->tanggal_lahir),
+                        'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? $existingBiodata->jenjang_pendidikan_terakhir,
+                        'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? $existingBiodata->nama_pendidikan_terakhir,
+                        'email' => $row['email'] ?? $existingBiodata->email,
+                        'no_telepon' => $row['no_telp'] ?? $existingBiodata->no_telepon,
+                        'no_telepon_2' => $row['no_telp_2'] ?? $existingBiodata->no_telepon_2,
+                        'negara_id' => $this->findId('negara', $row['negara'] ?? $existingBiodata->negara_id, $excelRow, false),
+                        'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? $existingBiodata->provinsi_id, $excelRow, false),
+                        'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? $existingBiodata->kabupaten_id, $excelRow, false),
+                        'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? $existingBiodata->kecamatan_id, $excelRow, false),
+                        'jalan' => $row['jalan'] ?? $existingBiodata->jalan,
+                        'kode_pos' => $row['kode_pos'] ?? $existingBiodata->kode_pos,
+                        'anak_keberapa' => $row['anak_keberapa'] ?? $existingBiodata->anak_keberapa,
+                        'dari_saudara' => $row['dari_saudara'] ?? $existingBiodata->dari_saudara,
+                        'tinggal_bersama' => $row['tinggal_bersama'] ?? $existingBiodata->tinggal_bersama,
+                        'status' => true,
+                        'wafat' => isset($row['wafat']) && strtolower($row['wafat']) === 'ya',
+                        'updated_at' => now(),
+                        'updated_by' => $this->userId ?? 1
+                    ]);
 
-                static $niupSeen = [];
-                $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : '';
+                    // ===== Keluarga =====
+                    $noKk = $row['no_kk'] ?? null;
+                    if ($noKk) {
+                        $existsKeluarga = DB::table('keluarga')
+                            ->where('id_biodata', $existingBiodata->id)
+                            ->where('no_kk', $noKk)
+                            ->exists();
 
-                if ($niupRaw !== '') {
-                    // 1️⃣ Cek duplikasi di file Excel itu sendiri
-                    if (isset($niupSeen[$niupRaw])) {
-                        throw new \Exception("NIUP '{$niupRaw}' duplikat di file Excel: baris {$excelRow} sama dengan baris {$niupSeen[$niupRaw]}.");
+                        if (!$existsKeluarga) {
+                            DB::table('keluarga')->insert([
+                                'id_biodata' => $existingBiodata->id,
+                                'no_kk' => $noKk,
+                                'status' => 1,
+                                'created_by' => $this->userId ?? 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
-                    $niupSeen[$niupRaw] = $excelRow;
 
-                    // 2️⃣ Cek duplikasi di database
-                    $existsNiup = DB::table('warga_pesantren')->where('niup', $niupRaw)->exists();
-                    if ($existsNiup) {
-                        throw new \Exception("NIUP '{$niupRaw}' sudah terdaftar di database (baris {$excelRow}).");
+                    // ===== Warga Pesantren =====
+                    $niup = $row['niup'] ?? null;
+                    if ($niup) {
+                        $existsNiup = DB::table('warga_pesantren')
+                            ->where('biodata_id', $existingBiodata->id)
+                            ->where('niup', $niup)
+                            ->exists();
+
+                        if (!$existsNiup) {
+                            DB::table('warga_pesantren')->insert([
+                                'biodata_id' => $existingBiodata->id,
+                                'niup' => $niup,
+                                'status' => 1,
+                                'created_by' => $this->userId ?? 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
-                }
-                // ===== Konversi Jenis Kelamin (lebih toleran) =====
-                $jkRaw = strtolower(trim((string)($row['jenis_kelamin'] ?? '')));
-                $jkRaw = str_replace(['.', ',', '-', '_', ' '], '', $jkRaw); // hapus simbol
 
-                if (in_array($jkRaw, ['l', 'lk', 'lelaki', 'laki', 'lakilaki', 'cowok'])) {
-                    $jenisKelamin = 'l';
-                } elseif (in_array($jkRaw, ['p', 'pr', 'perempuan', 'wanita', 'cewek'])) {
-                    $jenisKelamin = 'p';
+                    // Ambil data pegawai (jika ada)
+                    $pegawai = DB::table('pegawai')->where('biodata_id', $existingBiodata->id)->first();
+
+                    if ($pegawai) {
+                        if ($pegawai->status_aktif === 'aktif') {
+                            throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah terdaftar sebagai PEGAWAI AKTIF.");
+                        } else {
+                            // Reaktivasi pegawai nonaktif
+                            DB::table('pegawai')->where('id', $pegawai->id)->update([
+                                'status_aktif' => 'aktif',
+                                'updated_at' => now(),
+                                'updated_by' => $this->userId ?? 1,
+                            ]);
+                            $pegawaiId = $pegawai->id;
+                        }
+                    } else {
+                        // Pegawai belum pernah dibuat → insert baru
+                        $pegawaiId = DB::table('pegawai')->insertGetId([
+                            'biodata_id' => $existingBiodata->id,
+                            'status_aktif' => 'aktif',
+                            'created_at' => now(),
+                            'created_by' => $this->userId ?? 1,
+                            'updated_at' => now(),
+                            'updated_by' => $this->userId ?? 1,
+                        ]);
+                    }
+
+                    // Reaktivasi / update semua role
+                    if ($willInsertKaryawan) {
+                        DB::table('karyawan')->updateOrInsert(
+                            ['pegawai_id' => $pegawaiId],
+                            [
+                                'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['karyawan_golongan_jabatan'] ?? null, $excelRow, false),
+                                'lembaga_id' => $this->findId('lembaga', $row['karyawan_lembaga'] ?? null, $excelRow, false),
+                                'jabatan' => $row['karyawan_jabatan'] ?? null,
+                                'keterangan_jabatan' => $row['karyawan_keterangan_jabatan'] ?? null,
+                                'tanggal_mulai' => $this->transformDate($row['karyawan_tanggal_mulai'] ?? null),
+                                'status_aktif' => 'aktif',
+                                'updated_at' => now(),
+                                'updated_by' => $this->userId ?? 1
+                            ]
+                        );
+                    }
+
+                    if ($willInsertPengajar) {
+                        $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
+                        $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
+
+                        DB::table('pengajar')->updateOrInsert(
+                            ['pegawai_id' => $pegawaiId],
+                            [
+                                'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+                                'golongan_id' => $golonganId,
+                                'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
+                                'jabatan' => $row['pengajar_jabatan'] ?? null,
+                                'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? null),
+                                'status_aktif' => 'aktif',
+                                'updated_at' => now(),
+                                'updated_by' => $this->userId ?? 1,
+                                'created_by' => $this->userId ?? 1
+                            ]
+                        );
+
+                        // Ambil pengajar_id yang baru diinsert / update
+                        $pengajarRecord = DB::table('pengajar')->where('pegawai_id', $pegawaiId)->first();
+                        $pengajarId = $pengajarRecord->id;
+
+                        if (!empty($row['pengajar_nama_mapel']) || !empty($row['nama_mapel_pengajar'])) {
+                            $namaMapel = $row['pengajar_nama_mapel'] ?? $row['nama_mapel_pengajar'] ?? null;
+                            $kodeMapel = $row['pengajar_kode_mapel'] ?? null;
+
+                            DB::table('mata_pelajaran')->insert([
+                                'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+                                'kode_mapel' => $kodeMapel,
+                                'nama_mapel' => $namaMapel,
+                                'pengajar_id' => $pengajarId,
+                                'status' => 1,
+                                'created_by' => $this->userId ?? 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+
+                    if ($willInsertPengurus) {
+                        DB::table('pengurus')->updateOrInsert(
+                            ['pegawai_id' => $pegawaiId],
+                            [
+                                'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['pengurus_golongan_jabatan'] ?? null, $excelRow, false),
+                                'satuan_kerja' => $row['pengurus_satuan_kerja'] ?? null,
+                                'jabatan' => $row['pengurus_jabatan'] ?? null,
+                                'keterangan_jabatan' => $row['pengurus_keterangan_jabatan'] ?? null,
+                                'tanggal_mulai' => $this->transformDate($row['pengurus_tanggal_mulai'] ?? null),
+                                'status_aktif' => 'aktif',
+                                'updated_at' => now(),
+                                'updated_by' => $this->userId ?? 1
+                            ]
+                        );
+                    }
+
+                    if ($willInsertWali) {
+                        $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
+                        $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, ['lembaga_id' => $lembagaId]);
+                        $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, ['jurusan_id' => $jurusanId]);
+                        $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, ['kelas_id' => $kelasId]);
+
+                        DB::table('wali_kelas')->updateOrInsert(
+                            ['pegawai_id' => $pegawaiId],
+                            [
+                                'lembaga_id' => $lembagaId,
+                                'jurusan_id' => $jurusanId,
+                                'kelas_id' => $kelasId,
+                                'rombel_id' => $rombelId,
+                                'periode_awal' => $this->transformDate($row['wali_periode_awal'] ?? null),
+                                'status_aktif' => 'aktif',
+                                'updated_at' => now(),
+                                'updated_by' => $this->userId ?? 1
+                            ]
+                        );
+                    }
+                    $noKkPegawai = DB::table('keluarga')->where('id_biodata', $existingBiodata->id)->value('no_kk');
+                    if ($noKkPegawai) {
+                        $listSantriAktif = DB::table('keluarga as k')
+                            ->join('santri as s', 'k.id_biodata', '=', 's.biodata_id')
+                            ->where('k.no_kk', $noKkPegawai)
+                            ->where('s.status', 'aktif')
+                            ->where('k.id_biodata', '!=', $existingBiodata->id)
+                            ->select('s.biodata_id')
+                            ->get();
+
+                        if ($listSantriAktif->isNotEmpty()) {
+                            $hubungan = DB::table('orang_tua_wali as ow')
+                                ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
+                                ->where('ow.id_biodata', $existingBiodata->id)
+                                ->selectRaw("LOWER(hk.nama_status) as status_hubungan")
+                                ->first();
+
+                            if ($hubungan && (str_contains($hubungan->status_hubungan, 'ayah') || str_contains($hubungan->status_hubungan, 'ibu'))) {
+                                $statusUntukDisimpan = str_contains($hubungan->status_hubungan, 'ayah') ? 'ayah' : 'ibu';
+
+                                foreach ($listSantriAktif as $santri) {
+                                    DB::table('anak_pegawai')->updateOrInsert(
+                                        [
+                                            'biodata_id' => $santri->biodata_id,
+                                            'pegawai_id' => $pegawaiId,
+                                        ],
+                                        [
+                                            'status_hubungan' => $statusUntukDisimpan,
+                                            'status'          => true,
+                                            'created_by'      => $this->userId ?? 1,
+                                            'created_at'      => now(),
+                                            'updated_at'      => now(),
+                                        ]
+                                    );
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    throw new \Exception("Kolom 'jenis_kelamin' tidak dikenali di baris {$excelRow} (isi: '{$row['jenis_kelamin']}'). Harus diisi 'Laki-laki' atau 'Perempuan'.");
+                    // Biodata baru → insert baru
+                    $this->insertNewBiodataPegawaiRoles($row, $biodataId, $excelRow, $willInsertKaryawan, $willInsertPengajar, $willInsertPengurus, $willInsertWali);
+                    $newCount++;
                 }
+            }
 
+            DB::commit();
+            activity('import_pegawai')
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'total_baru' => $newCount,
+                    'total_update' => $updatedCount,
+                    'data_update' => $updatedList, // berisi nama & nik
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
+                ->event('import_pegawai')
+                ->log("Import data pegawai selesai: {$newCount} data baru, {$updatedCount} data diperbarui.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $line = $excelRow ?? 'unknown';
+            throw new \Exception("Error di baris Excel: {$line} → " . $e->getMessage());
+        }
+    }
+    protected function insertNewBiodataPegawaiRoles(
+        array $row,
+        string $biodataId,
+        int $excelRow,
+        bool $willInsertKaryawan,
+        bool $willInsertPengajar,
+        bool $willInsertPengurus,
+        bool $willInsertWali
+    ) {
+        // --- Fix: deklarasi variabel yang belum ada ---
+        $nik = trim((string)($row['nik'] ?? ''));
+        $noPassport = trim((string)($row['no_passport'] ?? ''));
+        $noKkRaw = trim((string)($row['no_kk'] ?? ''));
 
-                DB::table('biodata')->insert([
-                    'id' => $biodataId,
-                    'nama' => $row['nama_lengkap'] ?? null,
-                    'nik' => $nik,
-                    'no_passport' => $noPassport,
-                    'jenis_kelamin' => $jenisKelamin,
-                    'tempat_lahir' => $row['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $this->transformDate($row['tanggal_lahir'] ?? null),
-                    'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
-                    'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
-                    'email' => $row['email'] ?? null,
-                    'no_telepon' => $row['no_telp'] ?? null,
-                    'no_telepon_2' => $row['no_telp_2'] ?? null,
-                    'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, false),
-                    'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, false),
-                    'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, false),
-                    'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, false),
-                    'jalan' => $row['jalan'] ?? null,
-                    'kode_pos' => $row['kode_pos'] ?? null,
-                    // 'smartcard' => $row['smartcard'] ?? null,
-                    'anak_keberapa' => $row['anak_keberapa'] ?? null,
-                    'dari_saudara' => $row['dari_saudara'] ?? null,
-                    'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
-                    'status' => true,
-                    'wafat' => isset($row['wafat']) && strtolower($row['wafat']) === 'ya',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'created_by' => $this->userId ?? 1
-                ]);
+        // --- Jenis kelamin ---
+        $jkRaw = strtolower(trim((string)($row['jenis_kelamin'] ?? '')));
+        $jkRaw = str_replace(['.', ',', '-', '_', ' '], '', $jkRaw);
 
-                DB::table('keluarga')->insert([
-                    'id_biodata' => $biodataId,
-                    'no_kk' => $noKkRaw,
+        if (in_array($jkRaw, ['l', 'lk', 'lelaki', 'laki', 'lakilaki', 'cowok'])) {
+            $jenisKelamin = 'l';
+        } elseif (in_array($jkRaw, ['p', 'pr', 'perempuan', 'wanita', 'cewek'])) {
+            $jenisKelamin = 'p';
+        } else {
+            throw new \Exception("Kolom 'jenis_kelamin' tidak dikenali di baris {$excelRow} (isi: '{$row['jenis_kelamin']}'). Harus diisi 'Laki-laki' atau 'Perempuan'.");
+        }
+
+        // --- Insert Biodata ---
+        DB::table('biodata')->insert([
+            'id' => $biodataId,
+            'nama' => $row['nama_lengkap'] ?? null,
+            'nik' => $nik,
+            'no_passport' => $noPassport,
+            'jenis_kelamin' => $jenisKelamin,
+            'tempat_lahir' => $row['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $this->transformDate($row['tanggal_lahir'] ?? null),
+            'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
+            'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
+            'email' => $row['email'] ?? null,
+            'no_telepon' => $row['no_telp'] ?? null,
+            'no_telepon_2' => $row['no_telp_2'] ?? null,
+            'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, false),
+            'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, false),
+            'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, false),
+            'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, false),
+            'jalan' => $row['jalan'] ?? null,
+            'kode_pos' => $row['kode_pos'] ?? null,
+            'anak_keberapa' => $row['anak_keberapa'] ?? null,
+            'dari_saudara' => $row['dari_saudara'] ?? null,
+            'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
+            'status' => true,
+            'wafat' => isset($row['wafat']) && strtolower($row['wafat']) === 'ya',
+            'created_at' => now(),
+            'updated_at' => now(),
+            'created_by' => $this->userId ?? 1
+        ]);
+
+        // --- Insert Keluarga ---
+        DB::table('keluarga')->insert([
+            'id_biodata' => $biodataId,
+            'no_kk' => $noKkRaw,
+            'status' => 1,
+            'created_by' => $this->userId ?? 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // --- Insert Warga Pesantren (opsional) ---
+        $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : null;
+        if ($niupRaw) {
+            DB::table('warga_pesantren')->insert([
+                'biodata_id' => $biodataId,
+                'niup' => $niupRaw,
+                'status' => 1,
+                'created_by' => $this->userId ?? 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // --- Insert Pegawai ---
+        $pegawaiId = DB::table('pegawai')->insertGetId([
+            'biodata_id' => $biodataId,
+            'status_aktif' => 'aktif',
+            'created_at' => now(),
+            'updated_at' => now(),
+            'created_by' => $this->userId ?? 1
+        ]);
+
+        // ===== Role: Karyawan =====
+        if ($willInsertKaryawan) {
+            DB::table('karyawan')->insert([
+                'pegawai_id' => $pegawaiId,
+                'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['karyawan_golongan_jabatan'] ?? null, $excelRow, false),
+                'lembaga_id' => $this->findId('lembaga', $row['karyawan_lembaga'] ?? null, $excelRow, false),
+                'jabatan' => $row['karyawan_jabatan'] ?? null,
+                'keterangan_jabatan' => $row['karyawan_keterangan_jabatan'] ?? null,
+                'tanggal_mulai' => $this->transformDate($row['karyawan_tanggal_mulai'] ?? null),
+                'status_aktif' => 'aktif',
+                'created_at' => now(),
+                'updated_at' => now(),
+                'created_by' => $this->userId ?? 1
+            ]);
+        }
+
+        // ===== Role: Pengajar =====
+        if ($willInsertPengajar) {
+            // cek kode mapel
+            if (!empty($row['pengajar_kode_mapel'])) {
+                $kodeMapel = $row['pengajar_kode_mapel'];
+                $mapelExists = DB::table('mata_pelajaran')
+                    ->where('kode_mapel', $kodeMapel)
+                    ->where('status', 1)
+                    ->exists();
+                if ($mapelExists) {
+                    throw new \Exception("Kode Mata Pelajaran '{$kodeMapel}' sudah digunakan (baris {$excelRow}).");
+                }
+            }
+
+            $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
+            $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
+
+            $pengajarId = DB::table('pengajar')->insertGetId([
+                'pegawai_id' => $pegawaiId,
+                'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+                'golongan_id' => $golonganId,
+                'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
+                'jabatan' => $row['pengajar_jabatan'] ?? null,
+                'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? now()),
+                'status_aktif' => 'aktif',
+                'created_at' => now(),
+                'updated_at' => now(),
+                'created_by' => $this->userId ?? 1
+            ]);
+
+            if (!empty($row['pengajar_nama_mapel']) || !empty($row['nama_mapel_pengajar'])) {
+                $namaMapel = $row['pengajar_nama_mapel'] ?? $row['nama_mapel_pengajar'] ?? null;
+                $kodeMapel = $row['pengajar_kode_mapel'] ?? null;
+
+                DB::table('mata_pelajaran')->insert([
+                    'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+                    'kode_mapel' => $kodeMapel,
+                    'nama_mapel' => $namaMapel,
+                    'pengajar_id' => $pengajarId,
                     'status' => 1,
                     'created_by' => $this->userId ?? 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-
-                // ===== Insert Warga Pesantren (opsional) jika ada =====
-                $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : null;
-                if ($niupRaw) {
-                    DB::table('warga_pesantren')->insert([
-                        'biodata_id' => $biodataId,
-                        'niup' => $niupRaw,
-                        'status' => 1,
-                        'created_by' => $this->userId ?? 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-
-                // ===== Insert Pegawai =====
-                $pegawaiId = DB::table('pegawai')->insertGetId([
-                    'biodata_id' => $biodataId,
-                    'status_aktif' => 'aktif',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'created_by' => $this->userId ?? 1
-                ]);
-
-                // ===== Role: KARYAWAN =====
-                if ($willInsertKaryawan) {
-                    DB::table('karyawan')->insert([
-                        'pegawai_id' => $pegawaiId,
-                        'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['karyawan_golongan_jabatan'] ?? null, $excelRow, false),
-                        'lembaga_id' => $this->findId('lembaga', $row['karyawan_lembaga'] ?? null, $excelRow, false),
-                        'jabatan' => $row['karyawan_jabatan'] ?? null,
-                        'keterangan_jabatan' => $row['karyawan_keterangan_jabatan'] ?? null,
-                        'tanggal_mulai' => $this->transformDate($row['karyawan_tanggal_mulai'] ?? null),
-                        'status_aktif' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
-                }
-
-                // ===== Role: PENGAJAR =====
-                if ($willInsertPengajar) {
-                    if (!empty($row['pengajar_kode_mapel'])) {
-                        $kodeMapel = $row['pengajar_kode_mapel'];
-                        $mapelExists = DB::table('mata_pelajaran')
-                            ->where('kode_mapel', $kodeMapel)
-                            ->where('status', 1)
-                            ->exists();
-                        if ($mapelExists) {
-                            throw new \Exception("Kode Mata Pelajaran '{$kodeMapel}' sudah digunakan oleh mapel lain yang aktif (baris {$excelRow}).");
-                        }
-                    }
-
-                    $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
-                    $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
-
-                    // Insert ke tabel pengajar & ambil ID-nya
-                    $pengajarId = DB::table('pengajar')->insertGetId([
-                        'pegawai_id' => $pegawaiId,
-                        'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
-                        'golongan_id' => $golonganId,
-                        'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
-                        'jabatan' => $row['pengajar_jabatan'] ?? null,
-                        'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? now()),
-                        'status_aktif' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
-
-                    if (!empty($row['pengajar_nama_mapel']) || !empty($row['nama_mapel_pengajar'])) {
-                        $namaMapel = $row['pengajar_nama_mapel'] ?? $row['nama_mapel_pengajar'] ?? null;
-                        $kodeMapel = $row['pengajar_kode_mapel'] ?? null;
-
-                        DB::table('mata_pelajaran')->insert([
-                            'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
-                            'kode_mapel' => $kodeMapel,
-                            'nama_mapel' => $namaMapel,
-                            'pengajar_id' => $pengajarId,
-                            'status' => 1,
-                            'created_by' => $this->userId ?? 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-
-                // ===== Role: PENGURUS =====
-                if ($willInsertPengurus) {
-                    DB::table('pengurus')->insert([
-                        'pegawai_id' => $pegawaiId,
-                        'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['pengurus_golongan_jabatan'] ?? null, $excelRow, false),
-                        'satuan_kerja' => $row['pengurus_satuan_kerja'] ?? null,
-                        'jabatan' => $row['pengurus_jabatan'] ?? null,
-                        'keterangan_jabatan' => $row['pengurus_keterangan_jabatan'] ?? null,
-                        'tanggal_mulai' => $this->transformDate($row['pengurus_tanggal_mulai'] ?? null),
-                        'status_aktif' => 'aktif',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'created_by' => $this->userId ?? 1
-                    ]);
-                }
-
-                // ===== Role: WALI KELAS =====
-                if ($willInsertWali) {
-                    // Lembaga
-                    $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
-                    // Jurusan sesuai lembaga
-                    $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, [
-                        'lembaga_id' => $lembagaId
-                    ]);
-                    // Kelas sesuai jurusan
-                    $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, [
-                        'jurusan_id' => $jurusanId
-                    ]);
-                    // Rombel sesuai kelas
-                    $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, [
-                        'kelas_id' => $kelasId
-                    ]);
-
-                    DB::table('wali_kelas')->insert([
-                        'pegawai_id'      => $pegawaiId,
-                        'lembaga_id'      => $lembagaId,
-                        'jurusan_id'      => $jurusanId,
-                        'kelas_id'        => $kelasId,
-                        'rombel_id'       => $rombelId,
-                        // 'jumlah_murid'    => $row['wali_jumlah_murid'] ?? null,
-                        'periode_awal'    => $this->transformDate($row['wali_periode_awal'] ?? null),
-                        'status_aktif'    => 'aktif',
-                        'created_at'      => now(),
-                        'updated_at'      => now(),
-                        'created_by'      => $this->userId ?? 1
-                    ]);
-                }
             }
+        }
 
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // Pastikan $excelRow terdefinisi untuk error message
-            $line = $excelRow ?? 'unknown';
-            throw new \Exception("Error di baris Excel: {$line} → " . $e->getMessage());
+        // ===== Role: Pengurus =====
+        if ($willInsertPengurus) {
+            DB::table('pengurus')->insert([
+                'pegawai_id' => $pegawaiId,
+                'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['pengurus_golongan_jabatan'] ?? null, $excelRow, false),
+                'satuan_kerja' => $row['pengurus_satuan_kerja'] ?? null,
+                'jabatan' => $row['pengurus_jabatan'] ?? null,
+                'keterangan_jabatan' => $row['pengurus_keterangan_jabatan'] ?? null,
+                'tanggal_mulai' => $this->transformDate($row['pengurus_tanggal_mulai'] ?? null),
+                'status_aktif' => 'aktif',
+                'created_at' => now(),
+                'updated_at' => now(),
+                'created_by' => $this->userId ?? 1
+            ]);
+        }
+
+        // ===== Role: Wali Kelas =====
+        if ($willInsertWali) {
+            $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
+            $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, ['lembaga_id' => $lembagaId]);
+            $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, ['jurusan_id' => $jurusanId]);
+            $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, ['kelas_id' => $kelasId]);
+
+            DB::table('wali_kelas')->insert([
+                'pegawai_id' => $pegawaiId,
+                'lembaga_id' => $lembagaId,
+                'jurusan_id' => $jurusanId,
+                'kelas_id' => $kelasId,
+                'rombel_id' => $rombelId,
+                'periode_awal' => $this->transformDate($row['wali_periode_awal'] ?? null),
+                'status_aktif' => 'aktif',
+                'created_at' => now(),
+                'updated_at' => now(),
+                'created_by' => $this->userId ?? 1
+            ]);
         }
     }
+
+    // public function collection(Collection $rows)
+    // {
+    //     // Pastikan ada baris (HeadingRow akan otomatis dipakai oleh paket)
+    //     if ($rows->isEmpty()) {
+    //         return;
+    //     }
+
+    //     DB::beginTransaction();
+    //     try {
+    //         $processedNiks = [];
+    //         foreach ($rows as $index => $rawRow) {
+    //             $excelRow = $index + $this->headingRow() + 1;
+    //             // Cek kalau semua kolom kosong (anggap 0 di kolom tanggal juga kosong)
+    //             $isEmptyRow = collect($rawRow)->filter(function ($val) {
+    //                 // Anggap kosong kalau null, '', whitespace, atau 0 yang berasal dari cell tanggal
+    //                 if (is_numeric($val) && (int)$val === 0) {
+    //                     return false;
+    //                 }
+    //                 return trim((string)$val) !== '';
+    //             })->isEmpty();
+
+    //             if ($isEmptyRow) {
+    //                 continue; // lewati baris kosong
+    //             }
+    //             // Normalisasi keys header → jadi array biasa dengan key terstandard
+    //             $row = $this->normalizeRow($rawRow->toArray());
+
+    //             // =========================
+    //             // Deteksi otomatis role berdasarkan keberadaan data kolom entitas
+    //             // (TIDAK lagi memeriksa kolom status_karyawan/status_pengajar/...)
+    //             // =========================
+    //             $willInsertKaryawan = (
+    //                 (isset($row['karyawan_golongan_jabatan']) && trim((string)$row['karyawan_golongan_jabatan']) !== '') ||
+    //                 (isset($row['karyawan_lembaga']) && trim((string)$row['karyawan_lembaga']) !== '') ||
+    //                 (isset($row['karyawan_jabatan']) && trim((string)$row['karyawan_jabatan']) !== '') ||
+    //                 (isset($row['karyawan_keterangan_jabatan']) && trim((string)$row['karyawan_keterangan_jabatan']) !== '') ||
+    //                 (isset($row['karyawan_tanggal_mulai']) && trim((string)$row['karyawan_tanggal_mulai']) !== '')
+    //             );
+
+    //             $willInsertPengajar = (
+    //                 (isset($row['pengajar_kategori_golongan']) && trim((string)$row['pengajar_kategori_golongan']) !== '') ||
+    //                 (isset($row['pengajar_golongan']) && trim((string)$row['pengajar_golongan']) !== '') ||
+    //                 (isset($row['pengajar_lembaga']) && trim((string)$row['pengajar_lembaga']) !== '') ||
+    //                 (isset($row['pengajar_keterangan_jabatan']) && trim((string)$row['pengajar_keterangan_jabatan']) !== '') ||
+    //                 (isset($row['pengajar_jabatan']) && trim((string)$row['pengajar_jabatan']) !== '') ||
+    //                 (isset($row['pengajar_tahun_masuk']) && trim((string)$row['pengajar_tahun_masuk']) !== '')
+    //             );
+
+    //             $willInsertPengurus = (
+    //                 (isset($row['pengurus_golongan_jabatan']) && trim((string)$row['pengurus_golongan_jabatan']) !== '') ||
+    //                 (isset($row['pengurus_satuan_kerja']) && trim((string)$row['pengurus_satuan_kerja']) !== '') ||
+    //                 (isset($row['pengurus_jabatan']) && trim((string)$row['pengurus_jabatan']) !== '') ||
+    //                 (isset($row['pengurus_keterangan_jabatan']) && trim((string)$row['pengurus_keterangan_jabatan']) !== '') ||
+    //                 (isset($row['pengurus_tanggal_mulai']) && trim((string)$row['pengurus_tanggal_mulai']) !== '')
+    //             );
+
+    //             $willInsertWali = (
+    //                 (isset($row['wali_lembaga']) && trim((string)$row['wali_lembaga']) !== '') ||
+    //                 (isset($row['wali_jurusan']) && trim((string)$row['wali_jurusan']) !== '') ||
+    //                 (isset($row['wali_kelas']) && trim((string)$row['wali_kelas']) !== '') ||
+    //                 (isset($row['wali_rombel']) && trim((string)$row['wali_rombel']) !== '') ||
+    //                 (isset($row['wali_periode_awal']) && trim((string)$row['wali_periode_awal']) !== '')
+    //             );
+
+    //             // Validasi: minimal satu role harus ada datanya (berdasarkan kolom entitas)
+    //             if (!($willInsertKaryawan || $willInsertPengajar || $willInsertPengurus || $willInsertWali)) {
+    //                 throw new \Exception("Minimal satu role (karyawan, pengajar, pengurus, atau wali kelas) harus memiliki data di baris {$excelRow}.");
+    //             }
+
+    //             // ====== NIK DUPLIKAT FILE CHECK ======
+    //             $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
+
+    //             if ($nikRaw !== '') {
+    //                 if (isset($processedNiks[$nikRaw])) {
+    //                     $firstRow = $processedNiks[$nikRaw];
+    //                     throw new \Exception("Duplikat NIK '{$nikRaw}' ditemukan di file Excel (baris {$excelRow} dan baris {$firstRow}).");
+    //                 }
+    //                 $processedNiks[$nikRaw] = $excelRow; // simpan baris pertama kali muncul
+    //             }
+
+    //             // ===== Insert Biodata =====
+    //             $biodataId = Str::uuid()->toString();
+
+    //             // Ambil nilai NIK & No Passport (bersih)
+    //             $nikRaw = isset($row['nik']) ? trim((string)$row['nik']) : '';
+    //             $noPassportRaw = isset($row['no_passport']) ? trim((string)$row['no_passport']) : '';
+
+    //             // Tentukan kewarganegaraan (jika ada)
+    //             $kewarganegaraan = strtoupper(trim((string)($row['kewarganegaraan'] ?? '')));
+
+    //             if (!in_array($kewarganegaraan, ['WNI', 'WNA'])) {
+    //                 throw new \Exception("Kolom 'kewarganegaraan' hanya boleh berisi 'WNI' atau 'WNA' di baris {$excelRow} (isi: '{$row['kewarganegaraan']}').");
+    //             }
+
+    //             // ==========================================================
+    //             // --- TAMBAHAN VALIDASI 1: NEGARA UNTUK WNA ---
+    //             // ==========================================================
+    //             $negaraNama = trim((string)($row['negara'] ?? ''));
+    //             if ($kewarganegaraan === 'WNA' && strtolower($negaraNama) === 'indonesia') {
+    //                 throw new \Exception("Untuk WNA, negara tidak boleh 'Indonesia' di baris {$excelRow}.");
+    //             }
+    //             // ==========================================================
+    //             // --- AKHIR TAMBAHAN 1 ---
+    //             // ==========================================================
+
+    //             // ===== VALIDASI BARU: NIK ↔ NO PASSPORT =====
+    //             if ($nikRaw !== '' && $noPassportRaw !== '') {
+    //                 throw new \Exception("Kolom 'nik' dan 'no_passport' tidak boleh diisi bersamaan di baris {$excelRow}.");
+    //             }
+    //             if ($kewarganegaraan === 'WNI' && $noPassportRaw !== '') {
+    //                 throw new \Exception("Kewarganegaraan 'WNI' — kolom 'no_passport' harus dikosongkan di baris {$excelRow}.");
+    //             }
+    //             if ($kewarganegaraan === 'WNA' && $nikRaw !== '') {
+    //                 throw new \Exception("Kewarganegaraan 'WNA' — kolom 'nik' harus dikosongkan di baris {$excelRow}.");
+    //             }
+    //             if ($nikRaw === '' && $noPassportRaw === '') {
+    //                 throw new \Exception("Minimal kolom 'nik' atau 'no_passport' harus diisi di baris {$excelRow}.");
+    //             }
+
+    //             // ===== No KK berdasarkan kewarganegaraan =====
+    //             $noKkRaw = null;
+    //             if ($kewarganegaraan === 'WNA') {
+    //                 $angka13Digit = (string) random_int(1000000000000, 9999999999999);
+    //                 $noKkRaw = 'WNA' . $angka13Digit;
+    //             } elseif ($kewarganegaraan === 'WNI') {
+    //                 $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : '';
+    //                 if ($noKkRaw === '') {
+    //                     throw new \Exception("Kolom 'no_kk' harus diisi untuk kewarganegaraan WNI di baris {$excelRow}.");
+    //                 }
+    //             } else {
+    //                 $noKkRaw = isset($row['no_kk']) ? trim((string)$row['no_kk']) : null;
+    //             }
+
+    //             // Tetapkan nilai final untuk insert
+    //             $nik = null;
+    //             $noPassport = null;
+    //             if ($kewarganegaraan === 'WNI') {
+    //                 $nik = $nikRaw ?: null;
+    //             } elseif ($kewarganegaraan === 'WNA') {
+    //                 $noPassport = $noPassportRaw ?: null;
+    //             } else {
+    //                 if ($nikRaw !== '') $nik = $nikRaw;
+    //                 if ($noPassportRaw !== '') $noPassport = $noPassportRaw;
+    //             }
+
+    //             // ======================================================================
+    //             // --- TAMBAHAN VALIDASI 2: CEK STATUS AKTIF PEGAWAI & SANTRI DI DB ---
+    //             // (Ini menggantikan blok "CEK DUPLIKASI NIK / NO PASSPORT DI DB" Anda)
+    //             // ======================================================================
+    //             $existingBiodata = null;
+    //             if (!empty($nikRaw)) {
+    //                 $existingBiodata = DB::table('biodata')->where('nik', $nikRaw)->first();
+    //             } elseif (!empty($noPassportRaw)) {
+    //                 $existingBiodata = DB::table('biodata')->where('no_passport', $noPassportRaw)->first();
+    //             }
+
+    //             if ($existingBiodata) {
+    //                 $isPegawaiAktif = DB::table('pegawai')
+    //                     ->where('biodata_id', $existingBiodata->id)
+    //                     ->where('status_aktif', 'aktif')
+    //                     ->exists();
+
+    //                 if ($isPegawaiAktif) {
+    //                     throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah terdaftar sebagai PEGAWAI AKTIF.");
+    //                 }
+
+    //                 $isSantriAktif = DB::table('santri')
+    //                     ->where('biodata_id', $existingBiodata->id)
+    //                     ->where('status', 'aktif')
+    //                     ->exists();
+
+    //                 if ($isSantriAktif) {
+    //                     throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} masih terdaftar sebagai SANTRI AKTIF.");
+    //                 }
+
+    //                 throw new \Exception("Identitas (NIK/Paspor) di baris {$excelRow} sudah ada di database. Proses import hanya untuk data baru.");
+    //             }
+
+    //             static $niupSeen = [];
+    //             $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : '';
+
+    //             if ($niupRaw !== '') {
+    //                 // 1️⃣ Cek duplikasi di file Excel itu sendiri
+    //                 if (isset($niupSeen[$niupRaw])) {
+    //                     throw new \Exception("NIUP '{$niupRaw}' duplikat di file Excel: baris {$excelRow} sama dengan baris {$niupSeen[$niupRaw]}.");
+    //                 }
+    //                 $niupSeen[$niupRaw] = $excelRow;
+
+    //                 // 2️⃣ Cek duplikasi di database
+    //                 $existsNiup = DB::table('warga_pesantren')->where('niup', $niupRaw)->exists();
+    //                 if ($existsNiup) {
+    //                     throw new \Exception("NIUP '{$niupRaw}' sudah terdaftar di database (baris {$excelRow}).");
+    //                 }
+    //             }
+    //             // ===== Konversi Jenis Kelamin (lebih toleran) =====
+    //             $jkRaw = strtolower(trim((string)($row['jenis_kelamin'] ?? '')));
+    //             $jkRaw = str_replace(['.', ',', '-', '_', ' '], '', $jkRaw); // hapus simbol
+
+    //             if (in_array($jkRaw, ['l', 'lk', 'lelaki', 'laki', 'lakilaki', 'cowok'])) {
+    //                 $jenisKelamin = 'l';
+    //             } elseif (in_array($jkRaw, ['p', 'pr', 'perempuan', 'wanita', 'cewek'])) {
+    //                 $jenisKelamin = 'p';
+    //             } else {
+    //                 throw new \Exception("Kolom 'jenis_kelamin' tidak dikenali di baris {$excelRow} (isi: '{$row['jenis_kelamin']}'). Harus diisi 'Laki-laki' atau 'Perempuan'.");
+    //             }
+
+
+    //             DB::table('biodata')->insert([
+    //                 'id' => $biodataId,
+    //                 'nama' => $row['nama_lengkap'] ?? null,
+    //                 'nik' => $nik,
+    //                 'no_passport' => $noPassport,
+    //                 'jenis_kelamin' => $jenisKelamin,
+    //                 'tempat_lahir' => $row['tempat_lahir'] ?? null,
+    //                 'tanggal_lahir' => $this->transformDate($row['tanggal_lahir'] ?? null),
+    //                 'jenjang_pendidikan_terakhir' => $row['jenjang_pendidikan_terakhir'] ?? null,
+    //                 'nama_pendidikan_terakhir' => $row['nama_pendidikan_terakhir'] ?? null,
+    //                 'email' => $row['email'] ?? null,
+    //                 'no_telepon' => $row['no_telp'] ?? null,
+    //                 'no_telepon_2' => $row['no_telp_2'] ?? null,
+    //                 'negara_id' => $this->findId('negara', $row['negara'] ?? null, $excelRow, false),
+    //                 'provinsi_id' => $this->findId('provinsi', $row['provinsi'] ?? null, $excelRow, false),
+    //                 'kabupaten_id' => $this->findId('kabupaten', $row['kabupaten'] ?? null, $excelRow, false),
+    //                 'kecamatan_id' => $this->findId('kecamatan', $row['kecamatan'] ?? null, $excelRow, false),
+    //                 'jalan' => $row['jalan'] ?? null,
+    //                 'kode_pos' => $row['kode_pos'] ?? null,
+    //                 // 'smartcard' => $row['smartcard'] ?? null,
+    //                 'anak_keberapa' => $row['anak_keberapa'] ?? null,
+    //                 'dari_saudara' => $row['dari_saudara'] ?? null,
+    //                 'tinggal_bersama' => $row['tinggal_bersama'] ?? null,
+    //                 'status' => true,
+    //                 'wafat' => isset($row['wafat']) && strtolower($row['wafat']) === 'ya',
+    //                 'created_at' => now(),
+    //                 'updated_at' => now(),
+    //                 'created_by' => $this->userId ?? 1
+    //             ]);
+
+    //             DB::table('keluarga')->insert([
+    //                 'id_biodata' => $biodataId,
+    //                 'no_kk' => $noKkRaw,
+    //                 'status' => 1,
+    //                 'created_by' => $this->userId ?? 1,
+    //                 'created_at' => now(),
+    //                 'updated_at' => now(),
+    //             ]);
+
+    //             // ===== Insert Warga Pesantren (opsional) jika ada =====
+    //             $niupRaw = isset($row['niup']) ? trim((string)$row['niup']) : null;
+    //             if ($niupRaw) {
+    //                 DB::table('warga_pesantren')->insert([
+    //                     'biodata_id' => $biodataId,
+    //                     'niup' => $niupRaw,
+    //                     'status' => 1,
+    //                     'created_by' => $this->userId ?? 1,
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                 ]);
+    //             }
+
+    //             // ===== Insert Pegawai =====
+    //             $pegawaiId = DB::table('pegawai')->insertGetId([
+    //                 'biodata_id' => $biodataId,
+    //                 'status_aktif' => 'aktif',
+    //                 'created_at' => now(),
+    //                 'updated_at' => now(),
+    //                 'created_by' => $this->userId ?? 1
+    //             ]);
+
+    //             // ===== Role: KARYAWAN =====
+    //             if ($willInsertKaryawan) {
+    //                 DB::table('karyawan')->insert([
+    //                     'pegawai_id' => $pegawaiId,
+    //                     'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['karyawan_golongan_jabatan'] ?? null, $excelRow, false),
+    //                     'lembaga_id' => $this->findId('lembaga', $row['karyawan_lembaga'] ?? null, $excelRow, false),
+    //                     'jabatan' => $row['karyawan_jabatan'] ?? null,
+    //                     'keterangan_jabatan' => $row['karyawan_keterangan_jabatan'] ?? null,
+    //                     'tanggal_mulai' => $this->transformDate($row['karyawan_tanggal_mulai'] ?? null),
+    //                     'status_aktif' => 'aktif',
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                     'created_by' => $this->userId ?? 1
+    //                 ]);
+    //             }
+
+    //             // ===== Role: PENGAJAR =====
+    //             if ($willInsertPengajar) {
+    //                 if (!empty($row['pengajar_kode_mapel'])) {
+    //                     $kodeMapel = $row['pengajar_kode_mapel'];
+    //                     $mapelExists = DB::table('mata_pelajaran')
+    //                         ->where('kode_mapel', $kodeMapel)
+    //                         ->where('status', 1)
+    //                         ->exists();
+    //                     if ($mapelExists) {
+    //                         throw new \Exception("Kode Mata Pelajaran '{$kodeMapel}' sudah digunakan oleh mapel lain yang aktif (baris {$excelRow}).");
+    //                     }
+    //                 }
+
+    //                 $kategoriGolId = $this->findId('kategori_golongan', $row['pengajar_kategori_golongan'] ?? null, $excelRow, false);
+    //                 $golonganId = $this->findGolonganId($row['pengajar_golongan'] ?? null, $kategoriGolId, $excelRow, false);
+
+    //                 // Insert ke tabel pengajar & ambil ID-nya
+    //                 $pengajarId = DB::table('pengajar')->insertGetId([
+    //                     'pegawai_id' => $pegawaiId,
+    //                     'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+    //                     'golongan_id' => $golonganId,
+    //                     'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
+    //                     'jabatan' => $row['pengajar_jabatan'] ?? null,
+    //                     'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? now()),
+    //                     'status_aktif' => 'aktif',
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                     'created_by' => $this->userId ?? 1
+    //                 ]);
+
+    // if (!empty($row['pengajar_nama_mapel']) || !empty($row['nama_mapel_pengajar'])) {
+    //     $namaMapel = $row['pengajar_nama_mapel'] ?? $row['nama_mapel_pengajar'] ?? null;
+    //     $kodeMapel = $row['pengajar_kode_mapel'] ?? null;
+
+    //     DB::table('mata_pelajaran')->insert([
+    //         'lembaga_id' => $this->findId('lembaga', $row['pengajar_lembaga'] ?? null, $excelRow, false),
+    //         'kode_mapel' => $kodeMapel,
+    //         'nama_mapel' => $namaMapel,
+    //         'pengajar_id' => $pengajarId,
+    //         'status' => 1,
+    //         'created_by' => $this->userId ?? 1,
+    //         'created_at' => now(),
+    //         'updated_at' => now(),
+    //     ]);
+    // }
+    //             }
+
+    //             // ===== Role: PENGURUS =====
+    //             if ($willInsertPengurus) {
+    //                 DB::table('pengurus')->insert([
+    //                     'pegawai_id' => $pegawaiId,
+    //                     'golongan_jabatan_id' => $this->findId('golongan_jabatan', $row['pengurus_golongan_jabatan'] ?? null, $excelRow, false),
+    //                     'satuan_kerja' => $row['pengurus_satuan_kerja'] ?? null,
+    //                     'jabatan' => $row['pengurus_jabatan'] ?? null,
+    //                     'keterangan_jabatan' => $row['pengurus_keterangan_jabatan'] ?? null,
+    //                     'tanggal_mulai' => $this->transformDate($row['pengurus_tanggal_mulai'] ?? null),
+    //                     'status_aktif' => 'aktif',
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                     'created_by' => $this->userId ?? 1
+    //                 ]);
+    //             }
+
+    //             // ===== Role: WALI KELAS =====
+    //             if ($willInsertWali) {
+    //                 // Lembaga
+    //                 $lembagaId = $this->findId('lembaga', $row['wali_lembaga'] ?? null, $excelRow, false);
+    //                 // Jurusan sesuai lembaga
+    //                 $jurusanId = $this->findId('jurusan', $row['wali_jurusan'] ?? null, $excelRow, false, [
+    //                     'lembaga_id' => $lembagaId
+    //                 ]);
+    //                 // Kelas sesuai jurusan
+    //                 $kelasId = $this->findId('kelas', $row['wali_kelas'] ?? null, $excelRow, false, [
+    //                     'jurusan_id' => $jurusanId
+    //                 ]);
+    //                 // Rombel sesuai kelas
+    //                 $rombelId = $this->findId('rombel', $row['wali_rombel'] ?? null, $excelRow, false, [
+    //                     'kelas_id' => $kelasId
+    //                 ]);
+
+    //                 DB::table('wali_kelas')->insert([
+    //                     'pegawai_id'      => $pegawaiId,
+    //                     'lembaga_id'      => $lembagaId,
+    //                     'jurusan_id'      => $jurusanId,
+    //                     'kelas_id'        => $kelasId,
+    //                     'rombel_id'       => $rombelId,
+    //                     // 'jumlah_murid'    => $row['wali_jumlah_murid'] ?? null,
+    //                     'periode_awal'    => $this->transformDate($row['wali_periode_awal'] ?? null),
+    //                     'status_aktif'    => 'aktif',
+    //                     'created_at'      => now(),
+    //                     'updated_at'      => now(),
+    //                     'created_by'      => $this->userId ?? 1
+    //                 ]);
+    //             }
+    //         }
+
+    //         DB::commit();
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         // Pastikan $excelRow terdefinisi untuk error message
+    //         $line = $excelRow ?? 'unknown';
+    //         throw new \Exception("Error di baris Excel: {$line} → " . $e->getMessage());
+    //     }
+    // }
 
 
     /**
