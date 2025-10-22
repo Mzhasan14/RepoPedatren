@@ -61,26 +61,6 @@ class PresensiJamaahAnakService
             ];
         }
 
-        $jadwal       = $jadwalId ? JadwalSholat::with('sholat')->find($jadwalId) : null;
-
-        if ($tanggal) {
-            $jadwalNext = JadwalSholat::with('sholat')
-                ->where('berlaku_mulai', '<=', $tanggal)
-                ->where(function ($q) use ($tanggal) {
-                    $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', $tanggal);
-                })
-                ->whereTime('jam_mulai', '>', $now->format('H:i:s'))
-                ->orderBy('jam_mulai')
-                ->first();
-        }
-
-        if ($jadwal) {
-            $statusPresensi = $now->between(
-                Carbon::parse($jadwal->jam_mulai),
-                Carbon::parse($jadwal->jam_selesai)
-            ) ? 'waktunya_presensi' : 'belum_waktunya';
-        }
-
         $baseQuery = DB::table('presensi_sholat')
             ->join('santri', 'presensi_sholat.santri_id', '=', 'santri.id')
             ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
@@ -91,21 +71,32 @@ class PresensiJamaahAnakService
         if ($tanggal && !$showAll) $baseQuery->whereDate('presensi_sholat.tanggal', $tanggal);
         if ($sholatId)             $baseQuery->where('presensi_sholat.sholat_id', $sholatId);
         if ($metode)               $baseQuery->where('presensi_sholat.metode', $metode);
-        if ($gender)               $baseQuery->where('b.jenis_kelamin', $gender);
         if ($status !== 'all' && !in_array($status, ['tidak_hadir', 'tidak-hadir'])) {
             $baseQuery->where('presensi_sholat.status', ucfirst($status));
         }
 
-        $total_hadir       = (clone $baseQuery)->where('presensi_sholat.status', 'Hadir')->count();
-        $total_presensi    = (clone $baseQuery)->count();
-        $total_santri      = DB::table('santri')
-            ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
-            ->where('santri.id', $santriId)
-            ->where('santri.status', 'aktif')
-            ->when($gender, fn($q) => $q->where('b.jenis_kelamin', $gender))
+        // Total hadir
+        $total_hadir = (clone $baseQuery)
+            ->where('presensi_sholat.status', 'Hadir')
             ->count();
-        $total_tidak_hadir = max($total_santri - $total_hadir, 0);
 
+        // Ambil total jadwal sholat yang berlaku pada tanggal yang diminta
+        if ($tanggal) {
+            $total_jadwal = JadwalSholat::where('berlaku_mulai', '<=', $tanggal)
+                ->where(function ($q) use ($tanggal) {
+                    $q->whereNull('berlaku_sampai')
+                        ->orWhere('berlaku_sampai', '>=', $tanggal);
+                })
+                ->count();
+        } else {
+            // Jika tidak filter tanggal, bisa hitung total jadwal aktif
+            $total_jadwal = JadwalSholat::whereNull('berlaku_sampai')
+                ->orWhere('berlaku_sampai', '>=', now())
+                ->count();
+        }
+
+        // Total tidak hadir = semua jadwal - yang hadir
+        $total_tidak_hadir = max($total_jadwal - $total_hadir, 0);
 
         if (in_array($status, ['tidak_hadir', 'tidak-hadir'])) {
             if (!$tanggal) {
@@ -117,7 +108,7 @@ class PresensiJamaahAnakService
 
             $list = DB::table('santri')
                 ->join('biodata as b', 'santri.biodata_id', '=', 'b.id')
-                ->leftJoin('presensi_sholat', function ($join) use ($tanggal, $sholatId, $metode, $santriId) {
+                ->leftJoin('presensi_sholat', function ($join) use ($tanggal, $sholatId, $metode) {
                     $join->on('santri.id', '=', 'presensi_sholat.santri_id')
                         ->whereDate('presensi_sholat.tanggal', $tanggal);
                     if ($sholatId) $join->where('presensi_sholat.sholat_id', $sholatId);
@@ -178,8 +169,7 @@ class PresensiJamaahAnakService
             'totals' => [
                 'total_hadir'             => $total_hadir,
                 'total_tidak_hadir'       => $total_tidak_hadir,
-                'total_presensi_tercatat' => $total_presensi,
-                // 'total_santri'            => $total_santri,
+                'total_jadwal_sholat'     => $total_jadwal,
             ],
             'data' => $list,
         ];

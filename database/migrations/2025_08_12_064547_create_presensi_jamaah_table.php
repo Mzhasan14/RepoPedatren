@@ -58,7 +58,7 @@ return new class extends Migration
             $table->foreignId('sholat_id')->constrained('sholat')->cascadeOnDelete();
             $table->date('tanggal');
             $table->time('waktu_presensi')->nullable();
-            $table->enum('status', ['Hadir', 'Izin', 'Sakit', 'Alfa'])->default('Hadir');
+            $table->enum('status', ['Hadir', 'tidak_hadir'])->default('Hadir');
             $table->enum('metode', ['Manual', 'Kartu'])->default('Manual');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
