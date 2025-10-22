@@ -589,6 +589,7 @@ Route::prefix('crud')
             Route::post('/hubungan', [HubunganKeluargaController::class, 'store']);
             Route::put('{id}/hubungan', [HubunganKeluargaController::class, 'update']);
             Route::delete('{id}/hubungan', [HubunganKeluargaController::class, 'destroy']);
+            Route::post('/setwali', [HubunganKeluargaController::class, 'setwali']);
 
             // Kewaliasuhan
             Route::post('/grupwaliasuh', [GrupWaliAsuhController::class, 'store']);

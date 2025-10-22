@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api\keluarga;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Keluarga\HubunganKeluargaRequest;
+use App\Http\Requests\Keluarga\SetWaliRequest;
 use App\Models\HubunganKeluarga;
 use App\Services\Keluarga\HubunganKeluargaService;
 use Illuminate\Http\JsonResponse;
@@ -111,5 +112,21 @@ class HubunganKeluargaController extends Controller
         return response()->json([
             'message' => $result['message'],
         ]);
+    }
+
+    public function setWali(SetWaliRequest $request): JsonResponse
+    {
+        $biodataId = $request->validated()['biodata_id'];
+
+        try {
+            $result = $this->service->setwali($biodataId);
+
+            return response()->json($result, $result['status'] ? 200 : 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan internal: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
