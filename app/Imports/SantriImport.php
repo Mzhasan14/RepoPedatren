@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
@@ -610,8 +611,22 @@ class SantriImport implements ToCollection, WithHeadingRow
                         throw new \Exception("Gagal menyimpan pendidikan di baris {$excelRow}: " . $e->getMessage());
                     }
                 }
-
             }
+
+            $totalSantri = count($rows);
+
+            $user = Auth::user();
+
+            activity('import_santri')
+                ->causedBy($user)
+                ->withProperties([
+                    'total_santri' => $totalSantri,
+                    'ip'           => request()->ip(),
+                    'user_agent'   => request()->userAgent(),
+                    'timestamp'    => now(),
+                ])
+                ->event('import_santri')
+                ->log("Import data santri dari Excel berhasil. Total {$totalSantri} santri berhasil disimpan ke sistem.");
 
             DB::commit();
         } catch (\Exception $e) {

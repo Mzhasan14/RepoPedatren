@@ -10,31 +10,128 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityController extends Controller
 {
-   public function index(Request $request)
-{
-    // Ambil log activity terbaru, paginasi 15 per page
-    $logs = Activity::orderBy('created_at', 'desc')->paginate(15);
+    public function index(Request $request)
+    {
+        $query = Activity::query()->orderBy('created_at', 'desc');
 
-    // Ubah format agar kirim nama causer, bukan ID
-    $logs->getCollection()->transform(function ($item) {
-        return [
-            'id'           => $item->id,
-            'description'  => $item->description,
-            'log_name'     => $item->log_name,
-            'event'        => $item->event,
-            // Ganti id jadi nama/username:
-            'causer_username' => $item->causer ? ($item->causer->name ?? $item->causer->username ?? '-') : '-',
-            'causer_type'  => $item->causer_type,
-            'subject_id'   => $item->subject_id,
-            'subject_type' => $item->subject_type,
-            'properties'   => $item->properties,
-            'batch_uuid'   => $item->batch_uuid,
-            'created_at'   => $item->created_at->toDateTimeString(),
+        // === Filter tanggal dari dan sampai ===
+        if ($request->filled('tanggal_dari')) {
+            $query->whereDate('created_at', '>=', $request->tanggal_dari);
+        }
+
+        if ($request->filled('tanggal_sampai')) {
+            $query->whereDate('created_at', '<=', $request->tanggal_sampai);
+        }
+
+        // === Filter log_name (pakai LIKE) ===
+        if ($request->filled('log_name')) {
+            $query->where('log_name', 'like', '%' . $request->log_name . '%');
+        }
+
+        // === Filter event ===
+        if ($request->filled('event')) {
+            $query->where('event', $request->event);
+        }
+
+        // === Filter description (optional) ===
+        if ($request->filled('description')) {
+            $query->where('description', 'like', '%' . $request->description . '%');
+        }
+
+        // === Filter causer_id ===
+        if ($request->filled('causer_id')) {
+            $query->where('causer_id', $request->causer_id);
+        }
+
+        // === Filter orang tua (causer_id null) ===
+        if ($request->boolean('causer_orangtua')) {
+            $query->whereNull('causer_id');
+        }
+
+        // === Pagination ringan ===
+        $perPage = $request->get('per_page', 15);
+        $logs = $query->select([
+            'id',
+            'description',
+            'log_name',
+            'event',
+            'causer_id',
+            'causer_type',
+            'subject_id',
+            'subject_type',
+            'created_at'
+        ])->paginate($perPage);
+
+        // === Transformasi ringan ===
+        $logs->getCollection()->transform(function ($item) {
+            return [
+                'id'              => $item->id,
+                'description'     => $item->description,
+                'log_name'        => $item->log_name,
+                'event'           => $item->event,
+                'causer_username' => $item->causer
+                    ? ($item->causer->name ?? $item->causer->username ?? '-')
+                    : 'Orang Tua / Guest',
+                'causer_type'     => $item->causer_type,
+                'causer_id'       => $item->causer_id,
+                'subject_type'    => $item->subject_type,
+                'created_at'      => $item->created_at->toDateTimeString(),
+            ];
+        });
+
+        return response()->json($logs);
+    }
+
+    public function show($id)
+    {
+        $log = Activity::with(['causer'])
+            ->findOrFail($id);
+
+        $data = [
+            'id'              => $log->id,
+            'description'     => $log->description,
+            'log_name'        => $log->log_name,
+            'event'           => $log->event,
+            'causer_username' => $log->causer
+                ? ($log->causer->name ?? $log->causer->username ?? '-')
+                : 'Orang Tua / Guest',
+            'causer_type'     => $log->causer_type,
+            'causer_id'       => $log->causer_id,
+            'subject_id'      => $log->subject_id,
+            'subject_type'    => $log->subject_type,
+            'properties'      => $log->properties, 
+            'batch_uuid'      => $log->batch_uuid,
+            'created_at'      => $log->created_at->toDateTimeString(),
         ];
-    });
 
-    return response()->json($logs);
-}
+        return response()->json($data);
+    }
+
+    // public function index(Request $request)
+    // {
+    //     // Ambil log activity terbaru, paginasi 15 per page
+    //     $logs = Activity::orderBy('created_at', 'desc')->paginate(15);
+
+    //     // Ubah format agar kirim nama causer, bukan ID
+    //     $logs->getCollection()->transform(function ($item) {
+    //         return [
+    //             'id'           => $item->id,
+    //             'description'  => $item->description,
+    //             'log_name'     => $item->log_name,
+    //             'event'        => $item->event,
+    //             // Ganti id jadi nama/username:
+    //             'causer_username' => $item->causer ? ($item->causer->name ?? $item->causer->username ?? '-') : '-',
+    //             'causer_type'  => $item->causer_type,
+    //             'subject_id'   => $item->subject_id,
+    //             'subject_type' => $item->subject_type,
+    //             'properties'   => $item->properties,
+    //             'batch_uuid'   => $item->batch_uuid,
+    //             'created_at'   => $item->created_at->toDateTimeString(),
+    //         ];
+    //     });
+
+    //     return response()->json($logs);
+    // }
 
     // public function index(Request $request)
     // {
