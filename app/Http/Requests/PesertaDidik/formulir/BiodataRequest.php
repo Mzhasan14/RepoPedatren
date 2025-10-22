@@ -44,8 +44,8 @@ class BiodataRequest extends FormRequest
             ],
             'nama' => 'required|string|max:100',
             'jenis_kelamin' => 'required|in:l,p',
-            'tanggal_lahir' => 'required|date',
-            'tempat_lahir' => 'required|string|max:50',
+            'tanggal_lahir' => 'nullable|date',
+            'tempat_lahir' => 'nullable|string|max:50',
             'anak_keberapa' => 'nullable|integer',
             'dari_saudara' => 'nullable|integer',
 

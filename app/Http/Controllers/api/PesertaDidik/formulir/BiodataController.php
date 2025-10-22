@@ -17,28 +17,6 @@ class BiodataController extends Controller
         $this->biodata = $biodata;
     }
 
-    // public function store(BiodataRequest $request)
-    // {
-    //     try {
-    //         $result = $this->biodata->store($request->validated());
-    //         if (!$result['status']) {
-    //             return response()->json([
-    //                 'message' => $result['message']
-    //             ], 200);
-    //         }
-    //         return response()->json([
-    //             'message' => 'Data berhasil ditambah',
-    //             'data' => $result['data']
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         Log::error('Gagal tambah biodata: ' . $e->getMessage());
-    //         return response()->json([
-    //             'message' => 'Terjadi kesalahan saat memproses data',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
     public function show($id)
     {
         try {

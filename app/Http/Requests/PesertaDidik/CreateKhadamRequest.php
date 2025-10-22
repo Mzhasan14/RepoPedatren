@@ -29,8 +29,8 @@ class CreateKhadamRequest extends FormRequest
             'provinsi_id' => 'required|exists:provinsi,id',
             'kabupaten_id' => 'required|exists:kabupaten,id',
             'kecamatan_id' => 'required|exists:kecamatan,id',
-            'jalan' => 'required|string|max:255',
-            'kode_pos' => 'required|string|max:10',
+            'jalan' => 'nullable|string|max:255',
+            'kode_pos' => 'nullable|string|max:10',
             'nama' => 'required|string|max:100',
 
             // Aturan fleksibel antara nik/no_kk dan passport
@@ -39,9 +39,9 @@ class CreateKhadamRequest extends FormRequest
             'passport' => 'nullable|required_without_all:nik,no_kk|string|max:20',
 
             'jenis_kelamin' => 'required|in:l,p',
-            'tanggal_lahir' => 'required|date',
-            'tempat_lahir' => 'required|string|max:50',
-            'no_telepon' => 'required|string|max:20',
+            'tanggal_lahir' => 'nullable|date',
+            'tempat_lahir' => 'nullable|string|max:50',
+            'no_telepon' => 'nullable|string|max:20',
             'no_telepon_2' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100|unique:biodata,email',
 
