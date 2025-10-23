@@ -48,6 +48,7 @@ class KeluargaController extends Controller
             ->join('biodata as bo', 'ow.id_biodata', '=', 'bo.id')
             ->join('hubungan_keluarga as hk', 'ow.id_hubungan_keluarga', '=', 'hk.id')
             ->select([
+                'bo.id as biodata_id',
                 'k.id',
                 'bo.nama',
                 'bo.nik',
@@ -66,6 +67,7 @@ class KeluargaController extends Controller
             ->whereNotIn('k.id_biodata', $excluded)
             ->join('biodata as bs', 'k.id_biodata', '=', 'bs.id')
             ->select([
+                'bs.id as biodata_id',
                 'k.id',
                 'bs.nama',
                 'bs.nik',
@@ -130,6 +132,7 @@ class KeluargaController extends Controller
                     }
 
                     return [
+                        'biodata_id' => $i->biodata_id,
                         'id_keluarga' => $i->id,
                         'nik' => $i->nik,
                         'nama' => $i->nama,

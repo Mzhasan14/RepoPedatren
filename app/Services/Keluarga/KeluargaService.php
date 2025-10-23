@@ -24,6 +24,7 @@ class KeluargaService
                 'no_kk' => $kel->no_kk,
                 'nama' => $kel->biodata->nama,
                 'hubungan' => optional(optional($kel->orangTua)->hubunganKeluarga)->nama_status,
+                'status_wali' => optional($kel->orangTua)->wali ?? null,
                 'status' => $kel->status,
             ],
         ];

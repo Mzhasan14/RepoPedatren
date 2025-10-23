@@ -9,6 +9,7 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "bepsvpt/secure-headers": "^9.0",
+        "guzzlehttp/guzzle": "^7.10",
         "intervention/image": "^3.11",
         "intervention/image-laravel": "^1.5",
         "laravel/framework": "^11.31",
