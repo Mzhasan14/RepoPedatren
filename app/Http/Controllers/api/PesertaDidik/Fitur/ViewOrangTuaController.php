@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\api\PesertaDidik\Fitur;
 
 use Exception;
+use Carbon\Carbon;
 use App\Models\Santri;
 use Illuminate\Http\Request;
 use App\Models\TagihanSantri;
@@ -35,8 +36,8 @@ use App\Http\Requests\PesertaDidik\OrangTua\ViewTransaksiRequest;
 use App\Services\PesertaDidik\OrangTua\PresensiJamaahAnakService;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanAfektifRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\CatatanKognitifRequest;
-use App\Http\Requests\PesertaDidik\OrangTua\VirtualAccountAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahAnakRequest;
+use App\Http\Requests\PesertaDidik\OrangTua\VirtualAccountAnakRequest;
 use App\Http\Requests\PesertaDidik\OrangTua\PresensiJamaahTodayRequest;
 
 class ViewOrangTuaController extends Controller
@@ -365,7 +366,16 @@ class ViewOrangTuaController extends Controller
             $totalKredit = (clone $query)->where('tipe', 'kredit')->sum('jumlah');
             $totalRefund = (clone $query)->where('tipe', 'refund')->sum('jumlah');
 
-            // Ambil pagination dari request
+            // 🔹 Pengeluaran hari ini
+            $debitToday = TransaksiSaldo::where('santri_id', $santriId)
+                ->where('tipe', 'debit')
+                ->whereDate('created_at', Carbon::today()) // ✅ harus pakai whereDate
+                ->sum('jumlah');
+
+            // 🔹 Limit saldo santri
+            $limitSaldo = optional(Santri::with('kartu')->find($santriId)->kartu)->limit_saldo;
+
+            // Pagination
             $perPage = (int) $request->input('per_page', 25);
             $page    = (int) $request->input('page', 1);
 
@@ -373,32 +383,33 @@ class ViewOrangTuaController extends Controller
 
             $data = $results->getCollection()->map(function ($item) {
                 return [
-                    'id'         => $item->id,
-                    'tipe'       => $item->tipe,
-                    'total_bayar'     => (float) $item->jumlah,
-                    'keterangan' => $item->keterangan,
-                    'tanggal'    => $item->created_at,
-                    'outlet'     => $item->outlet,
-                    'kategori'   => $item->kategori,
-                    'uid_kartu'  => optional($item->santri->kartu)->uid_kartu,
-                    'limit_saldo'   => number_format($item->santri->kartu->limit_saldo, 0, ',', '.') ?? null,
+                    'id'            => $item->id,
+                    'tipe'          => $item->tipe,
+                    'total_bayar'   => (float) $item->jumlah,
+                    'keterangan'    => $item->keterangan,
+                    'tanggal'       => $item->created_at,
+                    'outlet'        => $item->outlet,
+                    'kategori'      => $item->kategori,
+                    'uid_kartu'     => optional($item->santri->kartu)->uid_kartu,
                 ];
             });
 
             $results->setCollection($data);
 
             return response()->json([
-                'success'         => true,
-                'status'          => 200,
-                'total_data'      => $results->total(),
-                'current_page'    => $results->currentPage(),
-                'per_page'        => $results->perPage(),
-                'total_pages'     => $results->lastPage(),
+                'success'       => true,
+                'status'        => 200,
+                'total_data'    => $results->total(),
+                'current_page'  => $results->currentPage(),
+                'per_page'      => $results->perPage(),
+                'total_pages'   => $results->lastPage(),
                 'rekap' => [
-                    'total_topup'  => (float) $totalTopup,
-                    'total_debit'  => (float) $totalDebit,
-                    'total_kredit' => (float) $totalKredit,
-                    'total_refund' => (float) $totalRefund,
+                    'total_topup'           => (float) $totalTopup,
+                    'total_debit'           => (float) $totalDebit,
+                    'total_kredit'          => (float) $totalKredit,
+                    'total_refund'          => (float) $totalRefund,
+                    'pengeluaran_hari_ini'  => (float) $debitToday,
+                    'limit_saldo'           => $limitSaldo ? number_format($limitSaldo, 0, ',', '.') : null,
                 ],
                 'data' => $results->items(),
             ], 200);
@@ -414,6 +425,7 @@ class ViewOrangTuaController extends Controller
             ], 500);
         }
     }
+
 
     public function getTagihanAnak($santriId)
     {
