@@ -40,7 +40,13 @@ class AuthOrtuController extends Controller
         if ($result['success']) {
             $user  = $result['data'];
             $anak = $result['anak'] ?? null;
-            $token = $user->createToken('auth-token')->plainTextToken;
+            // $token = $user->createToken('auth-token')->plainTextToken;
+            $token = $user->createToken('auth_token', [$user->getRoleNames()->first()])->plainTextToken;
+
+            // Set expired token manual (misal 8 jam)
+            $user->tokens()->latest()->first()->forceFill([
+                'expires_at' => now()->addHours(8),
+            ])->save();
 
             return response()->json([
                 'success' => true,
@@ -56,6 +62,14 @@ class AuthOrtuController extends Controller
             'message' => $result['message']
         ], $result['status']);
     }
+
+    public function logout(): JsonResponse
+    {
+        $this->service->logout(request()->user()->currentAccessToken());
+
+        return response()->json(null, 204);
+    }
+
     public function forgotPassword(ForgotPassOrtuRequest $req): JsonResponse
     {
         $status = $this->service->sendResetLink($req->email);

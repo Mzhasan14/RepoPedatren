@@ -978,8 +978,9 @@ Route::prefix('view-ortu')->middleware(['auth:orangtua', 'role:|superadmin|orang
     Route::get('/virtual-account', [ViewOrangTuaController::class, 'VirtualAccountAnak']);
 });
 
-Route::post('/login-ortu', [AuthOrtuController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/register-ortu', [AuthOrtuController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/login-ortu', [AuthOrtuController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/logout', [AuthOrtuController::class, 'logout'])->middleware('throttle:20,1');
 
 Route::post('forgot-passortu', [AuthOrtuController::class, 'forgotPassword'])
     ->middleware('throttle:5,1');

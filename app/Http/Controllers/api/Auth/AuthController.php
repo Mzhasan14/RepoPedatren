@@ -42,7 +42,13 @@ class AuthController extends Controller
         }
 
         $user = $result['data'];
-        $token = $user->createToken('auth-token')->plainTextToken;
+        // $token = $user->createToken('auth-token')->plainTextToken;
+        $token = $user->createToken('auth_token', [$user->getRoleNames()->first()])->plainTextToken;
+
+        // Set expired token manual (misal 8 jam)
+        $user->tokens()->latest()->first()->forceFill([
+            'expires_at' => now()->addHours(8),
+        ])->save();
 
         return response()->json([
             'success'   => true,
