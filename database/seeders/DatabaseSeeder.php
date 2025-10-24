@@ -73,7 +73,8 @@ class DatabaseSeeder extends Seeder
             // UserWaliasuhSeeder::class,
             UserOrangTuaSeeder::class,
             WaliKelasSeeder::class,
-            BillingSeeder::class
+            BillingSeeder::class,
+            PesantrenSeeder::class,
         ]);
         // Aktifkan kembali logging activity setelah seeding selesai
         Activity::enableLogging();

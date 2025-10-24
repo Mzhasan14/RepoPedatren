@@ -53,7 +53,6 @@ return new class extends Migration
             $table->foreign('provinsi_id')->references('id')->on('provinsi')->onDelete('cascade');
             $table->foreign('kabupaten_id')->references('id')->on('kabupaten')->onDelete('cascade');
             $table->foreign('kecamatan_id')->references('id')->on('kecamatan')->onDelete('cascade');
-            $table->fullText('nama');
 
             $table->index('negara_id', 'idx_biodata_negara_id');
             $table->index('provinsi_id', 'idx_biodata_provinsi_id');
