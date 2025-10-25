@@ -404,17 +404,25 @@ class DataKeluargaSeeder extends Seeder
                 } else {
                     $tanggalKeluarSantri = null;
                 }
+                $kodePesantren = '01';
+
+                $nis = $faker->unique()->numerify('##########');
+
+                // ubah digit ke-3 dan ke-4 menjadi kode pesantren
+                $nis = substr_replace($nis, $kodePesantren, 2, 2); // posisi mulai dari index 2 karena index dimulai dari 0
+
                 $santriId = DB::table('santri')->insertGetId([
-                    'biodata_id' => $childId,
-                    'angkatan_id' => $angkatanId,
-                    'nis' => $faker->unique()->numerify('##########'),
-                    'tanggal_masuk' => $tanggalMasukSantri,
-                    'tanggal_keluar' => $tanggalKeluarSantri,
-                    'status' => $stSantri,
-                    'created_by' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'biodata_id'      => $childId,
+                    'angkatan_id'     => $angkatanId,
+                    'nis'             => $nis,
+                    'tanggal_masuk'   => $tanggalMasukSantri,
+                    'tanggal_keluar'  => $tanggalKeluarSantri,
+                    'status'          => $stSantri,
+                    'created_by'      => 1,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
+
                 if (!$noDomisili) {
                     // FILTER wilayah sesuai jenis kelamin anak
                     if ($jenisKelaminAnak === 'l') {
