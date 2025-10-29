@@ -71,7 +71,7 @@ class ActivityController extends Controller
                 'event'           => $item->event,
                 'causer_username' => $item->causer
                     ? ($item->causer->name ?? $item->causer->username ?? '-')
-                    : 'Orang Tua / Guest',
+                    : 'Orang Tua',
                 'causer_type'     => $item->causer_type,
                 'causer_id'       => $item->causer_id,
                 'subject_type'    => $item->subject_type,
@@ -94,7 +94,7 @@ class ActivityController extends Controller
             'event'           => $log->event,
             'causer_username' => $log->causer
                 ? ($log->causer->name ?? $log->causer->username ?? '-')
-                : 'Orang Tua / Guest',
+                : 'Orang Tua',
             'causer_type'     => $log->causer_type,
             'causer_id'       => $log->causer_id,
             'subject_id'      => $log->subject_id,

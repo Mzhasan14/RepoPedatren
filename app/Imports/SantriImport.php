@@ -478,7 +478,7 @@ class SantriImport implements ToCollection, WithHeadingRow
                     // 🔹 Generate NIS unik
                     do {
                         $random = str_pad(rand(0, 99), 2, '0', STR_PAD_LEFT); // 2 digit random
-                        $nis = $tahunMasuk2Digit . '03' . $random . $nextUrut;
+                        $nis = $tahunMasuk2Digit . '02' . $random . $nextUrut;
                     } while (
                         DB::table('santri')->where('nis', $nis)->exists()
                     );

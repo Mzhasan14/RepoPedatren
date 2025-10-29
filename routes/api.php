@@ -883,7 +883,7 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 });
 
 // Virtual Accounts
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('virtual-accounts')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:200,1'])->prefix('virtual-accounts')->group(function () {
     Route::get('/', [VirtualAccountController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [VirtualAccountController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -893,7 +893,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('virtual-accounts')
 });
 
 // Tagihan
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('tagihan')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:200,1'])->prefix('tagihan')->group(function () {
     Route::get('/', [TagihanController::class, 'index'])->middleware('role:superadmin|admin|supervisor');
     Route::get('/{id}', [TagihanController::class, 'show'])->middleware('role:superadmin|admin|supervisor');
 
@@ -976,11 +976,11 @@ Route::prefix('view-ortu')->middleware(['auth:orangtua', 'role:|superadmin|orang
     Route::post('/SendMessage', [ViewOrangTuaController::class, 'SendMessage']);
     Route::get('/ReadMessage', [ViewOrangTuaController::class, 'ReadMessageOrtu']);
     Route::get('/virtual-account', [ViewOrangTuaController::class, 'VirtualAccountAnak']);
+    Route::post('/logout', [AuthOrtuController::class, 'logout'])->middleware('throttle:20,1');
 });
 
 Route::post('/register-ortu', [AuthOrtuController::class, 'register'])->middleware('throttle:10,1');
 Route::post('/login-ortu', [AuthOrtuController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/logout-ortu', [AuthOrtuController::class, 'logout'])->middleware('throttle:20,1');
 
 Route::post('forgot-passortu', [AuthOrtuController::class, 'forgotPassword'])
     ->middleware('throttle:5,1');
