@@ -748,13 +748,15 @@ Route::prefix('dropdown')->middleware(['auth:sanctum', 'throttle:200,1'])->group
 
 // Endpoint menampilkan log
 Route::prefix('log-activity')->middleware([
-        'auth:sanctum',        
-        'role:superadmin',   
-        'throttle:100,1',      
-    ])
+    'auth:sanctum',
+    'role:superadmin',
+    'throttle:100,1',
+])
     ->group(function () {
-        Route::get('/', [ActivityController::class, 'index'])->name('log-activity.index');
-        Route::get('/{id}', [ActivityController::class, 'show'])->name('log-activity.show');
+        Route::get('/admin', [ActivityController::class, 'indexAdmin']);
+        Route::get('/admin/{id}', [ActivityController::class, 'showAdmin']);
+        Route::get('/ortu', [ActivityController::class, 'indexOrtu']);
+        Route::get('/ortu/{id}', [ActivityController::class, 'showOrtu']);
     });
 
 // Biometric

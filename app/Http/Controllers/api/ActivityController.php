@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Models\User;
+use App\Models\UserOrtu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -10,9 +12,9 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityController extends Controller
 {
-    public function index(Request $request)
+    public function indexAdmin(Request $request)
     {
-        $query = Activity::query()->orderBy('created_at', 'desc');
+        $query = Activity::query()->where('causer_type', User::class)->orderBy('created_at', 'desc');
 
         // === Filter tanggal dari dan sampai ===
         if ($request->filled('tanggal_dari')) {
@@ -41,11 +43,6 @@ class ActivityController extends Controller
         // === Filter causer_id ===
         if ($request->filled('causer_id')) {
             $query->where('causer_id', $request->causer_id);
-        }
-
-        // === Filter orang tua (causer_id null) ===
-        if ($request->boolean('causer_orangtua')) {
-            $query->whereNull('causer_id');
         }
 
         // === Pagination ringan ===
@@ -82,9 +79,10 @@ class ActivityController extends Controller
         return response()->json($logs);
     }
 
-    public function show($id)
+    public function showAdmin($id)
     {
         $log = Activity::with(['causer'])
+            ->where('causer_type', User::class)
             ->findOrFail($id);
 
         $data = [
@@ -99,7 +97,102 @@ class ActivityController extends Controller
             'causer_id'       => $log->causer_id,
             'subject_id'      => $log->subject_id,
             'subject_type'    => $log->subject_type,
-            'properties'      => $log->properties, 
+            'properties'      => $log->properties,
+            'batch_uuid'      => $log->batch_uuid,
+            'created_at'      => $log->created_at->toDateTimeString(),
+        ];
+
+        return response()->json($data);
+    }
+
+    public function indexOrtu(Request $request)
+    {
+        $query = Activity::query()
+            ->where('causer_type', UserOrtu::class)
+            ->orderBy('created_at', 'desc');
+
+        // === Filter tanggal dari dan sampai ===
+        if ($request->filled('tanggal_dari')) {
+            $query->whereDate('created_at', '>=', $request->tanggal_dari);
+        }
+
+        if ($request->filled('tanggal_sampai')) {
+            $query->whereDate('created_at', '<=', $request->tanggal_sampai);
+        }
+
+        // === Filter log_name (pakai LIKE) ===
+        if ($request->filled('log_name')) {
+            $query->where('log_name', 'like', '%' . $request->log_name . '%');
+        }
+
+        // === Filter event ===
+        if ($request->filled('event')) {
+            $query->where('event', $request->event);
+        }
+
+        // === Filter description (optional) ===
+        if ($request->filled('description')) {
+            $query->where('description', 'like', '%' . $request->description . '%');
+        }
+
+        // === Filter causer_id ===
+        if ($request->filled('causer_id')) {
+            $query->where('causer_id', $request->causer_id);
+        }
+
+        // === Pagination ringan ===
+        $perPage = $request->get('per_page', 15);
+        $logs = $query->select([
+            'id',
+            'description',
+            'log_name',
+            'event',
+            'causer_id',
+            'causer_type',
+            'subject_id',
+            'subject_type',
+            'created_at'
+        ])->paginate($perPage);
+
+        // === Transformasi ringan ===
+        $logs->getCollection()->transform(function ($item) {
+            return [
+                'id'              => $item->id,
+                'description'     => $item->description,
+                'log_name'        => $item->log_name,
+                'event'           => $item->event,
+                'causer_username' => $item->causer
+                    ? ($item->causer->name ?? $item->causer->username ?? '-')
+                    : 'Orang Tua',
+                'causer_type'     => $item->causer_type,
+                'causer_id'       => $item->causer_id,
+                'subject_type'    => $item->subject_type,
+                'created_at'      => $item->created_at->toDateTimeString(),
+            ];
+        });
+
+        return response()->json($logs);
+    }
+
+    public function showOrtu($id)
+    {
+        $log = Activity::with(['causer'])
+            ->where('causer_type', UserOrtu::class)
+            ->findOrFail($id);
+
+        $data = [
+            'id'              => $log->id,
+            'description'     => $log->description,
+            'log_name'        => $log->log_name,
+            'event'           => $log->event,
+            'causer_username' => $log->causer
+                ? ($log->causer->name ?? $log->causer->username ?? '-')
+                : 'Orang Tua',
+            'causer_type'     => $log->causer_type,
+            'causer_id'       => $log->causer_id,
+            'subject_id'      => $log->subject_id,
+            'subject_type'    => $log->subject_type,
+            'properties'      => $log->properties,
             'batch_uuid'      => $log->batch_uuid,
             'created_at'      => $log->created_at->toDateTimeString(),
         ];
