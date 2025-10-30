@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\UserOrtu;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\ServiceProvider;
@@ -28,7 +29,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         ResetPassword::createUrlUsing(function ($user, string $token) {
-            return env('FRONTEND_URL').'/reset-password?token='.$token.'&email='.urlencode($user->email);
+            $frontendUrl = env('FRONTEND_URL');
+
+            if ($user instanceof UserOrtu) {
+                return $frontendUrl . '/reset-password-ortu?token=' . $token . '&email=' . urlencode($user->email);
+            }
+
+            return $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
         });
     }
 }
