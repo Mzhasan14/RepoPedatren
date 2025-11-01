@@ -524,7 +524,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
                 'golongan_id' => $golonganId,
                 'keterangan_jabatan' => $row['pengajar_keterangan_jabatan'] ?? null,
                 'jabatan' => $row['pengajar_jabatan'] ?? null,
-                'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? now()),
+                'tahun_masuk' => $this->transformDate($row['pengajar_tahun_masuk'] ?? null),
                 'status_aktif' => 'aktif',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -1155,7 +1155,7 @@ class PegawaiImport implements ToCollection, WithHeadingRow
      */
     protected function transformDate($value, $format = 'Y-m-d')
     {
-        if (empty($value) && $value !== '0') {
+        if (is_null($value) || $value === '' || $value == 0) {
             return null;
         }
 
